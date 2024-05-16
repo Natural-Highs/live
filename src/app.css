@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@tailwind components {
+    .todo {
+        @apply flex items-center justify-between py-8 px-14;    
+    } 
+}
