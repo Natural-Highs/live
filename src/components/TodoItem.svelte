@@ -10,14 +10,14 @@
         {index + 1}. {todo}
     </p>
     <div class="actions">
-        <i
+        <button
             on:click={() => {
                 editTodo(index);
             }}
             on:keydown={() => {}}
             class="fa-regular fa-pen-to-square"
         />
-        <i
+        <button
             on:click={() => {
                 removeTodo(index);
             }}
@@ -43,11 +43,11 @@
         font-size: 1.3rem;
     }
 
-    .actions i {
+    .actions button {
         cursor: pointer;
     }
 
-    .actions i:hover {
+    .actions button:hover {
         color: coral;
     }
 </style>
