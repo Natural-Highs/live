@@ -1,4 +1,4 @@
-<script>
+<!-- <script>
     export let index;
     export let todo;
     export let editTodo;
@@ -50,4 +50,4 @@
     .actions button:hover {
         color: coral;
     }
-</style>
+</style> -->
