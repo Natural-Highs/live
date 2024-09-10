@@ -1,0 +1,25 @@
+{
+	"name": "natural-highs",
+	"build": { 
+		"dockerfile": "Dockerfile", 
+		"context": "../" 
+	},
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"eamodio.gitlens",
+				"editorconfig.editorconfig",
+				"svelte.svelte-vscode",
+				"esbenp.prettier-vscode",
+				"github.vscode-github-actions",
+				"dbaeumer.vscode-eslint",
+				"johnpapa.vscode-peacock",
+				"ms-vscode-remote.remote-containers",
+				"GitHub.codespaces"
+			]
+		}
+	},
+  
+	"forwardPorts": [3000, 5173, 5174, 5175]
+  }
+  
