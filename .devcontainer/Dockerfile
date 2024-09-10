@@ -3,12 +3,13 @@ FROM node:18 AS builder
 
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install git
+    
 # Set the working directory inside the container
 WORKDIR /app
 
 # Copy package files first to leverage Docker caching
 COPY package*.json .
-COPY . .
+
 # Install dependencies
 RUN npm install
 
