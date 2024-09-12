@@ -4,9 +4,10 @@
 2. Click on the two angled brackets in the bottom left 
 
 ![alt text](image.png)
+
 3. Click Reopen in Container 
 ![alt text](image-1.png)
 
-4.w VSCode Should reopen from inside your docker container
+4. VSCode Should reopen from inside your docker container and you run the app with "npm run dev"
 
 ### Optional: Install the Peacock extension (johnpapa.vscode-peacock) to "Subtly change the color of your Visual Studio Code workspace."
