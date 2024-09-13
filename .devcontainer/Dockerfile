@@ -16,6 +16,7 @@ RUN npm install
 # Copy the rest of the project (except .devcontainer)
 COPY . .
 
+RUN npm i
 # Build the Svelte application
 RUN npm run build
 
