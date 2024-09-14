@@ -35,3 +35,10 @@
 ### Optional: Install the Peacock extension (johnpapa.vscode-peacock) to "Subtly change the color of your Visual Studio Code workspace."
 
 
+# Starting the Project
+
+1. npm install -g firebase-tools
+2. apt install -y default-jdk
+3. Start the emulator with "firebase emulators:start"
+4. You can now connect to http://127.0.0.1:4000/ to view a ui for the db and auth
+5. This eventually will be automated
