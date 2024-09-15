@@ -4,7 +4,7 @@ FROM node:18 AS builder
 RUN apt-get update && export DEBIAN_FRONTEND=noninteractive \
     && apt-get -y install git
 
-RUN apt install -y default-jdk
+# RUN apt install -y default-jdk
     
 # Set the working directory inside the container
 WORKDIR /app
@@ -18,13 +18,12 @@ RUN npm install
 # Copy the rest of the project (except .devcontainer)
 COPY . .
 
+RUN git config --global --add safe.directory /workspaces/Natural-Highs
 
-# RUN apt-get install -y openjdk-11-jdk
-# Set environment variables for Java
-# ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
-# ENV PATH=$JAVA_HOME/bin:$PATH
+RUN npm install -g firebase-tools && apt install -y default-jdk && npm install firebase-admin
 
 RUN npm i
+
 # Build the Svelte application
 RUN npm run build
 

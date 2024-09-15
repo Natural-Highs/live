@@ -11,6 +11,9 @@
     },
     "ui": {
       "enabled": true
+    },
+    "websocket": {
+      "port": 9151
     }
   }
 }

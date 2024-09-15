@@ -37,9 +37,8 @@
 
 # Starting the Project
 
-1. npm install -g firebase-tools
-2. apt install -y default-jdk
-3. npm install firebase-admin
-3. Start the emulator with "firebase emulators:start"
-4. You can now connect to http://127.0.0.1:4000/ to view a ui for the db and auth
-5. This eventually will be automated
+1. Start the emulator with "firebase emulators:start"
+2. If you have any errorrs try "npm install -g firebase-tools && apt install -y default-jdk && npm install firebase-admin"
+3. You can now connect to http://127.0.0.1:4000/ to view a ui for the db and auth
+4. This eventually will be automated
+5. "npm run dev" to start the project
