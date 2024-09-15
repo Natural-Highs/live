@@ -5,29 +5,6 @@
   let register = false;
   let authenticating = false;
 
-  // async function handleAuthenticate() {
-  //     if (authenticating) {
-  //         return;
-  //     }
-  //     if (!email || !password || (register && !confirmPass)) {
-  //         error = true;
-  //         return;
-  //     }
-  //     authenticating = true;
-
-  //     try {
-  //         if (!register) {
-  //             await authHandlers.login(email, password);
-  //         } else {
-  //             await authHandlers.signup(email, password);
-  //         }
-  //     } catch (err) {
-  //         console.log("There was an auth error", err);
-  //         error = true;
-  //         authenticating = false;
-  //     }
-  // }
-
   function handleRegister() {
     register = !register;
   }
