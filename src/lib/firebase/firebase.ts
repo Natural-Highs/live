@@ -1,36 +1,48 @@
-// Import the functions you need from the SDKs you need
-import type { ServiceAccount } from "firebase-admin";
-import admin from "firebase-admin";
-import serviceAccount from "../../../serviceAccount.json";
-import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { initializeApp } from "firebase/app";
+import { getFirestore, connectFirestoreEmulator, setDoc, doc } from "firebase/firestore";
+import { getAuth, connectAuthEmulator, createUserWithEmailAndPassword } from "firebase/auth";
 
-// // Your web app's Firebase configuration
-// const firebaseConfig = {
-//   apiKey: import.meta.env.VITE_APIKEY,
-//   authDomain: import.meta.env.VITE_AUTH_DOMAIN,
-//   projectId: import.meta.env.VITE_PROJECT_ID,
-//   storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
-//   messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
-//   appId: import.meta.env.VITE_APP_ID,
-// };
+// Firebase configuration (client-side)
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_APIKEY,
+  authDomain: import.meta.env.VITE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_APP_ID,
+};
 
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount as ServiceAccount),
-});
+// Initialize Firebase client app
+const firebaseApp = initializeApp(firebaseConfig);
 
-// Configure Firestore to use the emulator
-const firestoreEmulatorHost = "localhost:8080"; // Default port for Firestore emulator
-admin.firestore().settings({
-  host: firestoreEmulatorHost,
-  ssl: false,
-});
+// Initialize Firestore and Auth
+export const db = getFirestore(firebaseApp);
+export const auth = getAuth(firebaseApp);
 
-// If running the Firebase Auth emulator, set the emulator host
-if (process.env.MODE === 'development') {
-  process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099'; // replace 9099 with your emulator port if it's different
+// Connect to Firestore emulator if in development mode
+if (import.meta.env.MODE === "development") {
+  connectFirestoreEmulator(db, "localhost", 8080); // Use correct Firestore emulator port if different
+  connectAuthEmulator(auth, "http://localhost:9099"); // Use correct Auth emulator port if different
 }
 
-// Export the Firestore and Auth instances for use in your application
-export const db = admin.firestore();
-export const auth = admin.auth();
-// connectAuthEmulator(getAuth(), "http://127.0.0.1:9099");
+
+// Test function to sign in a user and add a Firestore document
+async function testClientFunctions() {
+  try {
+    // Sign in with test user (created from the Admin SDK)
+    const userCredential = await createUserWithEmailAndPassword(auth, "testuser@example.com", "testpassword123");
+    console.log("Test user signed in:", userCredential.user.uid);
+
+    // Add a test document to Firestore
+    await setDoc(doc(db, "testCollection", "clientTestDoc"), {
+      message: "Hello from Firebase Client SDK!",
+      createdAt: new Date().toISOString(),
+    });
+    console.log("Test document created in Firestore from client");
+  } catch (error) {
+    console.error("Error in testClientFunctions:", error);
+  }
+}
+
+// Call the test function to verify Firebase Client SDK functionality
+testClientFunctions();
