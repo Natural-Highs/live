@@ -19,18 +19,19 @@ const firebaseApp = initializeApp(firebaseConfig);
 export const db = getFirestore(firebaseApp);
 export const auth = getAuth(firebaseApp);
 
+console.log("Environment Mode:", import.meta.env.MODE);
 // Connect to Firestore emulator if in development mode
 if (import.meta.env.MODE === "development") {
   connectFirestoreEmulator(db, "localhost", 8080); // Use correct Firestore emulator port if different
   connectAuthEmulator(auth, "http://localhost:9099"); // Use correct Auth emulator port if different
-}
+}``
 
 
 // Test function to sign in a user and add a Firestore document
 async function testClientFunctions() {
   try {
     // Sign in with test user (created from the Admin SDK)
-    const userCredential = await createUserWithEmailAndPassword(auth, "testuser@example.com", "testpassword123");
+    const userCredential = await createUserWithEmailAndPassword(auth, "client@test.com", "abc123");
     console.log("Test user signed in:", userCredential.user.uid);
 
     // Add a test document to Firestore

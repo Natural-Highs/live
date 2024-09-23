@@ -1,9 +1,11 @@
-import { auth, db } from '$lib/firebase/firebase'; // Adjust the import path as needed
+import { auth, db } from '$lib/firebase/firebase.app'; // Adjust the import path as needed
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore'; // Import Firestore client methods
 
 /**
  * Creates a new user with email and password. Validates that password and confirmPassword match.
  * @param email - The email of the user.
- * @param password - The password of the user.
+ * @param password - The confirmation password to ensure they match.
  * @param confirmPassword - The confirmation password to ensure they match.
  * @returns A promise that resolves with the created user record or rejects with an error.
  */
@@ -13,16 +15,15 @@ export async function registerUser(email: string, password: string, confirmPassw
   }
 
   try {
-    // Create a new user with the provided email and password
-    const userRecord = await auth.createUser({
-      email: email,
-      password: password,
-    });
+    // Create a new user with the provided email and password using Firebase client SDK
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
 
-    const x = await db.collection('users').doc(userRecord.uid).set({
-        email: email,
-        createdAt: new Date(),
-      });
+    // Add user data to Firestore using client SDK
+    await setDoc(doc(db, 'users', user.uid), {
+      email: user.email,
+      createdAt: new Date(),
+    });
 
     return true;
   } catch (error) {
@@ -39,8 +40,9 @@ export async function registerUser(email: string, password: string, confirmPassw
  */
 export async function signInUser(email: string, password: string): Promise<boolean> {
   try {
-    const userRecord = await auth.getUserByEmail(email);
-    if (userRecord) {
+    // Sign in the user with Firebase Authentication
+    const userCredential = await signInWithEmailAndPassword(auth, email, password);
+    if (userCredential.user) {
       return true;
     } else {
       return false;
