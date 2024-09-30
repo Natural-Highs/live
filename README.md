@@ -1,4 +1,32 @@
-# Connecting to Docker
+# Contributers 
+
+|      Name      |     Github     |           Email           |
+|----------------|----------------|---------------------------|
+| Aidan Donnelly | AidanDonnelly1 |   aido4381@colorado.edu   |
+|----------------|----------------|---------------------------|
+|  Ishan Gohil   | IshanGProjects |  ishan10.gohil@gmail.com  |
+|----------------|----------------|---------------------------|
+|   Ari Guzzi    |                |                           | 
+|----------------|----------------|---------------------------|
+|   Luke Wu      |     lukewu1    |    Luke.Wu@colorado.edu   |
+|----------------|----------------|---------------------------|
+|  Tanmay Meti   |   Tanmay-Meti  |  Tanmay.Meti@colorado.edu |
+|----------------|----------------|---------------------------|
+|                |                |                           | 
+|----------------|----------------|---------------------------|
+|                |                |                           | 
+|----------------|----------------|---------------------------|
+|                |                |                           | 
+|----------------|----------------|---------------------------|
+|                |                |                           | 
+|----------------|----------------|---------------------------|
+|                |                |                           | 
+|----------------|----------------|---------------------------|
+|                |                |                           | 
+|----------------|----------------|---------------------------|
+    
+
+# Getting Started
 
 0. Clone the github repo onto your local machine
 
@@ -39,6 +67,6 @@
 
 1. Start the emulator with "firebase emulators:start"
 2. If you have any errorrs try "npm install -g firebase-tools && apt install -y default-jdk && npm install firebase-admin"
-3. You can now connect to http://127.0.0.1:4000/ to view a ui for the db and auth
-4. This eventually will be automated
-5. "npm run dev" to start the project
+3. You can now connect to http://127.0.0.1:4000/ to view a ui for the db and auth 
+4. "npm run dev" to start the project locally
+5. You can now connect to 
