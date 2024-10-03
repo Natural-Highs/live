@@ -15,6 +15,7 @@
         "dbaeumer.vscode-eslint",
         "johnpapa.vscode-peacock",
         "ms-vscode-remote.remote-containers",
+        "PKief.material-icon-theme",
         "GitHub.codespaces"
       ]
     }

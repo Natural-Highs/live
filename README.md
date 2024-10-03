@@ -17,6 +17,8 @@
 
 # Getting Started
 
+### before starting look for any folders called "node_modules" if you see it DELETE IT.
+
 0. Clone the github repo onto your local machine
 
 1. Downlaod the "Dev Containers" extension for VSCode (ms-vscode-remote.remote-containers)
