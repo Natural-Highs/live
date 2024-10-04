@@ -7,7 +7,7 @@
 |   Ari Guzzi    |                |                           | 
 |   Luke Wu      |     lukewu1    |    Luke.Wu@colorado.edu   |
 |  Tanmay Meti   |   Tanmay-Meti  |  Tanmay.Meti@colorado.edu |
-|                |                |                           | 
+| Brooke Seifert |  brookeseifert |   brse2921@colorado.edu   | 
 |                |                |                           | 
 |                |                |                           | 
 |                |                |                           | 
