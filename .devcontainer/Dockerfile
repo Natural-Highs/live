@@ -25,7 +25,7 @@ RUN npm install -g firebase-tools && apt install -y default-jdk && npm install f
 RUN npm i
 
 # Build the Svelte application
-RUN npm run build
+#RUN npm run build
 
 # Specify the command to run the app
 CMD ["npm", "run", "dev"]
