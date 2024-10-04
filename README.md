@@ -11,7 +11,7 @@
 |                |                |                           | 
 |                |                |                           | 
 |                |                |                           | 
-|                |                |                           | 
+|  Alicia Zhang  |     alzh42     | Alicia.Zhang@colorado.edu | 
 |                |                |                           | 
     
 
