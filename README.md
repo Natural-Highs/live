@@ -7,11 +7,11 @@
 |   Ari Guzzi    |   ari-guzzi    |   argu4451@colorado.edu   | 
 |   Luke Wu      |     lukewu1    |    Luke.Wu@colorado.edu   |
 |  Tanmay Meti   |   Tanmay-Meti  |  Tanmay.Meti@colorado.edu |
+|Jack Rueschhoff |    JWRoosky    |    jwroosky@gmail.com     | 
 |                |                |                           | 
 |                |                |                           | 
 |                |                |                           | 
-|                |                |                           | 
-|                |                |                           | 
+|  Alicia Zhang  |     alzh42     | Alicia.Zhang@colorado.edu | 
 |                |                |                           | 
     
 
