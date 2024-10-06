@@ -1,38 +1,63 @@
-# create-svelte
+# Contributers 
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/main/packages/create-svelte).
+|      Name      |     Github     |           Email           |
+|----------------|----------------|---------------------------|
+| Aidan Donnelly | AidanDonnelly1 |   aido4381@colorado.edu   |
+|  Ishan Gohil   | IshanGProjects |  ishan10.gohil@gmail.com  |
+|   Ari Guzzi    |                |                           | 
+|   Luke Wu      |     lukewu1    |    Luke.Wu@colorado.edu   |
+|  Tanmay Meti   |   Tanmay-Meti  |  Tanmay.Meti@colorado.edu |
+|                |                |                           | 
+|                |                |                           | 
+|                |                |                           | 
+|                |                |                           | 
+|                |                |                           | 
+|                |                |                           | 
+    
 
-## Creating a project
+# Getting Started
 
-If you're seeing this, you've probably already done this step. Congrats!
+### before starting look for any folders called "node_modules" if you see it DELETE IT.
 
-```bash
-# create a new project in the current directory
-npm create svelte@latest
+0. Clone the github repo onto your local machine
 
-# create a new project in my-app
-npm create svelte@latest my-app
-```
+1. Downlaod the "Dev Containers" extension for VSCode (ms-vscode-remote.remote-containers)
 
-## Developing
+2. Open a new VS Code window and close all others. In this window open the repository folder. It is important you open the folder called Natural-Highs and not any other
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
 
-```bash
-npm run dev
+3. Comment out this line in .devcontainer/Dockerfile
 
-# or start the server and open the app in a new browser tab
-npm run dev -- --open
-```
+![alt text](image-2.png)
 
-## Building
+4. Click on the two angled brackets in the bottom left 
 
-To create a production version of your app:
+![alt text](image.png)
 
-```bash
-npm run build
-```
+5. Click Reopen in Container
 
-You can preview the production build with `npm run preview`.
+![alt text](image-1.png)
 
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.
+6. VSCode Should reopen from inside your docker container
+
+7. Run "npm i" in the terminal
+
+8. create a file called .env and paste the contents from the pinned message in discord in
+
+9. run "npm run dev" in the terminal
+
+10. click on the local host link in your terminal and if you are brought to a log in page then every thing is working. 
+
+11. Make sure to uncomment that line in the Dockerfile after everything starts working
+
+
+### Optional: Install the Peacock extension (johnpapa.vscode-peacock) to "Subtly change the color of your Visual Studio Code workspace."
+
+
+# Starting the Project
+
+1. Start the emulator with "firebase emulators:start"
+2. If you have any errorrs try "npm install -g firebase-tools && apt install -y default-jdk && npm install firebase-admin"
+3. You can now connect to http://127.0.0.1:4000/ to view a ui for the db and auth 
+4. "npm run dev" to start the project locally
+5. You can now connect to 
