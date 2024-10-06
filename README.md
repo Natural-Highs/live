@@ -1,18 +1,18 @@
-# Contributers
+# Contributers 
 
-| Name           | Github         | Email                    |
-| -------------- | -------------- | ------------------------ |
-| Aidan Donnelly | AidanDonnelly1 | aido4381@colorado.edu    |
-| Ishan Gohil    | IshanGProjects | ishan10.gohil@gmail.com  |
-| Ari Guzzi      |                |                          |
-| Luke Wu        | lukewu1        | Luke.Wu@colorado.edu     |
-| Tanmay Meti    | Tanmay-Meti    | Tanmay.Meti@colorado.edu |
-| Alex Savard    | asavy79        | alsa8624@colorado.edu    |
-|                |                |                          |
-|                |                |                          |
-|                |                |                          |
-|                |                |                          |
-|                |                |                          |
+|      Name      |     Github     |           Email           |
+|----------------|----------------|---------------------------|
+| Aidan Donnelly | AidanDonnelly1 |   aido4381@colorado.edu   |
+|  Ishan Gohil   | IshanGProjects |  ishan10.gohil@gmail.com  |
+|   Ari Guzzi    |   ari-guzzi    |   argu4451@colorado.edu   | 
+|   Luke Wu      |     lukewu1    |    Luke.Wu@colorado.edu   |
+|  Tanmay Meti   |   Tanmay-Meti  |  Tanmay.Meti@colorado.edu |
+|Jack Rueschhoff |    JWRoosky    |    jwroosky@gmail.com     | 
+|                |                |                           | 
+|                |                |                           | 
+|                |                |                           | 
+|  Alicia Zhang  |     alzh42     | Alicia.Zhang@colorado.edu | 
+|  Alex Savard   |   asavy79      |  alsa8624@colorado.edu    |    
 
 # Getting Started
 
