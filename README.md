@@ -4,7 +4,7 @@
 |----------------|----------------|---------------------------|
 | Aidan Donnelly | AidanDonnelly1 |   aido4381@colorado.edu   |
 |  Ishan Gohil   | IshanGProjects |  ishan10.gohil@gmail.com  |
-|   Ari Guzzi    |                |                           | 
+|   Ari Guzzi    |   ari-guzzi    |   argu4451@colorado.edu   | 
 |   Luke Wu      |     lukewu1    |    Luke.Wu@colorado.edu   |
 |  Tanmay Meti   |   Tanmay-Meti  |  Tanmay.Meti@colorado.edu |
 |Jack Rueschhoff |    JWRoosky    |    jwroosky@gmail.com     | 
