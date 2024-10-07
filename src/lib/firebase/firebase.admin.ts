@@ -19,8 +19,8 @@ if (import.meta.env.MODE === "development") {
     ssl: false,
   });
   process.env.FIREBASE_AUTH_EMULATOR_HOST = "localhost:9099"; // replace 9099 with your emulator port if it's different
-  console.log("Firestore Emulator Host:", process.env.FIRESTORE_EMULATOR_HOST);
-  console.log("Auth Emulator Host:", process.env.FIREBASE_AUTH_EMULATOR_HOST);
+  // console.log("Firestore Emulator Host:", process.env.FIRESTORE_EMULATOR_HOST);
+  // console.log("Auth Emulator Host:", process.env.FIREBASE_AUTH_EMULATOR_HOST);
 }
 
 // Export the Firestore and Auth instances for use in your application
@@ -50,6 +50,7 @@ async function testAdminFunctions() {
       .set({
         message: "Hello from Firebase Admin SDK!",
         createdAt: new Date().toISOString(),
+        isAdmin: true
       });
     console.log("Test document created in Firestore");
   } catch (error) {
@@ -57,5 +58,5 @@ async function testAdminFunctions() {
   }
 }
 
-// Call the test function to verify Firebase Admin SDK functionality
+// // Call the test function to verify Firebase Admin SDK functionality
 testAdminFunctions();

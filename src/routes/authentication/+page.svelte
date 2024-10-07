@@ -1,9 +1,72 @@
 <script>
   import { enhance } from "$app/forms";
+  import { getDoc, doc } from "firebase/firestore";
+  // import { registerUser, signInUser } from '../../lib/firebase/db/client/auth'
+  import { auth } from '../../lib/firebase/firebase.app'
+  import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "firebase/auth";
+  import { fail, redirect } from "@sveltejs/kit";
+
   export let form;
 
   let register = false;
   let authenticating = false;
+  let email = "";
+  let password = "";
+  let confirmPass = "";
+  let error = false;
+
+  async function handleAuthenticate() {
+    if(authenticating){
+      return;
+    }
+
+    if (!email || !password || (register && !confirmPass)){
+      error = true;
+      console.log("invalid inputs");
+      return;
+    }
+
+    authenticating = true;
+
+    try {
+      if (!register){
+        try{
+          const userCredential = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password,
+          );
+
+          const user = userCredential.user;
+
+          const token = await user.getIdToken();
+
+          const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ token })
+          });
+
+          if (response.ok) {
+            error = false;
+            window.location.href = "/dashboard";
+          } else {
+            console.error('Login failed');
+          }
+        }
+        catch(err){
+          error = true;
+          console.error("Error logging in user:", err);
+        }
+      }
+    } catch (err) {
+      error = true;
+      console.log('There was an auth error', err);
+      authenticating = false;
+    }
+  }
 
   function handleRegister() {
     register = !register;
@@ -23,13 +86,12 @@
       <h1 class="text-white text-center text-2xl font-semibold py-2">
         {register ? "Register" : "Login"}
       </h1>
-      {#if form?.message}
-        <div class="flex flex-row justify-center">
-          <p class="text-md font-semibold text-error">{form?.message}</p>
-        </div>
+      {#if error}
+        <p class="text-center text-red-500 font-semibold">The information you have entered is not correct</p>
       {/if}
       <div class="flex flex-row justify-center">
         <input
+          bind:value={email}
           type="email"
           id="email"
           name="email"
@@ -39,6 +101,7 @@
       </div>
       <div class="flex flex-row justify-center">
         <input
+          bind:value={password}
           type="password"
           id="password"
           name="password"
@@ -49,6 +112,7 @@
       {#if register}
         <div class="flex flex-row justify-center">
           <input
+            bind:value={confirmPass}
             type="password"
             name="confirmPass"
             placeholder="Confirm Password"
@@ -57,15 +121,16 @@
         </div>
       {/if}
 
-      <input type="hidden" id="regiester" name="register" value={register} />
+      <input type="hidden" id="register" name="register" value={register} />
 
       <div class="flex flex-row justify-center">
-        <button type="submit" class="w-1/2 btn btn-primary">
-          {#if authenticating}
-            <p>Submitting</p>
+        <button on:click={handleAuthenticate} type="submit" class="w-1/2 btn btn-primary">
+          <!-- {#if authenticating}
+            <i class="fa-solid fa-spinner spin"/>
           {:else}
-            <p>Submit</p>
-          {/if}
+              Submit
+          {/if} -->
+          Submit
         </button>
       </div>
     </form>

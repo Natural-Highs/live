@@ -6,12 +6,11 @@
 
 2. Open a new VS Code window and close all others. In this window open the repository folder. It is important you open the folder called Natural-Highs and not any other
 
-
 3. Comment out this line in .devcontainer/Dockerfile
 
 ![alt text](image-2.png)
 
-4. Click on the two angled brackets in the bottom left 
+4. Click on the two angled brackets in the bottom left
 
 ![alt text](image.png)
 
@@ -27,13 +26,11 @@
 
 9. run "npm run dev" in the terminal
 
-10. click on the local host link in your terminal and if you are brought to a log in page then every thing is working. 
+10. click on the local host link in your terminal and if you are brought to a log in page then every thing is working.
 
 11. Make sure to uncomment that line in the Dockerfile after everything starts working
 
-
 ### Optional: Install the Peacock extension (johnpapa.vscode-peacock) to "Subtly change the color of your Visual Studio Code workspace."
-
 
 # Starting the Project
 
