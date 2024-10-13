@@ -23,7 +23,10 @@ const loadJson = async (filePath) => {
 }
 
 const serviceAccount = await loadJson("../serviceAccount.json");
+const dummyData = await loadJson("../scripts/dummy-data.json");
 
+
+console.log("loading json files");
 
 
 admin.initializeApp({
@@ -50,6 +53,7 @@ if (process.env.MODE === 'development') {
 
 const db = admin.firestore();
 
+/*
 const surveyTemplate = {
     name: "testTemplate",
     description: "Allows users to enter their personal information",
@@ -82,6 +86,7 @@ const response = {
   createdAt: new Date(),
   responseText: "20",
 }
+*/
 
 
 
@@ -93,7 +98,22 @@ const seedFirestore = async () => {
     const usersRef = db.collection("users");
     const questionsRef = db.collection("questions");
 
+    for(let i = 0; i < 5; i++) 
+    {
+      console.log("Iteration ", i);
+      try {
+        const surveyTemplateSnapshot = await surveyTemplateRef.add(dummyData.surveyTemplates[i]);
+        const questionsSnapshot = await questionsRef.add({...dummyData.questions[i], surveyTemplateId: surveyTemplateSnapshot.id});
+        const surveySnapshot = await surveyRef.add({createdAt: new Date(), templateId: surveyTemplateSnapshot.id});
+        const userSnapshot = await usersRef.add(dummyData.users[i]);
+        const surveyResponseSnapshot = await surveyResponseRef.add({...dummyData.surveyResponses[i], surveyId: surveySnapshot.id, userId: userSnapshot.id});
+        const responseSnapshot = await responsesRef.add({...dummyData.responses[i], questionId: questionsSnapshot.id, surveyResponseId: surveyResponseSnapshot.id});
+      } catch(error) {
+        console.log(error);
+      }
 
+    }
+    /*
     try {
         const surveyTemplateSnapshot = await surveyTemplateRef.add(surveyTemplate);
         const questionsSnapshot = await questionsRef.add({...question, surveyTemplateId: surveyTemplateSnapshot.id});
@@ -105,6 +125,7 @@ const seedFirestore = async () => {
     } catch(error) {
         console.log(error);
     }
+    */
     
 }
 
