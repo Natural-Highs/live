@@ -1,4 +1,21 @@
-# Connecting to Docker
+# Contributers 
+
+|      Name      |     Github     |           Email           |
+|----------------|----------------|---------------------------|
+| Aidan Donnelly | AidanDonnelly1 |   aido4381@colorado.edu   |
+|  Ishan Gohil   | IshanGProjects |  ishan10.gohil@gmail.com  |
+|   Ari Guzzi    |   ari-guzzi    |   argu4451@colorado.edu   | 
+|   Luke Wu      |     lukewu1    |    Luke.Wu@colorado.edu   |
+|  Tanmay Meti   |   Tanmay-Meti  |  Tanmay.Meti@colorado.edu |
+| Brooke Seifert |  brookeseifert |   brse2921@colorado.edu   | 
+|Jack Rueschhoff |    JWRoosky    |    jwroosky@gmail.com     | 
+|  Eric David    |  EricDavidd    |  Eric.David@colorado.edu  |  
+|  Alicia Zhang  |     alzh42     | Alicia.Zhang@colorado.edu | 
+|  Alex Savard   |   asavy79      |  alsa8624@colorado.edu    |    
+
+# Getting Started
+
+### before starting look for any folders called "node_modules" if you see it DELETE IT.
 
 0. Clone the github repo onto your local machine
 
@@ -37,5 +54,5 @@
 1. Start the emulator with "firebase emulators:start"
 2. If you have any errorrs try "npm install -g firebase-tools && apt install -y default-jdk && npm install firebase-admin"
 3. You can now connect to http://127.0.0.1:4000/ to view a ui for the db and auth
-4. This eventually will be automated
-5. "npm run dev" to start the project
+4. "npm run dev" to start the project locally
+5. You can now connect to
