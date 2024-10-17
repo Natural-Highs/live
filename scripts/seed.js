@@ -1,132 +1,113 @@
-// Import the functions you need from the SDKs you need
-// import type { ServiceAccount } from "firebase-admin";
-import admin from "firebase-admin";
-import { readFile } from "fs/promises";
-// import { getAuth, connectAuthEmulator } from "firebase/auth";
-
-
-
-// // Your web app's Firebase configuration
-// const firebaseConfig = {
-//   apiKey: import.meta.env.VITE_APIKEY,
-//   authDomain: import.meta.env.VITE_AUTH_DOMAIN,
-//   projectId: import.meta.env.VITE_PROJECT_ID,
-//   storageBucket: import.meta.env.VITE_STORAGE_BUCKET,
-//   messagingSenderId: import.meta.env.VITE_MESSAGING_SENDER_ID,
-//   appId: import.meta.env.VITE_APP_ID,
-// };
-
-const loadJson = async (filePath) => {
-  const data = await readFile(filePath, {encoding: "utf8"});
-  const jsonData = JSON.parse(data);
-  return jsonData;
-}
-
-const serviceAccount = await loadJson("../serviceAccount.json");
-const dummyData = await loadJson("../scripts/dummy-data.json");
-
-
-console.log("loading json files");
-
-
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount),
-});
-
-
-// Configure Firestore to use the emulator
-
-
-const firestoreEmulatorHost = "localhost:8080"; // Default port for Firestore emulator
-admin.firestore().settings({
-  host: firestoreEmulatorHost,
-  ssl: false,
-});
-
-// If running the Firebase Auth emulator, set the emulator host
-if (process.env.MODE === 'development') {
-  process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099'; // replace 9099 with your emulator port if it's different
-}
-
-// Export the Firestore and Auth instances for use in your application
-
-
-const db = admin.firestore();
-
-/*
-const surveyTemplate = {
-    name: "testTemplate",
-    description: "Allows users to enter their personal information",
-};
-
-const survey = {
-  createdAt: new Date(),
-}
-
-const question = {
-  questionText: "What is your age?",
-  questionType: "Personal",
-  isUniqueResponse: true,
-}
-
-const user = {
-  name: "Alex Savard",
-  email: "alex.savard20@icloud.com",
-  emergencyContact: "911",
-  isAdmin: true,
-
-}
-
-const surveyResponse = {
-  isComplete: true,
-  createdAt: new Date(),
-}
-
-const response = {
-  createdAt: new Date(),
-  responseText: "20",
-}
+/* 
+Run command:
+node seed.js
 */
 
+import { initializeApp } from "firebase/app";
+import {
+  getAuth,
+  connectAuthEmulator,
+  createUserWithEmailAndPassword,
+} from "firebase/auth";
+import {
+  getFirestore,
+  connectFirestoreEmulator,
+  collection,
+  addDoc,
+} from "firebase/firestore";
+import { readFile } from "fs/promises";
+import dotenv from "dotenv";
 
 
+dotenv.config({path: "../.env"});
+
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: process.env.VITE_APIKEY,
+  authDomain: process.env.VITE_AUTH_DOMAIN,
+  projectId: process.env.VITE_PROJECT_ID,
+  storageBucket: process.env.VITE_STORAGE_BUCKET,
+  messagingSenderId: process.env.VITE_MESSAGING_SENDER_ID,
+  appId: process.env.VITE_APP_ID,
+};
+
+
+// Define function to parse json file
+const loadJson = async (filePath) => {
+  const data = await readFile(filePath, { encoding: "utf8" });
+  const jsonData = JSON.parse(data);
+  return jsonData;
+};
+
+const dummyData = await loadJson("../scripts/dummy-data.json");
+
+const app = initializeApp(firebaseConfig);
+
+// Configure Firestore to use the emulator
+const db = getFirestore(app);
+connectFirestoreEmulator(db, "localhost", 8080);
+
+// Configure firebase auth
+const auth = getAuth();
+connectAuthEmulator(auth, "http://localhost:9199");
+
+
+// Iterate through json data and load databases
 const seedFirestore = async () => {
-    const surveyTemplateRef = db.collection("surveyTemplates");
-    const surveyRef = db.collection("surveys");
-    const surveyResponseRef = db.collection("surveyResponses");
-    const responsesRef = db.collection("responses");
-    const usersRef = db.collection("users");
-    const questionsRef = db.collection("questions");
+  const surveyTemplateRef = collection(db, "surveyTemplates");
+  const surveyRef = collection(db, "surveys");
+  const surveyResponseRef = collection(db, "surveyResponses");
+  const responsesRef = collection(db, "responses");
+  const usersRef = collection(db, "users");
+  const questionsRef = collection(db, "questions");
 
-    for(let i = 0; i < 5; i++) 
-    {
-      console.log("Iteration ", i);
-      try {
-        const surveyTemplateSnapshot = await surveyTemplateRef.add(dummyData.surveyTemplates[i]);
-        const questionsSnapshot = await questionsRef.add({...dummyData.questions[i], surveyTemplateId: surveyTemplateSnapshot.id});
-        const surveySnapshot = await surveyRef.add({createdAt: new Date(), templateId: surveyTemplateSnapshot.id});
-        const userSnapshot = await usersRef.add(dummyData.users[i]);
-        const surveyResponseSnapshot = await surveyResponseRef.add({...dummyData.surveyResponses[i], surveyId: surveySnapshot.id, userId: userSnapshot.id});
-        const responseSnapshot = await responsesRef.add({...dummyData.responses[i], questionId: questionsSnapshot.id, surveyResponseId: surveyResponseSnapshot.id});
-      } catch(error) {
-        console.log(error);
-      }
-
-    }
-    /*
+  for (let i = 0; i < 5; i++) {
+    console.log("Iteration ", i);
     try {
-        const surveyTemplateSnapshot = await surveyTemplateRef.add(surveyTemplate);
-        const questionsSnapshot = await questionsRef.add({...question, surveyTemplateId: surveyTemplateSnapshot.id});
-        const surveySnapshot = await surveyRef.add({...survey, templateId: surveyTemplateSnapshot.id});
-        const userSnapshot = await usersRef.add(user);
-        const surveyResponseSnapshot = await surveyResponseRef.add({...surveyResponse, surveyId: surveySnapshot.id, userId: userSnapshot.id});
-        const responseSnapshot = await responsesRef.add({...response, questionId: questionsSnapshot.id, surveyResponseId: surveyResponseSnapshot.id});
+      const surveyTemplateDoc = await addDoc(
+        surveyTemplateRef,
+        dummyData.surveyTemplates[i]
+      );
+      const questionsDoc = await addDoc(questionsRef, {
+        ...dummyData.questions[i],
+        surveyTemplateId: surveyTemplateDoc.id,
+      });
+      const surveyDoc = await addDoc(surveyRef, {
+        createdAt: new Date(),
+        templateId: surveyTemplateDoc.id,
+      });
 
-    } catch(error) {
-        console.log(error);
+      const authUser = await createUserWithEmailAndPassword(
+        auth,
+        dummyData.users[i].email,
+        dummyData.users[i].password
+      );
+
+      const userId = authUser.user.uid;
+      const userDoc = await addDoc(usersRef, {
+        ...dummyData.users[i],
+        id: userId,
+      });
+      const surveyResponseDoc = await addDoc(surveyResponseRef, {
+        ...dummyData.surveyResponses[i],
+        surveyId: surveyDoc.id,
+        userId: userDoc.id,
+      });
+      await addDoc(responsesRef, {
+        ...dummyData.responses[i],
+        questionId: questionsDoc.id,
+        surveyResponseId: surveyResponseDoc.id,
+      });
+
+      console.log(`Data added for iteration ${i + 1}`);
+    } catch (error) {
+      console.error("Error seeding Firestore:", error);
     }
-    */
-    
-}
+  }
+  console.log("Seeding completed.");
+  process.exit(0);
+};
+
 
 seedFirestore();

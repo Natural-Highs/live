@@ -70,31 +70,36 @@
         "name": "Alex Savard",
         "email": "alex.savard20@icloud.com",
         "emergencyContact": "911",
-        "isAdmin": true
+        "isAdmin": true,
+        "password": "12345678"
       },
       {
         "name": "John Doe",
         "email": "john.doe@example.com",
         "emergencyContact": "112",
-        "isAdmin": false
+        "isAdmin": false,
+        "password": "12345678"
       },
       {
         "name": "Jane Smith",
         "email": "jane.smith@example.com",
         "emergencyContact": "911",
-        "isAdmin": true
+        "isAdmin": true,
+        "password": "12345678"
       },
       {
         "name": "Emily Johnson",
         "email": "emily.j@example.com",
         "emergencyContact": "999",
-        "isAdmin": false
+        "isAdmin": false,
+        "password": "12345678"
       },
       {
         "name": "Michael Brown",
         "email": "michael.b@example.com",
         "emergencyContact": "123",
-        "isAdmin": true
+        "isAdmin": true,
+        "password": "12345678"
       }
     ],
     "surveyResponses": [
