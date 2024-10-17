@@ -1,5 +1,3 @@
-// import { getAuth } from "firebase/auth";
-// import type { PageServerLoad } from "./$types";
 import { redirect } from "@sveltejs/kit";
 import { adminAuth } from "../lib/firebase/firebase.admin";
 
