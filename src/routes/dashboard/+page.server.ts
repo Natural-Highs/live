@@ -1,11 +1,13 @@
-import { getAuth } from "firebase/auth";
 import type { PageServerLoad } from "./$types";
 import { redirect } from "@sveltejs/kit";
-import { auth } from "../../lib/firebase/firebase";
 
-export const load: PageServerLoad = async (event) => {
-  // const user = auth.currentUser;
-  // if (!user) {
-  //   redirect(302, "/authentication");
-  // }
+export const load: PageServerLoad = async ({ cookies }) => {
+  const session = cookies.get("session");
+
+  if (!session) {
+    throw redirect(302, "/auth"); // Redirect to auth page if not logged in
+  }
+
+  // Proceed to load dashboard data if session is valid
+  return { message: "Hello, user" };
 };
