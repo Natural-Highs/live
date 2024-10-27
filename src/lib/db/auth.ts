@@ -42,8 +42,10 @@ export async function signInUser(email: string, password: string): Promise<boole
   try {
     const userRecord = await adminAuth.getUserByEmail(email);
     if (userRecord) {
+      console.log('correct credentials');
       return true;
     } else {
+      console.log('incorrect username or password');
       return false;
     }
   } catch (error) {
