@@ -1,4 +1,4 @@
-<script>
+<!-- <script>
     import { getDoc, doc } from "firebase/firestore";
     import { onMount } from 'svelte';
     import { auth, db } from "$lib/firebase/firebase.app";
@@ -28,7 +28,7 @@
     onMount(() => {
         checkAdmin(); 
     });
-</script>
+</script> -->
 
 <div>
     <h1>Admin Page</h1>
