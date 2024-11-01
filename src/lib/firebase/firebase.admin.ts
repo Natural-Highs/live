@@ -7,17 +7,19 @@ import serviceAccount from "../../../serviceAccount.json";
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount as ServiceAccount),
+    storageBucket: "sveltekit-fullstack-c259e.appspot.com",
+  });
+  const firestoreEmulatorHost = "localhost:8080"; // Default port for Firestore emulator
+  admin.firestore().settings({
+    host: firestoreEmulatorHost,
+    ssl: false,
   });
 }
 
 // If running the Firebase Auth emulator, set the emulator host
 if (import.meta.env.MODE === "development") {
   // Configure Firestore to use the emulator
-  const firestoreEmulatorHost = "localhost:8080"; // Default port for Firestore emulator
-  admin.firestore().settings({
-    host: firestoreEmulatorHost,
-    ssl: false,
-  });
+
   process.env.FIREBASE_AUTH_EMULATOR_HOST = "localhost:9099"; // replace 9099 with your emulator port if it's different
   // console.log("Firestore Emulator Host:", process.env.FIRESTORE_EMULATOR_HOST);
   // console.log("Auth Emulator Host:", process.env.FIREBASE_AUTH_EMULATOR_HOST);
