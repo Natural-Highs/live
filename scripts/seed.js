@@ -55,7 +55,6 @@ connectAuthEmulator(auth, "http://localhost:9199");
 
 // Iterate through json data and load databases
 const seedFirestore = async () => {
-  const surveyTemplateRef = collection(db, "surveyTemplates");
   const surveyRef = collection(db, "surveys");
   const surveyResponseRef = collection(db, "surveyResponses");
   const responsesRef = collection(db, "responses");
@@ -64,30 +63,24 @@ const seedFirestore = async () => {
 
   for (let i = 0; i < 5; i++) {
     console.log("Iteration ", i);
+    
     try {
-      const surveyTemplateDoc = await addDoc(
-        surveyTemplateRef,
-        dummyData.surveyTemplates[i]
-      );
-      const questionsDoc = await addDoc(questionsRef, {
-        ...dummyData.questions[i],
-        surveyTemplateId: surveyTemplateDoc.id,
-      });
-      const surveyDoc = await addDoc(surveyRef, {
-        createdAt: new Date(),
-        templateId: surveyTemplateDoc.id,
-      });
-
-      const authUser = await createUserWithEmailAndPassword(
+        const authUser = await createUserWithEmailAndPassword(
         auth,
         dummyData.users[i].email,
         dummyData.users[i].password
       );
-
       const userId = authUser.user.uid;
       const userDoc = await addDoc(usersRef, {
         ...dummyData.users[i],
         id: userId,
+      });
+      const surveyDoc = await addDoc(surveyRef, {...dummyData.surveys[i],
+        createdAt: new Date(),
+      });
+      const questionsDoc = await addDoc(questionsRef, {
+        ...dummyData.questions[i],
+        surveyId: surveyDoc.id,
       });
       const surveyResponseDoc = await addDoc(surveyResponseRef, {
         ...dummyData.surveyResponses[i],
@@ -101,7 +94,9 @@ const seedFirestore = async () => {
       });
 
       console.log(`Data added for iteration ${i + 1}`);
-    } catch (error) {
+    }
+
+   catch (error) {
       console.error("Error seeding Firestore:", error);
     }
   }
