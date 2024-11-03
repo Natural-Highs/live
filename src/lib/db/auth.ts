@@ -1,4 +1,5 @@
-import { auth, db } from '$lib/firebase/firebase'; // Adjust the import path as needed
+// import { auth, db } from '$lib/firebase/firebase'; // Adjust the import path as needed
+import { adminAuth, adminDb } from '$lib/firebase/firebase.admin';
 
 /**
  * Creates a new user with email and password. Validates that password and confirmPassword match.
@@ -14,12 +15,12 @@ export async function registerUser(email: string, password: string, confirmPassw
 
   try {
     // Create a new user with the provided email and password
-    const userRecord = await auth.createUser({
+    const userRecord = await adminAuth.createUser({
       email: email,
       password: password,
     });
 
-    const x = await db.collection('users').doc(userRecord.uid).set({
+    const x = await adminDb.collection('users').doc(userRecord.uid).set({
         email: email,
         createdAt: new Date(),
       });
@@ -39,10 +40,12 @@ export async function registerUser(email: string, password: string, confirmPassw
  */
 export async function signInUser(email: string, password: string): Promise<boolean> {
   try {
-    const userRecord = await auth.getUserByEmail(email);
+    const userRecord = await adminAuth.getUserByEmail(email);
     if (userRecord) {
+      console.log('correct credentials');
       return true;
     } else {
+      console.log('incorrect username or password');
       return false;
     }
   } catch (error) {

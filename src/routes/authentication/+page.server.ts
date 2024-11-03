@@ -1,7 +1,7 @@
 import { fail, redirect, type Actions } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 import { signInUser, registerUser } from "$lib/db/auth"
-import { auth, db } from "$lib/firebase/firebase";
+// import { auth, db } from "$lib/firebase/firebase";
 import { addDoc, collection } from "firebase/firestore";
 
 export const load: PageServerLoad = async (event) => {
@@ -30,7 +30,16 @@ export const actions: Actions = {
     const response = isRegister ? registerUser(email, password, confirmPassword) : signInUser(email, password);
 
     if (await response) {
-      redirect(302, "/dashboard");
+      console.log('successfully logged in');
+      event.cookies.set("session", "your-session-token", {
+        path: "/",
+        httpOnly: true,
+        sameSite: "strict",
+        maxAge: 60 * 60 * 24, // Expires in 1 day
+      });
+      
+      // Redirect to the dashboard
+      throw redirect(302, "/dashboard");
     } else {
       return fail(400, {
         message: "Invalid Input"
