@@ -5,7 +5,7 @@ export const load: PageServerLoad = async ({ cookies }) => {
   const session = cookies.get("session");
 
   if (!session) {
-    throw redirect(302, "/auth"); // Redirect to auth page if not logged in
+    throw redirect(302, "/authentication"); // Redirect to auth page if not logged in
   }
 
   // Proceed to load dashboard data if session is valid
