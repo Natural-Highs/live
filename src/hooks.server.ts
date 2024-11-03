@@ -31,8 +31,6 @@ export const handle = async({event, resolve}) => {
 
   const response = await resolve(event);
 
-  console.log("Response: ", response);
-
   return response;
 }
 
