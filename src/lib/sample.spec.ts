@@ -1,16 +1,16 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 // describe is for a test suite(multiple tests)
 // it is for a single test
 // expect provides assertion functions
 // beforeEach sets up code before each test
 // vi is Vitests build in mocking utility
 import { getDocs, collection } from "firebase/firestore";
-import { mockFirebase } from 'firestore-vitest-mock';
+// import { mockFirebase } from 'firestore-vitest-mock';
 
 // Mock Firestore functions
 vi.mock("firebase/firestore", () => {
     // actual allows us to use the real module
-    const actual = vi.importActual("firebase/firestore");
+    // const actual = vi.importActual("firebase/firestore");
 
     return {
     collection: vi.fn(() => "users"), // Mock collection
