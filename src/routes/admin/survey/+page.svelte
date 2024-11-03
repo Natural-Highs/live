@@ -1,4 +1,5 @@
 <script lang="ts">
+    export let data;
     import { goto } from "$app/navigation"; //import for reroute
 
     function addsurvey(surveyID: string) { //rerouting
@@ -23,10 +24,10 @@
             </tr>
         </thead>
         <tbody>
-            {#each users as user}
+            {#each data?.surveys as survey}
                 <tr>
-                    <td>{user.id}</td>
-                    <td>{user.username}</td>
+                    <td>{survey.id}</td>
+                    <td>{survey.name}</td>
                     <td><button> <i class="fa-solid fa-pencil" /></button></td>
                     <td
                         ><button>
