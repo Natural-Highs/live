@@ -55,3 +55,14 @@ export const generateQRCode = async (url: string, filePath: string) => {
         return false;
     }
 }
+
+
+export const deleteQRCode = async(surveyLink: string) => {
+    try {
+        await bucket.file(surveyLink).delete();
+        return true;
+    } catch(error) {
+        console.log(error);
+        return false;
+    }
+}

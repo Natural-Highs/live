@@ -1,20 +1,51 @@
 <script>
   import QrScanner from "./QRScanner.svelte";
   import { enhance } from "$app/forms";
+  import { writable } from "svelte/store";
   export let data;
   export let form;
 
-  let fileDetails = data.fileDetails;
-
+  let fileDetails = writable(data.fileDetails);
   let message = "";
 
-  let options = {
-    result: async (response, formElement) => {},
+  const deleteQREnhance = ({ form, data, action, cancel }) => {
+    return async ({ result, update }) => {
+      console.log(result.data);
+
+      if (result.data.status === "success") {
+        fileDetails.update((details) => {
+          return details.filter((detail) => detail.name != result.data.name);
+        });
+      }
+    };
+  };
+
+  const submitAddQR = ({ form, data, action, cancel }) => {
+    return async ({ result, formElement, update }) => {
+      if (result.data.status === "success") {
+        fileDetails.update((details) => {
+          const updatedDetails = [
+            ...details,
+            {
+              name: `survey-qr/${result.data.name}.png`,
+              url: result.data.url,
+              surveyLink: result.data.surveyLink,
+            },
+          ];
+          console.log(updatedDetails);
+          return updatedDetails;
+        });
+      }
+      formElement.reset();
+      console.log(fileDetails);
+    };
   };
 </script>
 
 <div>
   <QrScanner />
+
+  <p>{form ? JSON.stringify(form) : ""}</p>
 
   <div class="flex flex-col items-center overflow-x-auto mt-10">
     <h1>QR Codes</h1>
@@ -28,45 +59,36 @@
         </tr>
       </thead>
       <tbody>
-        {#each fileDetails as row}
+        {#each $fileDetails as row}
           <tr>
-            <td>{row.name.split("/")[1]}</td>
+            <td>{row.name}</td>
             <td>{row.surveyLink}</td>
-            <label for="my_modal_7" class="btn">Show</label>
-
-            <!-- Put this part before </body> tag -->
-            <input type="checkbox" id="my_modal_7" class="modal-toggle" />
-            <div class="modal" role="dialog">
-              <div
-                class="modal-box w-[300px] h-[300px] flex flex-col items-center justify-center"
-              >
-                <img class="rounded-xl" width="200px" src={row.url} alt="" />
+            <td>
+              <label for={row.url} class="btn">Show</label>
+              <!-- Put this part before </body> tag -->
+              <input type="checkbox" id={row.url} class="modal-toggle" />
+              <div class="modal" role="dialog">
+                <div
+                  class="modal-box w-[300px] h-[300px] flex flex-col items-center justify-center"
+                >
+                  <img class="rounded-xl" width="200px" src={row.url} alt="" />
+                </div>
+                <label class="modal-backdrop" for={row.url}>Close</label>
               </div>
-              <label class="modal-backdrop" for="my_modal_7">Close</label>
-            </div>
-            <td class="cursor-pointer">×</td>
+            </td>
+
+            <td class="cursor-pointer">
+              <form
+                use:enhance={deleteQREnhance}
+                method="POST"
+                action="?/deleteSurvey"
+              >
+                <input name="surveyName" value={row.name} type="text" hidden />
+                <button type="submit">×</button>
+              </form>
+            </td>
           </tr>
         {/each}
-
-        <tr>
-          <td>{form?.name ? form.name : ""}</td>
-          <td>{form?.surveyLink ? form.surveyLink : ""}</td>
-
-          <!-- Put this part before </body> tag -->
-          {#if form?.url}
-            <label for="my_modal_7" class="btn">Close</label>
-            <input type="checkbox" id="my_modal_7" class="modal-toggle" />
-            <div class="modal" role="dialog">
-              <div
-                class="modal-box w-[300px] h-[300px] flex flex-col items-center justify-center"
-              >
-                <img class="rounded-xl" width="200px" src={form?.url} alt="" />
-              </div>
-            </div>
-          {/if}
-
-          <td class="cursor-pointer">{form?.url ? "×" : ""}</td>
-        </tr>
       </tbody>
     </table>
   </div>
@@ -76,7 +98,7 @@
       class="card-body form-control flex items-center space-y-3"
       method="POST"
       action="?/uploadSurvey"
-      use:enhance={options.result}
+      use:enhance={submitAddQR}
     >
       <input
         placeholder="Survey Name"
@@ -92,7 +114,7 @@
         placeholder="Link"
         required
       />
-      <button class="btn btn-primary">Generate QR Code</button>
+      <button type="submit" class="btn btn-primary">Generate QR Code</button>
       {#if message}
         <p class="text-red-300">{message}</p>
       {/if}
