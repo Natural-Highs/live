@@ -1,6 +1,5 @@
 import { bucket } from '$lib/firebase/firebase';
-import { json, fail } from '@sveltejs/kit';
-import { uploadFile, generateQRCode } from '$lib/qr-code.js';
+import { uploadFile, generateQRCode, deleteQRCode } from '$lib/qr-code.js';
 import { Actions } from '@sveltejs/kit';
 
 export async function load(event) {
@@ -36,8 +35,37 @@ export async function load(event) {
 
 
 export const actions: Actions =  {
+    deleteSurvey: async({request}) => {
+        console.log("trying to delete");
+        const data = await request.formData();
+        const surveyName = data.get('surveyName');
+        console.log(surveyName);
+        if(!(typeof surveyName === 'string')) {
+            return {
+                status: "error",
+            }
+        }
+
+
+        const success = await deleteQRCode(surveyName);
+
+        if(success) {
+            return {
+                type: "delete",
+                status: "success",
+                name: surveyName,
+            }
+        }
+        return {
+            type: "delete",
+            status: "error",
+        }
+
+
+
+
+    },
     uploadSurvey: async ({request}) => {
-        console.log("Trying");
         const data = await request.formData();
 
         const surveyName = data.get('surveyName')?.toString();
@@ -54,6 +82,7 @@ export const actions: Actions =  {
 
             if(!success) {
                 return {
+                    type: 'add',
                     status: 'error',
                     message: 'Failed to generate QR Code'
                 }
@@ -63,6 +92,7 @@ export const actions: Actions =  {
 
             if(!upload.success) {
                 return {
+                    type: 'add',
                     status: 'error',
                     message: 'Failed to upload file to storage bucket',
                 }
@@ -71,7 +101,7 @@ export const actions: Actions =  {
             const url = upload.fileUrl;
     
             return {
-    
+                    type: 'add',
                     status: 'success',
                     message: 'QR code generated and uploaded successfully',
                     url,
@@ -81,6 +111,7 @@ export const actions: Actions =  {
         } catch(error) {
             console.log(error);
             return {
+                type: 'add',
                 status: 'error',
                 message: 'An error occurred while trying to upload the QR Code to Firebase'
             }
