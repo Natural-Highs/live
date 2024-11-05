@@ -31,6 +31,7 @@
       (decodedText) => {
         qrCodeResult = decodedText; // handle the decoded result
         scanner.clear();
+        scanner = null;
         // Stops the scanner after a successful scan
       },
       (error) => console.log("QR code scan error:", error)
