@@ -1,7 +1,7 @@
 <!-- <script>
-    import { getDoc, doc } from "firebase/firestore";
-    import { onMount } from 'svelte';
-    import { auth, db } from "$lib/firebase/firebase.app";
+  import { getDoc, doc } from "firebase/firestore";
+  import { onMount } from "svelte";
+  import { auth, db } from "$lib/firebase/firebase.app";
 
   async function checkAdmin() {
     const user = auth.currentUser;
@@ -18,17 +18,17 @@
       if (userDoc.exists()) {
         const userData = userDoc.data();
         if (!userData.isAdmin) {
-          window.location.href = "/dashboard";
+          window.location.href = "/authentication";
         }
       }
     }
   }
 
-    onMount(() => {
-        checkAdmin(); 
-    });
+  onMount(() => {
+    checkAdmin();
+  });
 </script> -->
 
 <div>
-  <h1>Admin Page</h1>
+  <slot />
 </div>

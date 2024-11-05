@@ -14,23 +14,29 @@
 // //   appId: import.meta.env.VITE_APP_ID,
 // // };
 
-// admin.initializeApp({
-//   credential: admin.credential.cert(serviceAccount as ServiceAccount),
-// });
+if(!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount as ServiceAccount),
+    storageBucket: "sveltekit-fullstack-c259e.appspot.com",
+  });
+  const firestoreEmulatorHost = "localhost:8080"; // Default port for Firestore emulator
+admin.firestore().settings({
+  host: firestoreEmulatorHost,
+  ssl: false,
+});
 
-// // Configure Firestore to use the emulator
-// const firestoreEmulatorHost = "localhost:8080"; // Default port for Firestore emulator
-// admin.firestore().settings({
-//   host: firestoreEmulatorHost,
-//   ssl: false,
-// });
+}
 
-// // If running the Firebase Auth emulator, set the emulator host
-// if (process.env.MODE === 'development') {
-//   process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099'; // replace 9099 with your emulator port if it's different
-// }
 
-// // Export the Firestore and Auth instances for use in your application
-// export const db = admin.firestore();
-// export const auth = admin.auth();
-// // connectAuthEmulator(getAuth(), "http://127.0.0.1:9099");
+// Configure Firestore to use the emulator
+
+// If running the Firebase Auth emulator, set the emulator host
+if (process.env.MODE === 'development') {
+  process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099'; // replace 9099 with your emulator port if it's different
+}
+
+// Export the Firestore and Auth instances for use in your application
+export const db = admin.firestore();
+export const auth = admin.auth();
+export const bucket = admin.storage().bucket();
+// connectAuthEmulator(getAuth(), "http://127.0.0.1:9099");

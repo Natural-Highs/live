@@ -1,0 +1,120 @@
+import { bucket } from '$lib/firebase/firebase';
+import { uploadFile, generateQRCode, deleteQRCode } from '$lib/qr-code.js';
+import { Actions, RequestEvent } from '@sveltejs/kit';
+
+export async function load(event: RequestEvent) {
+    try {
+
+        const [files] = await bucket.getFiles();
+
+        const fileDetails = await Promise.all(
+            files.map(async (file) => {
+                const [url] = await file.getSignedUrl({
+                    action: 'read',
+                    expires: '03-09-2025',
+                });
+
+                const [metaData] = await file.getMetadata();
+                const { surveyLink } = metaData.metadata || {};
+
+                return {
+                    name: file.name,
+                    url,
+                    surveyLink,
+                };
+            })
+        );
+
+        // console.log(fileDetails);
+        return {fileDetails};
+    } catch (error) {
+        console.error('Error fetching files:', error);
+        return {fileDetails: []}
+    }
+}
+
+
+export const actions: Actions =  {
+    deleteSurvey: async({request}: RequestEvent) => {
+        console.log("trying to delete");
+        const data = await request.formData();
+        const surveyName = data.get('surveyName');
+        console.log(surveyName);
+        if(!(typeof surveyName === 'string')) {
+            return {
+                status: "error",
+            }
+        }
+
+
+        const success = await deleteQRCode(surveyName);
+
+        if(success) {
+            return {
+                type: "delete",
+                status: "success",
+                name: surveyName,
+            }
+        }
+        return {
+            type: "delete",
+            status: "error",
+        }
+
+
+
+
+    },
+    uploadSurvey: async ({request}: RequestEvent) => {
+        const data = await request.formData();
+
+        const surveyName = data.get('surveyName')?.toString();
+        const surveyLink = data.get('surveyLink')?.toString();
+
+
+        const metaData = {surveyName, surveyLink};
+        console.log(metaData);
+    
+    
+        try {
+    
+            const success = await generateQRCode(surveyLink, "tempQr.png");
+
+            if(!success) {
+                return {
+                    type: 'add',
+                    status: 'error',
+                    message: 'Failed to generate QR Code'
+                }
+            }
+    
+            const upload = await uploadFile("tempQr.png", `survey-qr/${surveyName}.png`, metaData);
+
+            if(!upload.success) {
+                return {
+                    type: 'add',
+                    status: 'error',
+                    message: upload.message,
+                }
+            }
+
+            const url = upload.fileUrl;
+    
+            return {
+                    type: 'add',
+                    status: 'success',
+                    message: 'QR code generated and uploaded successfully',
+                    url,
+                    name: surveyName,
+                    surveyLink
+            };
+        } catch(error) {
+            console.log(error);
+            return {
+                type: 'add',
+                status: 'error',
+                message: 'An error occurred while trying to upload the QR Code to Firebase'
+            }
+    }
+    }
+}
