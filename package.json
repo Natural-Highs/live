@@ -43,6 +43,8 @@
   "dependencies": {
     "@sveltejs/adapter-node": "^5.2.2",
     "firebase": "^10.12.4",
-    "firebase-admin": "^12.5.0"
+    "firebase-admin": "^12.5.0",
+    "html5-qrcode": "^2.3.8",
+    "qrcode": "^1.5.4"
   }
 }
