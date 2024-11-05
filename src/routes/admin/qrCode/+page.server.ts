@@ -1,8 +1,8 @@
 import { bucket } from '$lib/firebase/firebase';
 import { uploadFile, generateQRCode, deleteQRCode } from '$lib/qr-code.js';
-import { Actions } from '@sveltejs/kit';
+import { Actions, RequestEvent } from '@sveltejs/kit';
 
-export async function load(event) {
+export async function load(event: RequestEvent) {
     try {
 
         const [files] = await bucket.getFiles();
@@ -35,7 +35,7 @@ export async function load(event) {
 
 
 export const actions: Actions =  {
-    deleteSurvey: async({request}) => {
+    deleteSurvey: async({request}: RequestEvent) => {
         console.log("trying to delete");
         const data = await request.formData();
         const surveyName = data.get('surveyName');
@@ -65,7 +65,7 @@ export const actions: Actions =  {
 
 
     },
-    uploadSurvey: async ({request}) => {
+    uploadSurvey: async ({request}: RequestEvent) => {
         const data = await request.formData();
 
         const surveyName = data.get('surveyName')?.toString();
@@ -94,7 +94,7 @@ export const actions: Actions =  {
                 return {
                     type: 'add',
                     status: 'error',
-                    message: 'Failed to upload file to storage bucket',
+                    message: upload.message,
                 }
             }
 

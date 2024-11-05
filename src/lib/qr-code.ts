@@ -10,6 +10,16 @@ type MetaDataType = {
 
 export const uploadFile = async (filePath: string, destination: string, metaData: MetaDataType) => {
     try {
+
+        const [foundFile] = await bucket.file(destination).exists();
+        if(foundFile) {
+            return {
+                success: false,
+                message: "There already exists a file with that name!",
+            }
+        }
+
+
         const [file] = await bucket.upload(filePath, {
             destination: destination,
             metadata: {

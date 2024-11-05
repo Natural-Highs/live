@@ -21,6 +21,7 @@
   };
 
   const submitAddQR = ({ form, data, action, cancel }) => {
+    message = "";
     return async ({ result, formElement, update }) => {
       if (result.data.status === "success") {
         fileDetails.update((details) => {
@@ -36,6 +37,9 @@
           return updatedDetails;
         });
       }
+      if (result.data.status === "error") {
+        message = result.data.message;
+      }
       formElement.reset();
       console.log(fileDetails);
     };
@@ -44,8 +48,6 @@
 
 <div>
   <QrScanner />
-
-  <p>{form ? JSON.stringify(form) : ""}</p>
 
   <div class="flex flex-col items-center overflow-x-auto mt-10">
     <h1>QR Codes</h1>
@@ -116,7 +118,7 @@
       />
       <button type="submit" class="btn btn-primary">Generate QR Code</button>
       {#if message}
-        <p class="text-red-300">{message}</p>
+        <p class="text-red-500">{message}</p>
       {/if}
     </form>
   </div>
