@@ -9,16 +9,11 @@ if (!admin.apps.length) {
     storageBucket: "sveltekit-fullstack-c259e.appspot.com",
   });
   const firestoreEmulatorHost = "localhost:8080"; // Default port for Firestore emulator
-  admin.firestore().settings({
-    host: firestoreEmulatorHost,
-    ssl: false,
-  });
-
   // Set up Firestore and Auth emulators if running in development mode
   if (import.meta.env.MODE === "development") {
     // Use Firestore emulator
     admin.firestore().settings({
-      host: "localhost:8080",
+      host: firestoreEmulatorHost,
       ssl: false,
     });
 
