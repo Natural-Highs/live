@@ -50,7 +50,7 @@ connectFirestoreEmulator(db, "localhost", 8080);
 
 // Configure firebase auth
 const auth = getAuth();
-connectAuthEmulator(auth, "http://localhost:9199");
+connectAuthEmulator(auth, "http://localhost:9099");
 
 
 // Iterate through json data and load databases
