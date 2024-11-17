@@ -21,9 +21,9 @@ export async function registerUser(email: string, password: string, confirmPassw
     });
 
     const x = await adminDb.collection('users').doc(userRecord.uid).set({
-        email: email,
-        createdAt: new Date(),
-      });
+      email: email,
+      createdAt: new Date(),
+    });
 
     return true;
   } catch (error) {
