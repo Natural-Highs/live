@@ -1,7 +1,7 @@
 //need this page to move data logic to server side (getting error bc of client vs server)
 import { redirect } from "@sveltejs/kit";
-import { adminDb } from "../../../lib/firebase/firebase.admin";
-import type { PageServerLoad } from "./$types";
+import { adminDb } from "$lib/firebase/firebase.admin";
+import type { PageServerLoad, Actions } from "./$types";
 
 async function getSurveys() {
   try {
@@ -33,3 +33,15 @@ export const load: PageServerLoad = async ({ cookies }) => {
   //nullish coalescing operator (??) will return the right hand side if the left is null
   return { surveys }; //return users object with document data, that will be available in a prop named users in +page.svelte
 };
+
+export const actions: Actions = {
+  addSurvey: async ( event ) => {
+    const result = await adminDb.collection("surveys").add({
+      name: "New Survey",
+      createdAt: new Date(),
+    });
+    console.log("Survey added with ID:", result.id);
+    throw redirect(302, `/admin/survey/${result.id}?id=${result.id}`);
+  },
+};
+
