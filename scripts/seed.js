@@ -73,7 +73,7 @@ const seedFirestore = async () => {
       const userId = authUser.user.uid;
       const userDoc = await addDoc(usersRef, {
         ...dummyData.users[i],
-        id: userId,
+        uid: userId,
       });
       const surveyDoc = await addDoc(surveyRef, {...dummyData.surveys[i],
         createdAt: new Date(),
@@ -84,6 +84,7 @@ const seedFirestore = async () => {
       });
       const surveyResponseDoc = await addDoc(surveyResponseRef, {
         ...dummyData.surveyResponses[i],
+        surveyName: dummyData.surveys[i].name,
         surveyId: surveyDoc.id,
         userId: userDoc.id,
       });
