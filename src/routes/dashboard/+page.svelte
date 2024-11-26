@@ -5,8 +5,8 @@
   import { signOut } from "firebase/auth";
   import { browser } from "$app/environment";
   import { onMount } from "svelte";
-  import { getAuth } from "firebase/auth";
   import { enhance } from "$app/forms";
+  import { Html5QrcodeScanner } from "html5-qrcode";
 
   $: if (browser && !$authStore.loading && !$authStore.user) {
     goto("/authentication");
@@ -51,8 +51,62 @@
       } else {
         message = result.data.message;
       }
-      formElement.reset();
+      const surveyIdInput = formElement.querySelector('input[name="surveyId"]');
+      if(surveyIdInput) {
+        surveyIdInput.value = "";
+      }
+      
     };
+  };
+
+  let qrCodeResult = "";
+  let isScannerOpen = false;
+  let scanner = null;
+
+  const closeScanner = () => {
+    if (isScannerOpen && scanner) {
+      scanner
+        .clear() // Stops and clears the scanner
+        .then(() => {
+          isScannerOpen = false;
+        })
+        .catch((err) => console.log("Camera stop error:", err));
+      scanner = null;
+    }
+  };
+
+  const startScanner = () => {
+    isScannerOpen = true;
+    scanner = new Html5QrcodeScanner(
+      "qr-reader",
+      {
+        fps: 10,
+        qrbox: { width: 250, height: 250 },
+      },
+      false
+    );
+    scanner.render(
+      (decodedText) => {
+        qrCodeResult = decodedText;
+
+        const surveyIdInput = document.querySelector('input[name="surveyId"]');
+        if (surveyIdInput) {
+          surveyIdInput.value = qrCodeResult;
+        }
+
+        // Automatically submit the form
+        const form = document.querySelector("form");
+        if (form) {
+          form.submit();
+        }
+
+        // handle the decoded result
+        scanner.clear();
+        scanner = null;
+        // Stops the scanner after a successful scan
+      },
+      (error) => console.log("QR code scan error:", error)
+    );
   };
 </script>
 
@@ -85,22 +139,40 @@
   </div>
   <div class="card flex flex-col items-center mt-10">
     <h1 class="card-title">Add Survey</h1>
-    <form
-      class="card-body form-control flex items-center space-y-3"
-      method="POST"
-      action="?/addSurvey"
-      use:enhance={submitAddSurvey}
-    >
-      <input
-        class="input input-bordered"
-        type="text"
-        name="surveyId"
-        required
-        placeholder="Survey Id..."
-      />
-      <input hidden name="userEmail" value={$authStore.user} />
-      <button class="btn btn-primary">Submit</button>
-      <p class="text-red-500">{message}</p>
-    </form>
+    <div class="flex flex-row space-x-3 items-center">
+      <div class="flex flex-col items-center space-y-3">
+        <div id="qr-reader"></div>
+        {#if !scanner}
+          <button on:click={startScanner} class="btn btn-primary"
+            >Scan Survey Code</button
+          >
+        {/if}
+
+        {#if scanner}
+          <button on:click={closeScanner} class="btn btn-primary"
+            >Stop Scan</button
+          >
+        {/if}
+
+        <p>{qrCodeResult ? `QR Code Result: ${qrCodeResult}` : ""}</p>
+      </div>
+      <form
+        class="card-body form-control flex items-center space-y-3"
+        method="POST"
+        action="?/addSurvey"
+        use:enhance={submitAddSurvey}
+      >
+        <input
+          class="input input-bordered"
+          type="text"
+          name="surveyId"
+          required
+          placeholder="Survey Id..."
+        />
+        <input hidden name="userEmail" value={$authStore.user} />
+        <button class="btn btn-primary">Submit</button>
+        <p class="text-red-500">{message}</p>
+      </form>
+    </div>
   </div>
 </div>

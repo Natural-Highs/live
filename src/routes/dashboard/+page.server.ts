@@ -21,6 +21,8 @@ export const actions: Actions = {
         console.log(surveyId);
 
         if(!userEmail || !surveyId) {
+            console.log("Email: ", userEmail);
+            console.log("SID", surveyId);
             return {
                 status: "error",
                 message: "Invalid fields!"
