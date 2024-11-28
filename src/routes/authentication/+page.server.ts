@@ -12,6 +12,35 @@ export const load: PageServerLoad = async (event) => {
 };
 
 export const actions: Actions = {
+  createUser: async (event) => {
+    console.log("Creating user");
+    const formData = await event.request.formData();
+
+    const email = formData.get("email")?.toString();
+    const password = formData.get("password")?.toString();
+    const confirmPass = formData.get("confirmPass")?.toString();
+    if(!email || !password || !confirmPass) {
+      return {
+        success: false,
+        message: "Invalid fields",
+      }
+    }
+
+    const success = registerUser(email, password, confirmPass);
+
+    if(!success) {
+      return {
+        success: false,
+        message: "An error occurred while registering user",
+      }
+    }
+
+    return {
+      success: true,
+      message: "User successfully created!",
+    }
+
+  },
   handleAuth: async (event) => {
     const formData = await event.request.formData();
     const registerValue = String(formData.get('register'));
