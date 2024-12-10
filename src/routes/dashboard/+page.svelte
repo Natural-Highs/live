@@ -16,12 +16,16 @@
   let message = "";
 
   onMount(async () => {
-    const unsubscribe = authStore.subscribe(async ({ user }) => {
+    const unsubscribe = authStore.subscribe(async ({ user, initialSurvey }) => {
       if (user) {
         // const clientAuth = getAuth();
         // const user = clientAuth.currentUser;
         // const idToken = await user?.getIdToken();
         // console.log(idToken);
+
+        if (!initialSurvey) {
+          return goto("/initialSurvey");
+        }
         try {
           const results = await fetch(`/api/surveys/?user=${user}`, {
             method: "GET",
@@ -52,10 +56,9 @@
         message = result.data.message;
       }
       const surveyIdInput = formElement.querySelector('input[name="surveyId"]');
-      if(surveyIdInput) {
+      if (surveyIdInput) {
         surveyIdInput.value = "";
       }
-      
     };
   };
 
