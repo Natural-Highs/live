@@ -42,6 +42,7 @@
   "type": "module",
   "dependencies": {
     "@sveltejs/adapter-node": "^5.2.2",
+    "chart.js": "^4.4.6",
     "dotenv": "^16.4.5",
     "firebase": "^10.14.1",
     "firebase-admin": "^12.5.0",
