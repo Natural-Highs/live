@@ -58,7 +58,8 @@
         "gender": "Male",
         "sexualIdentity": "Heterosexual",
         "race": "Caucasian",
-        "password": "12345678"
+        "password": "12345678",
+        "completedInitialSurvey": false
       },
       {
         "name": "John Doe",
@@ -69,7 +70,8 @@
         "gender": "Male",
         "sexualIdentity": "Homosexual",
         "race": "Asian",
-        "password": "12345678"
+        "password": "12345678",
+        "completedInitialSurvey": false
       },
       {
         "name": "Jane Smith",
@@ -80,7 +82,8 @@
         "gender": "Female",
         "sexualIdentity": "Bisexual",
         "race": "African American",
-        "password": "12345678"
+        "password": "12345678",
+        "completedInitialSurvey": false
       },
       {
         "name": "Emily Johnson",
@@ -91,7 +94,8 @@
         "gender": "Female",
         "sexualIdentity": "Heterosexual",
         "race": "Hispanic",
-        "password": "12345678"
+        "password": "12345678",
+        "completedInitialSurvey": false
       },
       {
         "name": "Michael Brown",
@@ -102,7 +106,8 @@
         "gender": "Male",
         "sexualIdentity": "Heterosexual",
         "race": "Native American",
-        "password": "12345678"
+        "password": "12345678",
+        "completedInitialSurvey": false
       }
     ],
   "surveyResponses": [
