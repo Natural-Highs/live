@@ -44,6 +44,24 @@
     if (!register) {
       try {
         const user = await signInWithEmailAndPassword(auth, email, password);
+        const result = await fetch(`/api/users/?user=${email}`, {
+          method: "GET",
+        });
+        if (!result.ok) {
+          await signOut(auth);
+          console.log("Result not okay");
+        } else {
+          const data = await result.json();
+          const hasFilledOutSurvey = data?.data?.completedInitialSurvey;
+          console.log("Filled out survey?", hasFilledOutSurvey);
+          authStore.update((currentStore) => {
+            return {
+              ...currentStore,
+              initialSurveyComplete:
+                hasFilledOutSurvey ?? currentStore.initialSurvey,
+            };
+          });
+        }
         authenticating = false;
         console.log($authStore);
         return;
@@ -51,8 +69,8 @@
         console.log(error);
         errorMessage = "Invalid credentials!";
       }
+      authenticating = false;
     }
-    authenticating = false;
   }
 </script>
 
