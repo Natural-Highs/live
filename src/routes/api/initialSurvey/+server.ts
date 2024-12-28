@@ -1,36 +1,51 @@
-import { db } from "$lib/firebase/firebase";
-import { auth } from '$lib/firebase/firebase.js';
+import { RequestHandler } from '@sveltejs/kit';
+import { adminAuth, adminDb } from '$lib/firebase/firebase.admin';
 
-export const POST = async ({request, url}) => 
-{
+export const POST: RequestHandler = async ({cookies, request}) => {
 
-
-    const userData = await request.json();
-    const userEmail = url.searchParams.get("user");
-
-    const userRef = db.collection("users");
-    const querySnapshot = await userRef.where("email", "==", userEmail).get();
+    const data = await request.json();
+    const token = data.token;
 
 
-    const userDoc = querySnapshot.docs[0];
+    const cookie = cookies.get("session");
 
-    const userDocData = userDoc.data();
+    if(!cookie) {
+        return new Response(JSON.stringify({success: false, message: "No browse cookie set!"}));
+    }
 
-    await userDoc.ref.update({
-        completedInitialSurvey: true,
-        sexualIdentity: userData.sexualIdentity,
-        gender: userData.gender,
-        age: userData.age
-    });
+    try {
+        const decodedToken = await adminAuth.verifyIdToken(cookie);
 
-    await auth.setCustomUserClaims(userDocData.uid, {
-        admin: userDocData.isAdmin,
-        initialSurvey: true,
-    });
-
-    return new Response(JSON.stringify({
-        success: true,
-        message: "User data successfully updated!" 
-    }))
-
+        const email = decodedToken.email;
+    
+        const userRef = adminDb.collection("users");
+        const querySnapshot = await userRef.where("email", "==", email).get();
+    
+    
+        const [user] = querySnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+        }))
+    
+        const userDocRef = userRef.doc(user.id);
+    
+        await userDocRef.update({
+            completedInitialSurvey: true,
+        })
+    
+        console.log("updating claims");
+        await adminAuth.setCustomUserClaims(user.uid, {
+            admin: user.isAdmin,
+            initialSurvey: true,
+        });
+    
+        cookies.delete("session", {path: "/"});
+    
+        
+        return new Response(JSON.stringify({success: true}));
+    } catch(error) {
+        console.log(error);
+        return new Response(JSON.stringify({success: false, error: error.code}));
+    }
+ 
 }
