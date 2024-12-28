@@ -3,7 +3,7 @@
   * get data from firebase
 -->
 
-<script>
+<!-- <script>
 // import { redirect } from "@sveltejs/kit";
 // import { adminDb } from "../../../lib/firebase/firebase.admin";
 //import type { PageServerLoad } from "./$types";
@@ -424,4 +424,4 @@ function downloadChart() { // Downloads the chart as an image
     font-family: "Arapey", serif;
 }
   </style>
-
+ -->

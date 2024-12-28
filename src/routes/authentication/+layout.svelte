@@ -2,9 +2,9 @@
   import { authStore } from "../../store/store";
   import { goto } from "$app/navigation";
 
-  $: if (!$authStore.loading && $authStore.user) {
-    goto("/dashboard");
-  }
+  // $: if (!$authStore.loading && $authStore.user) {
+  //   goto("/dashboard");
+  // }
 </script>
 
 <slot />

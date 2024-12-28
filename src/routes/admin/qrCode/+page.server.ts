@@ -1,10 +1,16 @@
 import { bucket } from '$lib/firebase/firebase';
 import { uploadFile, generateQRCode, deleteQRCode } from '$lib/qr-code.js';
 import { Actions, RequestEvent } from '@sveltejs/kit';
+import { redisClient } from '$lib/redisConfig';
 
 export async function load(event: RequestEvent) {
     try {
 
+
+        // const cachedFileDetails = await redisClient.get('fileDetails');
+        // if (cachedFileDetails) {
+        //     return { fileDetails: JSON.parse(cachedFileDetails) };
+        // }
         const [files] = await bucket.getFiles();
 
         const fileDetails = await Promise.all(
@@ -25,7 +31,7 @@ export async function load(event: RequestEvent) {
             })
         );
 
-        // console.log(fileDetails);
+        // await redisClient.set('fileDetails', JSON.stringify(fileDetails), 'EX', 3600);
         return {fileDetails};
     } catch (error) {
         console.error('Error fetching files:', error);
@@ -50,6 +56,17 @@ export const actions: Actions =  {
         const success = await deleteQRCode(surveyName);
 
         if(success) {
+
+            // const cachedFiles = await redisClient.get("fileDetails");
+            // const files = JSON.parse(cachedFiles);
+
+
+            // const filteredArray = files.filter((file) => {
+            //     return file.name !== surveyName;
+            // })
+
+            // await redisClient.set('fileDetails', JSON.stringify(filteredArray), 'EX', 3600);
+
             return {
                 type: "delete",
                 status: "success",
@@ -99,6 +116,12 @@ export const actions: Actions =  {
             }
 
             const url = upload.fileUrl;
+
+            // const cachedFiles = await redisClient.get("fileDetails");
+            // let files = cachedFiles ? JSON.parse(cachedFiles) : [];
+            // files.push({name: `survey-qr/${surveyName}.png`, url, surveyLink});
+
+            // await redisClient.set("fileDetails", JSON.stringify(files));
     
             return {
                     type: 'add',
