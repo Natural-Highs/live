@@ -6,22 +6,22 @@
   import { goto } from "$app/navigation";
   import { onMount } from "svelte";
 
-  $: if (browser && !$authStore.loading && !$authStore.user) {
-    goto("/authentication");
-  }
+  // $: if (browser && !$authStore.loading && !$authStore.user) {
+  //   goto("/authentication");
+  // }
 
-  onMount(async () => {
-    const unsubscribe = authStore.subscribe(async ({ user, initialSurvey }) => {
-      console.log($authStore);
-      if (user) {
-        if (initialSurvey) {
-          return (window.location.href = "/dashboard");
-        }
-      }
-    });
+  // onMount(async () => {
+  //   const unsubscribe = authStore.subscribe(async ({ user, initialSurvey }) => {
+  //     console.log($authStore);
+  //     if (user) {
+  //       if (initialSurvey) {
+  //         return (window.location.href = "/dashboard");
+  //       }
+  //     }
+  //   });
 
-    return () => unsubscribe();
-  });
+  //   return () => unsubscribe();
+  // });
 
   let selectedSexualIdentity = "";
   let selectedGender = "";
@@ -29,43 +29,66 @@
 
   let errorMessage = "";
 
-  const submitSurvey = async () => {
+  const fillSurvey = async () => {
     errorMessage = "";
-    if (!selectedSexualIdentity || !selectedGender) {
-      errorMessage = "Must fill out all fields!";
+    const user = auth.currentUser;
+    if (!user) {
+      errorMessage = "No current user found!";
       return;
     }
-    if (age <= 0) {
-      errorMessage = "Invalid age!";
-      return;
-    }
-
-    const result = await fetch(`/api/initialSurvey/?user=${$authStore.user}`, {
+    const token = await user.getIdToken();
+    const result = await fetch("/api/initialSurvey", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        sexualIdentity: selectedSexualIdentity,
-        gender: selectedGender,
-        age: age,
-      }),
+      body: JSON.stringify({ token }),
+      headers: { "Content-Type": "application/json" },
     });
-
-    if (!result.ok) {
-      errorMessage = "Something failed";
+    if (result.ok) {
+      const data = await result.json();
+      if (!data.success) {
+        errorMessage = "An error occured!";
+        return;
+      }
+    } else {
+      errorMessage = "An error occurred!";
       return;
     }
 
-    authStore.update((originalStore) => {
-      return {
-        ...originalStore,
-        initialSurvey: true,
-      };
+    const newToken = await user.getIdToken(true);
+    const newSessionResult = await fetch("/api/sessionLogin", {
+      method: "POST",
+      body: JSON.stringify({ idToken: newToken }),
+      headers: { "Content-Type": "application/json" },
     });
+    if (newSessionResult.ok) {
+      const data = await newSessionResult.json();
+      if (data.success) {
+        return (window.location.href = "/dashboard");
+      }
+      errorMessage = data.message;
+    } else {
+      errorMessage = "An error occurred";
+    }
+  };
 
-    const data = await result.json();
-    console.log(data);
+  const logOut = async () => {
+    try {
+      await signOut(auth);
+      const result = await fetch("/api/logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (result.ok) {
+        const data = await result.json();
+        if (data.success) {
+          window.location.href = "/dashboard";
+        } else {
+          console.log("Something went wrong when deleting the cookie");
+        }
+      }
+    } catch (error) {
+      console.log(error);
+    }
   };
 </script>
 
@@ -73,19 +96,13 @@
   <h1 class="mt-5 text-blue-500">
     Please fill out this intial survey to complete your account registration:
   </h1>
-  <button
-    on:click={async () => {
-      await signOut(auth);
-    }}
-    class="btn btn-primary">Sign Out</button
-  >
-  <!-- Question Card -->
+  <button on:click={logOut} class="btn btn-primary">Sign Out</button>
+
   <div class="card w-full max-w-md bg-base-100 shadow-lg">
     <div class="card-body">
       <h2 class="card-title">Question 1</h2>
       <p>Select your gender</p>
 
-      <!-- Multiple Choice Options -->
       <div class="form-control">
         <label class="label cursor-pointer">
           <span class="label-text">Male</span>
@@ -126,7 +143,6 @@
       <h2 class="card-title">Question 2</h2>
       <p>Select your sexual identity</p>
 
-      <!-- Multiple Choice Options -->
       <div class="form-control">
         <label class="label cursor-pointer">
           <span class="label-text">Asexual</span>
@@ -211,6 +227,5 @@
     </div>
   </div>
 
-  <!-- Submit Button -->
-  <button class="btn btn-primary" on:click={submitSurvey}> Submit </button>
+  <button class="btn btn-primary" on:click={fillSurvey}> Submit </button>
 </div>
