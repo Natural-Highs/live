@@ -22,9 +22,9 @@
     register = !register;
   }
 
-  if ($authStore.loading && $authStore.user != null) {
-    goto("/dashboard");
-  }
+  // if ($authStore.loading && $authStore.user != null) {
+  //   goto("/dashboard");
+  // }
 
   async function handleSubmit(event) {
     errorMessage = "";
@@ -33,40 +33,33 @@
       console.log("Closing");
       return;
     }
-    authenticating = true;
-    authStore.update((store) => {
-      return {
-        ...store,
-        loading: true,
-      };
-    });
 
     if (!register) {
       try {
-        const user = await signInWithEmailAndPassword(auth, email, password);
-        const result = await fetch(`/api/users/?user=${email}`, {
-          method: "GET",
+        const userRecord = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+        const idToken = await userRecord.user.getIdToken();
+
+        const result = await fetch("/api/sessionLogin", {
+          method: "POST",
+          body: JSON.stringify({ idToken }),
+          headers: { "Content-Type": "application/json" },
         });
-        if (!result.ok) {
-          await signOut(auth);
-          console.log("Result not okay");
-        } else {
+
+        if (result.ok) {
           const data = await result.json();
-          const hasFilledOutSurvey = data?.data?.completedInitialSurvey;
-          console.log("Filled out survey?", hasFilledOutSurvey);
-          authStore.update((currentStore) => {
-            return {
-              ...currentStore,
-              initialSurveyComplete:
-                hasFilledOutSurvey ?? currentStore.initialSurvey,
-            };
-          });
+          if (data.success) {
+            return (window.location.href = "/dashboard");
+          }
+        } else {
+          errorMessage = "Something went wrong when adding cookie!";
         }
         authenticating = false;
-        console.log($authStore);
         return;
       } catch (error) {
-        console.log(error);
         errorMessage = "Invalid credentials!";
       }
       authenticating = false;

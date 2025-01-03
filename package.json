@@ -47,6 +47,7 @@
     "firebase": "^10.14.1",
     "firebase-admin": "^12.5.0",
     "html5-qrcode": "^2.3.8",
-    "qrcode": "^1.5.4"
+    "qrcode": "^1.5.4",
+    "redis": "^4.7.0"
   }
 }

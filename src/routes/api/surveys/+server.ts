@@ -1,9 +1,14 @@
 import { db } from "$lib/firebase/firebase";
+import { adminAuth } from "$lib/firebase/firebase.admin.js";
 
 
-export const GET = async ({request, url}) => {
+export const GET = async ({request, url, cookies}) => {
 
-    const userEmail = url.searchParams.get("user");
+    const session = cookies.get("session");
+
+    const decodedToken = await adminAuth.verifyIdToken(session);
+    const userEmail = decodedToken.email;
+
 
     const userRef = db.collection("users");
     const querySnapshot = await userRef.where("email", "==", userEmail).get();
