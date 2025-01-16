@@ -30,7 +30,7 @@
           >
           <td
             ><button>
-              ><i class="fa-solid fa-user-tie" />
+              <i class="fa-solid fa-user-tie" />
             </button>
           </td>
         </tr>

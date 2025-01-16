@@ -24,28 +24,31 @@
   "questions": [
     {
       "questionText": "What is your age?",
-      "questionType": "Personal",
-      "isUniqueResponse": true
+      "questionType": "number",
+      "isMultipleChoice": false
     },
     {
       "questionText": "What is your height?",
-      "questionType": "Health",
-      "isUniqueResponse": true
+      "questionType": "text",
+      "isMultipleChoice": false
     },
     {
       "questionText": "How satisfied are you with our service?",
-      "questionType": "Feedback",
-      "isUniqueResponse": false
+      "questionType": "multiple choice",
+      "options": ["Not satisfied at all", "Somewhat satisfied", "Satisfied", "Very satisfied"],
+      "isMultipleChoice": true
     },
     {
       "questionText": "What event did you attend?",
-      "questionType": "Event Feedback",
-      "isUniqueResponse": false
+      "questionType": "text",
+      "options": ["Open house", "Breathing workshop", "Pizza party"],
+      "isMultipleChoice": true
     },
     {
       "questionText": "What is your preferred payment method?",
-      "questionType": "Registration",
-      "isUniqueResponse": false
+      "questionType": "mulitple choice",
+      "options": ["Card","Cash", "Check", "Venmo", "Zelle"],
+      "isMultipleChoice": true
     }
   ],
     "users": [
