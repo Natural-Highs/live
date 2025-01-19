@@ -19,9 +19,15 @@
     <tbody>
       {#each data?.surveys as survey}
         <tr>
-          <td>{survey.id}</td>
+          <td>{survey.id} </td>
           <td>{survey.name}</td>
-          <td><button> <i class="fa-solid fa-pencil" /></button></td>
+          <td
+            ><button>
+              <a href={`/admin/survey/${survey.id}`}
+                ><i class="fa-solid fa-pencil" /></a
+              ></button
+            ></td
+          >
           <td
             ><button>
               <i class="fa-solid fa-user-tie" />
