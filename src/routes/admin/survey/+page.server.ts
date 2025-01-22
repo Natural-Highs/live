@@ -36,12 +36,43 @@ export const load: PageServerLoad = async ({ cookies }) => {
 
 export const actions: Actions = {
   addSurvey: async ( event ) => {
-    const result = await adminDb.collection("surveys").add({
-      name: "New Survey",
-      createdAt: new Date(),
-    });
-    console.log("Survey added with ID:", result.id);
-    throw redirect(302, `/admin/survey/${result.id}?id=${result.id}`);
+
+
+    const data = await event.request.formData();
+      const surveyName = data.get('surveyName');
+
+    if(!surveyName) 
+    {
+      return {
+        success: false,
+      }
+    }
+    let newId = "";
+    let success = false;
+    try {
+      const result = await adminDb.collection("surveys").add({
+        name: surveyName,
+        createdAt: new Date(),
+      });
+      console.log("Survey added with ID:", result.id);
+      success = true;
+      newId = result.id;
+      
+    } catch(error) {
+      success = false;
+    }
+    if(success === true) {
+      return {
+        success: true,
+        id: newId,
+      }
+    }
+    else {
+      return {
+        success: false,
+      }
+    }
+   
   },
 };
 
