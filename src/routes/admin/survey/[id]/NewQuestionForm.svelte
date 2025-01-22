@@ -77,7 +77,9 @@
 </script>
 
 <div class="modal-box space-y-3">
-  <h3 class="font-bold text-lg">Add New Question</h3>
+  <h3 class="font-bold text-lg">
+    {editMode ? "Edit Question" : "Add Question"}
+  </h3>
   <input
     type="text"
     bind:value={questionText}
