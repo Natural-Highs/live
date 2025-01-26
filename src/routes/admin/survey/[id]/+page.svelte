@@ -10,6 +10,8 @@
 
   let questionEdit = {};
 
+  let surveyName = "";
+
   const id = $page.params.id;
 
   onMount(async () => {
@@ -19,6 +21,7 @@
     if (response.ok) {
       const data = await response.json();
       questions = data.questions;
+      surveyName = data.name;
       console.log(data);
     } else {
       message = "Something went wrong when fetching survey questions";
@@ -110,6 +113,33 @@
       });
     }
   };
+  let editNameModal;
+  let editNameMessage = "";
+  const handleSurveyNameEdit = async (event) => {
+    editNameMessage = "";
+    event.preventDefault();
+    const formData = new FormData(event.target);
+    const newSurveyName = formData.get("newSurveyName");
+
+    if (!newSurveyName) {
+      editNameMessage = "Please enter a valid survey name!";
+      return;
+    }
+
+    const result = await fetch(`/api/adminSurvey/?id=${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ newSurveyName }),
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (result.ok) {
+      surveyName = newSurveyName.toString();
+      editNameModal.close();
+      return;
+    } else {
+      editNameMessage = "Something went wrong!";
+    }
+  };
 </script>
 
 <div class="flex flex-col items-center mt-10 space-y-3">
@@ -119,6 +149,36 @@
     >All surveys</button
   >
   <h1>Survey ID: {id}</h1>
+  <div class="flex flex-row space-x-3">
+    <h1>Survey Name: {surveyName}</h1>
+    <button on:click={() => document.getElementById("my_modal_3").showModal()}
+      ><i class="fa-solid fa-pencil" /></button
+    >
+    <dialog bind:this={editNameModal} id="my_modal_3" class="modal">
+      <div class="modal-box">
+        <form
+          class="flex flex-row justify-between"
+          on:submit={handleSurveyNameEdit}
+        >
+          <input
+            type="text"
+            class="input input-bordered"
+            placeholder="Enter new name..."
+            name="newSurveyName"
+            value={surveyName}
+          />
+          <button class="btn btn-primary">Submit</button>
+        </form>
+
+        <div class="modal-action flex flex-col items-center">
+          <form method="dialog">
+            <button class="btn">Close</button>
+          </form>
+          <p class="text-red-500">{editNameMessage}</p>
+        </div>
+      </div>
+    </dialog>
+  </div>
 </div>
 
 <div class="flex flex-col space-y-3 items-center mt-10">
