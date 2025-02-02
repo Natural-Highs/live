@@ -4,11 +4,17 @@ export const GET = async ({ request, url, cookies }) => {
 
 
     const surveyId = url.searchParams.get("id");
+    if (!surveyId) {
+        return new Response(JSON.stringify({
+            success: false,
+            message: "No survey ID provided",
+        }), { status: 400 });
+    }
 
     try {
         const surveyRef = adminDb.collection("surveys");
         const surveyData = await surveyRef.doc(surveyId).get();
-        
+
         if (!surveyData.exists) {
             console.log("Survey doesn't exist!");
             return new Response(JSON.stringify({
@@ -16,7 +22,7 @@ export const GET = async ({ request, url, cookies }) => {
                 message: "No survey exists!",
             }))
         }
-        const {name} = surveyData.data();
+        const { name } = surveyData.data();
         const questionRef = adminDb.collection("questions");
         const questionData = await questionRef.where("surveyId", "==", surveyId).get();
         const questions = questionData.docs.map(doc => ({
