@@ -12,6 +12,9 @@
   let errorMessage = "";
   let surveyName = "";
   let loadErrorMessage = "";
+  let editQuestion = null;
+
+  let editResponseText = "";
 
   const handleOptionSelect = (questionId, option) => {
     const existingQuestionIndex = userResponses.findIndex(
@@ -38,7 +41,6 @@
       loadErrorMessage = data.message;
       return;
     }
-    console.log("Survey? ", data);
 
     isComplete = data.response.isComplete;
     surveyName = data.response.surveyName;
@@ -75,11 +77,30 @@
         responseText:
           userResponses.find((r) => r.questionId === question.id)
             ?.responseText || "",
+        id: question.id,
+        isMultipleChoice: question.isMultipleChoice,
+        options: question.options,
       }));
       isComplete = true;
       return;
     }
     errorMessage = "Something went wrong when submitting the survey!";
+  };
+
+  const handleEdit = async (responseId, responseText, prevText) => {
+    const response = await fetch(`/api/userResponses?id=${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ responseId, responseText }),
+    });
+    const data = await response.json();
+    if (data.success) {
+      responses = responses.map((r) =>
+        r.id === responseId ? { ...r, responseText } : r,
+      );
+    }
+    editQuestion = null;
+    editResponseText = "";
   };
 </script>
 
@@ -94,16 +115,79 @@
     <h2>Responses</h2>
     {#each responses as response, index (response.questionText)}
       <div
-        class="card w-full max-w-md bg-base-100 shadow-lg hover:shadow-xl transition-shadow duration-200"
+        class="card w-full max-w-md bg-base-100 shadow-lg hover:shadow-xl transition-shadow duration-200 mb-4"
       >
-        <div class="card-body">
-          <h3 class="font-semibold text-lg text-primary mb-2">
-            {index + 1}. {response.questionText}
-          </h3>
-          <div class="bg-base-200 p-3 rounded-lg">
-            <p class="text-base">{response.responseText}</p>
+        {#if editQuestion === response.id}
+          <div class="card-body">
+            <h3 class="font-semibold text-lg text-primary mb-2">
+              {index + 1}. {response.questionText}
+            </h3>
+            <div class="flex flex-col">
+              {#if response.isMultipleChoice}
+                <div class="form-control">
+                  {#each response.options as option}
+                    <label class="label cursor-pointer justify-start gap-2">
+                      <input
+                        type="radio"
+                        name="edit_response_{response.id}"
+                        value={option}
+                        class="radio checked:bg-blue-500"
+                        checked={editResponseText === option}
+                        on:change={(e) =>
+                          (editResponseText = e.currentTarget.value)}
+                      />
+                      {option}
+                    </label>
+                  {/each}
+                </div>
+              {:else}
+                <input
+                  class="input input-bordered w-full max-w-xs mr-2"
+                  type="text"
+                  value={editResponseText}
+                  on:input={(e) => (editResponseText = e.currentTarget.value)}
+                />
+              {/if}
+              <div class="flex justify-end gap-2 mt-2">
+                <button
+                  class="btn btn-ghost btn-sm"
+                  on:click={() => (editQuestion = null)}
+                >
+                  Cancel
+                </button>
+                <button
+                  class="btn btn-primary btn-sm"
+                  on:click={() =>
+                    handleEdit(
+                      response.id,
+                      editResponseText,
+                      response.responseText,
+                    )}
+                >
+                  Save
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
+        {:else}
+          <div class="card-body relative">
+            <h3 class="font-semibold text-lg text-primary mb-2">
+              {index + 1}. {response.questionText}
+            </h3>
+            <div class="bg-base-200 p-3 rounded-lg">
+              <p class="text-base">{response.responseText}</p>
+            </div>
+            <button
+              class="absolute top-4 right-4 btn btn-ghost btn-sm"
+              on:click={() => {
+                editQuestion = response.id;
+                editResponseText = response.responseText;
+              }}
+            >
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+          </div>
+        {/if}
       </div>
     {/each}
   {/if}
