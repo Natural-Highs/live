@@ -20,7 +20,7 @@
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
-
+    console.log("On dashboard page");
     if (!results.ok) {
       message = "An error occurred whilst loading the surveys";
       return;

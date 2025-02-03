@@ -1,8 +1,9 @@
 import { adminDb, adminAuth } from '$lib/firebase/firebase.admin';
+import type { RequestHandler } from '@sveltejs/kit';
+import { fetchByQuery } from '$lib/utils/firebaseCalls';
 
-export const GET = async ({ request, url, cookies }) => {
+export const GET: RequestHandler = async ({ request, url, cookies }) => {
     const surveyId = url.searchParams.get("id");
-
     if (!surveyId) {
         return new Response(JSON.stringify({
             success: false,
@@ -10,86 +11,83 @@ export const GET = async ({ request, url, cookies }) => {
         }), { status: 400 });
     }
 
-    const surveyDocRef = adminDb.collection("surveys");
-    const surveyDoc = await surveyDocRef.doc(surveyId).get();
-    if (!surveyDoc.exists) {
+    try {
+        const surveyDocRef = adminDb.collection("surveys");
+        const surveyDoc = await surveyDocRef.doc(surveyId).get();
+        if (!surveyDoc.exists) {
+            return new Response(JSON.stringify({
+                success: false,
+                message: "Survey not found",
+            }));
+        }
+    } catch (error) {
+        console.error("Error fetching survey:", error);
         return new Response(JSON.stringify({
             success: false,
-            message: "Survey not found",
-        }));
+            message: "Error fetching survey",
+        }), { status: 500 });
     }
-
 
     const cookie = cookies.get("session");
 
     if (!cookie) {
         return new Response(JSON.stringify({ success: false, message: "No browse cookie set!" }));
     }
-
     const decodedToken = await adminAuth.verifyIdToken(cookie);
     const uid = decodedToken.uid;
 
-    const userRef = adminDb.collection("users");
-    const userSnapshot = await userRef.where("uid", "==", uid).get();
-
-    const userData = userSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-    }));
+    const userData = await fetchByQuery("users", "uid", uid);
 
     if (!userData) {
         return new Response(JSON.stringify({ success: false, message: "User not found!" }));
     }
 
     const userId = userData[0].id;
-    const surveyResponseRef = adminDb.collection("surveyResponses");
-    const responseSnapshot = await surveyResponseRef.where("userId", "==", userId).where("surveyId", "==", surveyId).get();
 
-    const [response] = responseSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-    }));
+    const surveyResponseRef = adminDb.collection("surveyResponses");
+    const surveyResponseSnapshot = await surveyResponseRef
+        .where("userId", "==", userId)
+        .where("surveyId", "==", surveyId)
+        .get();
+
+    if (surveyResponseSnapshot.empty) {
+        return new Response(JSON.stringify({
+            success: false,
+            message: "Survey response not found",
+        }));
+    }
+
+    const response = surveyResponseSnapshot.docs[0].data();
+    const responseId = surveyResponseSnapshot.docs[0].id;
 
     if (!response.isComplete) {
         return new Response(JSON.stringify({
             success: true,
-            response,
+            response: { ...response, id: responseId },
         }));
     }
 
-    const questionResponseRef = adminDb.collection("responses");
-    const questionResponseSnapshot = await questionResponseRef.where("surveyResponseId", "==", response.id).get();
-    const questionResponses = questionResponseSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-    }));
+    const questionResponses = await fetchByQuery("responses", "surveyResponseId", responseId);
 
-    const surveyRef = adminDb.collection("questions");
-    const questions = await surveyRef.where("surveyId", "==", surveyId).get();
-    const questionsData = questions.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-    }));
-
-
-
+    const questionsData = await fetchByQuery("questions", "surveyId", surveyId);
 
     const responsesWithText = questionResponses.map(response => {
         const matchingQuestion = questionsData.find(q => q.id === response.questionId);
         return {
             ...response,
-            questionText: matchingQuestion ? matchingQuestion.questionText : 'Question not found'
+            questionText: matchingQuestion ? matchingQuestion.questionText : 'Question not found',
+            isMultipleChoice: matchingQuestion ? matchingQuestion.isMultipleChoice : false,
+            options: matchingQuestion ? matchingQuestion.options : [],
         };
     });
-
     return new Response(JSON.stringify({
         success: true,
-        response,
+        response: { ...response, id: responseId },
         questionResponses: responsesWithText,
     }));
 }
 
-export const POST = async ({ request, url, cookies }) => {
+export const POST: RequestHandler = async ({ request, url, cookies }) => {
     const surveyId = url.searchParams.get("id");
 
     const { userResponses } = await request.json();
@@ -118,13 +116,7 @@ export const POST = async ({ request, url, cookies }) => {
     const decodedToken = await adminAuth.verifyIdToken(cookie);
     const uid = decodedToken.uid;
 
-    const userRef = adminDb.collection("users");
-    const userSnapshot = await userRef.where("uid", "==", uid).get();
-
-    const userData = userSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-    }));
+    const userData = await fetchByQuery("users", "uid", uid);
 
     if (!userData) {
         return new Response(JSON.stringify({ success: false, message: "User not found!" }));
@@ -151,5 +143,28 @@ export const POST = async ({ request, url, cookies }) => {
     return new Response(JSON.stringify({
         success: true,
         message: "Survey responses submitted successfully",
+    }));
+}
+
+
+export const PATCH: RequestHandler = async ({ request, url, cookies }) => {
+    const { responseId, responseText } = await request.json();
+
+    try {
+        await adminDb.collection("responses").doc(responseId).update({
+            responseText,
+        });
+    } catch (error) {
+        console.error("Error updating response:", error);
+        return new Response(JSON.stringify({
+            success: false,
+            message: "Error updating response",
+        }), { status: 500 });
+    }
+
+
+    return new Response(JSON.stringify({
+        success: true,
+        message: "Response updated successfully",
     }));
 }
