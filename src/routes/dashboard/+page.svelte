@@ -20,7 +20,7 @@
       method: "GET",
       headers: { "Content-Type": "application/json" },
     });
-
+    console.log("On dashboard page");
     if (!results.ok) {
       message = "An error occurred whilst loading the surveys";
       return;
@@ -121,7 +121,7 @@
         fps: 10,
         qrbox: { width: 250, height: 250 },
       },
-      false
+      false,
     );
     scanner.render(
       (decodedText) => {
@@ -143,7 +143,7 @@
         scanner = null;
         // Stops the scanner after a successful scan
       },
-      (error) => console.log("QR code scan error:", error)
+      (error) => console.log("QR code scan error:", error),
     );
   };
 </script>
@@ -162,12 +162,14 @@
       <h1 class="text-gray-500">No Surveys to display!</h1>
     {/if}
     {#each surveys as survey}
-      <div class="card bg-base-100 w-96 shadow-xl">
-        <div class="card-body flex flex-col">
-          <p>Name: {survey?.surveyName}</p>
-          <p>ID: {survey?.surveyId}</p>
+      <a href={`/dashboard/${survey?.surveyId}`}>
+        <div class="card bg-base-100 w-96 shadow-xl cursor-pointer">
+          <div class="card-body flex flex-col">
+            <p>Name: {survey?.surveyName}</p>
+            <p>ID: {survey?.surveyId}</p>
+          </div>
         </div>
-      </div>
+      </a>
     {/each}
   </div>
   <div class="card flex flex-col items-center mt-10">
