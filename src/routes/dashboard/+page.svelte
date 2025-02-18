@@ -153,7 +153,6 @@
     <h1>Hello {$authStore.user ? $authStore.user : ""}</h1>
     <button on:click={logOut} class="btn btn-primary">Sign Out</button>
   </div>
-
   <h1 class="text-center mt-20 text-blue-500 font-extrabold text-lg">
     Surveys
   </h1>
@@ -174,8 +173,8 @@
   </div>
   <div class="card flex flex-col items-center mt-10">
     <h1 class="card-title">Add Survey</h1>
-    <div class="flex flex-row space-x-3 items-center">
-      <div class="flex flex-col items-center space-y-3">
+    <div class="flex flex-row space-x-3 items-center justify-center">
+      <div class="flex flex-col pb-24 pl-20 items-center">
         <div id="qr-reader"></div>
         {#if !scanner}
           <button on:click={startScanner} class="btn btn-primary"
@@ -192,7 +191,7 @@
         <p>{qrCodeResult ? `QR Code Result: ${qrCodeResult}` : ""}</p>
       </div>
       <form
-        class="card-body form-control flex items-center space-y-3"
+        class="card-body form-control flex items-center space-y-3 mt-4 flex-col items-center"
         method="POST"
         action="?/addSurvey"
         use:enhance={submitAddSurvey}
