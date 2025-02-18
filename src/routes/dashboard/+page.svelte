@@ -149,10 +149,6 @@
 </script>
 
 <div>
-  <div class="flex flex-col items-center space-y-3 mt-5">
-    <h1>Hello {$authStore.user ? $authStore.user : ""}</h1>
-    <button on:click={logOut} class="btn btn-primary">Sign Out</button>
-  </div>
 
   <h1 class="text-center mt-20 text-blue-500 font-extrabold text-lg">
     Surveys
