@@ -21,9 +21,9 @@
   };
 </script>
 
-<div class="overflow-x-auto px-8">
-  <table class="table">
-    <thead class="test-lg">
+<div class="overflow-x-auto pl-16 pt-8 pb-4">
+  <table class="table text-base">
+    <thead class="test-lg text-base">
       <tr>
         <th>UUID</th>
         <th>Name</th>
@@ -71,7 +71,7 @@
         placeholder="Survey name..."
         class="input input-bordered"
       />
-      <button type="submit" class="add-button pl-12">
+      <button type="submit" class="add-button pl-12 underline">
         <i class="fa-solid fa-plus" /> Create Survey
       </button>
     </form>

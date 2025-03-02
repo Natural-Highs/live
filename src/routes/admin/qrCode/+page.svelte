@@ -49,11 +49,11 @@
 <div>
   <QrScanner />
 
-  <div class="flex flex-col items-center overflow-x-auto mt-10">
-    <h1>QR Codes</h1>
+  <div class="flex flex-col items-center overflow-x-auto mt-8 px-6">
+    <h1 class="underline">QR Codes</h1>
 
-    <table class="table mt-10">
-      <thead>
+    <table class="table mt-10 text-base">
+      <thead class="text-base">
         <tr>
           <th>UID</th>
           <th>Value</th>
