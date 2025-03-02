@@ -55,6 +55,7 @@
 
     return () => unsubscribe();
   });
+  import Navbar from "./navbar.svelte";
 </script>
-
+<Navbar />
 <slot />
