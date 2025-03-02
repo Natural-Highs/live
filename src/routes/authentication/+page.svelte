@@ -77,7 +77,7 @@
         action="?/createUser"
         method="POST"
       >
-        <h1 class="text-white text-center text-2xl font-semibold py-2">
+        <h1 class="text-grey dark:text-white text-center text-2xl font-semibold py-2">
           {register ? "Register" : "Login"}
         </h1>
         {#if errorMessage}
@@ -91,7 +91,7 @@
             id="email"
             name="email"
             placeholder="Email"
-            class="w-1/2 mx-2 p-2 rounded-md"
+            class="w-1/2 mx-2 p-2 rounded-md bg-base-200 dark:bg-neutral"
             bind:value={email}
           />
         </div>
@@ -101,7 +101,7 @@
             id="password"
             name="password"
             placeholder="Password"
-            class="w-1/2 mx-2 p-2 rounded-md"
+            class="w-1/2 mx-2 p-2 rounded-md bg-base-200 dark:bg-neutral"
             bind:value={password}
           />
         </div>
@@ -110,7 +110,7 @@
             type="password"
             name="confirmPass"
             placeholder="Confirm Password"
-            class="w-1/2 mx-2 p-2 rounded-md"
+            class="w-1/2 mx-2 p-2 rounded-md bg-base-200 dark:bg-neutral"
             bind:value={password2}
           />
         </div>
@@ -137,7 +137,7 @@
         class="flex flex-col justify-start w-full gap-2"
         on:submit={handleSubmit}
       >
-        <h1 class="text-white text-center text-2xl font-semibold py-2">
+        <h1 class="text-grey dark:text-white text-center text-2xl font-semibold py-2">
           Login
         </h1>
         {#if errorMessage}
@@ -151,24 +151,24 @@
             id="email"
             name="email"
             placeholder="Email"
-            class="w-1/2 mx-2 p-2 rounded-md"
+            class="w-1/2 mx-2 p-2 rounded-md bg-base-200 dark:bg-neutral"
             bind:value={email}
           />
         </div>
-        <div class="flex flex-row justify-center">
+        <div class="flex flex-row justify-center opacity-100">
           <input
             type="password"
             id="password"
             name="password"
             placeholder="Password"
-            class="w-1/2 mx-2 p-2 rounded-md"
+            class="w-1/2 mx-2 p-2 rounded-md bg-base-200 dark:bg-neutral"
             bind:value={password}
           />
         </div>
 
         <input type="hidden" id="regiester" name="register" value={register} />
 
-        <div class="flex flex-row justify-center">
+        <div class="flex flex-row justify-center opacity-100">
           <button
             disabled={authenticating}
             type="submit"
@@ -186,27 +186,27 @@
 
     <div class="flex flex-row justify-center">
       {#if register}
-        <div class="flex flex-row">
-          <p class="text-lg text-white font-semibold px-1">
+        <div class="flex justify-center flex-wrap">
+          <p class="text-grey dark:text-white font-semibold px-1">
             Already have an account?
           </p>
           <button
             on:click={handleRegister}
             on:keydown={() => {}}
-            class="text-lg text-primary font-semibold"
+            class="text-base text-primary font-semibold underline"
           >
             Login</button
           >
         </div>
       {:else}
-        <div class="flex flex-row">
-          <p class="text-lg text-white font-semibold px-1">
+        <div class="flex justify-center flex-wrap">
+          <p class="text-grey dark:text-white font-semibold px-1">
             Don't have an account?
           </p>
           <button
             on:click={handleRegister}
             on:keydown={() => {}}
-            class="text-lg text-primary font-semibold"
+            class="text-base text-primary font-semibold underline"
           >
             Register</button
           >
