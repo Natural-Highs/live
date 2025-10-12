@@ -1,0 +1,12 @@
+@startuml routes__dashboard__id___page_svelte
+title routes/dashboard/[id]/+page.svelte
+class "routes/dashboard/[id]/+page.svelte" as routes_dashboard__id___page_svelte <<SvelteComponent>> {
+  -- no exports --
+}
+note bottom of routes_dashboard__id___page_svelte
+  Imports:
+    External:
+    - $app/stores
+    - svelte
+end note
+@enduml

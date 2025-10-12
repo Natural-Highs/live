@@ -1,0 +1,13 @@
+@startuml routes__authentication__layout_svelte
+title routes/authentication/+layout.svelte
+class "routes/authentication/+layout.svelte" as routes_authentication__layout_svelte <<SvelteComponent>> {
+  -- no exports --
+}
+note bottom of routes_authentication__layout_svelte
+  Imports:
+    Local:
+    - store/store
+    External:
+    - $app/navigation
+end note
+@enduml

@@ -1,0 +1,13 @@
+@startuml routes__page_server_ts
+title routes/+page.server.ts
+class "routes/+page.server.ts" as routes__page_server_ts <<SvelteKitModule>> {
+  + async function load
+}
+note bottom of routes__page_server_ts
+  Imports:
+    Local:
+    - lib/firebase/firebase.admin
+    External:
+    - @sveltejs/kit
+end note
+@enduml

@@ -1,0 +1,12 @@
+@startuml lib__sample_spec_ts
+title lib/sample.spec.ts
+class "lib/sample.spec.ts" as lib_sample_spec_ts <<Module>> {
+  -- no exports --
+}
+note bottom of lib_sample_spec_ts
+  Imports:
+    External:
+    - firebase/firestore
+    - vitest
+end note
+@enduml

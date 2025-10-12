@@ -1,0 +1,14 @@
+@startuml store__store_ts
+title store/store.ts
+class "store/store.ts" as store_store_ts <<Module>> {
+  + const authStore
+}
+note bottom of store_store_ts
+  Imports:
+    Local:
+    - lib/firebase/firebase.app
+    External:
+    - firebase/auth
+    - svelte/store
+end note
+@enduml

@@ -1,0 +1,63 @@
+name: generate diagrams
+on:
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: "Branch for diagram updates"
+        required: false
+        default: "docs/diagrams"
+  push:
+    branches:
+      - docs/diagrams
+      - dev
+
+jobs:
+  generate_plantuml:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    name: plantuml
+    steps:
+      - name: checkout
+        uses: actions/checkout@v4.1.1
+      - name: render diagrams
+        id: plantuml
+        uses: rotaract/plantuml-action@master
+        with:
+          format: png
+          pattern: "docs/diagrams/src/**/*.puml"
+      - name: detect diagram changes
+        id: diagram_changes
+        run: |
+          if git status --short docs/diagrams | grep .; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: commit diagram updates
+        if: steps.diagram_changes.outputs.changed == 'true' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.push_changes == 'true'))
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/diagrams
+          git commit -m "docs(diagrams): update png renders"
+          git push
+
+  generate_overview:
+    runs-on: ubuntu-latest
+    name: overview-diagram
+    steps:
+      - name: checkout
+        uses: actions/checkout@master
+      - name: generate overview diagram
+        uses: githubocto/repo-visualizer@0.7.1
+        with:
+          output_file: "docs/diagrams/out/repo-overview.svg"
+          excluded_paths: "dist,node_modules"
+          commit_message: "docs: update overview diagram"
+          branch: docs/diagrams
+          excluded_globs: "**/*.{png,jpg};**/!(*.module).ts"
+          root_path: "src/"
+          should_push: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
