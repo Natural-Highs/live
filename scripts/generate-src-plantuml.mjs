@@ -4,12 +4,19 @@ import path from 'path';
 import process from 'process';
 import { fileURLToPath } from 'url';
 import ts from 'typescript';
+import prettier from 'prettier';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 const srcDir = path.join(repoRoot, 'src');
 const diagramsRoot = path.join(repoRoot, 'docs/diagrams/src');
+const readmePath = path.join(repoRoot, 'docs/diagrams/README.md');
+const README_START_MARKER = '<!-- DIAGRAM-LIST:START -->';
+const README_END_MARKER = '<!-- DIAGRAM-LIST:END -->';
+
+const diagramEntries = [];
+const posixPath = path.posix;
 
 const SVELTE_SPECIAL_TAGS = new Set([
   'SLOT',
@@ -290,9 +297,9 @@ const buildNoteSections = (info) => {
   return sections;
 };
 
-const createDiagram = (relativePath, analysis, stereotype) => {
+const createDiagram = (relativePath, analysis, stereotype, diagramName) => {
   const id = sanitizeId(relativePath);
-  const startumlName = buildDiagramName(relativePath);
+  const startumlName = diagramName ?? buildDiagramName(relativePath);
   const lines = [
     `@startuml ${startumlName}`,
     `title ${relativePath}`,
@@ -325,6 +332,79 @@ const createDiagram = (relativePath, analysis, stereotype) => {
   return lines.join('\n');
 };
 
+const generateDiagramIndexMarkdown = (entries) => {
+  if (!entries.length) {
+    return '_No diagrams generated yet._';
+  }
+
+  const sortedEntries = [...entries].sort((a, b) =>
+    a.relativePath.localeCompare(b.relativePath)
+  );
+  const groups = new Map();
+  for (const entry of sortedEntries) {
+    const key = entry.directory || '';
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+    groups.get(key).push(entry);
+  }
+
+  const groupKeys = [...groups.keys()].sort((a, b) => a.localeCompare(b));
+  const lines = [];
+  for (const key of groupKeys) {
+    const list = groups.get(key);
+    const summaryLabel = key ? `src/${key}` : 'src (root)';
+    const countLabel = `${list.length} diagram${list.length === 1 ? '' : 's'}`;
+    lines.push('<details open>');
+    lines.push(`<summary>${summaryLabel} (${countLabel})</summary>`);
+    lines.push('');
+    lines.push('| Diagram | Preview | Details |');
+    lines.push('| --- | --- | --- |');
+    for (const entry of list) {
+      const preview = `![${entry.diagramName}](${entry.pngPath})`;
+      const details = [
+        `Source: [\`${entry.pumlPath}\`](${entry.pumlPath})`,
+        `Diagram ID: \`${entry.diagramName}\``,
+        `Stereotype: \`${entry.stereotype}\``,
+      ].join('<br/>');
+      lines.push(`| ${entry.relativePath} | ${preview} | ${details} |`);
+    }
+    lines.push('');
+    lines.push('</details>');
+    lines.push('');
+  }
+
+  return lines.join('\n').trim();
+};
+
+const updateReadmeIndex = async (entries) => {
+  const indexMarkdown = generateDiagramIndexMarkdown(entries);
+  let currentReadme = '# Natural Highs Repo Overview\n';
+  try {
+    currentReadme = await fs.readFile(readmePath, 'utf8');
+  } catch (err) {
+    if (err.code !== 'ENOENT') {
+      throw err;
+    }
+  }
+
+  if (!currentReadme.includes(README_START_MARKER)) {
+    const appendix = `\n\n## Diagram Catalog\n\n${README_START_MARKER}\n${indexMarkdown}\n${README_END_MARKER}\n`;
+    const updated = `${currentReadme.trimEnd()}${appendix}`;
+    const formatted = await formatMarkdown(updated);
+    await fs.writeFile(readmePath, formatted, 'utf8');
+    return;
+  }
+
+  const markerRegex = new RegExp(
+    `${README_START_MARKER}[\\s\\S]*?${README_END_MARKER}`
+  );
+  const replacement = `${README_START_MARKER}\n${indexMarkdown}\n${README_END_MARKER}`;
+  const updatedContent = currentReadme.replace(markerRegex, replacement);
+  const formatted = await formatMarkdown(updatedContent);
+  await fs.writeFile(readmePath, formatted, 'utf8');
+};
+
 const writeDiagram = async (relativePath, content) => {
   const targetPath = path.join(diagramsRoot, `${relativePath}.puml`);
   const dirName = path.dirname(targetPath);
@@ -333,14 +413,54 @@ const writeDiagram = async (relativePath, content) => {
 };
 
 const clearDiagrams = async () => {
-  try {
-    await fs.rm(diagramsRoot, { recursive: true, force: true });
-  } catch (err) {
-    if (err.code !== 'ENOENT') {
+  const removePumlFiles = async (dir, isRoot = false) => {
+    let entries;
+    try {
+      entries = await fs.readdir(dir, { withFileTypes: true });
+    } catch (err) {
+      if (err.code === 'ENOENT') {
+        return;
+      }
       throw err;
     }
-  }
+
+    await Promise.all(
+      entries.map(async (entry) => {
+        const fullPath = path.join(dir, entry.name);
+        if (entry.isDirectory()) {
+          await removePumlFiles(fullPath, false);
+          try {
+            const remaining = await fs.readdir(fullPath);
+            if (!remaining.length) {
+              await fs.rmdir(fullPath);
+            }
+          } catch (err) {
+            if (err.code !== 'ENOENT') {
+              throw err;
+            }
+          }
+        } else if (entry.isFile() && entry.name.endsWith('.puml')) {
+          await fs.unlink(fullPath);
+        }
+      })
+    );
+
+    if (!isRoot) {
+      try {
+        const remaining = await fs.readdir(dir);
+        if (!remaining.length) {
+          await fs.rmdir(dir);
+        }
+      } catch (err) {
+        if (err.code !== 'ENOENT') {
+          throw err;
+        }
+      }
+    }
+  };
+
   await ensureDir(diagramsRoot);
+  await removePumlFiles(diagramsRoot, true);
 };
 
 const determineStereotype = (relativePath, extension) => {
@@ -392,14 +512,56 @@ const handleFile = async (filePath) => {
   analysis.externalImports = externalImports;
 
   const stereotype = determineStereotype(relativePath, ext);
-  const diagram = createDiagram(relativePath, analysis, stereotype);
+  const diagramName = buildDiagramName(relativePath);
+  const diagram = createDiagram(
+    relativePath,
+    analysis,
+    stereotype,
+    diagramName
+  );
   await writeDiagram(relativePath, diagram);
+
+  const dir = posixPath.dirname(relativePath);
+  const diagramDir = dir === '.' ? '' : dir;
+  const pngRelativePath = posixPath.join(
+    'src',
+    diagramDir,
+    `${diagramName}.png`
+  );
+  const pumlRelativePath = posixPath.join('src', `${relativePath}.puml`);
+
+  diagramEntries.push({
+    relativePath,
+    diagramName,
+    pumlPath: pumlRelativePath,
+    pngPath: pngRelativePath,
+    directory: diagramDir,
+    stereotype,
+  });
+};
+
+const formatMarkdown = async (content) => {
+  try {
+    const config = await prettier.resolveConfig(readmePath);
+    return prettier.format(content, {
+      ...(config || {}),
+      filepath: readmePath,
+    });
+  } catch (err) {
+    console.warn(
+      'Warning: failed to format README with Prettier:',
+      err.message
+    );
+    return `${content.trimEnd()}\n`;
+  }
 };
 
 const main = async () => {
+  diagramEntries.length = 0;
   await clearDiagrams();
   const allFiles = await readAllFiles(srcDir);
   await Promise.all(allFiles.map(handleFile));
+  await updateReadmeIndex(diagramEntries);
   console.log(`Generated PlantUML diagrams for ${allFiles.length} files.`);
 };
 
