@@ -1,4 +1,5 @@
 name: generate diagrams
+
 on:
   workflow_dispatch:
     inputs:
@@ -6,58 +7,68 @@ on:
         description: "Branch for diagram updates"
         required: false
         default: "docs/diagrams"
+      push_changes:
+        description: "Push generated files"
+        type: boolean
+        default: false
   push:
     branches:
       - docs/diagrams
       - dev
 
+permissions:
+  contents: write
+
+concurrency:
+  group: generate-diagrams-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TARGET_BRANCH: ${{ github.event.inputs.target_branch || 'docs/diagrams' }}
+
 jobs:
-  generate_plantuml:
+  generate_and_push:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    name: plantuml
     steps:
-      - name: checkout
+      - name: Checkout target branch
         uses: actions/checkout@v4.1.1
-      - name: render diagrams
-        id: plantuml
+        with:
+          ref: ${{ env.TARGET_BRANCH }}
+          fetch-depth: 0
+
+      - name: Generate PlantUML
         uses: rotaract/plantuml-action@master
         with:
           format: png
           pattern: "docs/diagrams/src/**/*.puml"
-      - name: detect diagram changes
-        id: diagram_changes
-        run: |
-          if git status --short docs/diagrams | grep .; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          fi
-      - name: commit diagram updates
-        if: steps.diagram_changes.outputs.changed == 'true' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.push_changes == 'true'))
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/diagrams
-          git commit -m "docs(diagrams): update png renders"
-          git push
 
-  generate_overview:
-    runs-on: ubuntu-latest
-    name: overview-diagram
-    steps:
-      - name: checkout
-        uses: actions/checkout@master
-      - name: generate overview diagram
+      - name: Generate repo overview
         uses: githubocto/repo-visualizer@0.7.1
         with:
           output_file: "docs/diagrams/out/repo-overview.svg"
           excluded_paths: "dist,node_modules"
-          commit_message: "docs: update overview diagram"
-          branch: docs/diagrams
+          commit_message: "docs(diagrams): update overview diagram"
+          branch: ${{ env.TARGET_BRANCH }}
           excluded_globs: "**/*.{png,jpg};**/!(*.module).ts"
           root_path: "src/"
           should_push: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Detect changes
+        id: changes
+        run: |
+          if git status --porcelain docs/diagrams | grep .; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Commit and push
+        if: steps.changes.outputs.changed == 'true' && (github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && github.event.inputs.push_changes == 'true'))
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/diagrams
+          git commit -m "docs(diagrams): update png renders and overview"
+          git push origin ${{ env.TARGET_BRANCH }}
