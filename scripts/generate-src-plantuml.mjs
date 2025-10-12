@@ -340,41 +340,99 @@ const generateDiagramIndexMarkdown = (entries) => {
   const sortedEntries = [...entries].sort((a, b) =>
     a.relativePath.localeCompare(b.relativePath)
   );
-  const groups = new Map();
+
+  const createNode = (name, fullPath) => ({
+    name,
+    fullPath,
+    files: [],
+    children: new Map(),
+  });
+
+  const root = createNode('src', 'src');
+
   for (const entry of sortedEntries) {
-    const key = entry.directory || '';
-    if (!groups.has(key)) {
-      groups.set(key, []);
+    const segments = entry.directory ? entry.directory.split('/') : [];
+    let node = root;
+    const pathSegments = [];
+
+    for (const segment of segments) {
+      pathSegments.push(segment);
+      if (!node.children.has(segment)) {
+        const fullPath = `src/${pathSegments.join('/')}`;
+        node.children.set(segment, createNode(segment, fullPath));
+      }
+      node = node.children.get(segment);
     }
-    groups.get(key).push(entry);
+
+    node.files.push(entry);
   }
 
-  const groupKeys = [...groups.keys()].sort((a, b) => a.localeCompare(b));
-  const lines = [];
-  for (const key of groupKeys) {
-    const list = groups.get(key);
-    const summaryLabel = key ? `src/${key}` : 'src (root)';
-    const countLabel = `${list.length} diagram${list.length === 1 ? '' : 's'}`;
-    lines.push('<details open>');
-    lines.push(`<summary>${summaryLabel} (${countLabel})</summary>`);
+  const countDiagrams = (node) =>
+    node.files.length +
+    [...node.children.values()].reduce(
+      (total, child) => total + countDiagrams(child),
+      0
+    );
+
+  const renderNode = (node, summaryLabel, defaultOpen = false) => {
+    const count = countDiagrams(node);
+    const label = summaryLabel ?? node.fullPath ?? node.name ?? 'src';
+    const openAttr = defaultOpen ? ' open' : '';
+
+    const lines = [];
+    lines.push(`<details${openAttr}>`);
+    lines.push(`<summary>${label} [${count}]</summary>`);
     lines.push('');
-    lines.push('| Diagram | Preview | Details |');
-    lines.push('| --- | --- | --- |');
-    for (const entry of list) {
-      const preview = `![${entry.diagramName}](${entry.pngPath})`;
-      const details = [
-        `Source: [\`${entry.pumlPath}\`](${entry.pumlPath})`,
-        `Diagram ID: \`${entry.diagramName}\``,
-        `Stereotype: \`${entry.stereotype}\``,
-      ].join('<br/>');
-      lines.push(`| ${entry.relativePath} | ${preview} | ${details} |`);
+
+    if (node.files.length) {
+      const sortedFiles = [...node.files].sort((a, b) =>
+        a.relativePath.localeCompare(b.relativePath)
+      );
+      lines.push('| Source | Diagram | Details |');
+      lines.push('| --- | --- | --- |');
+      for (const entry of sortedFiles) {
+        const preview = `![${entry.diagramName}](${entry.pngPath})`;
+        const details = [
+          `Path: [\`${entry.pumlPath}\`](${entry.pumlPath})`,
+          `Diagram ID: \`${entry.diagramName}\``,
+          `Stereotype: \`${entry.stereotype}\``,
+        ].join('<br/>');
+        lines.push(`| ${entry.relativePath} | ${preview} | ${details} |`);
+      }
+      lines.push('');
     }
-    lines.push('');
+
+    const childKeys = [...node.children.keys()].sort((a, b) =>
+      a.localeCompare(b)
+    );
+    for (const key of childKeys) {
+      const childNode = node.children.get(key);
+      lines.push(renderNode(childNode, undefined).trimEnd());
+    }
+
     lines.push('</details>');
     lines.push('');
+
+    return lines.join('\n');
+  };
+
+  const sections = [];
+
+  if (root.files.length) {
+    const rootFilesNode = createNode('src', 'src');
+    rootFilesNode.files.push(...root.files);
+    sections.push(renderNode(rootFilesNode, 'src'));
   }
 
-  return lines.join('\n').trim();
+  const topLevelKeys = [...root.children.keys()].sort((a, b) =>
+    a.localeCompare(b)
+  );
+  for (const key of topLevelKeys) {
+    const childNode = root.children.get(key);
+    sections.push(renderNode(childNode, undefined).trimEnd());
+  }
+
+  return sections.join('\n').trim();
 };
 
 const updateReadmeIndex = async (entries) => {
@@ -389,7 +447,7 @@ const updateReadmeIndex = async (entries) => {
   }
 
   if (!currentReadme.includes(README_START_MARKER)) {
-    const appendix = `\n\n## Diagram Catalog\n\n${README_START_MARKER}\n${indexMarkdown}\n${README_END_MARKER}\n`;
+    const appendix = `\n\n## Directory\n\n${README_START_MARKER}\n${indexMarkdown}\n${README_END_MARKER}\n`;
     const updated = `${currentReadme.trimEnd()}${appendix}`;
     const formatted = await formatMarkdown(updated);
     await fs.writeFile(readmePath, formatted, 'utf8');
