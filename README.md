@@ -1,15 +1,14 @@
-# Contributers 
+# Contributers
 
-|      Name      |     Github     |           Email           |
-|----------------|----------------|---------------------------|
-| Aidan Donnelly | AidanDonnelly1 |   aido4381@colorado.edu   |
-|  Ishan Gohil   | IshanGProjects |  ishan10.gohil@gmail.com  |
-|   Ari Guzzi    |   ari-guzzi    |   argu4451@colorado.edu   | 
-|  Alex Savard   |   asavy79      |  alsa8624@colorado.edu    |    
-|   Luke Wu      |     lukewu1    |    Luke.Wu@colorado.edu   |
-|  Eric David    |  EricDavidd    |  Eric.David@colorado.edu  |  
-|  Alicia Zhang  |     alzh42     | Alicia.Zhang@colorado.edu | 
-
+| Name           | Github         | Email                     |
+| -------------- | -------------- | ------------------------- |
+| Aidan Donnelly | AidanDonnelly1 | aido4381@colorado.edu     |
+| Ishan Gohil    | IshanGProjects | ishan10.gohil@gmail.com   |
+| Ari Guzzi      | ari-guzzi      | argu4451@colorado.edu     |
+| Alex Savard    | asavy79        | alsa8624@colorado.edu     |
+| Luke Wu        | lukewu1        | Luke.Wu@colorado.edu      |
+| Eric David     | EricDavidd     | Eric.David@colorado.edu   |
+| Alicia Zhang   | alzh42         | Alicia.Zhang@colorado.edu |
 
 # Getting Started
 
@@ -23,17 +22,15 @@
 
 3. Comment out this line in .devcontainer/Dockerfile
 
-![alt text](image-2.png)
+![alt text](docs/readme/image-2.png)
 
 4. Click on the two angled brackets in the bottom left
 
-![alt text](image.png)
+![alt text](docs/readme/image.png)
 
 5. Click Reopen in Container
 
-![alt text](image-1.png)
-
-6. VSCode Should reopen from inside your docker container
+![alt text](docs/readme/image-1.png) 6. VSCode Should reopen from inside your docker container
 
 7. Run "npm i" in the terminal
 
