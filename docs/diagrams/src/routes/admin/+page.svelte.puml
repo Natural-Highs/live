@@ -1,0 +1,13 @@
+@startuml routes__admin__page_svelte
+title routes/admin/+page.svelte
+class "routes/admin/+page.svelte" as routes_admin__page_svelte <<SvelteComponent>> {
+  -- no exports --
+}
+note bottom of routes_admin__page_svelte
+  Imports:
+    External:
+    - $lib/firebase/firebase.app
+    - firebase/firestore
+    - svelte
+end note
+@enduml

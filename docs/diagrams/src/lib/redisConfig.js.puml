@@ -1,0 +1,6 @@
+@startuml lib__redisConfig_js
+title lib/redisConfig.js
+class "lib/redisConfig.js" as lib_redisConfig_js <<Module>> {
+  -- no exports --
+}
+@enduml

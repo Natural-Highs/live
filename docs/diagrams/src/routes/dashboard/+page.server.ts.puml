@@ -1,0 +1,16 @@
+@startuml routes__dashboard__page_server_ts
+title routes/dashboard/+page.server.ts
+class "routes/dashboard/+page.server.ts" as routes_dashboard__page_server_ts <<SvelteKitModule>> {
+  + async const load
+  + const actions
+}
+note bottom of routes_dashboard__page_server_ts
+  Imports:
+    Local:
+    - routes/dashboard/$types
+    - store/store
+    External:
+    - $lib/firebase/firebase
+    - @sveltejs/kit
+end note
+@enduml

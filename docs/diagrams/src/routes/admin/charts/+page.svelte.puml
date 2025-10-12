@@ -1,0 +1,13 @@
+@startuml routes__admin__charts__page_svelte
+title routes/admin/charts/+page.svelte
+class "routes/admin/charts/+page.svelte" as routes_admin_charts__page_svelte <<SvelteComponent>> {
+  -- no exports --
+}
+note bottom of routes_admin_charts__page_svelte
+  Imports:
+    External:
+    - chart.js/auto
+    - svelte
+    - svelte/store
+end note
+@enduml

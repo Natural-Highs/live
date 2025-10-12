@@ -1,0 +1,6 @@
+@startuml routes__authentication__firebase_debug_log
+title routes/authentication/firebase-debug.log
+class "routes/authentication/firebase-debug.log" as routes_authentication_firebase_debug_log <<Artifact>> {
+  -- no exports --
+}
+@enduml

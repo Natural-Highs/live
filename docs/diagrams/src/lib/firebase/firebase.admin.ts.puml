@@ -1,0 +1,14 @@
+@startuml lib__firebase__firebase_admin_ts
+title lib/firebase/firebase.admin.ts
+class "lib/firebase/firebase.admin.ts" as lib_firebase_firebase_admin_ts <<Module>> {
+  + const adminDb
+  + const adminAuth
+}
+note bottom of lib_firebase_firebase_admin_ts
+  Imports:
+    Local:
+    - ../serviceAccount.json
+    External:
+    - firebase-admin
+end note
+@enduml

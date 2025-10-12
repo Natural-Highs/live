@@ -1,0 +1,17 @@
+@startuml routes__admin__survey__id___page_svelte
+title routes/admin/survey/[id]/+page.svelte
+class "routes/admin/survey/[id]/+page.svelte" as routes_admin_survey__id___page_svelte <<SvelteComponent>> {
+  -- no exports --
+}
+note bottom of routes_admin_survey__id___page_svelte
+  Imports:
+    Local:
+    - routes/admin/survey/[id]/NewQuestionForm.svelte
+    External:
+    - $app/stores
+    - svelte
+  
+  Child components:
+    - NewQuestionForm
+end note
+@enduml

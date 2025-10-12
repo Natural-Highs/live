@@ -1,0 +1,12 @@
+@startuml routes__initialSurvey__page_server_ts
+title routes/initialSurvey/+page.server.ts
+class "routes/initialSurvey/+page.server.ts" as routes_initialSurvey__page_server_ts <<SvelteKitModule>> {
+  + const actions
+}
+note bottom of routes_initialSurvey__page_server_ts
+  Imports:
+    External:
+    - $lib/firebase/firebase
+    - @sveltejs/kit
+end note
+@enduml
