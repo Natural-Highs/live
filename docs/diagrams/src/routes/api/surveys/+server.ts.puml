@@ -1,0 +1,12 @@
+@startuml routes__api__surveys__server_ts
+title routes/api/surveys/+server.ts
+class "routes/api/surveys/+server.ts" as routes_api_surveys__server_ts <<SvelteKitEndpoint>> {
+  + async const GET
+}
+note bottom of routes_api_surveys__server_ts
+  Imports:
+    External:
+    - $lib/firebase/firebase
+    - $lib/firebase/firebase.admin.js
+end note
+@enduml

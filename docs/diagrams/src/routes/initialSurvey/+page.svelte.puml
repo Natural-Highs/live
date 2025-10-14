@@ -1,0 +1,17 @@
+@startuml routes__initialSurvey__page_svelte
+title routes/initialSurvey/+page.svelte
+class "routes/initialSurvey/+page.svelte" as routes_initialSurvey__page_svelte <<SvelteComponent>> {
+  -- no exports --
+}
+note bottom of routes_initialSurvey__page_svelte
+  Imports:
+    Local:
+    - store/store
+    External:
+    - $app/environment
+    - $app/navigation
+    - $lib/firebase/firebase.app
+    - firebase/auth
+    - svelte
+end note
+@enduml

@@ -1,0 +1,6 @@
+@startuml app_html
+title app.html
+class "app.html" as app_html <<Markup>> {
+  -- no exports --
+}
+@enduml

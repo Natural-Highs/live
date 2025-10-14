@@ -1,0 +1,6 @@
+@startuml routes__api__login__server_ts
+title routes/api/login/+server.ts
+class "routes/api/login/+server.ts" as routes_api_login__server_ts <<SvelteKitEndpoint>> {
+  -- no exports --
+}
+@enduml

@@ -1,0 +1,19 @@
+@startuml routes__dashboard__page_svelte
+title routes/dashboard/+page.svelte
+class "routes/dashboard/+page.svelte" as routes_dashboard__page_svelte <<SvelteComponent>> {
+  -- no exports --
+}
+note bottom of routes_dashboard__page_svelte
+  Imports:
+    Local:
+    - store/store
+    External:
+    - $app/environment
+    - $app/forms
+    - $app/navigation
+    - $lib/firebase/firebase.app
+    - firebase/auth
+    - html5-qrcode
+    - svelte
+end note
+@enduml
