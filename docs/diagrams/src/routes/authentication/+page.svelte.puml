@@ -1,0 +1,17 @@
+@startuml routes__authentication__page_svelte
+title routes/authentication/+page.svelte
+class "routes/authentication/+page.svelte" as routes_authentication__page_svelte <<SvelteComponent>> {
+  -- no exports --
+}
+note bottom of routes_authentication__page_svelte
+  Imports:
+    Local:
+    - routes/+layout.svelte
+    - store/store
+    External:
+    - $app/forms
+    - $app/navigation
+    - $lib/firebase/firebase.app
+    - firebase/auth
+end note
+@enduml

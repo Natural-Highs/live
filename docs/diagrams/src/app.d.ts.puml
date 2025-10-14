@@ -1,0 +1,6 @@
+@startuml app_d_ts
+title app.d.ts
+class "app.d.ts" as app_d_ts <<Module>> {
+  -- no exports --
+}
+@enduml

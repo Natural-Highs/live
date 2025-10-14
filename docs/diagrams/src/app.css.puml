@@ -1,0 +1,6 @@
+@startuml app_css
+title app.css
+class "app.css" as app_css <<Styles>> {
+  -- no exports --
+}
+@enduml

@@ -1,0 +1,19 @@
+@startuml routes__layout_svelte
+title routes/+layout.svelte
+class "routes/+layout.svelte" as routes__layout_svelte <<SvelteComponent>> {
+  -- no exports --
+}
+note bottom of routes__layout_svelte
+  Imports:
+    Local:
+    - app.css
+    - routes/navbar.svelte
+    External:
+    - $lib/firebase/firebase.app
+    - firebase/auth
+    - svelte
+  
+  Child components:
+    - Navbar
+end note
+@enduml

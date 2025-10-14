@@ -1,0 +1,12 @@
+@startuml hooks_server_ts
+title hooks.server.ts
+class "hooks.server.ts" as hooks_server_ts <<Module>> {
+  + async function handle
+}
+note bottom of hooks_server_ts
+  Imports:
+    External:
+    - $lib/firebase/firebase.admin
+    - @sveltejs/kit
+end note
+@enduml

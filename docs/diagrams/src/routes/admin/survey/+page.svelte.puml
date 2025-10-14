@@ -1,0 +1,16 @@
+@startuml routes__admin__survey__page_svelte
+title routes/admin/survey/+page.svelte
+class "routes/admin/survey/+page.svelte" as routes_admin_survey__page_svelte <<SvelteComponent>> {
+  + let data
+}
+note bottom of routes_admin_survey__page_svelte
+  Imports:
+    External:
+    - $app/forms
+    - $app/navigation
+    - $app/stores
+  
+  Svelte props:
+    - data
+end note
+@enduml
