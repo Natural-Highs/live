@@ -59,6 +59,5 @@ describe("Firebase Firestore Tests", () => {
 });
 
 // INSTALL DEPENDENCIES 
-// npm install vitest --save-dev
-// npm install firestore-vitest-mock --save-dev
-
+// bun add -d vitest
+// bun add -d firestore-vitest-mock

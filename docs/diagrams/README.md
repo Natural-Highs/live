@@ -6,7 +6,7 @@
 
 1. Save any changes in project root `src/` to be rendered
    - `docs/diagrams/src/` is root `*.puml` equivalent
-2. Run `npm run docs:puml`
+2. Run `bun run docs:puml`
    - rebuilds`.puml` sources
    - refreshes PNG previews
    - rewrites the catalog below
