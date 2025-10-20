@@ -1,6 +1,6 @@
 /* 
 Run command:
-node seed.js
+bun scripts/seed.js
 */
 
 import { initializeApp } from "firebase/app";

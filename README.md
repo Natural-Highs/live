@@ -32,11 +32,11 @@
 
 ![alt text](docs/readme/image-1.png) 6. VSCode Should reopen from inside your docker container
 
-7. Run "npm i" in the terminal
+7. Run `bun install` in the terminal
 
 8. create a file called .env and paste the contents from the pinned message in discord in
 
-9. run "npm run dev" in the terminal
+9. run `bun run dev` in the terminal
 
 10. click on the local host link in your terminal and if you are brought to a log in page then every thing is working.
 
@@ -46,8 +46,8 @@
 
 # Starting the Project
 
-1. Start the emulator with "firebase emulators:start"
-2. If you have any errorrs try "npm install -g firebase-tools && apt install -y default-jdk && npm install firebase-admin"
+1. Start the emulator with `bunx firebase-tools emulators:start`
+2. If you have any errors try `bun install -g firebase-tools@latest` and `apt install -y default-jdk` then rerun the command
 3. You can now connect to http://127.0.0.1:4000/ to view a ui for the db and auth
-4. "npm run dev" to start the project locally
-5. You can now connect to
+4. `bun run dev` to start the project locally (Vite serves on port 5174 by default)
+5. You can now connect to the local URL printed in the terminal to verify the login page
