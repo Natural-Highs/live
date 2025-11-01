@@ -1,20 +1,8 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import {
-  getFirestore,
-  connectFirestoreEmulator,
-  setDoc,
-  doc,
-  addDoc,
-  collection,
-} from "firebase/firestore";
-import {
-  getAuth,
-  connectAuthEmulator,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
-} from "firebase/auth";
+import { getApp, getApps, initializeApp } from 'firebase/app';
+import { connectAuthEmulator, getAuth } from 'firebase/auth';
+import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 
-console.log("Script is running");
+console.log('Script is running');
 
 // Firebase configuration (client-side)
 const firebaseConfig = {
@@ -27,26 +15,25 @@ const firebaseConfig = {
 };
 
 // Check if Firebase has already been initialized
-let firebaseApp;
+let firebaseApp: ReturnType<typeof initializeApp> | undefined;
 if (!getApps().length) {
   // No apps have been initialized, initialize one
   firebaseApp = initializeApp(firebaseConfig);
-  console.log("Firebase Client SDK initialized");
+  console.log('Firebase Client SDK initialized');
 } else {
   // If an app has already been initialized, use the existing one
   firebaseApp = getApp();
-  console.log("Using existing Firebase app");
+  console.log('Using existing Firebase app');
 }
 
 // Initialize Firestore and Auth
 export const db = getFirestore(firebaseApp);
 export const auth = getAuth(firebaseApp);
 
-console.log("Environment Mode:", import.meta.env.MODE);
+console.log('Environment Mode:', import.meta.env.MODE);
 // // Connect to Firestore emulator if in development mode
-if (import.meta.env.MODE === "development") {
-  connectFirestoreEmulator(db, "localhost", 8080); // Use correct Firestore emulator port if different
-  connectAuthEmulator(auth, "http://localhost:9099"); // Use correct Auth emulator port if different
-  console.log("Connected to Firestore and Auth emulators");
+if (import.meta.env.MODE === 'development') {
+  connectFirestoreEmulator(db, 'localhost', 8080); // Use correct Firestore emulator port if different
+  connectAuthEmulator(auth, 'http://localhost:9099'); // Use correct Auth emulator port if different
+  console.log('Connected to Firestore and Auth emulators');
 }
-

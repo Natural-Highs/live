@@ -1,11 +1,11 @@
 // Import the functions you need from the SDKs you need
-import type { ServiceAccount } from "firebase-admin";
-import admin from "firebase-admin";
-import serviceAccount from "../../../serviceAccount.json";
-import { getAuth, connectAuthEmulator } from "firebase/auth";
+
+import type { ServiceAccount } from 'firebase-admin';
+import admin from 'firebase-admin';
+import serviceAccount from '../../../serviceAccount.json';
 
 // // Your web app's Firebase configuration
-const firebaseConfig = {
+const _firebaseConfig = {
   apiKey: import.meta.env.VITE_APIKEY,
   authDomain: import.meta.env.VITE_AUTH_DOMAIN,
   projectId: import.meta.env.VITE_PROJECT_ID,
@@ -14,19 +14,17 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_APP_ID,
 };
 
-if(!admin.apps.length) {
+if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount as ServiceAccount),
-    storageBucket: "sveltekit-fullstack-c259e.appspot.com",
+    storageBucket: 'sveltekit-fullstack-c259e.appspot.com',
   });
-  const firestoreEmulatorHost = "localhost:8080"; // Default port for Firestore emulator
-admin.firestore().settings({
-  host: firestoreEmulatorHost,
-  ssl: false,
-});
-
+  const firestoreEmulatorHost = 'localhost:8080'; // Default port for Firestore emulator
+  admin.firestore().settings({
+    host: firestoreEmulatorHost,
+    ssl: false,
+  });
 }
-
 
 // Configure Firestore to use the emulator
 
