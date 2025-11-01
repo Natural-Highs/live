@@ -1,10 +1,15 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
-import authRoutes from './routes/auth';
-import userRoutes from './routes/users';
-import surveyRoutes from './routes/surveys';
 import { errorHandler } from './middleware/errorHandler';
+import authRoutes from './routes/auth';
+import eventRoutes from './routes/events';
+import eventTypeRoutes from './routes/eventTypes';
+import formRoutes from './routes/forms';
+import formTemplateRoutes from './routes/formTemplates';
+import guestRoutes from './routes/guests';
+import surveyRoutes from './routes/surveys';
+import userRoutes from './routes/users';
 
 const app = new Hono();
 
@@ -18,31 +23,29 @@ app.use(
   })
 );
 
-app.get('/health', (c) => c.json({ status: 'ok' }));
+app.get('/health', c => c.json({ status: 'ok' }));
 
 // API routes
 app.route('/api/auth', authRoutes);
 app.route('/api/users', userRoutes);
+app.route('/api/events', eventRoutes);
+app.route('/api/eventTypes', eventTypeRoutes);
+app.route('/api/formTemplates', formTemplateRoutes);
+app.route('/api/forms', formRoutes);
+app.route('/api/guests', guestRoutes);
 app.route('/api/surveys', surveyRoutes);
 app.route('/api/adminSurvey', surveyRoutes);
 app.route('/api/surveyQuestions', surveyRoutes);
 app.route('/api/userResponses', surveyRoutes);
-app.route('/api/initialSurvey', surveyRoutes);
 
-// Error handler (must be last)
 app.onError(errorHandler);
 
-// Export for Bun
-const port = process.env.PORT || 3000;
-export default {
+const port = Number(process.env.PORT || process.env.BUN_PORT || process.env.NODE_PORT || 3000);
+
+const server = Bun.serve({
   port,
   fetch: app.fetch,
-};
+  hostname: '0.0.0.0',
+});
 
-if (typeof Bun !== 'undefined' && Bun.serve) {
-  Bun.serve({
-    port: Number(port) || 3000,
-    fetch: app.fetch,
-  });
-  console.log(`🚀 Server running on http://localhost:${port}`);
-}
+console.log(`🚀 Server running on ${server.url}`);
