@@ -1,4 +1,4 @@
-import { Context, Next } from 'hono';
+import type { Context, Next } from 'hono';
 import { getCookie } from 'hono/cookie';
 import { adminAuth } from '$lib/firebase/firebase.admin';
 
@@ -7,7 +7,7 @@ export interface AuthContext extends Context {
     uid: string;
     email?: string;
     admin: boolean;
-    initialSurvey: boolean;
+    signedConsentForm: boolean;
   };
 }
 
@@ -27,7 +27,7 @@ export async function authMiddleware(c: AuthContext, next: Next) {
       uid: decodedToken.uid,
       email: decodedToken.email,
       admin: decodedToken.admin || false,
-      initialSurvey: decodedToken.initialSurvey || false,
+      signedConsentForm: decodedToken.signedConsentForm || false,
     });
     await next();
   } catch (error: unknown) {
