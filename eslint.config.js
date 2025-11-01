@@ -8,7 +8,6 @@ import globals from "globals";
 export default [
   js.configs.recommended,
   ...ts.configs.recommended,
-  ...svelte.configs["flat/recommended"],
   prettier,
   ...svelte.configs["flat/prettier"],
   {
@@ -20,7 +19,7 @@ export default [
     },
   },
   {
-    files: ["**/*.svelte"],
+    files: ["**/*.tsx", "**/*.ts"],
     languageOptions: {
       parserOptions: {
         parser: ts.parser,
@@ -28,6 +27,6 @@ export default [
     },
   },
   {
-    ignores: ["build/", ".svelte-kit/", "dist/"],
+    ignores: ["build/", "dist/"],
   },
 ];
