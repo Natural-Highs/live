@@ -93,13 +93,144 @@ auth.post('/logout', async (c) => {
 });
 
 /**
+ * POST /api/auth/register
+ * Register a new user with username, email, and password
+ * Issue #63: Implement Sign Up (Page 1) Functionality
+ */
+auth.post('/register', async (c) => {
+  try {
+    const { username, email, password, confirmPassword } = await c.req.json();
+
+    // Validation
+    if (!username || !email || !password || !confirmPassword) {
+      return c.json(
+        { success: false, error: 'All fields are required' },
+        400
+      );
+    }
+
+    if (password !== confirmPassword) {
+      return c.json(
+        { success: false, error: 'Passwords do not match' },
+        400
+      );
+    }
+
+    // Check if username already exists
+    const usernameCheck = await adminDb
+      .collection('users')
+      .where('username', '==', username)
+      .get();
+
+    if (!usernameCheck.empty) {
+      return c.json(
+        { success: false, error: 'Username already exists' },
+        409
+      );
+    }
+
+    // Check if email already exists
+    try {
+      await adminAuth.getUserByEmail(email);
+      return c.json({ success: false, error: 'Email already exists' }, 409);
+    } catch (error: unknown) {
+      // User doesn't exist, continue with registration
+    }
+
+    // Create Firebase Auth user
+    const userRecord = await adminAuth.createUser({
+      email: email,
+      password: password,
+    });
+
+    // Create user document in Firestore
+    await adminDb.collection('users').doc(userRecord.uid).set({
+      username: username,
+      email: email,
+      createdAt: new Date(),
+      uid: userRecord.uid,
+      isAdmin: false,
+      completedInitialSurvey: false,
+    });
+
+    return c.json({
+      success: true,
+      message: 'User created successfully',
+      uid: userRecord.uid,
+    });
+  } catch (error: unknown) {
+    console.error('Registration error:', error);
+    return c.json(
+      {
+        success: false,
+        error:
+          (error instanceof Error && error.message) ||
+          'Failed to create user',
+      },
+      500
+    );
+  }
+});
+
+/**
  * POST /api/auth/login
- * Legacy endpoint - may be used for future password-based login
+ * Login user with email and password
+ * Issue #62: Implement Log In Functionality
+ * Note: Firebase Admin SDK doesn't verify passwords directly.
+ * Client should use Firebase Auth SDK for password verification,
+ * then send the resulting idToken to /api/auth/sessionLogin
  */
 auth.post('/login', async (c) => {
-  // This endpoint can be implemented later if needed
-  // For now, authentication is handled via Firebase client SDK
-  return c.json({ error: 'Use Firebase Auth client SDK for login' }, 400);
+  try {
+    const { email, password } = await c.req.json();
+
+    if (!email || !password) {
+      return c.json(
+        { success: false, error: 'Email and password are required' },
+        400
+      );
+    }
+
+    // Get user by email to verify account exists
+    // Actual password verification happens client-side with Firebase Auth SDK
+    try {
+      const userRecord = await adminAuth.getUserByEmail(email);
+      
+      // Get user document from Firestore
+      const userRef = adminDb.collection('users');
+      const querySnapshot = await userRef.where('email', '==', email).get();
+
+      if (querySnapshot.empty) {
+        return c.json(
+          { success: false, error: 'User not found in database' },
+          404
+        );
+      }
+
+      // Return success - client will verify password with Firebase Auth SDK
+      return c.json({
+        success: true,
+        message: 'Email verified - use Firebase Auth client SDK for password verification',
+        userId: userRecord.uid,
+      });
+    } catch (error: unknown) {
+      // User not found
+      return c.json(
+        { success: false, error: 'Invalid email or password' },
+        401
+      );
+    }
+  } catch (error: unknown) {
+    console.error('Login error:', error);
+    return c.json(
+      {
+        success: false,
+        error:
+          (error instanceof Error && error.message) || 'Login failed',
+      },
+      500
+    );
+  }
 });
 
 export default auth;
