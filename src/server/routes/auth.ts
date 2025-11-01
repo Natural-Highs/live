@@ -1,6 +1,12 @@
 import { Hono } from 'hono';
-import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
+import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import { adminAuth, adminDb } from '$lib/firebase/firebase.admin';
+import type {
+  UserLoginRequest,
+  UserRegistrationRequest,
+  UserSessionLoginRequest,
+  UserWithClaims,
+} from '../types/auth';
 
 const auth = new Hono();
 
@@ -8,14 +14,15 @@ const auth = new Hono();
  * POST /api/auth/sessionLogin
  * Creates or updates session from Firebase ID token
  */
-auth.post('/sessionLogin', async (c) => {
+auth.post('/sessionLogin', async c => {
   try {
     const oldToken = getCookie(c, 'session');
     if (oldToken) {
       return c.json({ success: true });
     }
 
-    const { idToken } = await c.req.json();
+    const requestData = (await c.req.json()) as UserSessionLoginRequest;
+    const { idToken } = requestData;
     if (!idToken) {
       return c.json({ success: false, error: 'Missing idToken' }, 400);
     }
@@ -32,17 +39,16 @@ auth.post('/sessionLogin', async (c) => {
       return c.json({ success: false, error: 'User not found' }, 404);
     }
 
-    const [user] = querySnapshot.docs.map((doc) => ({
+    const [user] = querySnapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
     }));
 
     // Set custom claims
+    const userWithClaims = user as UserWithClaims;
     await adminAuth.setCustomUserClaims(uid, {
-      admin: (user as { isAdmin?: boolean }).isAdmin || false,
-      initialSurvey:
-        (user as { completedInitialSurvey?: boolean }).completedInitialSurvey ||
-        false,
+      admin: userWithClaims.isAdmin || false,
+      signedConsentForm: userWithClaims.signedConsentForm || false,
     });
 
     // Set session cookie
@@ -64,9 +70,7 @@ auth.post('/sessionLogin', async (c) => {
     return c.json(
       {
         success: false,
-        error:
-          (error instanceof Error && error.message) ||
-          'Failed to create session',
+        error: (error instanceof Error && error.message) || 'Failed to create session',
       },
       500
     );
@@ -77,7 +81,7 @@ auth.post('/sessionLogin', async (c) => {
  * GET /api/auth/sessionLogin
  * Check if session exists
  */
-auth.get('/sessionLogin', async (c) => {
+auth.get('/sessionLogin', async c => {
   const oldToken = getCookie(c, 'session');
   return c.json({ token: !!oldToken });
 });
@@ -86,7 +90,7 @@ auth.get('/sessionLogin', async (c) => {
  * POST /api/auth/logout
  * Destroy session cookie
  */
-auth.post('/logout', async (c) => {
+auth.post('/logout', async c => {
   deleteCookie(c, 'session', { path: '/' });
   console.log('Cookie deleted');
   return c.json({ success: true });
@@ -97,36 +101,25 @@ auth.post('/logout', async (c) => {
  * Register a new user with username, email, and password
  * Issue #63: Implement Sign Up (Page 1) Functionality
  */
-auth.post('/register', async (c) => {
+auth.post('/register', async c => {
   try {
-    const { username, email, password, confirmPassword } = await c.req.json();
+    const requestData = (await c.req.json()) as UserRegistrationRequest;
+    const { username, email, password, confirmPassword } = requestData;
 
     // Validation
     if (!username || !email || !password || !confirmPassword) {
-      return c.json(
-        { success: false, error: 'All fields are required' },
-        400
-      );
+      return c.json({ success: false, error: 'All fields are required' }, 400);
     }
 
     if (password !== confirmPassword) {
-      return c.json(
-        { success: false, error: 'Passwords do not match' },
-        400
-      );
+      return c.json({ success: false, error: 'Passwords do not match' }, 400);
     }
 
     // Check if username already exists
-    const usernameCheck = await adminDb
-      .collection('users')
-      .where('username', '==', username)
-      .get();
+    const usernameCheck = await adminDb.collection('users').where('username', '==', username).get();
 
     if (!usernameCheck.empty) {
-      return c.json(
-        { success: false, error: 'Username already exists' },
-        409
-      );
+      return c.json({ success: false, error: 'Username already exists' }, 409);
     }
 
     // Check if email already exists
@@ -134,7 +127,23 @@ auth.post('/register', async (c) => {
       await adminAuth.getUserByEmail(email);
       return c.json({ success: false, error: 'Email already exists' }, 409);
     } catch (error: unknown) {
-      // User doesn't exist, continue with registration
+      // If user doesn't exist, continue with registration
+      // Only return error if it's specifically about email already in use
+      if (
+        error instanceof Error &&
+        (error.message.includes('auth/email-already-in-use') ||
+          error.message.includes('auth/user-not-found'))
+      ) {
+        // User doesn't exist (user-not-found) or email is in use - continue or return accordingly
+        if (error.message.includes('auth/email-already-in-use')) {
+          return c.json({ success: false, error: 'Email already exists' }, 409);
+        }
+        // Otherwise continue (user-not-found means we can create the user)
+      } else {
+        // Unexpected error
+        console.error('Registration error:', error);
+        return c.json({ success: false, error: 'Failed to check user existence' }, 500);
+      }
     }
 
     // Create Firebase Auth user
@@ -150,7 +159,8 @@ auth.post('/register', async (c) => {
       createdAt: new Date(),
       uid: userRecord.uid,
       isAdmin: false,
-      completedInitialSurvey: false,
+      isGuest: false,
+      signedConsentForm: false,
     });
 
     return c.json({
@@ -163,9 +173,7 @@ auth.post('/register', async (c) => {
     return c.json(
       {
         success: false,
-        error:
-          (error instanceof Error && error.message) ||
-          'Failed to create user',
+        error: (error instanceof Error && error.message) || 'Failed to create user',
       },
       500
     );
@@ -180,31 +188,26 @@ auth.post('/register', async (c) => {
  * Client should use Firebase Auth SDK for password verification,
  * then send the resulting idToken to /api/auth/sessionLogin
  */
-auth.post('/login', async (c) => {
+auth.post('/login', async c => {
   try {
-    const { email, password } = await c.req.json();
+    const requestData = (await c.req.json()) as UserLoginRequest;
+    const { email, password } = requestData;
 
     if (!email || !password) {
-      return c.json(
-        { success: false, error: 'Email and password are required' },
-        400
-      );
+      return c.json({ success: false, error: 'Email and password are required' }, 400);
     }
 
     // Get user by email to verify account exists
     // Actual password verification happens client-side with Firebase Auth SDK
     try {
       const userRecord = await adminAuth.getUserByEmail(email);
-      
+
       // Get user document from Firestore
       const userRef = adminDb.collection('users');
       const querySnapshot = await userRef.where('email', '==', email).get();
 
       if (querySnapshot.empty) {
-        return c.json(
-          { success: false, error: 'User not found in database' },
-          404
-        );
+        return c.json({ success: false, error: 'User not found in database' }, 404);
       }
 
       // Return success - client will verify password with Firebase Auth SDK
@@ -214,9 +217,12 @@ auth.post('/login', async (c) => {
         userId: userRecord.uid,
       });
     } catch (error: unknown) {
-      // User not found
+      console.error('Login error:', error);
       return c.json(
-        { success: false, error: 'Invalid email or password' },
+        {
+          success: false,
+          error: (error instanceof Error && error.message) || 'Invalid email or password',
+        },
         401
       );
     }
@@ -225,8 +231,7 @@ auth.post('/login', async (c) => {
     return c.json(
       {
         success: false,
-        error:
-          (error instanceof Error && error.message) || 'Login failed',
+        error: (error instanceof Error && error.message) || 'Login failed',
       },
       500
     );
