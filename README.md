@@ -1,4 +1,6 @@
-# Contributers
+# Natural Highs
+
+## Contributors
 
 | Name           | Github         | Email                     |
 | -------------- | -------------- | ------------------------- |
@@ -10,44 +12,46 @@
 | Eric David     | EricDavidd     | Eric.David@colorado.edu   |
 | Alicia Zhang   | alzh42         | Alicia.Zhang@colorado.edu |
 
-# Getting Started
+## Quick Start
 
-### before starting look for any folders called "node_modules" if you see it DELETE IT.
+### Prerequisites
 
-0. Clone the github repo onto your local machine
+- Bun: https://bun.sh
+  - Linux/WSL/MacOS: `curl -fsSL https://bun.sh/install | bash`
+  - Windows: `powershell -c "irm bun.sh/install.ps1 | iex"`
+- Doppler CLI: https://docs.doppler.com/docs/install-cli
 
-1. Downlaod the "Dev Containers" extension for VSCode (ms-vscode-remote.remote-containers)
+### Setup
 
-2. Open a new VS Code window and close all others. In this window open the repository folder. It is important you open the folder called Natural-Highs and not any other
+1.  Clone repository
+2.  Install dependencies: `bun install`
+3.  Setup Doppler: `bun run setup` (requires shared service token from team)
+4.  Start development:
 
-3. Comment out this line in .devcontainer/Dockerfile
+    ```bash
+    # Terminal 1: Database
+    doppler run -- bun run emulators
 
-![alt text](docs/readme/image-2.png)
+    # Terminal 2: Backend
+    doppler run -- bun run server
 
-4. Click on the two angled brackets in the bottom left
+    # Terminal 3: Frontend
+    doppler run -- bun run dev
+    ```
 
-![alt text](docs/readme/image.png)
+    or use `bun run dev:full` to start all services (database, backend, frontend).
 
-5. Click Reopen in Container
+    **Note**: Scripts like `bun run dev` will inject secrets from Doppler. You can view secrets with `doppler secrets` or `doppler tui`.
 
-![alt text](docs/readme/image-1.png) 6. VSCode Should reopen from inside your docker container
+5.  Open: http://localhost:5174
 
-7. Run `bun install` in the terminal
+## Docs
 
-8. create a file called .env and paste the contents from the pinned message in discord in
+For detailed notes see [docs/RUNBOOK.md](docs/RUNBOOK.md):
 
-9. run `bun run dev` in the terminal
-
-10. click on the local host link in your terminal and if you are brought to a log in page then every thing is working.
-
-11. Make sure to uncomment that line in the Dockerfile after everything starts working
-
-### Optional: Install the Peacock extension (johnpapa.vscode-peacock) to "Subtly change the color of your Visual Studio Code workspace."
-
-# Starting the Project
-
-1. Start the emulator with `bunx firebase-tools emulators:start`
-2. If you have any errors try `bun install -g firebase-tools@latest` and `apt install -y default-jdk` then rerun the command
-3. You can now connect to http://127.0.0.1:4000/ to view a ui for the db and auth
-4. `bun run dev` to start the project locally (Vite serves on port 5174 by default)
-5. You can now connect to the local URL printed in the terminal to verify the login page
+- Project structure
+- Common tasks (add pages, forms, routes, components)
+- Testing guide
+- Secrets management
+- Troubleshooting
+- Git workflow
