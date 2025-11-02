@@ -1,0 +1,6 @@
+@startuml pages__SignUpPage1_tsx
+title pages/SignUpPage1.tsx
+class "pages/SignUpPage1.tsx" as pages_SignUpPage1_tsx <<Artifact>> {
+  -- no exports --
+}
+@enduml

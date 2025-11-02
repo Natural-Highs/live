@@ -1,0 +1,6 @@
+@startuml components__Layout_tsx
+title components/Layout.tsx
+class "components/Layout.tsx" as components_Layout_tsx <<Artifact>> {
+  -- no exports --
+}
+@enduml

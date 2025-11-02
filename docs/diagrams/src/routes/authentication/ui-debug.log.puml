@@ -1,6 +1,0 @@
-@startuml routes__authentication__ui_debug_log
-title routes/authentication/ui-debug.log
-class "routes/authentication/ui-debug.log" as routes_authentication_ui_debug_log <<Artifact>> {
-  -- no exports --
-}
-@enduml

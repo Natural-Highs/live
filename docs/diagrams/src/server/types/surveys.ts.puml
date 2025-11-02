@@ -1,0 +1,13 @@
+@startuml server__types__surveys_ts
+title server/types/surveys.ts
+class "server/types/surveys.ts" as server_types_surveys_ts <<Module>> {
+  + interface SurveyQuestionCreationRequest
+  + interface SurveyQuestionUpdateRequest
+  + interface SurveyQuestionDeleteRequest
+  + interface SurveyResponseSubmissionRequest
+  + interface SurveyQuestionResponse
+  + interface SurveyAdminUpdateRequest
+  + interface SurveyCreationRequest
+  + interface SurveyUpdateRequest
+}
+@enduml

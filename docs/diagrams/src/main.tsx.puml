@@ -1,0 +1,6 @@
+@startuml main_tsx
+title main.tsx
+class "main.tsx" as main_tsx <<Artifact>> {
+  -- no exports --
+}
+@enduml

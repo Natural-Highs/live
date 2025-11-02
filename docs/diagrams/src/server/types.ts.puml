@@ -1,0 +1,6 @@
+@startuml server__types_ts
+title server/types.ts
+class "server/types.ts" as server_types_ts <<Module>> {
+  -- no exports --
+}
+@enduml
