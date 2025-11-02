@@ -1,4 +1,4 @@
-import React from 'react';
+import type React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
@@ -23,7 +23,9 @@ const Navbar: React.FC = () => {
             <Link to="/dashboard" className="btn btn-ghost">
               Dashboard
             </Link>
-            <button className="btn btn-ghost">Logout</button>
+            <button type="button" className="btn btn-ghost">
+              Logout
+            </button>
           </>
         ) : (
           <Link to="/authentication" className="btn btn-ghost">
