@@ -65,7 +65,11 @@ forms.post('/consent', async c => {
       }
     }
 
-    const userDocRef = adminDb.collection('users').doc(userId!);
+    if (!userId) {
+      return c.json({ success: false, error: 'User ID not found' }, 500);
+    }
+
+    const userDocRef = adminDb.collection('users').doc(userId);
     const consentCompletedAt = new Date();
 
     await userDocRef.update({
