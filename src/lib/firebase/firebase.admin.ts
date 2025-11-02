@@ -1,52 +1,71 @@
 import type { ServiceAccount } from 'firebase-admin';
 import admin from 'firebase-admin';
-import serviceAccount from '../../../serviceAccount.json';
 
 // Initialize Firebase Admin SDK only if it hasn't been initialized
 if (!admin.apps.length) {
+  // Service account can come from:
+  // 1. Doppler secret (FIREBASE_SERVICE_ACCOUNT as JSON string) - recommended
+  // 2. serviceAccount.json file (fallback for local dev)
+  let serviceAccount: ServiceAccount;
+
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    // Parse JSON string from Doppler
+    try {
+      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT) as ServiceAccount;
+    } catch (error) {
+      console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT from Doppler:', error);
+      throw new Error('Invalid FIREBASE_SERVICE_ACCOUNT format');
+    }
+  } else {
+    // Fallback to serviceAccount.json file (for local dev without Doppler)
+    try {
+      serviceAccount = require('../../../serviceAccount.json') as ServiceAccount;
+    } catch (error) {
+      console.error('Failed to load serviceAccount.json:', error);
+      throw new Error(
+        'Firebase Admin requires either FIREBASE_SERVICE_ACCOUNT env var or serviceAccount.json file'
+      );
+    }
+  }
+
+  const storageBucket =
+    process.env.FIREBASE_STORAGE_BUCKET || serviceAccount.projectId
+      ? `${serviceAccount.projectId}.appspot.com`
+      : 'sveltekit-fullstack-c259e.appspot.com';
+
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount as ServiceAccount),
-    storageBucket: 'sveltekit-fullstack-c259e.appspot.com',
+    credential: admin.credential.cert(serviceAccount),
+    storageBucket,
   });
-  const firestoreEmulatorHost = 'localhost:8080'; // Default port for Firestore emulator
-  // Set up Firestore and Auth emulators if running in development mode
+
+  const firestoreEmulatorHost = 'localhost:8080';
   if (import.meta.env.MODE === 'development') {
-    // Use Firestore emulator
     admin.firestore().settings({
       host: firestoreEmulatorHost,
       ssl: false,
     });
 
-    // Use Auth emulator
     process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099';
     console.log('Firestore Emulator and Auth Emulator configured');
   }
 }
 
-// If running the Firebase Auth emulator, set the emulator host
 if (import.meta.env.MODE === 'development') {
-  // Configure Firestore to use the emulator
-
-  process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099'; // replace 9099 with your emulator port if it's different
-  // console.log("Firestore Emulator Host:", process.env.FIRESTORE_EMULATOR_HOST);
-  // console.log("Auth Emulator Host:", process.env.FIREBASE_AUTH_EMULATOR_HOST);
+  process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099';
 }
 
-// Export the Firestore and Auth instances for use in your application
 export const adminDb = admin.firestore();
 export const adminAuth = admin.auth();
 
 // Test function for verifying Firestore and Auth functionality in development mode
 async function testAdminFunctions() {
-  if (import.meta.env.MODE !== 'development') return; // Run this only in development
+  if (import.meta.env.MODE !== 'development') return;
 
   try {
-    // Check if the user already exists
     try {
       const existingUser = await adminAuth.getUserByEmail('admin@example.com');
       console.log('Admin test user already exists:', existingUser.uid);
     } catch (_error) {
-      // Create a new user if not existing
       const userRecord = await adminAuth.createUser({
         email: 'admin@example.com',
         password: 'abc123',
@@ -66,7 +85,6 @@ async function testAdminFunctions() {
   }
 }
 
-// Call the test function in development mode
 if (import.meta.env.MODE === 'development') {
   testAdminFunctions();
 }
