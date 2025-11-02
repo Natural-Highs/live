@@ -48,4 +48,4 @@ const server = Bun.serve({
   hostname: '0.0.0.0',
 });
 
-console.log(`🚀 Server running on ${server.url}`);
+console.log(`Server running on ${server.url}`);
