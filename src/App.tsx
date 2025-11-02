@@ -1,20 +1,67 @@
-import { Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
+import { Route, Routes } from 'react-router-dom';
+import AdminRoute from './components/AdminRoute';
 import Layout from './components/Layout';
-import HomePage from './pages/HomePage';
-import AuthenticationPage from './pages/AuthenticationPage';
-import DashboardPage from './pages/DashboardPage';
+import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './context/AuthContext';
 import AdminPage from './pages/AdminPage';
+import AuthenticationPage from './pages/AuthenticationPage';
+import ConsentFormPage from './pages/ConsentFormPage';
+import DashboardPage from './pages/DashboardPage';
+import HomePage from './pages/HomePage';
+import SignUpPage1 from './pages/SignUpPage1';
+import SignUpPage2 from './pages/SignUpPage2';
 
 function App() {
   return (
     <AuthProvider>
       <Layout>
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          {/* Protected routes - require authentication */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <HomePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* Admin routes - require admin access */}
+          <Route
+            path="/admin/*"
+            element={
+              <AdminRoute>
+                <AdminPage />
+              </AdminRoute>
+            }
+          />
+          {/* Consent form route - protected but doesn't require consent form to be completed */}
+          <Route
+            path="/consent"
+            element={
+              <ProtectedRoute>
+                <ConsentFormPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* Public routes */}
           <Route path="/authentication" element={<AuthenticationPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/admin/*" element={<AdminPage />} />
+          <Route path="/signup" element={<SignUpPage1 />} />
+          <Route
+            path="/signup/about-you"
+            element={
+              <ProtectedRoute>
+                <SignUpPage2 />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </Layout>
     </AuthProvider>

@@ -1,25 +1,21 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from 'react';
+import { getIdTokenResult, onAuthStateChanged, type User } from 'firebase/auth';
+import type React from 'react';
+import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
 import { auth } from '$lib/firebase/firebase.app';
-import { onAuthStateChanged, getIdTokenResult, User } from 'firebase/auth';
+import type { AuthContextUserData } from './types/authContext';
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  initialSurvey: boolean;
+  consentForm: boolean;
   admin: boolean;
-  data: Record<string, any>;
+  data: AuthContextUserData;
 }
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   loading: true,
-  initialSurvey: false,
+  consentForm: false,
   admin: false,
   data: {},
 });
@@ -34,17 +30,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [authState, setAuthState] = useState<AuthContextType>({
     user: null,
     loading: true,
-    initialSurvey: false,
+    consentForm: false,
     admin: false,
     data: {},
   });
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async user => {
       console.log('Auth state changed');
 
       let claims = {
-        initialSurvey: false,
+        signedConsentForm: false,
         admin: false,
       };
 
@@ -57,7 +53,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setAuthState({
         user,
         loading: false,
-        initialSurvey: claims?.initialSurvey || false,
+        consentForm: claims?.signedConsentForm || false,
         admin: claims?.admin || false,
         data: {},
       });
@@ -66,7 +62,5 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
-  return (
-    <AuthContext.Provider value={authState}>{children}</AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={authState}>{children}</AuthContext.Provider>;
 };
