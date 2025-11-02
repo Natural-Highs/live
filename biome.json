@@ -54,6 +54,14 @@
   "files": {
     "ignoreUnknown": true
   },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    },
+    "linter": {
+      "enabled": false
+    }
+  },
   "overrides": [
     {
       "includes": ["*.config.js", "*.config.ts", "*.config.mjs"],
@@ -61,16 +69,6 @@
         "rules": {
           "style": {
             "noDefaultExport": "off"
-          }
-        }
-      }
-    },
-    {
-      "includes": ["**/*.css"],
-      "linter": {
-        "rules": {
-          "suspicious": {
-            "noUnknownAtRules": "off"
           }
         }
       }
