@@ -1,25 +1,30 @@
 import type { ServiceAccount } from 'firebase-admin';
 import admin from 'firebase-admin';
 
-// Initialize Firebase Admin SDK only if it hasn't been initialized
 if (!admin.apps.length) {
   // Service account can come from:
-  // 1. Doppler secret (FIREBASE_SERVICE_ACCOUNT as JSON string) - recommended
+  // 1. Doppler secret (FIREBASE_SERVICE_ACCOUNT as JSON string)
   // 2. serviceAccount.json file (fallback for local dev)
   let serviceAccount: ServiceAccount;
 
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     // Parse JSON string from Doppler
     try {
-      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT) as ServiceAccount;
+      serviceAccount = JSON.parse(
+        process.env.FIREBASE_SERVICE_ACCOUNT
+      ) as ServiceAccount;
     } catch (error) {
-      console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT from Doppler:', error);
+      console.error(
+        'Failed to parse FIREBASE_SERVICE_ACCOUNT from Doppler:',
+        error
+      );
       throw new Error('Invalid FIREBASE_SERVICE_ACCOUNT format');
     }
   } else {
     // Fallback to serviceAccount.json file (for local dev without Doppler)
     try {
-      serviceAccount = require('../../../serviceAccount.json') as ServiceAccount;
+      serviceAccount =
+        require('../../../serviceAccount.json') as ServiceAccount;
     } catch (error) {
       console.error('Failed to load serviceAccount.json:', error);
       throw new Error(
@@ -39,7 +44,7 @@ if (!admin.apps.length) {
   });
 
   const firestoreEmulatorHost = 'localhost:8080';
-  if (import.meta.env.MODE === 'development') {
+  if (process.env.NODE_ENV === 'development') {
     admin.firestore().settings({
       host: firestoreEmulatorHost,
       ssl: false,
@@ -50,7 +55,7 @@ if (!admin.apps.length) {
   }
 }
 
-if (import.meta.env.MODE === 'development') {
+if (process.env.NODE_ENV === 'development') {
   process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099';
 }
 
@@ -59,7 +64,7 @@ export const adminAuth = admin.auth();
 
 // Test function for verifying Firestore and Auth functionality in development mode
 async function testAdminFunctions() {
-  if (import.meta.env.MODE !== 'development') return;
+  if (process.env.NODE_ENV !== 'development') return;
 
   try {
     try {
@@ -85,6 +90,6 @@ async function testAdminFunctions() {
   }
 }
 
-if (import.meta.env.MODE === 'development') {
+if (process.env.NODE_ENV === 'development') {
   testAdminFunctions();
 }
