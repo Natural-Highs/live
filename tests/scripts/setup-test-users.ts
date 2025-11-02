@@ -47,10 +47,10 @@ async function removeUserFromFirebaseAuth(emailAddress: string): Promise<void> {
         }
       );
 
-      console.log(`  ✅ Removed ${emailAddress} from Firebase Auth`);
+      console.log(`  Removed ${emailAddress} from Firebase Auth`);
     }
   } catch (_error) {
-    console.log(`  ℹ️  ${emailAddress} not found in Auth or could not be deleted`);
+    console.log(`  ${emailAddress} not found in Auth or could not be deleted`);
   }
 }
 
@@ -74,13 +74,13 @@ async function createNewTestUser(
 
   if (!registrationResponse.ok) {
     const errorData = (await registrationResponse.json()) as RegistrationResponse;
-    console.log(`  ❌ Registration failed: ${errorData.error || 'Unknown error'}`);
+    console.log(`  Registration failed: ${errorData.error || 'Unknown error'}`);
     return null;
   }
 
   const registrationData = (await registrationResponse.json()) as RegistrationResponse;
   if (registrationData.uid) {
-    console.log(`  ✅ Created user: ${emailAddress} (${registrationData.uid})`);
+    console.log(`  Created user: ${emailAddress} (${registrationData.uid})`);
   }
 
   const signInResponse = await fetch(
@@ -108,12 +108,12 @@ async function createNewTestUser(
 }
 
 async function main() {
-  console.log('🧹 Cleaning up existing test users...\n');
+  console.log('Cleaning up existing test users\n');
 
   await removeUserFromFirebaseAuth('testuser@test.com');
   await removeUserFromFirebaseAuth('admin@test.com');
 
-  console.log('\n👤 Creating fresh test users...\n');
+  console.log('\nCreating fresh test users\n');
 
   const regularUserCredentials = await createNewTestUser(
     'testuser',
@@ -121,21 +121,21 @@ async function main() {
     'password123'
   );
   if (!regularUserCredentials) {
-    console.log('❌ Failed to create regular user');
+    console.log('Failed to create regular user');
     process.exit(1);
   }
 
   const adminUserCredentials = await createNewTestUser('admin', 'admin@test.com', 'password123');
   if (!adminUserCredentials) {
-    console.log('❌ Failed to create admin user');
+    console.log('Failed to create admin user');
     process.exit(1);
   }
 
-  console.log('\n📝 Admin Flag Setup:');
+  console.log('\nAdmin Flag Setup:');
   console.log('  Note: Set isAdmin=true in Firestore for admin@test.com');
   console.log('        Or use Firebase Emulator UI at http://localhost:4000');
 
-  console.log('\n✅ Test users ready!');
+  console.log('\nTest users ready');
   console.log(`\nRegular user token: ${regularUserCredentials.idToken.slice(0, 50)}...`);
   console.log(`Admin user token: ${adminUserCredentials.idToken.slice(0, 50)}...`);
   console.log('\nNext steps:');

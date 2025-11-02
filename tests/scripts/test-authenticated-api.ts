@@ -126,11 +126,11 @@ async function registerUserAndObtainToken(
       uid: string;
     };
     firebaseUserId = registrationData.uid;
-    console.log(`  ✅ Registered (UID: ${firebaseUserId})`);
+    console.log(`  Registered (UID: ${firebaseUserId})`);
   } else {
     const errorData = (await registrationResponse.json()) as { error?: string };
     if (errorData.error?.includes('already exists')) {
-      console.log(`  ℹ️  User already exists, continuing...`);
+      console.log(`  User already exists, continuing`);
       const signInResponse = await fetch(
         `${FIREBASE_AUTH_EMULATOR_URL}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${FIREBASE_EMULATOR_API_KEY}`,
         {
@@ -149,13 +149,13 @@ async function registerUserAndObtainToken(
         firebaseUserId = signInData.localId;
       }
     } else {
-      console.log(`  ❌ Registration failed: ${errorData.error || 'Unknown error'}`);
+      console.log(`  Registration failed: ${errorData.error || 'Unknown error'}`);
       return null;
     }
   }
 
   if (!firebaseUserId) {
-    console.log(`  ⚠️  Could not get user ID, trying direct sign-in...`);
+    console.log(`  Could not get user ID, trying direct sign-in`);
   }
 
   const signInResponse = await fetch(
@@ -173,7 +173,7 @@ async function registerUserAndObtainToken(
 
   if (!signInResponse.ok) {
     const errorText = await signInResponse.text();
-    console.log(`  ❌ Sign-in failed: ${errorText}`);
+    console.log(`  Sign-in failed: ${errorText}`);
     return null;
   }
 
@@ -188,7 +188,7 @@ async function registerUserAndObtainToken(
 }
 
 async function markUserAsAdmin(_userId: string): Promise<boolean> {
-  console.log(`  ⚠️  Admin flag update: Use Firebase Emulator UI or admin endpoint`);
+  console.log(`  Admin flag update: Use Firebase Emulator UI or admin endpoint`);
   return true;
 }
 
@@ -217,17 +217,17 @@ async function createSessionFromIdToken(idToken: string): Promise<string | null>
 async function verifyEmulatorsAreRunning(): Promise<void> {
   try {
     await fetch(`${FIREBASE_AUTH_EMULATOR_URL}/`);
-    console.log('✅ Firebase Auth emulator connected');
+    console.log('Firebase Auth emulator connected');
   } catch (_error) {
-    console.log('❌ Firebase Auth emulator not responding');
+    console.log('Firebase Auth emulator not responding');
     process.exit(1);
   }
 
   try {
     await fetch(FIREBASE_FIRESTORE_EMULATOR_URL);
-    console.log('✅ Firestore emulator connected');
+    console.log('Firestore emulator connected');
   } catch (_error) {
-    console.log('❌ Firestore emulator not responding');
+    console.log('Firestore emulator not responding');
     process.exit(1);
   }
 }
@@ -240,7 +240,7 @@ async function main() {
   await verifyEmulatorsAreRunning();
   console.log('');
 
-  console.log('👤 Creating test users...\n');
+  console.log('Creating test users\n');
 
   const regularUserCredentials = await registerUserAndObtainToken(
     'testuser',
@@ -248,10 +248,10 @@ async function main() {
     'password123'
   );
   if (!regularUserCredentials) {
-    console.log('❌ Failed to get regular user credentials');
+    console.log('Failed to get regular user credentials');
     process.exit(1);
   }
-  console.log(`✅ Regular user ready: testuser@test.com\n`);
+  console.log(`Regular user ready: testuser@test.com\n`);
 
   const adminUserCredentials = await registerUserAndObtainToken(
     'admin',
@@ -259,28 +259,28 @@ async function main() {
     'password123'
   );
   if (!adminUserCredentials) {
-    console.log('⚠️  Could not get admin user credentials, some tests will be skipped');
+    console.log('Could not get admin user credentials, some tests will be skipped');
   } else {
     await markUserAsAdmin(adminUserCredentials.userId);
-    console.log(`✅ Admin user ready: admin@test.com\n`);
+    console.log(`Admin user ready: admin@test.com\n`);
   }
 
-  console.log('🔐 Creating session cookies...\n');
+  console.log('Creating session cookies\n');
 
   const regularUserSessionCookie = await createSessionFromIdToken(regularUserCredentials.idToken);
   if (!regularUserSessionCookie) {
-    console.log('❌ Failed to create regular user session');
+    console.log('Failed to create regular user session');
     process.exit(1);
   }
-  console.log('✅ Regular user session created');
+  console.log('Regular user session created');
 
   let adminUserSessionCookie: string | null = null;
   if (adminUserCredentials) {
     adminUserSessionCookie = await createSessionFromIdToken(adminUserCredentials.idToken);
     if (adminUserSessionCookie) {
-      console.log('✅ Admin user session created');
+      console.log('Admin user session created');
     } else {
-      console.log('⚠️  Admin session failed (may need isAdmin flag set)');
+      console.log('Admin session failed (may need isAdmin flag set)');
     }
   }
 
@@ -374,7 +374,7 @@ async function main() {
       adminUserSessionCookie
     );
   } else {
-    console.log('⚠️  Skipping admin endpoints - no admin session cookie available');
+    console.log('Skipping admin endpoints - no admin session cookie available');
   }
 
   console.log('\n--- Survey Endpoints ---');
@@ -396,8 +396,8 @@ async function main() {
   const passedTests = testResults.filter(result => result.passed).length;
   const failedTests = testResults.filter(result => !result.passed).length;
 
-  console.log(`✅ Passed: ${passedTests}`);
-  console.log(`❌ Failed: ${failedTests}`);
+  console.log(`Passed: ${passedTests}`);
+  console.log(`Failed: ${failedTests}`);
   console.log(`Total: ${testResults.length}\n`);
 
   if (failedTests > 0) {
@@ -405,7 +405,7 @@ async function main() {
     testResults
       .filter(result => !result.passed)
       .forEach(result => {
-        console.log(`  ❌ ${result.testName}`);
+        console.log(`  ${result.testName}`);
         if (result.errorMessage) console.log(`     ${result.errorMessage}`);
         if (result.actualStatusCode && result.expectedStatusCode) {
           console.log(
@@ -416,7 +416,7 @@ async function main() {
   }
 
   if (failedTests === 0 && passedTests > 0) {
-    console.log('🎉 All tests passed!\n');
+    console.log('All tests passed\n');
     process.exit(0);
   } else {
     process.exit(failedTests > 0 ? 1 : 0);
