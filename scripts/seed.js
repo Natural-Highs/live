@@ -1,17 +1,15 @@
 /* 
 Run command:
-bun scripts/seed.js
+doppler run -- bun scripts/seed.js
 */
 
 import { readFile } from 'node:fs/promises';
-import dotenv from 'dotenv';
 import { initializeApp } from 'firebase/app';
 import { connectAuthEmulator, createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
 import { addDoc, collection, connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 
-dotenv.config({ path: '../.env' });
-
-// Your web app's Firebase configuration
+// Firebase configuration from environment variables (provided by Doppler)
+// These will be prefixed with VITE_ for client-side use
 const firebaseConfig = {
   apiKey: process.env.VITE_APIKEY,
   authDomain: process.env.VITE_AUTH_DOMAIN,
@@ -62,7 +60,10 @@ const seedFirestore = async () => {
         ...dummyData.users[i],
         uid: userId,
       });
-      const surveyDoc = await addDoc(surveyRef, { ...dummyData.surveys[i], createdAt: new Date() });
+      const surveyDoc = await addDoc(surveyRef, {
+        ...dummyData.surveys[i],
+        createdAt: new Date(),
+      });
       const questionsDoc = await addDoc(questionsRef, {
         ...dummyData.questions[i],
         surveyId: surveyDoc.id,
