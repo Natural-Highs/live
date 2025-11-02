@@ -3,7 +3,7 @@ import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import prettier from 'prettier';
+import { execFileSync } from 'node:child_process';
 import ts from 'typescript';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -553,13 +553,19 @@ const handleFile = async filePath => {
 
 const formatMarkdown = async content => {
   try {
-    const config = await prettier.resolveConfig(readmePath);
-    return prettier.format(content, {
-      ...(config || {}),
-      filepath: readmePath,
-    });
+    const formatted = execFileSync(
+      'bunx',
+      ['@biomejs/biome', 'format', '--stdin-file-path', readmePath],
+      {
+        input: content,
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+      }
+    );
+    return formatted;
   } catch (err) {
-    console.warn('Warning: failed to format README with Prettier:', err.message);
+
+    console.warn('Warning: Biome formatting skipped for markdown:', err.message);
     return `${content.trimEnd()}\n`;
   }
 };
