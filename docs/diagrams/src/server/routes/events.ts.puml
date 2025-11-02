@@ -1,0 +1,15 @@
+@startuml server__routes__events_ts
+title server/routes/events.ts
+class "server/routes/events.ts" as server_routes_events_ts <<Module>> {
+  + default default
+}
+note bottom of server_routes_events_ts
+  Imports:
+    Local:
+    - server/middleware/auth
+    - server/types/events
+    External:
+    - $lib/firebase/firebase.admin
+    - hono
+end note
+@enduml

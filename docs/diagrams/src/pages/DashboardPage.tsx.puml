@@ -1,0 +1,6 @@
+@startuml pages__DashboardPage_tsx
+title pages/DashboardPage.tsx
+class "pages/DashboardPage.tsx" as pages_DashboardPage_tsx <<Artifact>> {
+  -- no exports --
+}
+@enduml

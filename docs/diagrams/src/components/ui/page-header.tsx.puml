@@ -1,0 +1,6 @@
+@startuml components__ui__page_header_tsx
+title components/ui/page-header.tsx
+class "components/ui/page-header.tsx" as components_ui_page_header_tsx <<Artifact>> {
+  -- no exports --
+}
+@enduml

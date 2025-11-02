@@ -7,6 +7,5 @@ note bottom of lib_sample_spec_ts
   Imports:
     External:
     - firebase/firestore
-    - vitest
 end note
 @enduml
