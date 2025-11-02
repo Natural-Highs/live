@@ -10,6 +10,10 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 serviceAccount.json
 *.log
+.logs
 dist/
 .vite/
+test-results/
 coverage/
+.doppler.token
+.doppler.yaml.local
