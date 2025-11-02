@@ -1,9 +1,6 @@
 import type { Page } from '@playwright/test';
 
-export async function waitForServer(
-  url: string,
-  maxRetries = 30
-): Promise<boolean> {
+export async function waitForServer(url: string, maxRetries = 30): Promise<boolean> {
   for (let i = 0; i < maxRetries; i++) {
     try {
       const response = await fetch(url);
@@ -13,7 +10,7 @@ export async function waitForServer(
     } catch {
       // Server not ready yet
     }
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 1000));
   }
   return false;
 }
@@ -48,11 +45,7 @@ export async function createTestUser(
   }
 }
 
-export async function loginAsUser(
-  page: Page,
-  email: string,
-  password: string
-): Promise<void> {
+export async function loginAsUser(page: Page, email: string, password: string): Promise<void> {
   await page.goto('/authentication');
   await page.fill('input[id="login-email"]', email);
   await page.fill('input[id="login-password"]', password);

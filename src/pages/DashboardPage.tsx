@@ -80,9 +80,7 @@ const DashboardPage: React.FC = () => {
       setEventCode('');
       window.location.reload();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : 'Failed to register for event'
-      );
+      setError(err instanceof Error ? err.message : 'Failed to register for event');
       setSubmittingCode(false);
     }
   };
@@ -116,9 +114,7 @@ const DashboardPage: React.FC = () => {
           <div className="mb-4 flex justify-center">
             <Logo size="md" />
           </div>
-          <h1 className="text-4xl font-bold text-base-content mb-2">
-            Dashboard
-          </h1>
+          <h1 className="text-4xl font-bold text-base-content mb-2">Dashboard</h1>
           <p className="text-sm opacity-70">
             Welcome{user?.email ? `, ${user.email.split('@')[0]}` : ''}!
           </p>
@@ -126,12 +122,8 @@ const DashboardPage: React.FC = () => {
 
         <div className="space-y-6">
           <FormContainer>
-            <h2 className="text-2xl font-semibold text-base-content mb-4">
-              Join an Event
-            </h2>
-            <p className="text-sm opacity-70 mb-4">
-              Enter your 4-digit event code to register
-            </p>
+            <h2 className="text-2xl font-semibold text-base-content mb-4">Join an Event</h2>
+            <p className="text-sm opacity-70 mb-4">Enter your 4-digit event code to register</p>
 
             {error && (
               <div className="alert alert-error mb-4">
@@ -154,7 +146,7 @@ const DashboardPage: React.FC = () => {
                   id="eventCode"
                   type="text"
                   value={eventCode}
-                  onChange={(e) => setEventCode(e.target.value)}
+                  onChange={e => setEventCode(e.target.value)}
                   placeholder="Enter 4-digit code"
                   maxLength={4}
                   className="input input-bordered text-center text-2xl tracking-widest"
@@ -172,9 +164,7 @@ const DashboardPage: React.FC = () => {
           </FormContainer>
 
           <div>
-            <h2 className="text-2xl font-semibold text-base-content mb-4">
-              My Events
-            </h2>
+            <h2 className="text-2xl font-semibold text-base-content mb-4">My Events</h2>
             {events.length === 0 ? (
               <div className="card bg-base-200 shadow-xl">
                 <div className="card-body">
@@ -185,19 +175,14 @@ const DashboardPage: React.FC = () => {
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {events.map((event) => (
+                {events.map(event => (
                   <div key={event.id} className="card bg-base-200 shadow-xl">
                     <div className="card-body">
-                      <h3 className="card-title text-base-content">
-                        {event.name}
-                      </h3>
+                      <h3 className="card-title text-base-content">{event.name}</h3>
                       <p className="text-sm opacity-70">
-                        Date:{' '}
-                        {formatDate(event.eventDate as string | undefined)}
+                        Date: {formatDate(event.eventDate as string | undefined)}
                       </p>
-                      {event.code && (
-                        <p className="text-sm opacity-70">Code: {event.code}</p>
-                      )}
+                      {event.code && <p className="text-sm opacity-70">Code: {event.code}</p>}
                       <div className="card-actions justify-end mt-4">
                         <button
                           type="button"
@@ -218,9 +203,7 @@ const DashboardPage: React.FC = () => {
           </div>
 
           <div>
-            <h2 className="text-2xl font-semibold text-base-content mb-4">
-              Available Surveys
-            </h2>
+            <h2 className="text-2xl font-semibold text-base-content mb-4">Available Surveys</h2>
             <div className="card bg-base-200 shadow-xl">
               <div className="card-body">
                 <p className="text-base-content opacity-70">

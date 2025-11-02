@@ -1,9 +1,9 @@
 #!/usr/bin/env node
+import { execFileSync } from 'node:child_process';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { execFileSync } from 'node:child_process';
 import ts from 'typescript';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -564,7 +564,6 @@ const formatMarkdown = async content => {
     );
     return formatted;
   } catch (err) {
-
     console.warn('Warning: Biome formatting skipped for markdown:', err.message);
     return `${content.trimEnd()}\n`;
   }
