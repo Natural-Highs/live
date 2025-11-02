@@ -60,7 +60,9 @@ jobs:
           key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock') }}
           restore-keys: ${{ runner.os }}-bun-
       - run: bun install --no-progress
-      - run: bun run check:biome
+      - name: Biome Check
+        timeout-minutes: 2
+        run: bun run check:biome
 
   typecheck:
     name: Type Check
