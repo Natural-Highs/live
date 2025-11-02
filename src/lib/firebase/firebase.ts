@@ -1,29 +1,57 @@
-// Import the functions you need from the SDKs you need
-
 import type { ServiceAccount } from 'firebase-admin';
 import admin from 'firebase-admin';
-import serviceAccount from '../../../serviceAccount.json';
 
 if (!admin.apps.length) {
+  // Service account can come from:
+  // 1. Doppler secret (FIREBASE_SERVICE_ACCOUNT as JSON string)
+  // 2. serviceAccount.json file (fallback for local dev)
+  let serviceAccount: ServiceAccount;
+
+  if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+    try {
+      serviceAccount = JSON.parse(
+        process.env.FIREBASE_SERVICE_ACCOUNT
+      ) as ServiceAccount;
+    } catch (error) {
+      console.error(
+        'Failed to parse FIREBASE_SERVICE_ACCOUNT from Doppler:',
+        error
+      );
+      throw new Error('Invalid FIREBASE_SERVICE_ACCOUNT format');
+    }
+  } else {
+    try {
+      serviceAccount =
+        require('../../../serviceAccount.json') as ServiceAccount;
+    } catch (error) {
+      console.error('Failed to load serviceAccount.json:', error);
+      throw new Error(
+        'Firebase Admin requires either FIREBASE_SERVICE_ACCOUNT env var or serviceAccount.json file'
+      );
+    }
+  }
+
+  const storageBucket =
+    process.env.FIREBASE_STORAGE_BUCKET || serviceAccount.projectId
+      ? `${serviceAccount.projectId}.appspot.com`
+      : 'sveltekit-fullstack-c259e.appspot.com';
+
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount as ServiceAccount),
-    storageBucket: 'sveltekit-fullstack-c259e.appspot.com',
+    credential: admin.credential.cert(serviceAccount),
+    storageBucket,
   });
-  const firestoreEmulatorHost = 'localhost:8080'; // Default port for Firestore emulator
+
+  const firestoreEmulatorHost = 'localhost:8080';
   admin.firestore().settings({
     host: firestoreEmulatorHost,
     ssl: false,
   });
 }
 
-// Configure Firestore to use the emulator
-
-// If running the Firebase Auth emulator, set the emulator host
 if (process.env.MODE === 'development') {
-  process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099'; // replace 9099 with your emulator port if it's different
+  process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099';
 }
 
-// Export the Firestore and Auth instances for use in your application
 export const db = admin.firestore();
 export const auth = admin.auth();
 export const bucket = admin.storage().bucket();
