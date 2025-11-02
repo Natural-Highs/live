@@ -16,18 +16,9 @@
       "correctness": {
         "noUnusedVariables": "error"
       },
-      "style": {
-        "noParameterAssign": "error",
-        "useConst": "error",
-        "useExportType": "error",
-        "useImportType": "error"
-      },
       "suspicious": {
         "noExplicitAny": "error",
         "noDoubleEquals": "error"
-      },
-      "complexity": {
-        "noForEach": "off"
       }
     }
   },
@@ -52,12 +43,19 @@
     }
   },
   "files": {
-    "ignoreUnknown": true
+    "ignoreUnknown": true,
+    "includes": [
+      "src/**",
+      "tests/**",
+      "scripts/**",
+      "*.config.ts",
+      "*.config.js",
+      "*.config.mjs",
+      "*.config.cjs",
+      "*.json"
+    ]
   },
   "css": {
-    "parser": {
-      "tailwindDirectives": true
-    },
     "linter": {
       "enabled": false
     }
