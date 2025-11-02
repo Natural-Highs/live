@@ -11,9 +11,7 @@ test.describe('Authentication Flow', () => {
     await page.goto('/');
   });
 
-  test('redirects to authentication page when not logged in', async ({
-    page,
-  }) => {
+  test('redirects to authentication page when not logged in', async ({ page }) => {
     await expect(page).toHaveURL(/.*authentication/);
   });
 
@@ -37,22 +35,14 @@ test.describe('Authentication Flow', () => {
     await page.click('button[type="submit"]');
 
     // Wait for React Hook Form validation to complete
-    await page
-      .waitForSelector('.label-text-alt.text-error', { timeout: 2000 })
-      .catch(() => {
-        // If selector not found, check for any error text
-      });
+    await page.waitForSelector('.label-text-alt.text-error', { timeout: 2000 }).catch(() => {
+      // If selector not found, check for any error text
+    });
 
     // Check for error messages - React Hook Form shows errors in label-text-alt with text-error
-    const errorTexts = await page
-      .locator('.label-text-alt.text-error')
-      .allTextContents();
-    const hasEmailError = errorTexts.some((text) =>
-      text.includes('Invalid email')
-    );
-    const hasPasswordError = errorTexts.some((text) =>
-      text.includes('Password must be at least 6')
-    );
+    const errorTexts = await page.locator('.label-text-alt.text-error').allTextContents();
+    const hasEmailError = errorTexts.some(text => text.includes('Invalid email'));
+    const hasPasswordError = errorTexts.some(text => text.includes('Password must be at least 6'));
 
     expect(hasEmailError || hasPasswordError).toBe(true);
   });

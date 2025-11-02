@@ -24,9 +24,7 @@ test('debug auth page', async ({ page }) => {
   await page.screenshot({ path: 'debug-after-submit.png' });
 
   // Log all error-related elements
-  const errorElements = await page
-    .locator('[class*="error"], .text-error, .label-text-alt')
-    .all();
+  const errorElements = await page.locator('[class*="error"], .text-error, .label-text-alt').all();
   console.log(`Found ${errorElements.length} error-related elements`);
 
   for (const element of errorElements) {

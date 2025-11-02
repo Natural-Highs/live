@@ -15,9 +15,7 @@ const Button: React.FC<{ children: React.ReactNode; className?: string }> = ({
 describe('Button Component', () => {
   it('renders button with children', () => {
     render(<Button>Click me</Button>);
-    expect(
-      screen.getByRole('button', { name: /click me/i })
-    ).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /click me/i })).toBeInTheDocument();
   });
 
   it('applies custom className', () => {

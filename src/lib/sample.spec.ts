@@ -34,7 +34,7 @@ describe('Firebase Firestore Tests', () => {
     const collectionRef = collection(mockDb, 'users');
     const userDocs = await getDocs(collectionRef);
 
-    const users = userDocs.docs.map((doc) => doc.data());
+    const users = userDocs.docs.map(doc => doc.data());
     expect(users).toEqual([
       { email: 'abc@gmail.com', name: 'Bob Fred' },
       { email: 'def@gmail.com', name: 'John Green' },
@@ -48,8 +48,8 @@ describe('Firebase Firestore Tests', () => {
     const mockDb = {} as Parameters<typeof collection>[0];
     const collectionRef = collection(mockDb, 'users');
     const userDocs = await getDocs(collectionRef);
-    const users = userDocs.docs.map((doc) => doc.data());
-    const user = users.find((u) => u.email === 'abc@gmail.com');
+    const users = userDocs.docs.map(doc => doc.data());
+    const user = users.find(u => u.email === 'abc@gmail.com');
 
     expect(user).toEqual({ email: 'abc@gmail.com', name: 'Bob Fred' });
   });
@@ -58,8 +58,8 @@ describe('Firebase Firestore Tests', () => {
     const mockDb = {} as Parameters<typeof collection>[0];
     const collectionRef = collection(mockDb, 'users');
     const userDocs = await getDocs(collectionRef);
-    const users = userDocs.docs.map((doc) => doc.data());
-    const user = users.find((u) => u.name === 'John Green');
+    const users = userDocs.docs.map(doc => doc.data());
+    const user = users.find(u => u.name === 'John Green');
     expect(user).toEqual({ email: 'def@gmail.com', name: 'John Green' });
   });
 });

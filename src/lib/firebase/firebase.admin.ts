@@ -10,21 +10,15 @@ if (!admin.apps.length) {
   if (process.env.FIREBASE_SERVICE_ACCOUNT) {
     // Parse JSON string from Doppler
     try {
-      serviceAccount = JSON.parse(
-        process.env.FIREBASE_SERVICE_ACCOUNT
-      ) as ServiceAccount;
+      serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT) as ServiceAccount;
     } catch (error) {
-      console.error(
-        'Failed to parse FIREBASE_SERVICE_ACCOUNT from Doppler:',
-        error
-      );
+      console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT from Doppler:', error);
       throw new Error('Invalid FIREBASE_SERVICE_ACCOUNT format');
     }
   } else {
     // Fallback to serviceAccount.json file (for local dev without Doppler)
     try {
-      serviceAccount =
-        require('../../../serviceAccount.json') as ServiceAccount;
+      serviceAccount = require('../../../serviceAccount.json') as ServiceAccount;
     } catch (error) {
       console.error('Failed to load serviceAccount.json:', error);
       throw new Error(

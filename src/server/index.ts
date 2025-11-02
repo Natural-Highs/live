@@ -23,7 +23,7 @@ app.use(
   })
 );
 
-app.get('/health', (c) => c.json({ status: 'ok' }));
+app.get('/health', c => c.json({ status: 'ok' }));
 
 // API routes
 app.route('/api/auth', authRoutes);
@@ -40,9 +40,7 @@ app.route('/api/userResponses', surveyRoutes);
 
 app.onError(errorHandler);
 
-const port = Number(
-  process.env.PORT || process.env.BUN_PORT || process.env.NODE_PORT || 3000
-);
+const port = Number(process.env.PORT || process.env.BUN_PORT || process.env.NODE_PORT || 3000);
 
 const server = Bun.serve({
   port,
