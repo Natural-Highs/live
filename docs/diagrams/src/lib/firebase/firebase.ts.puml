@@ -11,6 +11,5 @@ note bottom of lib_firebase_firebase_ts
     - ../serviceAccount.json
     External:
     - firebase-admin
-    - firebase/auth
 end note
 @enduml

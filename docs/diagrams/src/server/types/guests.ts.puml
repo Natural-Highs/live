@@ -1,0 +1,9 @@
+@startuml server__types__guests_ts
+title server/types/guests.ts
+class "server/types/guests.ts" as server_types_guests_ts <<Module>> {
+  + interface GuestCodeValidationRequest
+  + interface GuestCodeValidationResponse
+  + interface GuestRegistrationRequest
+  + interface GuestRegistrationResponse
+}
+@enduml

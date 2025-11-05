@@ -6,7 +6,7 @@
 
 1. Save any changes in project root `src/` to be rendered
    - `docs/diagrams/src/` is root `*.puml` equivalent
-2. Run `npm run docs:puml`
+2. Run `bun run docs:puml`
    - rebuilds`.puml` sources
    - refreshes PNG previews
    - rewrites the catalog below
@@ -17,26 +17,66 @@
 
 <!-- DIAGRAM-LIST:START -->
 <details>
-<summary>src [5]</summary>
+<summary>src [6]</summary>
 
-| Source          | Diagram                                     | Details                                                                                                                 |
-| --------------- | ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| app.css         | ![app_css](src/app_css.png)                 | Path: [`src/app.css.puml`](src/app.css.puml)<br/>Diagram ID: `app_css`<br/>Stereotype: `Styles`                         |
-| app.d.ts        | ![app_d_ts](src/app_d_ts.png)               | Path: [`src/app.d.ts.puml`](src/app.d.ts.puml)<br/>Diagram ID: `app_d_ts`<br/>Stereotype: `Module`                      |
-| app.html        | ![app_html](src/app_html.png)               | Path: [`src/app.html.puml`](src/app.html.puml)<br/>Diagram ID: `app_html`<br/>Stereotype: `Markup`                      |
-| hooks.server.ts | ![hooks_server_ts](src/hooks_server_ts.png) | Path: [`src/hooks.server.ts.puml`](src/hooks.server.ts.puml)<br/>Diagram ID: `hooks_server_ts`<br/>Stereotype: `Module` |
-| index.test.ts   | ![index_test_ts](src/index_test_ts.png)     | Path: [`src/index.test.ts.puml`](src/index.test.ts.puml)<br/>Diagram ID: `index_test_ts`<br/>Stereotype: `Module`       |
+| Source        | Diagram                                 | Details                                                                                                           |
+| ------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| app.css       | ![app_css](src/app_css.png)             | Path: [`src/app.css.puml`](src/app.css.puml)<br/>Diagram ID: `app_css`<br/>Stereotype: `Styles`                   |
+| app.d.ts      | ![app_d_ts](src/app_d_ts.png)           | Path: [`src/app.d.ts.puml`](src/app.d.ts.puml)<br/>Diagram ID: `app_d_ts`<br/>Stereotype: `Module`                |
+| app.html      | ![app_html](src/app_html.png)           | Path: [`src/app.html.puml`](src/app.html.puml)<br/>Diagram ID: `app_html`<br/>Stereotype: `Markup`                |
+| App.tsx       | ![App_tsx](src/App_tsx.png)             | Path: [`src/App.tsx.puml`](src/App.tsx.puml)<br/>Diagram ID: `App_tsx`<br/>Stereotype: `Artifact`                 |
+| index.test.ts | ![index_test_ts](src/index_test_ts.png) | Path: [`src/index.test.ts.puml`](src/index.test.ts.puml)<br/>Diagram ID: `index_test_ts`<br/>Stereotype: `Module` |
+| main.tsx      | ![main_tsx](src/main_tsx.png)           | Path: [`src/main.tsx.puml`](src/main.tsx.puml)<br/>Diagram ID: `main_tsx`<br/>Stereotype: `Artifact`              |
 
 </details>
 
 <details>
-<summary>src/lib [9]</summary>
+<summary>src/components [11]</summary>
+
+| Source                        | Diagram                                                                              | Details                                                                                                                                                              |
+| ----------------------------- | ------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| components/AdminRoute.tsx     | ![components__AdminRoute_tsx](src/components/components__AdminRoute_tsx.png)         | Path: [`src/components/AdminRoute.tsx.puml`](src/components/AdminRoute.tsx.puml)<br/>Diagram ID: `components__AdminRoute_tsx`<br/>Stereotype: `Artifact`             |
+| components/Layout.tsx         | ![components__Layout_tsx](src/components/components__Layout_tsx.png)                 | Path: [`src/components/Layout.tsx.puml`](src/components/Layout.tsx.puml)<br/>Diagram ID: `components__Layout_tsx`<br/>Stereotype: `Artifact`                         |
+| components/Navbar.tsx         | ![components__Navbar_tsx](src/components/components__Navbar_tsx.png)                 | Path: [`src/components/Navbar.tsx.puml`](src/components/Navbar.tsx.puml)<br/>Diagram ID: `components__Navbar_tsx`<br/>Stereotype: `Artifact`                         |
+| components/ProtectedRoute.tsx | ![components__ProtectedRoute_tsx](src/components/components__ProtectedRoute_tsx.png) | Path: [`src/components/ProtectedRoute.tsx.puml`](src/components/ProtectedRoute.tsx.puml)<br/>Diagram ID: `components__ProtectedRoute_tsx`<br/>Stereotype: `Artifact` |
+
+<details>
+<summary>src/components/ui [7]</summary>
+
+| Source                           | Diagram                                                                                         | Details                                                                                                                                                                        |
+| -------------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| components/ui/button.test.tsx    | ![components__ui__button_test_tsx](src/components/ui/components__ui__button_test_tsx.png)       | Path: [`src/components/ui/button.test.tsx.puml`](src/components/ui/button.test.tsx.puml)<br/>Diagram ID: `components__ui__button_test_tsx`<br/>Stereotype: `Artifact`          |
+| components/ui/chart.tsx          | ![components__ui__chart_tsx](src/components/ui/components__ui__chart_tsx.png)                   | Path: [`src/components/ui/chart.tsx.puml`](src/components/ui/chart.tsx.puml)<br/>Diagram ID: `components__ui__chart_tsx`<br/>Stereotype: `Artifact`                            |
+| components/ui/divider.tsx        | ![components__ui__divider_tsx](src/components/ui/components__ui__divider_tsx.png)               | Path: [`src/components/ui/divider.tsx.puml`](src/components/ui/divider.tsx.puml)<br/>Diagram ID: `components__ui__divider_tsx`<br/>Stereotype: `Artifact`                      |
+| components/ui/form-container.tsx | ![components__ui__form_container_tsx](src/components/ui/components__ui__form_container_tsx.png) | Path: [`src/components/ui/form-container.tsx.puml`](src/components/ui/form-container.tsx.puml)<br/>Diagram ID: `components__ui__form_container_tsx`<br/>Stereotype: `Artifact` |
+| components/ui/logo.tsx           | ![components__ui__logo_tsx](src/components/ui/components__ui__logo_tsx.png)                     | Path: [`src/components/ui/logo.tsx.puml`](src/components/ui/logo.tsx.puml)<br/>Diagram ID: `components__ui__logo_tsx`<br/>Stereotype: `Artifact`                               |
+| components/ui/page-container.tsx | ![components__ui__page_container_tsx](src/components/ui/components__ui__page_container_tsx.png) | Path: [`src/components/ui/page-container.tsx.puml`](src/components/ui/page-container.tsx.puml)<br/>Diagram ID: `components__ui__page_container_tsx`<br/>Stereotype: `Artifact` |
+| components/ui/page-header.tsx    | ![components__ui__page_header_tsx](src/components/ui/components__ui__page_header_tsx.png)       | Path: [`src/components/ui/page-header.tsx.puml`](src/components/ui/page-header.tsx.puml)<br/>Diagram ID: `components__ui__page_header_tsx`<br/>Stereotype: `Artifact`          |
+
+</details>
+</details>
+<details>
+<summary>src/context [2]</summary>
+
+| Source                  | Diagram                                                               | Details                                                                                                                                            |
+| ----------------------- | --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| context/AuthContext.tsx | ![context__AuthContext_tsx](src/context/context__AuthContext_tsx.png) | Path: [`src/context/AuthContext.tsx.puml`](src/context/AuthContext.tsx.puml)<br/>Diagram ID: `context__AuthContext_tsx`<br/>Stereotype: `Artifact` |
+
+<details>
+<summary>src/context/types [1]</summary>
+
+| Source                       | Diagram                                                                                 | Details                                                                                                                                                          |
+| ---------------------------- | --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| context/types/authContext.ts | ![context__types__authContext_ts](src/context/types/context__types__authContext_ts.png) | Path: [`src/context/types/authContext.ts.puml`](src/context/types/authContext.ts.puml)<br/>Diagram ID: `context__types__authContext_ts`<br/>Stereotype: `Module` |
+
+</details>
+</details>
+<details>
+<summary>src/lib [7]</summary>
 
 | Source             | Diagram                                                 | Details                                                                                                                           |
 | ------------------ | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | lib/index.ts       | ![lib__index_ts](src/lib/lib__index_ts.png)             | Path: [`src/lib/index.ts.puml`](src/lib/index.ts.puml)<br/>Diagram ID: `lib__index_ts`<br/>Stereotype: `Module`                   |
-| lib/qr-code.ts     | ![lib__qr_code_ts](src/lib/lib__qr_code_ts.png)         | Path: [`src/lib/qr-code.ts.puml`](src/lib/qr-code.ts.puml)<br/>Diagram ID: `lib__qr_code_ts`<br/>Stereotype: `Module`             |
-| lib/redisConfig.js | ![lib__redisConfig_js](src/lib/lib__redisConfig_js.png) | Path: [`src/lib/redisConfig.js.puml`](src/lib/redisConfig.js.puml)<br/>Diagram ID: `lib__redisConfig_js`<br/>Stereotype: `Module` |
 | lib/sample.spec.ts | ![lib__sample_spec_ts](src/lib/lib__sample_spec_ts.png) | Path: [`src/lib/sample.spec.ts.puml`](src/lib/sample.spec.ts.puml)<br/>Diagram ID: `lib__sample_spec_ts`<br/>Stereotype: `Module` |
 
 <details>
@@ -67,185 +107,67 @@
 </details>
 </details>
 <details>
-<summary>src/routes [37]</summary>
+<summary>src/pages [7]</summary>
 
-| Source                 | Diagram                                                          | Details                                                                                                                                               |
-| ---------------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| routes/+layout.svelte  | ![routes__layout_svelte](src/routes/routes__layout_svelte.png)   | Path: [`src/routes/+layout.svelte.puml`](src/routes/+layout.svelte.puml)<br/>Diagram ID: `routes__layout_svelte`<br/>Stereotype: `SvelteComponent`    |
-| routes/+page.server.ts | ![routes__page_server_ts](src/routes/routes__page_server_ts.png) | Path: [`src/routes/+page.server.ts.puml`](src/routes/+page.server.ts.puml)<br/>Diagram ID: `routes__page_server_ts`<br/>Stereotype: `SvelteKitModule` |
-| routes/+page.svelte    | ![routes__page_svelte](src/routes/routes__page_svelte.png)       | Path: [`src/routes/+page.svelte.puml`](src/routes/+page.svelte.puml)<br/>Diagram ID: `routes__page_svelte`<br/>Stereotype: `SvelteComponent`          |
-| routes/navbar.svelte   | ![routes__navbar_svelte](src/routes/routes__navbar_svelte.png)   | Path: [`src/routes/navbar.svelte.puml`](src/routes/navbar.svelte.puml)<br/>Diagram ID: `routes__navbar_svelte`<br/>Stereotype: `SvelteComponent`      |
-
-<details>
-<summary>src/routes/admin [13]</summary>
-
-| Source                         | Diagram                                                                                  | Details                                                                                                                                                                        |
-| ------------------------------ | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| routes/admin/+layout.server.ts | ![routes__admin__layout_server_ts](src/routes/admin/routes__admin__layout_server_ts.png) | Path: [`src/routes/admin/+layout.server.ts.puml`](src/routes/admin/+layout.server.ts.puml)<br/>Diagram ID: `routes__admin__layout_server_ts`<br/>Stereotype: `SvelteKitModule` |
-| routes/admin/+layout.svelte    | ![routes__admin__layout_svelte](src/routes/admin/routes__admin__layout_svelte.png)       | Path: [`src/routes/admin/+layout.svelte.puml`](src/routes/admin/+layout.svelte.puml)<br/>Diagram ID: `routes__admin__layout_svelte`<br/>Stereotype: `SvelteComponent`          |
-| routes/admin/+page.server.ts   | ![routes__admin__page_server_ts](src/routes/admin/routes__admin__page_server_ts.png)     | Path: [`src/routes/admin/+page.server.ts.puml`](src/routes/admin/+page.server.ts.puml)<br/>Diagram ID: `routes__admin__page_server_ts`<br/>Stereotype: `SvelteKitModule`       |
-| routes/admin/+page.svelte      | ![routes__admin__page_svelte](src/routes/admin/routes__admin__page_svelte.png)           | Path: [`src/routes/admin/+page.svelte.puml`](src/routes/admin/+page.svelte.puml)<br/>Diagram ID: `routes__admin__page_svelte`<br/>Stereotype: `SvelteComponent`                |
-
-<details>
-<summary>src/routes/admin/charts [1]</summary>
-
-| Source                           | Diagram                                                                                               | Details                                                                                                                                                                               |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| routes/admin/charts/+page.svelte | ![routes__admin__charts__page_svelte](src/routes/admin/charts/routes__admin__charts__page_svelte.png) | Path: [`src/routes/admin/charts/+page.svelte.puml`](src/routes/admin/charts/+page.svelte.puml)<br/>Diagram ID: `routes__admin__charts__page_svelte`<br/>Stereotype: `SvelteComponent` |
+| Source                       | Diagram                                                                       | Details                                                                                                                                                           |
+| ---------------------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| pages/AdminPage.tsx          | ![pages__AdminPage_tsx](src/pages/pages__AdminPage_tsx.png)                   | Path: [`src/pages/AdminPage.tsx.puml`](src/pages/AdminPage.tsx.puml)<br/>Diagram ID: `pages__AdminPage_tsx`<br/>Stereotype: `Artifact`                            |
+| pages/AuthenticationPage.tsx | ![pages__AuthenticationPage_tsx](src/pages/pages__AuthenticationPage_tsx.png) | Path: [`src/pages/AuthenticationPage.tsx.puml`](src/pages/AuthenticationPage.tsx.puml)<br/>Diagram ID: `pages__AuthenticationPage_tsx`<br/>Stereotype: `Artifact` |
+| pages/ConsentFormPage.tsx    | ![pages__ConsentFormPage_tsx](src/pages/pages__ConsentFormPage_tsx.png)       | Path: [`src/pages/ConsentFormPage.tsx.puml`](src/pages/ConsentFormPage.tsx.puml)<br/>Diagram ID: `pages__ConsentFormPage_tsx`<br/>Stereotype: `Artifact`          |
+| pages/DashboardPage.tsx      | ![pages__DashboardPage_tsx](src/pages/pages__DashboardPage_tsx.png)           | Path: [`src/pages/DashboardPage.tsx.puml`](src/pages/DashboardPage.tsx.puml)<br/>Diagram ID: `pages__DashboardPage_tsx`<br/>Stereotype: `Artifact`                |
+| pages/HomePage.tsx           | ![pages__HomePage_tsx](src/pages/pages__HomePage_tsx.png)                     | Path: [`src/pages/HomePage.tsx.puml`](src/pages/HomePage.tsx.puml)<br/>Diagram ID: `pages__HomePage_tsx`<br/>Stereotype: `Artifact`                               |
+| pages/SignUpPage1.tsx        | ![pages__SignUpPage1_tsx](src/pages/pages__SignUpPage1_tsx.png)               | Path: [`src/pages/SignUpPage1.tsx.puml`](src/pages/SignUpPage1.tsx.puml)<br/>Diagram ID: `pages__SignUpPage1_tsx`<br/>Stereotype: `Artifact`                      |
+| pages/SignUpPage2.tsx        | ![pages__SignUpPage2_tsx](src/pages/pages__SignUpPage2_tsx.png)               | Path: [`src/pages/SignUpPage2.tsx.puml`](src/pages/SignUpPage2.tsx.puml)<br/>Diagram ID: `pages__SignUpPage2_tsx`<br/>Stereotype: `Artifact`                      |
 
 </details>
 <details>
-<summary>src/routes/admin/qrCode [3]</summary>
+<summary>src/server [22]</summary>
 
-| Source                               | Diagram                                                                                                         | Details                                                                                                                                                                                            |
-| ------------------------------------ | --------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| routes/admin/qrCode/+page.server.ts  | ![routes__admin__qrCode__page_server_ts](src/routes/admin/qrCode/routes__admin__qrCode__page_server_ts.png)     | Path: [`src/routes/admin/qrCode/+page.server.ts.puml`](src/routes/admin/qrCode/+page.server.ts.puml)<br/>Diagram ID: `routes__admin__qrCode__page_server_ts`<br/>Stereotype: `SvelteKitModule`     |
-| routes/admin/qrCode/+page.svelte     | ![routes__admin__qrCode__page_svelte](src/routes/admin/qrCode/routes__admin__qrCode__page_svelte.png)           | Path: [`src/routes/admin/qrCode/+page.svelte.puml`](src/routes/admin/qrCode/+page.svelte.puml)<br/>Diagram ID: `routes__admin__qrCode__page_svelte`<br/>Stereotype: `SvelteComponent`              |
-| routes/admin/qrCode/QRScanner.svelte | ![routes__admin__qrCode__QRScanner_svelte](src/routes/admin/qrCode/routes__admin__qrCode__QRScanner_svelte.png) | Path: [`src/routes/admin/qrCode/QRScanner.svelte.puml`](src/routes/admin/qrCode/QRScanner.svelte.puml)<br/>Diagram ID: `routes__admin__qrCode__QRScanner_svelte`<br/>Stereotype: `SvelteComponent` |
+| Source          | Diagram                                              | Details                                                                                                                  |
+| --------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| server/index.ts | ![server__index_ts](src/server/server__index_ts.png) | Path: [`src/server/index.ts.puml`](src/server/index.ts.puml)<br/>Diagram ID: `server__index_ts`<br/>Stereotype: `Module` |
+| server/types.ts | ![server__types_ts](src/server/server__types_ts.png) | Path: [`src/server/types.ts.puml`](src/server/types.ts.puml)<br/>Diagram ID: `server__types_ts`<br/>Stereotype: `Module` |
+
+<details>
+<summary>src/server/middleware [2]</summary>
+
+| Source                            | Diagram                                                                                               | Details                                                                                                                                                                         |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| server/middleware/auth.ts         | ![server__middleware__auth_ts](src/server/middleware/server__middleware__auth_ts.png)                 | Path: [`src/server/middleware/auth.ts.puml`](src/server/middleware/auth.ts.puml)<br/>Diagram ID: `server__middleware__auth_ts`<br/>Stereotype: `Module`                         |
+| server/middleware/errorHandler.ts | ![server__middleware__errorHandler_ts](src/server/middleware/server__middleware__errorHandler_ts.png) | Path: [`src/server/middleware/errorHandler.ts.puml`](src/server/middleware/errorHandler.ts.puml)<br/>Diagram ID: `server__middleware__errorHandler_ts`<br/>Stereotype: `Module` |
 
 </details>
 <details>
-<summary>src/routes/admin/survey [5]</summary>
+<summary>src/server/routes [8]</summary>
 
-| Source                              | Diagram                                                                                                     | Details                                                                                                                                                                                        |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| routes/admin/survey/+page.server.ts | ![routes__admin__survey__page_server_ts](src/routes/admin/survey/routes__admin__survey__page_server_ts.png) | Path: [`src/routes/admin/survey/+page.server.ts.puml`](src/routes/admin/survey/+page.server.ts.puml)<br/>Diagram ID: `routes__admin__survey__page_server_ts`<br/>Stereotype: `SvelteKitModule` |
-| routes/admin/survey/+page.svelte    | ![routes__admin__survey__page_svelte](src/routes/admin/survey/routes__admin__survey__page_svelte.png)       | Path: [`src/routes/admin/survey/+page.svelte.puml`](src/routes/admin/survey/+page.svelte.puml)<br/>Diagram ID: `routes__admin__survey__page_svelte`<br/>Stereotype: `SvelteComponent`          |
-
-<details>
-<summary>src/routes/admin/survey/[id] [3]</summary>
-
-| Source                                          | Diagram                                                                                                                                    | Details                                                                                                                                                                                                                             |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| routes/admin/survey/[id]/+page.server.ts        | ![routes__admin__survey__id___page_server_ts](src/routes/admin/survey/[id]/routes__admin__survey__id___page_server_ts.png)                 | Path: [`src/routes/admin/survey/[id]/+page.server.ts.puml`](src/routes/admin/survey/[id]/+page.server.ts.puml)<br/>Diagram ID: `routes__admin__survey__id___page_server_ts`<br/>Stereotype: `SvelteKitModule`                       |
-| routes/admin/survey/[id]/+page.svelte           | ![routes__admin__survey__id___page_svelte](src/routes/admin/survey/[id]/routes__admin__survey__id___page_svelte.png)                       | Path: [`src/routes/admin/survey/[id]/+page.svelte.puml`](src/routes/admin/survey/[id]/+page.svelte.puml)<br/>Diagram ID: `routes__admin__survey__id___page_svelte`<br/>Stereotype: `SvelteComponent`                                |
-| routes/admin/survey/[id]/NewQuestionForm.svelte | ![routes__admin__survey__id___NewQuestionForm_svelte](src/routes/admin/survey/[id]/routes__admin__survey__id___NewQuestionForm_svelte.png) | Path: [`src/routes/admin/survey/[id]/NewQuestionForm.svelte.puml`](src/routes/admin/survey/[id]/NewQuestionForm.svelte.puml)<br/>Diagram ID: `routes__admin__survey__id___NewQuestionForm_svelte`<br/>Stereotype: `SvelteComponent` |
-
-</details>
-</details>
-</details>
-<details>
-<summary>src/routes/api [9]</summary>
-
-<details>
-<summary>src/routes/api/adminSurvey [1]</summary>
-
-| Source                            | Diagram                                                                                                    | Details                                                                                                                                                                                    |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| routes/api/adminSurvey/+server.ts | ![routes__api__adminSurvey__server_ts](src/routes/api/adminSurvey/routes__api__adminSurvey__server_ts.png) | Path: [`src/routes/api/adminSurvey/+server.ts.puml`](src/routes/api/adminSurvey/+server.ts.puml)<br/>Diagram ID: `routes__api__adminSurvey__server_ts`<br/>Stereotype: `SvelteKitEndpoint` |
+| Source                         | Diagram                                                                                     | Details                                                                                                                                                                |
+| ------------------------------ | ------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| server/routes/auth.ts          | ![server__routes__auth_ts](src/server/routes/server__routes__auth_ts.png)                   | Path: [`src/server/routes/auth.ts.puml`](src/server/routes/auth.ts.puml)<br/>Diagram ID: `server__routes__auth_ts`<br/>Stereotype: `Module`                            |
+| server/routes/events.ts        | ![server__routes__events_ts](src/server/routes/server__routes__events_ts.png)               | Path: [`src/server/routes/events.ts.puml`](src/server/routes/events.ts.puml)<br/>Diagram ID: `server__routes__events_ts`<br/>Stereotype: `Module`                      |
+| server/routes/eventTypes.ts    | ![server__routes__eventTypes_ts](src/server/routes/server__routes__eventTypes_ts.png)       | Path: [`src/server/routes/eventTypes.ts.puml`](src/server/routes/eventTypes.ts.puml)<br/>Diagram ID: `server__routes__eventTypes_ts`<br/>Stereotype: `Module`          |
+| server/routes/forms.ts         | ![server__routes__forms_ts](src/server/routes/server__routes__forms_ts.png)                 | Path: [`src/server/routes/forms.ts.puml`](src/server/routes/forms.ts.puml)<br/>Diagram ID: `server__routes__forms_ts`<br/>Stereotype: `Module`                         |
+| server/routes/formTemplates.ts | ![server__routes__formTemplates_ts](src/server/routes/server__routes__formTemplates_ts.png) | Path: [`src/server/routes/formTemplates.ts.puml`](src/server/routes/formTemplates.ts.puml)<br/>Diagram ID: `server__routes__formTemplates_ts`<br/>Stereotype: `Module` |
+| server/routes/guests.ts        | ![server__routes__guests_ts](src/server/routes/server__routes__guests_ts.png)               | Path: [`src/server/routes/guests.ts.puml`](src/server/routes/guests.ts.puml)<br/>Diagram ID: `server__routes__guests_ts`<br/>Stereotype: `Module`                      |
+| server/routes/surveys.ts       | ![server__routes__surveys_ts](src/server/routes/server__routes__surveys_ts.png)             | Path: [`src/server/routes/surveys.ts.puml`](src/server/routes/surveys.ts.puml)<br/>Diagram ID: `server__routes__surveys_ts`<br/>Stereotype: `Module`                   |
+| server/routes/users.ts         | ![server__routes__users_ts](src/server/routes/server__routes__users_ts.png)                 | Path: [`src/server/routes/users.ts.puml`](src/server/routes/users.ts.puml)<br/>Diagram ID: `server__routes__users_ts`<br/>Stereotype: `Module`                         |
 
 </details>
 <details>
-<summary>src/routes/api/initialSurvey [1]</summary>
+<summary>src/server/types [10]</summary>
 
-| Source                              | Diagram                                                                                                          | Details                                                                                                                                                                                          |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| routes/api/initialSurvey/+server.ts | ![routes__api__initialSurvey__server_ts](src/routes/api/initialSurvey/routes__api__initialSurvey__server_ts.png) | Path: [`src/routes/api/initialSurvey/+server.ts.puml`](src/routes/api/initialSurvey/+server.ts.puml)<br/>Diagram ID: `routes__api__initialSurvey__server_ts`<br/>Stereotype: `SvelteKitEndpoint` |
-
-</details>
-<details>
-<summary>src/routes/api/login [1]</summary>
-
-| Source                      | Diagram                                                                                  | Details                                                                                                                                                                  |
-| --------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| routes/api/login/+server.ts | ![routes__api__login__server_ts](src/routes/api/login/routes__api__login__server_ts.png) | Path: [`src/routes/api/login/+server.ts.puml`](src/routes/api/login/+server.ts.puml)<br/>Diagram ID: `routes__api__login__server_ts`<br/>Stereotype: `SvelteKitEndpoint` |
-
-</details>
-<details>
-<summary>src/routes/api/logout [1]</summary>
-
-| Source                       | Diagram                                                                                     | Details                                                                                                                                                                     |
-| ---------------------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| routes/api/logout/+server.ts | ![routes__api__logout__server_ts](src/routes/api/logout/routes__api__logout__server_ts.png) | Path: [`src/routes/api/logout/+server.ts.puml`](src/routes/api/logout/+server.ts.puml)<br/>Diagram ID: `routes__api__logout__server_ts`<br/>Stereotype: `SvelteKitEndpoint` |
+| Source                        | Diagram                                                                                  | Details                                                                                                                                                             |
+| ----------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| server/types/auth.ts          | ![server__types__auth_ts](src/server/types/server__types__auth_ts.png)                   | Path: [`src/server/types/auth.ts.puml`](src/server/types/auth.ts.puml)<br/>Diagram ID: `server__types__auth_ts`<br/>Stereotype: `Module`                            |
+| server/types/events.ts        | ![server__types__events_ts](src/server/types/server__types__events_ts.png)               | Path: [`src/server/types/events.ts.puml`](src/server/types/events.ts.puml)<br/>Diagram ID: `server__types__events_ts`<br/>Stereotype: `Module`                      |
+| server/types/eventTypes.ts    | ![server__types__eventTypes_ts](src/server/types/server__types__eventTypes_ts.png)       | Path: [`src/server/types/eventTypes.ts.puml`](src/server/types/eventTypes.ts.puml)<br/>Diagram ID: `server__types__eventTypes_ts`<br/>Stereotype: `Module`          |
+| server/types/forms.ts         | ![server__types__forms_ts](src/server/types/server__types__forms_ts.png)                 | Path: [`src/server/types/forms.ts.puml`](src/server/types/forms.ts.puml)<br/>Diagram ID: `server__types__forms_ts`<br/>Stereotype: `Module`                         |
+| server/types/formTemplates.ts | ![server__types__formTemplates_ts](src/server/types/server__types__formTemplates_ts.png) | Path: [`src/server/types/formTemplates.ts.puml`](src/server/types/formTemplates.ts.puml)<br/>Diagram ID: `server__types__formTemplates_ts`<br/>Stereotype: `Module` |
+| server/types/guests.ts        | ![server__types__guests_ts](src/server/types/server__types__guests_ts.png)               | Path: [`src/server/types/guests.ts.puml`](src/server/types/guests.ts.puml)<br/>Diagram ID: `server__types__guests_ts`<br/>Stereotype: `Module`                      |
+| server/types/surveyData.ts    | ![server__types__surveyData_ts](src/server/types/server__types__surveyData_ts.png)       | Path: [`src/server/types/surveyData.ts.puml`](src/server/types/surveyData.ts.puml)<br/>Diagram ID: `server__types__surveyData_ts`<br/>Stereotype: `Module`          |
+| server/types/surveys.ts       | ![server__types__surveys_ts](src/server/types/server__types__surveys_ts.png)             | Path: [`src/server/types/surveys.ts.puml`](src/server/types/surveys.ts.puml)<br/>Diagram ID: `server__types__surveys_ts`<br/>Stereotype: `Module`                   |
+| server/types/updateData.ts    | ![server__types__updateData_ts](src/server/types/server__types__updateData_ts.png)       | Path: [`src/server/types/updateData.ts.puml`](src/server/types/updateData.ts.puml)<br/>Diagram ID: `server__types__updateData_ts`<br/>Stereotype: `Module`          |
+| server/types/users.ts         | ![server__types__users_ts](src/server/types/server__types__users_ts.png)                 | Path: [`src/server/types/users.ts.puml`](src/server/types/users.ts.puml)<br/>Diagram ID: `server__types__users_ts`<br/>Stereotype: `Module`                         |
 
 </details>
-<details>
-<summary>src/routes/api/sessionLogin [1]</summary>
-
-| Source                             | Diagram                                                                                                       | Details                                                                                                                                                                                       |
-| ---------------------------------- | ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| routes/api/sessionLogin/+server.ts | ![routes__api__sessionLogin__server_ts](src/routes/api/sessionLogin/routes__api__sessionLogin__server_ts.png) | Path: [`src/routes/api/sessionLogin/+server.ts.puml`](src/routes/api/sessionLogin/+server.ts.puml)<br/>Diagram ID: `routes__api__sessionLogin__server_ts`<br/>Stereotype: `SvelteKitEndpoint` |
-
-</details>
-<details>
-<summary>src/routes/api/surveyQuestions [1]</summary>
-
-| Source                                | Diagram                                                                                                                | Details                                                                                                                                                                                                |
-| ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| routes/api/surveyQuestions/+server.ts | ![routes__api__surveyQuestions__server_ts](src/routes/api/surveyQuestions/routes__api__surveyQuestions__server_ts.png) | Path: [`src/routes/api/surveyQuestions/+server.ts.puml`](src/routes/api/surveyQuestions/+server.ts.puml)<br/>Diagram ID: `routes__api__surveyQuestions__server_ts`<br/>Stereotype: `SvelteKitEndpoint` |
-
-</details>
-<details>
-<summary>src/routes/api/surveys [1]</summary>
-
-| Source                        | Diagram                                                                                        | Details                                                                                                                                                                        |
-| ----------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| routes/api/surveys/+server.ts | ![routes__api__surveys__server_ts](src/routes/api/surveys/routes__api__surveys__server_ts.png) | Path: [`src/routes/api/surveys/+server.ts.puml`](src/routes/api/surveys/+server.ts.puml)<br/>Diagram ID: `routes__api__surveys__server_ts`<br/>Stereotype: `SvelteKitEndpoint` |
-
-</details>
-<details>
-<summary>src/routes/api/userResponses [1]</summary>
-
-| Source                              | Diagram                                                                                                          | Details                                                                                                                                                                                          |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| routes/api/userResponses/+server.ts | ![routes__api__userResponses__server_ts](src/routes/api/userResponses/routes__api__userResponses__server_ts.png) | Path: [`src/routes/api/userResponses/+server.ts.puml`](src/routes/api/userResponses/+server.ts.puml)<br/>Diagram ID: `routes__api__userResponses__server_ts`<br/>Stereotype: `SvelteKitEndpoint` |
-
-</details>
-<details>
-<summary>src/routes/api/users [1]</summary>
-
-| Source                      | Diagram                                                                                  | Details                                                                                                                                                                  |
-| --------------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| routes/api/users/+server.ts | ![routes__api__users__server_ts](src/routes/api/users/routes__api__users__server_ts.png) | Path: [`src/routes/api/users/+server.ts.puml`](src/routes/api/users/+server.ts.puml)<br/>Diagram ID: `routes__api__users__server_ts`<br/>Stereotype: `SvelteKitEndpoint` |
-
-</details>
-</details>
-<details>
-<summary>src/routes/authentication [6]</summary>
-
-| Source                                    | Diagram                                                                                                                   | Details                                                                                                                                                                                                   |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| routes/authentication/+layout.svelte      | ![routes__authentication__layout_svelte](src/routes/authentication/routes__authentication__layout_svelte.png)             | Path: [`src/routes/authentication/+layout.svelte.puml`](src/routes/authentication/+layout.svelte.puml)<br/>Diagram ID: `routes__authentication__layout_svelte`<br/>Stereotype: `SvelteComponent`          |
-| routes/authentication/+page.server.ts     | ![routes__authentication__page_server_ts](src/routes/authentication/routes__authentication__page_server_ts.png)           | Path: [`src/routes/authentication/+page.server.ts.puml`](src/routes/authentication/+page.server.ts.puml)<br/>Diagram ID: `routes__authentication__page_server_ts`<br/>Stereotype: `SvelteKitModule`       |
-| routes/authentication/+page.svelte        | ![routes__authentication__page_svelte](src/routes/authentication/routes__authentication__page_svelte.png)                 | Path: [`src/routes/authentication/+page.svelte.puml`](src/routes/authentication/+page.svelte.puml)<br/>Diagram ID: `routes__authentication__page_svelte`<br/>Stereotype: `SvelteComponent`                |
-| routes/authentication/firebase-debug.log  | ![routes__authentication__firebase_debug_log](src/routes/authentication/routes__authentication__firebase_debug_log.png)   | Path: [`src/routes/authentication/firebase-debug.log.puml`](src/routes/authentication/firebase-debug.log.puml)<br/>Diagram ID: `routes__authentication__firebase_debug_log`<br/>Stereotype: `Artifact`    |
-| routes/authentication/firestore-debug.log | ![routes__authentication__firestore_debug_log](src/routes/authentication/routes__authentication__firestore_debug_log.png) | Path: [`src/routes/authentication/firestore-debug.log.puml`](src/routes/authentication/firestore-debug.log.puml)<br/>Diagram ID: `routes__authentication__firestore_debug_log`<br/>Stereotype: `Artifact` |
-| routes/authentication/ui-debug.log        | ![routes__authentication__ui_debug_log](src/routes/authentication/routes__authentication__ui_debug_log.png)               | Path: [`src/routes/authentication/ui-debug.log.puml`](src/routes/authentication/ui-debug.log.puml)<br/>Diagram ID: `routes__authentication__ui_debug_log`<br/>Stereotype: `Artifact`                      |
-
-</details>
-<details>
-<summary>src/routes/dashboard [3]</summary>
-
-| Source                           | Diagram                                                                                          | Details                                                                                                                                                                              |
-| -------------------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| routes/dashboard/+page.server.ts | ![routes__dashboard__page_server_ts](src/routes/dashboard/routes__dashboard__page_server_ts.png) | Path: [`src/routes/dashboard/+page.server.ts.puml`](src/routes/dashboard/+page.server.ts.puml)<br/>Diagram ID: `routes__dashboard__page_server_ts`<br/>Stereotype: `SvelteKitModule` |
-| routes/dashboard/+page.svelte    | ![routes__dashboard__page_svelte](src/routes/dashboard/routes__dashboard__page_svelte.png)       | Path: [`src/routes/dashboard/+page.svelte.puml`](src/routes/dashboard/+page.svelte.puml)<br/>Diagram ID: `routes__dashboard__page_svelte`<br/>Stereotype: `SvelteComponent`          |
-
-<details>
-<summary>src/routes/dashboard/[id] [1]</summary>
-
-| Source                             | Diagram                                                                                                   | Details                                                                                                                                                                                    |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| routes/dashboard/[id]/+page.svelte | ![routes__dashboard__id___page_svelte](src/routes/dashboard/[id]/routes__dashboard__id___page_svelte.png) | Path: [`src/routes/dashboard/[id]/+page.svelte.puml`](src/routes/dashboard/[id]/+page.svelte.puml)<br/>Diagram ID: `routes__dashboard__id___page_svelte`<br/>Stereotype: `SvelteComponent` |
-
-</details>
-</details>
-<details>
-<summary>src/routes/initialSurvey [2]</summary>
-
-| Source                               | Diagram                                                                                                      | Details                                                                                                                                                                                          |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| routes/initialSurvey/+page.server.ts | ![routes__initialSurvey__page_server_ts](src/routes/initialSurvey/routes__initialSurvey__page_server_ts.png) | Path: [`src/routes/initialSurvey/+page.server.ts.puml`](src/routes/initialSurvey/+page.server.ts.puml)<br/>Diagram ID: `routes__initialSurvey__page_server_ts`<br/>Stereotype: `SvelteKitModule` |
-| routes/initialSurvey/+page.svelte    | ![routes__initialSurvey__page_svelte](src/routes/initialSurvey/routes__initialSurvey__page_svelte.png)       | Path: [`src/routes/initialSurvey/+page.svelte.puml`](src/routes/initialSurvey/+page.svelte.puml)<br/>Diagram ID: `routes__initialSurvey__page_svelte`<br/>Stereotype: `SvelteComponent`          |
-
-</details>
-</details>
-<details>
-<summary>src/store [1]</summary>
-
-| Source         | Diagram                                           | Details                                                                                                               |
-| -------------- | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| store/store.ts | ![store__store_ts](src/store/store__store_ts.png) | Path: [`src/store/store.ts.puml`](src/store/store.ts.puml)<br/>Diagram ID: `store__store_ts`<br/>Stereotype: `Module` |
-
 </details>
 <!-- DIAGRAM-LIST:END -->

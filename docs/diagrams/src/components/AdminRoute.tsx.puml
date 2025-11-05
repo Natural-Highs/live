@@ -1,0 +1,6 @@
+@startuml components__AdminRoute_tsx
+title components/AdminRoute.tsx
+class "components/AdminRoute.tsx" as components_AdminRoute_tsx <<Artifact>> {
+  -- no exports --
+}
+@enduml

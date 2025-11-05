@@ -1,0 +1,15 @@
+@startuml server__middleware__auth_ts
+title server/middleware/auth.ts
+class "server/middleware/auth.ts" as server_middleware_auth_ts <<Module>> {
+  + interface AuthContext
+  + async function authMiddleware
+  + async function adminMiddleware
+}
+note bottom of server_middleware_auth_ts
+  Imports:
+    External:
+    - $lib/firebase/firebase.admin
+    - hono
+    - hono/cookie
+end note
+@enduml

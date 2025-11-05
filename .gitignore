@@ -9,6 +9,11 @@ node_modules
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 serviceAccount.json
-firebase-debug.log
-firestore-debug.log
-ui-debug.log
+*.log
+.logs
+dist/
+.vite/
+test-results/
+coverage/
+.doppler.token
+.doppler.yaml.local

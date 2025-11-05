@@ -8,7 +8,11 @@ import { adminAuth, adminDb } from '$lib/firebase/firebase.admin';
  * @param confirmPassword - The confirmation password to ensure they match.
  * @returns A promise that resolves with the created user record or rejects with an error.
  */
-export async function registerUser(email: string, password: string, confirmPassword: string): Promise<boolean> {
+export async function registerUser(
+  email: string,
+  password: string,
+  confirmPassword: string
+): Promise<boolean> {
   if (password !== confirmPassword) {
     return false;
   }
@@ -20,12 +24,12 @@ export async function registerUser(email: string, password: string, confirmPassw
       password: password,
     });
 
-    const x = await adminDb.collection('users').doc(userRecord.uid).set({
+    await adminDb.collection('users').doc(userRecord.uid).set({
       email: email,
       createdAt: new Date(),
       uid: userRecord.uid,
       isAdmin: false,
-      completedInitialSurvey: false,
+      signedConsentForm: false,
     });
 
     return true;
@@ -41,7 +45,7 @@ export async function registerUser(email: string, password: string, confirmPassw
  * @param password - The password of the user.
  * @returns A promise that resolves with a sign-in result or rejects with an error.
  */
-export async function signInUser(email: string, password: string): Promise<boolean> {
+export async function signInUser(email: string, _password: string): Promise<boolean> {
   try {
     const userRecord = await adminAuth.getUserByEmail(email);
     if (userRecord) {
