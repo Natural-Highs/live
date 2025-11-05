@@ -1,0 +1,6 @@
+@startuml context__types__authContext_ts
+title context/types/authContext.ts
+class "context/types/authContext.ts" as context_types_authContext_ts <<Module>> {
+  + interface AuthContextUserData
+}
+@enduml

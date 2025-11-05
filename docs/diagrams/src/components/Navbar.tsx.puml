@@ -1,0 +1,6 @@
+@startuml components__Navbar_tsx
+title components/Navbar.tsx
+class "components/Navbar.tsx" as components_Navbar_tsx <<Artifact>> {
+  -- no exports --
+}
+@enduml

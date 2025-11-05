@@ -1,0 +1,23 @@
+@startuml server__index_ts
+title server/index.ts
+class "server/index.ts" as server_index_ts <<Module>> {
+  -- no exports --
+}
+note bottom of server_index_ts
+  Imports:
+    Local:
+    - server/middleware/errorHandler
+    - server/routes/auth
+    - server/routes/eventTypes
+    - server/routes/events
+    - server/routes/formTemplates
+    - server/routes/forms
+    - server/routes/guests
+    - server/routes/surveys
+    - server/routes/users
+    External:
+    - hono
+    - hono/cors
+    - hono/logger
+end note
+@enduml

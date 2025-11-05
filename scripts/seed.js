@@ -1,28 +1,15 @@
 /* 
 Run command:
-node seed.js
+doppler run -- bun scripts/seed.js
 */
 
-import { initializeApp } from "firebase/app";
-import {
-  getAuth,
-  connectAuthEmulator,
-  createUserWithEmailAndPassword,
-} from "firebase/auth";
-import {
-  getFirestore,
-  connectFirestoreEmulator,
-  collection,
-  addDoc,
-} from "firebase/firestore";
-import { readFile } from "fs/promises";
-import dotenv from "dotenv";
+import { readFile } from 'node:fs/promises';
+import { initializeApp } from 'firebase/app';
+import { connectAuthEmulator, createUserWithEmailAndPassword, getAuth } from 'firebase/auth';
+import { addDoc, collection, connectFirestoreEmulator, getFirestore } from 'firebase/firestore';
 
-
-dotenv.config({path: "../.env"});
-
-
-// Your web app's Firebase configuration
+// Firebase configuration from environment variables (provided by Doppler)
+// These will be prefixed with VITE_ for client-side use
 const firebaseConfig = {
   apiKey: process.env.VITE_APIKEY,
   authDomain: process.env.VITE_AUTH_DOMAIN,
@@ -32,40 +19,38 @@ const firebaseConfig = {
   appId: process.env.VITE_APP_ID,
 };
 
-
 // Define function to parse json file
-const loadJson = async (filePath) => {
-  const data = await readFile(filePath, { encoding: "utf8" });
+const loadJson = async filePath => {
+  const data = await readFile(filePath, { encoding: 'utf8' });
   const jsonData = JSON.parse(data);
   return jsonData;
 };
 
-const dummyData = await loadJson("../scripts/dummy-data.json");
+const dummyData = await loadJson('../scripts/dummy-data.json');
 
 const app = initializeApp(firebaseConfig);
 
 // Configure Firestore to use the emulator
 const db = getFirestore(app);
-connectFirestoreEmulator(db, "localhost", 8080);
+connectFirestoreEmulator(db, 'localhost', 8080);
 
 // Configure firebase auth
 const auth = getAuth();
-connectAuthEmulator(auth, "http://localhost:9099");
-
+connectAuthEmulator(auth, 'http://localhost:9099');
 
 // Iterate through json data and load databases
 const seedFirestore = async () => {
-  const surveyRef = collection(db, "surveys");
-  const surveyResponseRef = collection(db, "surveyResponses");
-  const responsesRef = collection(db, "responses");
-  const usersRef = collection(db, "users");
-  const questionsRef = collection(db, "questions");
+  const surveyRef = collection(db, 'surveys');
+  const surveyResponseRef = collection(db, 'surveyResponses');
+  const responsesRef = collection(db, 'responses');
+  const usersRef = collection(db, 'users');
+  const questionsRef = collection(db, 'questions');
 
   for (let i = 0; i < 5; i++) {
-    console.log("Iteration ", i);
-    
+    console.log('Iteration ', i);
+
     try {
-        const authUser = await createUserWithEmailAndPassword(
+      const authUser = await createUserWithEmailAndPassword(
         auth,
         dummyData.users[i].email,
         dummyData.users[i].password
@@ -75,7 +60,8 @@ const seedFirestore = async () => {
         ...dummyData.users[i],
         uid: userId,
       });
-      const surveyDoc = await addDoc(surveyRef, {...dummyData.surveys[i],
+      const surveyDoc = await addDoc(surveyRef, {
+        ...dummyData.surveys[i],
         createdAt: new Date(),
       });
       const questionsDoc = await addDoc(questionsRef, {
@@ -95,15 +81,12 @@ const seedFirestore = async () => {
       });
 
       console.log(`Data added for iteration ${i + 1}`);
-    }
-
-   catch (error) {
-      console.error("Error seeding Firestore:", error);
+    } catch (error) {
+      console.error('Error seeding Firestore:', error);
     }
   }
-  console.log("Seeding completed.");
+  console.log('Seeding completed.');
   process.exit(0);
 };
-
 
 seedFirestore();

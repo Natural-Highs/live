@@ -1,10 +1,10 @@
 #!/usr/bin/env node
-import { promises as fs } from 'fs';
-import path from 'path';
-import process from 'process';
-import { fileURLToPath } from 'url';
+import { execFileSync } from 'node:child_process';
+import { promises as fs } from 'node:fs';
+import path from 'node:path';
+import process from 'node:process';
+import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
-import prettier from 'prettier';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,11 +30,11 @@ const SVELTE_SPECIAL_TAGS = new Set([
   'SVELTE:OPTIONS',
 ]);
 
-const ensureDir = async (dir) => {
+const ensureDir = async dir => {
   await fs.mkdir(dir, { recursive: true });
 };
 
-const readAllFiles = async (dir) => {
+const readAllFiles = async dir => {
   const entries = await fs.readdir(dir, { withFileTypes: true });
   const files = [];
   for (const entry of entries) {
@@ -48,23 +48,21 @@ const readAllFiles = async (dir) => {
   return files;
 };
 
-const sanitizeId = (relativePath) => {
+const sanitizeId = relativePath => {
   const cleaned = relativePath.replace(/[^A-Za-z0-9_]/g, '_');
   return /^[A-Za-z_]/.test(cleaned) ? cleaned : `_${cleaned}`;
 };
 
-const buildDiagramName = (relativePath) => {
-  const sanitizeSegment = (segment) => {
+const buildDiagramName = relativePath => {
+  const sanitizeSegment = segment => {
     let result = '';
     for (const char of segment) {
       if (/^[A-Za-z0-9]$/.test(char)) {
         result += char;
       } else if (char === '[') {
-        continue;
       } else if (char === ']') {
         result += '_';
       } else if (char === '+') {
-        continue;
       } else {
         result += '_';
       }
@@ -76,8 +74,7 @@ const buildDiagramName = (relativePath) => {
 };
 
 const hasModifier = (node, kind) =>
-  Array.isArray(node.modifiers) &&
-  node.modifiers.some((mod) => mod.kind === kind);
+  Array.isArray(node.modifiers) && node.modifiers.some(mod => mod.kind === kind);
 
 const analyzeTsLike = (content, fileName, scriptKind = ts.ScriptKind.TS) => {
   const sourceFile = ts.createSourceFile(
@@ -91,24 +88,17 @@ const analyzeTsLike = (content, fileName, scriptKind = ts.ScriptKind.TS) => {
   const exports = [];
   const reExports = [];
 
-  const visit = (node) => {
+  const visit = node => {
     if (ts.isImportDeclaration(node) && node.moduleSpecifier) {
       const moduleName = node.moduleSpecifier.getText(sourceFile).slice(1, -1);
       imports.add(moduleName);
     } else if (ts.isImportEqualsDeclaration(node) && node.moduleReference) {
-      if (
-        ts.isExternalModuleReference(node.moduleReference) &&
-        node.moduleReference.expression
-      ) {
-        const moduleName = node.moduleReference.expression
-          .getText(sourceFile)
-          .slice(1, -1);
+      if (ts.isExternalModuleReference(node.moduleReference) && node.moduleReference.expression) {
+        const moduleName = node.moduleReference.expression.getText(sourceFile).slice(1, -1);
         imports.add(moduleName);
       }
     } else if (ts.isExportAssignment(node)) {
-      const details = node.expression
-        ? node.expression.getText(sourceFile)
-        : '';
+      const details = node.expression ? node.expression.getText(sourceFile) : '';
       exports.push({
         type: node.isExportEquals ? 'export=' : 'default',
         name: 'default',
@@ -165,28 +155,16 @@ const analyzeTsLike = (content, fileName, scriptKind = ts.ScriptKind.TS) => {
             : 'enum';
       const name = node.name ? node.name.getText(sourceFile) : 'default';
       exports.push({ type, name });
-    } else if (
-      ts.isTypeAliasDeclaration(node) &&
-      hasModifier(node, ts.SyntaxKind.ExportKeyword)
-    ) {
-      const type = hasModifier(node, ts.SyntaxKind.DefaultKeyword)
-        ? 'default type'
-        : 'type';
+    } else if (ts.isTypeAliasDeclaration(node) && hasModifier(node, ts.SyntaxKind.ExportKeyword)) {
+      const type = hasModifier(node, ts.SyntaxKind.DefaultKeyword) ? 'default type' : 'type';
       exports.push({ type, name: node.name.getText(sourceFile) });
-    } else if (
-      ts.isVariableStatement(node) &&
-      hasModifier(node, ts.SyntaxKind.ExportKeyword)
-    ) {
-      const isConst =
-        (node.declarationList.flags & ts.NodeFlags.Const) ===
-        ts.NodeFlags.Const;
+    } else if (ts.isVariableStatement(node) && hasModifier(node, ts.SyntaxKind.ExportKeyword)) {
+      const isConst = (node.declarationList.flags & ts.NodeFlags.Const) === ts.NodeFlags.Const;
       const declType = isConst ? 'const' : 'let';
       const isDefault = hasModifier(node, ts.SyntaxKind.DefaultKeyword);
       for (const declaration of node.declarationList.declarations) {
         const name = declaration.name.getText(sourceFile);
-        const initializer = declaration.initializer
-          ? declaration.initializer.kind
-          : undefined;
+        const initializer = declaration.initializer ? declaration.initializer.kind : undefined;
         const asyncValue =
           initializer &&
           ts.isArrowFunction(declaration.initializer) &&
@@ -205,9 +183,7 @@ const analyzeTsLike = (content, fileName, scriptKind = ts.ScriptKind.TS) => {
 const analyzeSvelte = (content, relativePath) => {
   const scriptMatch = content.match(/<script[^>]*>([\s\S]*?)<\/script>/i);
   const scriptContent = scriptMatch ? scriptMatch[1] : '';
-  const markupOnly = scriptMatch
-    ? content.replace(scriptMatch[0], '')
-    : content;
+  const markupOnly = scriptMatch ? content.replace(scriptMatch[0], '') : content;
 
   const tsInfo = analyzeTsLike(scriptContent, relativePath, ts.ScriptKind.TS);
 
@@ -220,12 +196,14 @@ const analyzeSvelte = (content, relativePath) => {
 
   const componentSet = new Set();
   const componentRegex = /<([A-Z][A-Za-z0-9_]*)\b/g;
-  let match;
-  while ((match = componentRegex.exec(markupOnly))) {
-    const tag = match[1].toUpperCase();
+  let match = componentRegex.exec(markupOnly);
+  while (match !== null) {
+    const componentName = match[1];
+    const tag = componentName.toUpperCase();
     if (!SVELTE_SPECIAL_TAGS.has(tag)) {
-      componentSet.add(match[1]);
+      componentSet.add(componentName);
     }
+    match = componentRegex.exec(markupOnly);
   }
 
   return { ...tsInfo, props, components: Array.from(componentSet).sort() };
@@ -249,12 +227,12 @@ const splitImports = (relativePath, imports) => {
   };
 };
 
-const formatExportLine = (exp) => {
+const formatExportLine = exp => {
   const label = exp.type ? `${exp.type} ${exp.name}` : exp.name;
   return `+ ${label}`.trim();
 };
 
-const buildNoteSections = (info) => {
+const buildNoteSections = info => {
   const sections = [];
   if (info.localImports.length || info.externalImports.length) {
     const lines = ['Imports:'];
@@ -332,14 +310,12 @@ const createDiagram = (relativePath, analysis, stereotype, diagramName) => {
   return lines.join('\n');
 };
 
-const generateDiagramIndexMarkdown = (entries) => {
+const generateDiagramIndexMarkdown = entries => {
   if (!entries.length) {
     return '_No diagrams generated yet._';
   }
 
-  const sortedEntries = [...entries].sort((a, b) =>
-    a.relativePath.localeCompare(b.relativePath)
-  );
+  const sortedEntries = [...entries].sort((a, b) => a.relativePath.localeCompare(b.relativePath));
 
   const createNode = (name, fullPath) => ({
     name,
@@ -367,12 +343,9 @@ const generateDiagramIndexMarkdown = (entries) => {
     node.files.push(entry);
   }
 
-  const countDiagrams = (node) =>
+  const countDiagrams = node =>
     node.files.length +
-    [...node.children.values()].reduce(
-      (total, child) => total + countDiagrams(child),
-      0
-    );
+    [...node.children.values()].reduce((total, child) => total + countDiagrams(child), 0);
 
   const renderNode = (node, summaryLabel, defaultOpen = false) => {
     const count = countDiagrams(node);
@@ -402,9 +375,7 @@ const generateDiagramIndexMarkdown = (entries) => {
       lines.push('');
     }
 
-    const childKeys = [...node.children.keys()].sort((a, b) =>
-      a.localeCompare(b)
-    );
+    const childKeys = [...node.children.keys()].sort((a, b) => a.localeCompare(b));
     for (const key of childKeys) {
       const childNode = node.children.get(key);
       lines.push(renderNode(childNode, undefined).trimEnd());
@@ -424,9 +395,7 @@ const generateDiagramIndexMarkdown = (entries) => {
     sections.push(renderNode(rootFilesNode, 'src'));
   }
 
-  const topLevelKeys = [...root.children.keys()].sort((a, b) =>
-    a.localeCompare(b)
-  );
+  const topLevelKeys = [...root.children.keys()].sort((a, b) => a.localeCompare(b));
   for (const key of topLevelKeys) {
     const childNode = root.children.get(key);
     sections.push(renderNode(childNode, undefined).trimEnd());
@@ -435,7 +404,7 @@ const generateDiagramIndexMarkdown = (entries) => {
   return sections.join('\n').trim();
 };
 
-const updateReadmeIndex = async (entries) => {
+const updateReadmeIndex = async entries => {
   const indexMarkdown = generateDiagramIndexMarkdown(entries);
   let currentReadme = '# Natural Highs Repo Overview\n';
   try {
@@ -454,9 +423,7 @@ const updateReadmeIndex = async (entries) => {
     return;
   }
 
-  const markerRegex = new RegExp(
-    `${README_START_MARKER}[\\s\\S]*?${README_END_MARKER}`
-  );
+  const markerRegex = new RegExp(`${README_START_MARKER}[\\s\\S]*?${README_END_MARKER}`);
   const replacement = `${README_START_MARKER}\n${indexMarkdown}\n${README_END_MARKER}`;
   const updatedContent = currentReadme.replace(markerRegex, replacement);
   const formatted = await formatMarkdown(updatedContent);
@@ -483,7 +450,7 @@ const clearDiagrams = async () => {
     }
 
     await Promise.all(
-      entries.map(async (entry) => {
+      entries.map(async entry => {
         const fullPath = path.join(dir, entry.name);
         if (entry.isDirectory()) {
           await removePumlFiles(fullPath, false);
@@ -543,19 +510,14 @@ const determineStereotype = (relativePath, extension) => {
   return 'Artifact';
 };
 
-const handleFile = async (filePath) => {
+const handleFile = async filePath => {
   const relativePath = path.relative(srcDir, filePath).replace(/\\/g, '/');
   const ext = path.extname(filePath).toLowerCase();
   const content = await fs.readFile(filePath, 'utf8');
   let analysis;
   if (ext === '.svelte') {
     analysis = analyzeSvelte(content, relativePath);
-  } else if (
-    ext === '.ts' ||
-    ext === '.js' ||
-    ext === '.mjs' ||
-    ext === '.cjs'
-  ) {
+  } else if (ext === '.ts' || ext === '.js' || ext === '.mjs' || ext === '.cjs') {
     const kind = ext === '.ts' ? ts.ScriptKind.TS : ts.ScriptKind.JS;
     analysis = analyzeTsLike(content, relativePath, kind);
   } else {
@@ -571,21 +533,12 @@ const handleFile = async (filePath) => {
 
   const stereotype = determineStereotype(relativePath, ext);
   const diagramName = buildDiagramName(relativePath);
-  const diagram = createDiagram(
-    relativePath,
-    analysis,
-    stereotype,
-    diagramName
-  );
+  const diagram = createDiagram(relativePath, analysis, stereotype, diagramName);
   await writeDiagram(relativePath, diagram);
 
   const dir = posixPath.dirname(relativePath);
   const diagramDir = dir === '.' ? '' : dir;
-  const pngRelativePath = posixPath.join(
-    'src',
-    diagramDir,
-    `${diagramName}.png`
-  );
+  const pngRelativePath = posixPath.join('src', diagramDir, `${diagramName}.png`);
   const pumlRelativePath = posixPath.join('src', `${relativePath}.puml`);
 
   diagramEntries.push({
@@ -598,18 +551,20 @@ const handleFile = async (filePath) => {
   });
 };
 
-const formatMarkdown = async (content) => {
+const formatMarkdown = async content => {
   try {
-    const config = await prettier.resolveConfig(readmePath);
-    return prettier.format(content, {
-      ...(config || {}),
-      filepath: readmePath,
-    });
-  } catch (err) {
-    console.warn(
-      'Warning: failed to format README with Prettier:',
-      err.message
+    const formatted = execFileSync(
+      'bunx',
+      ['@biomejs/biome', 'format', '--stdin-file-path', readmePath],
+      {
+        input: content,
+        encoding: 'utf8',
+        stdio: ['pipe', 'pipe', 'pipe'],
+      }
     );
+    return formatted;
+  } catch (err) {
+    console.warn('Warning: Biome formatting skipped for markdown:', err.message);
     return `${content.trimEnd()}\n`;
   }
 };
@@ -623,7 +578,7 @@ const main = async () => {
   console.log(`Generated PlantUML diagrams for ${allFiles.length} files.`);
 };
 
-main().catch((err) => {
+main().catch(err => {
   console.error('Failed to generate PlantUML diagrams:', err);
   process.exit(1);
 });

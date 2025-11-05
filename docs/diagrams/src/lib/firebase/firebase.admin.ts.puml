@@ -6,8 +6,6 @@ class "lib/firebase/firebase.admin.ts" as lib_firebase_firebase_admin_ts <<Modul
 }
 note bottom of lib_firebase_firebase_admin_ts
   Imports:
-    Local:
-    - ../serviceAccount.json
     External:
     - firebase-admin
 end note

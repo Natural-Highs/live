@@ -3,9 +3,4 @@ title index.test.ts
 class "index.test.ts" as index_test_ts <<Module>> {
   -- no exports --
 }
-note bottom of index_test_ts
-  Imports:
-    External:
-    - vitest
-end note
 @enduml

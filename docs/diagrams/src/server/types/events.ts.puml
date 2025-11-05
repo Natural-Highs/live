@@ -1,0 +1,9 @@
+@startuml server__types__events_ts
+title server/types/events.ts
+class "server/types/events.ts" as server_types_events_ts <<Module>> {
+  + interface EventCreationRequest
+  + interface EventTypeData
+  + interface EventDocumentData
+  + interface EventDocument
+}
+@enduml
