@@ -16,4 +16,4 @@ dist/
 test-results/
 coverage/
 .doppler.token
-.doppler.yaml.local
+.doppler.gist
