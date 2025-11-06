@@ -9,7 +9,7 @@
     "preview": "vite preview",
     "server": "doppler run -- bun src/server/index.ts",
     "emulators": "doppler run -- bunx firebase-tools emulators:start",
-    "dev:full": "concurrently \"bun run dev\" \"bun run server\"",
+    "dev:full": "concurrently \"bun run emulators\" \"bun run server\" \"bun run dev\"",
     "test": "bun run test:integration && bun run test:unit",
     "check": "tsc --noEmit",
     "check:watch": "tsc --noEmit --watch",
