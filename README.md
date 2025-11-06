@@ -1,45 +1,48 @@
 # Natural Highs
 
-## Contributors
+## Prerequisites
 
-| Name           | Github         | Email                     |
-| -------------- | -------------- | ------------------------- |
-| Aidan Donnelly | AidanDonnelly1 | aido4381@colorado.edu     |
-| Ishan Gohil    | IshanGProjects | ishan10.gohil@gmail.com   |
-| Ari Guzzi      | ari-guzzi      | argu4451@colorado.edu     |
-| Alex Savard    | asavy79        | alsa8624@colorado.edu     |
-| Luke Wu        | lukewu1        | Luke.Wu@colorado.edu      |
-| Eric David     | EricDavidd     | Eric.David@colorado.edu   |
-| Alicia Zhang   | alzh42         | Alicia.Zhang@colorado.edu |
+- VS Code
+- Docker Desktop (Mac/Windows) or Docker Engine (Linux/WSL)
 
-## Quick Start
+## Setup (VS Code Dev Container)
 
-### Prerequisites
+1.  Open VS Code
+2.  Open command palette (F1 / Ctrl|Cmd+Shift+P)
+3.  Type "Dev Containers: Reopen in Container"
+4.  Wait for container to start (first build can take ~3-5 minutes)
+5.  Run `bun dev:full` to start all services or use tasks in VS Code (F1)
 
-- Bun: https://bun.sh
-  - Linux/WSL/MacOS: `curl -fsSL https://bun.sh/install | bash`
-  - Windows: `powershell -c "irm bun.sh/install.ps1 | iex"`
-- Doppler CLI: https://docs.doppler.com/docs/install-cli
-
-### Setup
+## Setup (Manual)
 
 1.  Clone repository
 2.  Install dependencies: `bun install`
-3.  Setup Doppler: `bun run setup` (requires shared service token from team)
+3.  Setup Doppler: `bun run setup`
+
+    The setup script automatically fetches the doppler service token. No manual configuration needed.
+
+    **Optional**: You can override the automatic setup by:
+
+    - Setting environment variable: `export DOPPLER_TOKEN='dp.st.dev.xxxx'`
+    - Creating a local file: `.doppler.token` with the token
+    - Using a custom Gist via environment variables: `DOPPLER_GIST_ID`, `DOPPLER_GIST_USER`, `DOPPLER_GIST_FILE`
+
+    **Note**: Only the service token (not secrets) is stored in the Gist. The token authenticates with Doppler, which then provides the actual secrets securely.
+
 4.  Start development:
 
     ```bash
     # Terminal 1: Database
-    doppler run -- bun run emulators
+    bun emulators
 
     # Terminal 2: Backend
-    doppler run -- bun run server
+    bun server
 
     # Terminal 3: Frontend
-    doppler run -- bun run dev
+    bun dev
     ```
 
-    or use `bun run dev:full` to start all services (database, backend, frontend).
+    or use `bun dev:full` to start all services (database, backend, frontend).
 
     **Note**: Scripts like `bun run dev` will inject secrets from Doppler. You can view secrets with `doppler secrets` or `doppler tui`.
 
