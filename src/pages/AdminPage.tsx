@@ -1,10 +1,11 @@
 import type React from 'react';
 import { Route, Routes } from 'react-router-dom';
 import Chart from '@/components/ui/chart';
+import { PageContainer } from '@/components/ui/page-container';
 
 const AdminHome: React.FC = () => {
   return (
-    <div className="container mx-auto p-4">
+    <PageContainer>
       <h1 className="text-2xl font-bold mb-4">Admin Dashboard</h1>
       <div className="alert alert-info mb-4">
         <span>Charts framework - TODO: Implement data visualization</span>
@@ -40,7 +41,7 @@ const AdminHome: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

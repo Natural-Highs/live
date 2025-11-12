@@ -7,6 +7,7 @@ import { Navigate } from 'react-router-dom';
 import { z } from 'zod';
 import { auth } from '$lib/firebase/firebase.app';
 import { useAuth } from '../context/AuthContext';
+import { PageContainer } from '@/components/ui/page-container';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -152,7 +153,7 @@ const AuthenticationPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-base-100">
+    <PageContainer>
       <div className="card bg-base-200 w-full max-w-md shadow-xl">
         <div className="card-body">
           <h2 className="card-title text-2xl">{isSignUp ? 'Sign Up' : 'Login'}</h2>
@@ -315,7 +316,7 @@ const AuthenticationPage: React.FC = () => {
           </div>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 
