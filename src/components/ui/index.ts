@@ -1,3 +1,4 @@
+export { BrandLogo } from './brand-logo';
 export { default as Chart } from './chart';
 export { Divider } from './divider';
 export { FormContainer } from './form-container';
