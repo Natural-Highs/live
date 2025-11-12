@@ -2,6 +2,7 @@ import type React from 'react';
 import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { PageContainer } from '@/components/ui/page-container';
 
 /**
  * SignUpPage2 - About You (Profile Information)
@@ -100,7 +101,7 @@ const SignUpPage2: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center py-8 px-4 bg-base-100">
+    <PageContainer>
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
           <div className="mb-4 flex justify-center">
@@ -251,7 +252,7 @@ const SignUpPage2: React.FC = () => {
           </button>
         </form>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

@@ -3,6 +3,9 @@ import type React from 'react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '$lib/firebase/firebase.app';
+import { PageContainer } from '@/components/ui/page-container';
+import GrnButton from '@/components/ui/GrnButton';
+import GreyButton from '@/components/ui/GreyButton';
 
 const SignUpPage1: React.FC = () => {
   const navigate = useNavigate();
@@ -94,7 +97,7 @@ const SignUpPage1: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center py-8 px-4 bg-base-100">
+    <PageContainer>
       <div className="w-full max-w-md">
         <div className="text-center mb-6">
           <div className="mb-4 flex justify-center">
@@ -177,26 +180,25 @@ const SignUpPage1: React.FC = () => {
             />
           </div>
 
-          <button
+          <GrnButton
             type="submit"
             disabled={loading}
-            className="btn btn-primary w-full rounded-[20px] shadow-md font-semibold"
           >
             {loading ? 'Creating Account...' : 'Create Account'}
-          </button>
+          </GrnButton>
 
           <div className="divider">Or</div>
 
-          <button
+          <GreyButton
             type="button"
             onClick={() => navigate('/authentication')}
             className="btn btn-secondary w-full rounded-[20px] shadow-md font-semibold"
           >
             Sign In
-          </button>
+          </GreyButton>
         </form>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 

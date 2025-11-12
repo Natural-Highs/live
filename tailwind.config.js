@@ -18,11 +18,11 @@ module.exports = {
                 bgGreen: "#E2FDE6",
             },
             fontFamily: {
-                inria: ['Inria Serif', 'sans-serif'],
-                inter: ['Inter', 'sans-serif'],
-                kapakana: ['Kapakana', 'sans-serif'],
-                kotta: ['Kotta One', 'sans-serif'],
-                lisu: ['Lisu Bosa', 'sans-serif'],
+                inria: ['Inria Serif', 'sans-serif'], // text
+                inter: ['Inter', 'sans-serif'], // just because
+                kapakana: ['Kapakana', 'sans-serif'], // logo
+                kotta: ['Kotta One', 'sans-serif'], // buttons
+                lisu: ['Lisu Bosa', 'sans-serif'], // h1
             }
         },
     },
