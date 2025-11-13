@@ -162,12 +162,6 @@ const AuthenticationPage: React.FC = () => {
         <h1>{isSignUp ? 'Sign Up' : 'Sign In'}</h1>
       </TitleCard>
       <GreenCard>
-        <p className="text-sm opacity-70">
-          {isSignUp
-            ? 'Create a new account to get started'
-            : 'Enter your credentials to access your account'}
-        </p>
-
         {authError && (
           <div className="alert alert-error">
             <span>{authError}</span>
@@ -300,21 +294,21 @@ const AuthenticationPage: React.FC = () => {
             <GrnButton type="submit">Sign In</GrnButton>
           </form>
         )}
-
-        <div className="mt-4 text-center text-sm">
-          <GreyButton
-            type="button"
-            onClick={() => {
-              setIsSignUp(!isSignUp);
-              setAuthError('');
-              loginForm.reset();
-              signupForm.reset();
-            }}
-          >
-            {isSignUp ? 'Already have an account? Login' : "Don't have an account? Sign Up"}
-          </GreyButton>
-        </div>
       </GreenCard>
+      <div className="text-center">
+        <p className='pb-2 px-[7.2rem] font-inria text-[1.25rem]'>Or</p>
+        <GreyButton
+          type="button"
+          onClick={() => {
+            setIsSignUp(!isSignUp);
+            setAuthError('');
+            loginForm.reset();
+            signupForm.reset();
+          }}
+        >
+          {isSignUp ? 'Login' : 'Sign Up'}
+        </GreyButton>
+      </div>
     </PageContainer>
   );
 };
