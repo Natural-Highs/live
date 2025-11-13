@@ -8,6 +8,8 @@ import { z } from 'zod';
 import { auth } from '$lib/firebase/firebase.app';
 import { useAuth } from '../context/AuthContext';
 import { PageContainer } from '@/components/ui/page-container';
+import GrnButton from '@/components/ui/GrnButton';
+import GreyButton from '@/components/ui/GreyButton';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -156,7 +158,7 @@ const AuthenticationPage: React.FC = () => {
     <PageContainer>
       <div className="card bg-base-200 w-full max-w-md shadow-xl">
         <div className="card-body">
-          <h2 className="card-title text-2xl">{isSignUp ? 'Sign Up' : 'Login'}</h2>
+          <h1 className="card-title text-2xl">{isSignUp ? 'Sign Up' : 'Login'}</h1>
           <p className="text-sm opacity-70">
             {isSignUp
               ? 'Create a new account to get started'
@@ -249,9 +251,9 @@ const AuthenticationPage: React.FC = () => {
                 )}
               </div>
 
-              <button type="submit" className="btn btn-primary w-full">
+              <GrnButton type="submit">
                 Sign Up
-              </button>
+              </GrnButton>
             </form>
           ) : (
             <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
@@ -294,14 +296,14 @@ const AuthenticationPage: React.FC = () => {
                 )}
               </div>
 
-              <button type="submit" className="btn btn-primary w-full">
+              <GrnButton type="submit">
                 Login
-              </button>
+              </GrnButton>
             </form>
           )}
 
           <div className="mt-4 text-center text-sm">
-            <button
+            <GreyButton
               type="button"
               onClick={() => {
                 setIsSignUp(!isSignUp);
@@ -309,10 +311,9 @@ const AuthenticationPage: React.FC = () => {
                 loginForm.reset();
                 signupForm.reset();
               }}
-              className="link link-primary"
             >
               {isSignUp ? 'Already have an account? Login' : "Don't have an account? Sign Up"}
-            </button>
+            </GreyButton>
           </div>
         </div>
       </div>

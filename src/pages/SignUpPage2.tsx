@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { PageContainer } from '@/components/ui/page-container';
+import GrnButton from '@/components/ui/GrnButton';
+import GreyButton from '@/components/ui/GreyButton';
 
 /**
  * SignUpPage2 - About You (Profile Information)
@@ -235,21 +237,20 @@ const SignUpPage2: React.FC = () => {
             </select>
           </div>
 
-          <button
+          <GrnButton
             type="submit"
             disabled={loading}
             className="btn btn-primary w-full rounded-[20px] shadow-md font-semibold mt-6"
           >
             {loading ? 'Saving...' : 'Continue'}
-          </button>
-
-          <button
+          </GrnButton>
+          
+          <GreyButton
             type="button"
             onClick={() => navigate(-1)}
-            className="btn btn-secondary w-full rounded-[20px] shadow-md font-semibold mt-2"
           >
             Back
-          </button>
+          </GreyButton>
         </form>
       </div>
     </PageContainer>
