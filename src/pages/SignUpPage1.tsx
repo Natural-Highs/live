@@ -192,7 +192,6 @@ const SignUpPage1: React.FC = () => {
           <GreyButton
             type="button"
             onClick={() => navigate('/authentication')}
-            className="btn btn-secondary w-full rounded-[20px] shadow-md font-semibold"
           >
             Sign In
           </GreyButton>
