@@ -159,10 +159,9 @@ const AuthenticationPage: React.FC = () => {
   return (
     <PageContainer>
       <TitleCard>
-        <h1>{isSignUp ? 'Sign Up' : 'Login'}</h1>
+        <h1>{isSignUp ? 'Sign Up' : 'Sign In'}</h1>
       </TitleCard>
       <GreenCard>
-        {/* <h1 className="card-title text-2xl">{isSignUp ? 'Sign Up' : 'Login'}</h1> */}
         <p className="text-sm opacity-70">
           {isSignUp
             ? 'Create a new account to get started'
@@ -298,7 +297,7 @@ const AuthenticationPage: React.FC = () => {
               )}
             </div>
 
-            <GrnButton type="submit">Login</GrnButton>
+            <GrnButton type="submit">Sign In</GrnButton>
           </form>
         )}
 

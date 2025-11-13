@@ -6,11 +6,15 @@ interface Props extends React.HTMLAttributes<HTMLDivElement> {
 
 const GreenCard = React.forwardRef<HTMLDivElement, Props>(
   ({ className, children, ...props }, ref) => {
-    const baseClasses = 'card-body bg-midGreen w-full max-w-md shadow-xl padding-4 rounded-xl';
+    const baseClasses = 'card bg-midGreen shadow-xl p-1 rounded-xl mb-[0.75rem]';
+    const baseClassesInner = 'bg-midGreen w-full max-w-md p-4 shadow-none rounded-lg';
 
     return (
-      <div ref={ref} className={`${baseClasses} ${className ?? ''}`} {...props}>
-        {children}
+      <div ref={ref} className={baseClasses}>
+        <hr className="bg-black mx-auto w-[45%] h-[2px] mt-[-0.15rem]"></hr>
+        <div className={`${baseClassesInner} ${className ?? ''}`} {...props}>
+          {children}
+        </div>
       </div>
     );
   }

@@ -6,13 +6,12 @@ interface Props extends React.HTMLAttributes<HTMLDivElement> {
 
 const TitleCard = React.forwardRef<HTMLDivElement, Props>(
   ({ className, children, ...props }, ref) => {
-    const baseClasses = 'card-body bg-midGreen shadow-xl padding-[0.2rem] rounded-xl mb-[-0.75rem]';
+    const baseClasses = 'card bg-midGreen shadow-xl pb-1 px-[2rem] rounded-lg mb-[-0.75rem] h-auto';
     //flex justify-center
 
     return (
       <div ref={ref} className={`${baseClasses} ${className ?? ''}`} {...props}>
         {children}
-        <hr className="bg-black mx-auto w-[90%] height-[0.5rem]"></hr>
       </div>
     );
   }
