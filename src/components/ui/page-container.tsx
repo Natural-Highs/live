@@ -9,7 +9,7 @@ const PageContainer = React.forwardRef<HTMLDivElement, PageContainerProps>(
     return (
       <div
         ref={ref}
-        className={`min-h-screen flex flex-col items-center justify-center py-8 px-4 bg-base-100 ${
+        className={`min-h-screen flex flex-col items-center justify-center py-8 px-4 bg-bgGreen ${
           className || ''
         }`}
         {...props}
