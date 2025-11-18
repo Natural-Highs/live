@@ -6,6 +6,7 @@ import { useForm } from 'react-hook-form';
 import { Navigate } from 'react-router-dom';
 import { z } from 'zod';
 import { auth } from '$lib/firebase/firebase.app';
+import { BrandLogo } from '@/components/ui';
 import { useAuth } from '../context/AuthContext';
 
 const loginSchema = z.object({
@@ -152,7 +153,18 @@ const AuthenticationPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-base-100">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-base-100">
+      <div className="mb-8">
+        <BrandLogo
+          size="lg"
+          direction="vertical"
+          showTitle={true}
+          titleClassName="font-['Kapakana'] text-[75px] leading-none tracking-normal [word-spacing:0.40em]"
+          titlePosition="above"
+          gapClassName="gap-0"
+          titleSpacing={-55}
+        />
+      </div>
       <div className="card bg-base-200 w-full max-w-md shadow-xl">
         <div className="card-body">
           <h2 className="card-title text-2xl">{isSignUp ? 'Sign Up' : 'Login'}</h2>
