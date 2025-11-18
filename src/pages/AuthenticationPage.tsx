@@ -11,6 +11,7 @@ import GrnButton from '@/components/ui/GrnButton';
 import { PageContainer } from '@/components/ui/page-container';
 import TitleCard from '@/components/ui/TitleCard';
 import { auth } from '$lib/firebase/firebase.app';
+import { BrandLogo } from '@/components/ui';
 import { useAuth } from '../context/AuthContext';
 
 const loginSchema = z.object({
@@ -158,6 +159,15 @@ const AuthenticationPage: React.FC = () => {
 
   return (
     <PageContainer>
+      <BrandLogo
+        size="lg"
+        direction="vertical"
+        showTitle={true}
+        titleClassName="font-['Kapakana'] text-[75px] leading-none tracking-normal [word-spacing:0.40em]"
+        titlePosition="above"
+        gapClassName="gap-0"
+        titleSpacing={-55}
+      />
       <TitleCard>
         <h1>{isSignUp ? 'Sign Up' : 'Sign In'}</h1>
       </TitleCard>
