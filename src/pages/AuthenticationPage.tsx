@@ -10,8 +10,6 @@ import GreyButton from '@/components/ui/GreyButton';
 import GrnButton from '@/components/ui/GrnButton';
 import { PageContainer } from '@/components/ui/page-container';
 import TitleCard from '@/components/ui/TitleCard';
-import { BrandLogo } from '@/components/ui/title';
-import { auth } from '$lib/firebase/firebase.app';
 import { BrandLogo } from '@/components/ui';
 import { auth } from '$lib/firebase/firebase.app';
 import { useAuth } from '../context/AuthContext';
