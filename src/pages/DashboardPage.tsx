@@ -1,8 +1,8 @@
 import type React from 'react';
 import { useEffect, useState } from 'react';
 import { FormContainer } from '@/components/ui/form-container';
-import { Logo } from '@/components/ui/logo';
 import { PageContainer } from '@/components/ui/page-container';
+import { WebsiteLogo } from '@/components/ui/website-logo';
 import { useAuth } from '../context/AuthContext';
 
 interface Event {
@@ -108,116 +108,123 @@ const DashboardPage: React.FC = () => {
   }
 
   return (
-    <PageContainer>
-      <div className="w-full max-w-4xl">
-        <div className="text-center mb-6">
-          <div className="mb-4 flex justify-center">
-            <Logo size="md" />
+    <div className="min-h-screen bg-base-100 from-green-100 to-green-50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        {/* Header with Logo */}
+        <div className="flex flex-col items-center mb-6">
+          <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-4 shadow-lg">
+            <WebsiteLogo size="lg" />
           </div>
-          <h1 className="text-4xl font-bold text-base-content mb-2">Dashboard</h1>
-          <p className="text-sm opacity-70">
-            Welcome{user?.email ? `, ${user.email.split('@')[0]}` : ''}!
+          <h1 className="text-4xl font-serif text-gray-800 border-b-2 border-gray-800 pb-2">
+            Home
+          </h1>
+        </div>
+
+        {/* Check In Section */}
+        <div className="bg-base-200 rounded-3xl p-6 mb-4 shadow-md">
+          <h2 className="text-2xl font-semibold text-gray-800 mb-4 text-center">
+            Check In
+          </h2>
+          
+          {error && (
+            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-lg mb-3 text-sm text-center">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div className="text-center text-green-800 italic mb-3">
+              <p className="font-semibold">Success!</p>
+              <p>You've checked in</p>
+            </div>
+          )}
+
+          <form onSubmit={handleEventCodeSubmit}>
+            <input
+              style={{borderColor:'green', borderWidth:'2px'}}
+              type="text"
+              value={eventCode}
+              onChange={(e) => setEventCode(e.target.value)}
+              placeholder="Enter 4-digit code"
+              maxLength={4}
+              className="w-full bg-white rounded-lg px-4 py-3 text-center text-xl text-gray-700 mb-4 focus:outline-none focus:ring-2 focus:ring-green-600 tracking-widest"
+              required
+            />
+            
+            <button
+              type="submit"
+              disabled={submittingCode || eventCode.length !== 4}
+              className="w-full btn-base-100 hover:bg-green-800 disabled:bg-green-600 disabled:opacity-50 text-white font-semibold py-3 rounded-full transition-colors duration-200"
+            >
+              {submittingCode ? 'Registering...' : 'Submit'}
+            </button>
+          </form>
+        </div>
+
+        {/* Navigation Buttons */}
+        <div className="space-y-3">
+          <button 
+            onClick={() => console.log('Account Information')}
+            className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 rounded-full transition-colors duration-200"
+          >
+            Account Information
+          </button>
+          
+          <button 
+            onClick={() => console.log('Feedback Forms')}
+            className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 rounded-full transition-colors duration-200"
+          >
+            Feedback Forms
+          </button>
+          
+          <button 
+            onClick={() => console.log('Acudetox Form')}
+            className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 rounded-full transition-colors duration-200"
+          >
+            Acudetox Form
+          </button>
+          
+          <p 
+            onClick={() => console.log('Download Consent Form')}
+            className="text-center text-gray-700 text-sm pt-2 underline cursor-pointer hover:text-gray-900"
+          >
+            Download Consent Form
           </p>
         </div>
 
-        <div className="space-y-6">
-          <FormContainer>
-            <h2 className="text-2xl font-semibold text-base-content mb-4">Join an Event</h2>
-            <p className="text-sm opacity-70 mb-4">Enter your 4-digit event code to register</p>
+        {/* Footer */}
+        <div className="mt-6 text-center text-gray-600 text-sm">
+          <p>naturalhighs.org</p>
+        </div>
 
-            {error && (
-              <div className="alert alert-error mb-4">
-                <span>{error}</span>
-              </div>
-            )}
-
-            {success && (
-              <div className="alert alert-success mb-4">
-                <span>{success}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleEventCodeSubmit} className="space-y-4">
-              <div className="form-control">
-                <label htmlFor="eventCode" className="label">
-                  <span className="label-text">Event Code</span>
-                </label>
-                <input
-                  id="eventCode"
-                  type="text"
-                  value={eventCode}
-                  onChange={e => setEventCode(e.target.value)}
-                  placeholder="Enter 4-digit code"
-                  maxLength={4}
-                  className="input input-bordered text-center text-2xl tracking-widest"
-                  required
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={submittingCode || eventCode.length !== 4}
-                className="btn btn-primary w-full rounded-[20px] shadow-md font-semibold"
-              >
-                {submittingCode ? 'Registering...' : 'Join Event'}
-              </button>
-            </form>
-          </FormContainer>
-
-          <div>
-            <h2 className="text-2xl font-semibold text-base-content mb-4">My Events</h2>
-            {events.length === 0 ? (
-              <div className="card bg-base-200 shadow-xl">
-                <div className="card-body">
-                  <p className="text-base-content opacity-70">
-                    No events yet. Join an event using a code above.
+        {/* My Events Section - Hidden by default, can be toggled */}
+        {events.length > 0 && (
+          <div className="mt-8 bg-white rounded-2xl p-6 shadow-md">
+            <h2 className="text-2xl font-semibold text-gray-800 mb-4">My Events</h2>
+            <div className="space-y-3">
+              {events.map(event => (
+                <div key={event.id} className="bg-gray-100 rounded-lg p-4">
+                  <h3 className="font-semibold text-gray-800">{event.name}</h3>
+                  <p className="text-sm text-gray-600">
+                    Date: {formatDate(event.eventDate as string | undefined)}
                   </p>
+                  {event.code && <p className="text-sm text-gray-600">Code: {event.code}</p>}
+                  <button
+                    type="button"
+                    className="mt-2 text-sm text-green-700 hover:text-green-800 font-semibold"
+                    onClick={() => {
+                      console.log('Event clicked:', event.id);
+                    }}
+                  >
+                    View Details →
+                  </button>
                 </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {events.map(event => (
-                  <div key={event.id} className="card bg-base-200 shadow-xl">
-                    <div className="card-body">
-                      <h3 className="card-title text-base-content">{event.name}</h3>
-                      <p className="text-sm opacity-70">
-                        Date: {formatDate(event.eventDate as string | undefined)}
-                      </p>
-                      {event.code && <p className="text-sm opacity-70">Code: {event.code}</p>}
-                      <div className="card-actions justify-end mt-4">
-                        <button
-                          type="button"
-                          className="btn btn-sm btn-primary"
-                          onClick={() => {
-                            // TODO: Navigate to event details or survey
-                            console.log('Event clicked:', event.id);
-                          }}
-                        >
-                          View Details
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div>
-            <h2 className="text-2xl font-semibold text-base-content mb-4">Available Surveys</h2>
-            <div className="card bg-base-200 shadow-xl">
-              <div className="card-body">
-                <p className="text-base-content opacity-70">
-                  TODO: Display surveys available for your events
-                </p>
-                <p className="text-sm opacity-50 mt-2">
-                  Surveys become available 1 hour after event activation
-                </p>
-              </div>
+              ))}
             </div>
           </div>
-        </div>
+        )}
       </div>
-    </PageContainer>
+    </div>
   );
 };
 
