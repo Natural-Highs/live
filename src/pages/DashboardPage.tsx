@@ -1,6 +1,5 @@
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import { FormContainer } from '@/components/ui/form-container';
 import { PageContainer } from '@/components/ui/page-container';
 import { WebsiteLogo } from '@/components/ui/website-logo';
 import { useAuth } from '../context/AuthContext';
@@ -15,7 +14,7 @@ interface Event {
 }
 
 const DashboardPage: React.FC = () => {
-  const { user } = useAuth();
+  //const { user } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [eventCode, setEventCode] = useState('');
   const [loading, setLoading] = useState(true);
@@ -108,7 +107,7 @@ const DashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-base-100 from-green-100 to-green-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header with Logo */}
         <div className="flex flex-col items-center mb-6">
@@ -125,7 +124,7 @@ const DashboardPage: React.FC = () => {
           <h2 className="text-2xl font-semibold text-gray-800 mb-4 text-center">
             Check In
           </h2>
-          
+
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-lg mb-3 text-sm text-center">
               {error}
@@ -150,11 +149,11 @@ const DashboardPage: React.FC = () => {
               className="w-full bg-white rounded-lg px-4 py-3 text-center text-xl text-gray-700 mb-4 focus:outline-none focus:ring-2 focus:ring-green-600 tracking-widest"
               required
             />
-            
+
             <button
               type="submit"
               disabled={submittingCode || eventCode.length !== 4}
-              className="w-full btn-base-100 hover:bg-green-800 disabled:bg-green-600 disabled:opacity-50 text-white font-semibold py-3 rounded-full transition-colors duration-200"
+              className="w-full bg-green-700 hover:bg-green-800 disabled:bg-green-600 disabled:opacity-50 text-white font-semibold py-3 rounded-full transition-colors duration-200"
             >
               {submittingCode ? 'Registering...' : 'Submit'}
             </button>
@@ -163,33 +162,37 @@ const DashboardPage: React.FC = () => {
 
         {/* Navigation Buttons */}
         <div className="space-y-3">
-          <button 
+          <button
+            type='submit'
             onClick={() => console.log('Account Information')}
             className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 rounded-full transition-colors duration-200"
           >
             Account Information
           </button>
-          
-          <button 
+
+          <button
+            type='submit'
             onClick={() => console.log('Feedback Forms')}
             className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 rounded-full transition-colors duration-200"
           >
             Feedback Forms
           </button>
-          
-          <button 
+
+          <button
+            type='submit'
             onClick={() => console.log('Acudetox Form')}
             className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 rounded-full transition-colors duration-200"
           >
             Acudetox Form
           </button>
-          
-          <p 
+
+          <button
+            type="button"
             onClick={() => console.log('Download Consent Form')}
-            className="text-center text-gray-700 text-sm pt-2 underline cursor-pointer hover:text-gray-900"
+            className="text-center w-full text-gray-700 text-sm pt-2 underline cursor-pointer hover:text-gray-900 bg-transparent"
           >
             Download Consent Form
-          </p>
+          </button>
         </div>
 
         {/* Footer */}
