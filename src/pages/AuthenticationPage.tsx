@@ -163,7 +163,7 @@ const AuthenticationPage: React.FC = () => {
         size="lg"
         direction="vertical"
         showTitle={true}
-        titleClassName="font-['Kapakana'] text-[75px] leading-none tracking-normal [word-spacing:0.40em]"
+        titleClassName="font-kapakana text-[75px] leading-none tracking-normal [word-spacing:0.40em]"
         titlePosition="above"
         gapClassName="gap-0"
         titleSpacing={-55}

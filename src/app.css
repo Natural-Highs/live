@@ -11,14 +11,14 @@
   --color-bgGreen: #E2FDE6;
 
   /* Custom Font Families */
-  --font-inria: 'Inria Serif', sans-serif;
-  --font-inter: 'Inter', sans-serif;
-  --font-kapakana: 'Kapakana', sans-serif;
-  --font-kotta: 'Kotta One', sans-serif;
-  --font-lisu: 'Lisu Bosa', sans-serif;
+  --font-inria: "Inria Serif", sans-serif;
+  --font-inter: "Inter", sans-serif;
+  --font-kapakana: "Kapakana", sans-serif;
+  --font-kotta: "Kotta One", sans-serif;
+  --font-lisu: "Lisu Bosa", sans-serif;
 }
 
-h1 {
+.card h1 {
   font-family: 'Lisu Bosa', sans-serif;
   font-size: 37px;
 }
