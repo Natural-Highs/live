@@ -2,6 +2,10 @@ import type React from 'react';
 import { useEffect, useState } from 'react';
 import { PageContainer } from '@/components/ui/page-container';
 import { WebsiteLogo } from '@/components/ui/website-logo';
+import Greencard from '@/components/ui/GreenCard';
+import GrnButton from '@/components/ui/GrnButton';
+import GreyButton from '@/components/ui/GreyButton';
+import Titlecard from '@/components/ui/TitleCard';
 import { useAuth } from '../context/AuthContext';
 
 interface Event {
@@ -107,8 +111,7 @@ const DashboardPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <PageContainer>
         {/* Header with Logo */}
         <div className="flex flex-col items-center mb-6">
           <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-4 shadow-lg">
@@ -120,11 +123,12 @@ const DashboardPage: React.FC = () => {
         </div>
 
         {/* Check In Section */}
-        <div className="bg-base-200 rounded-3xl p-6 mb-4 shadow-md">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4 text-center">
-            Check In
-          </h2>
+        
+        <Titlecard>
+          <h1>Check In</h1>
+        </Titlecard>
 
+        <Greencard>
           {error && (
             <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-lg mb-3 text-sm text-center">
               {error}
@@ -150,41 +154,36 @@ const DashboardPage: React.FC = () => {
               required
             />
 
-            <button
+            <GrnButton
               type="submit"
-              disabled={submittingCode || eventCode.length !== 4}
-              className="w-full bg-green-700 hover:bg-green-800 disabled:bg-green-600 disabled:opacity-50 text-white font-semibold py-3 rounded-full transition-colors duration-200"
-            >
+              disabled={submittingCode || eventCode.length !== 4}            >
               {submittingCode ? 'Registering...' : 'Submit'}
-            </button>
+            </GrnButton>
           </form>
-        </div>
+        </Greencard>
 
         {/* Navigation Buttons */}
-        <div className="space-y-3">
-          <button
-            type='submit'
+        <div className="text-center space-y-3 w-1/5">
+          <GreyButton
+            type='button'
             onClick={() => console.log('Account Information')}
-            className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 rounded-full transition-colors duration-200"
           >
             Account Information
-          </button>
+          </GreyButton>
 
-          <button
-            type='submit'
+          <GreyButton
+            type='button'
             onClick={() => console.log('Feedback Forms')}
-            className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 rounded-full transition-colors duration-200"
           >
             Feedback Forms
-          </button>
+          </GreyButton>
 
-          <button
-            type='submit'
+          <GreyButton
+            type='button'
             onClick={() => console.log('Acudetox Form')}
-            className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 rounded-full transition-colors duration-200"
           >
             Acudetox Form
-          </button>
+          </GreyButton>
 
           <button
             type="button"
@@ -226,8 +225,7 @@ const DashboardPage: React.FC = () => {
             </div>
           </div>
         )}
-      </div>
-    </div>
+    </PageContainer>
   );
 };
 
