@@ -5,6 +5,11 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Navigate } from 'react-router-dom';
 import { z } from 'zod';
+import GreenCard from '@/components/ui/GreenCard';
+import GreyButton from '@/components/ui/GreyButton';
+import GrnButton from '@/components/ui/GrnButton';
+import { PageContainer } from '@/components/ui/page-container';
+import TitleCard from '@/components/ui/TitleCard';
 import { auth } from '$lib/firebase/firebase.app';
 import { BrandLogo } from '@/components/ui';
 import { useAuth } from '../context/AuthContext';
@@ -153,181 +158,168 @@ const AuthenticationPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-base-100">
-      <div className="mb-8">
-        <BrandLogo
-          size="lg"
-          direction="vertical"
-          showTitle={true}
-          titleClassName="font-['Kapakana'] text-[75px] leading-none tracking-normal [word-spacing:0.40em]"
-          titlePosition="above"
-          gapClassName="gap-0"
-          titleSpacing={-55}
-        />
-      </div>
-      <div className="card bg-base-200 w-full max-w-md shadow-xl">
-        <div className="card-body">
-          <h2 className="card-title text-2xl">{isSignUp ? 'Sign Up' : 'Login'}</h2>
-          <p className="text-sm opacity-70">
-            {isSignUp
-              ? 'Create a new account to get started'
-              : 'Enter your credentials to access your account'}
-          </p>
-
-          {authError && (
-            <div className="alert alert-error">
-              <span>{authError}</span>
-            </div>
-          )}
-
-          {isSignUp ? (
-            <form onSubmit={signupForm.handleSubmit(onSignUp)} className="space-y-4">
-              <div className="form-control">
-                <label htmlFor="signup-username" className="label">
-                  <span className="label-text">Username</span>
-                </label>
-                <input
-                  id="signup-username"
-                  type="text"
-                  placeholder="johndoe"
-                  className="input input-bordered"
-                  {...signupForm.register('username')}
-                />
-                {signupForm.formState.errors.username && (
-                  <div className="label">
-                    <span className="label-text-alt text-error">
-                      {signupForm.formState.errors.username.message}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="form-control">
-                <label htmlFor="signup-email" className="label">
-                  <span className="label-text">Email</span>
-                </label>
-                <input
-                  id="signup-email"
-                  type="email"
-                  placeholder="john@example.com"
-                  className="input input-bordered"
-                  {...signupForm.register('email')}
-                />
-                {signupForm.formState.errors.email && (
-                  <div className="label">
-                    <span className="label-text-alt text-error">
-                      {signupForm.formState.errors.email.message}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="form-control">
-                <label htmlFor="signup-password" className="label">
-                  <span className="label-text">Password</span>
-                </label>
-                <input
-                  id="signup-password"
-                  type="password"
-                  className="input input-bordered"
-                  {...signupForm.register('password')}
-                />
-                {signupForm.formState.errors.password && (
-                  <div className="label">
-                    <span className="label-text-alt text-error">
-                      {signupForm.formState.errors.password.message}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="form-control">
-                <label htmlFor="signup-confirm-password" className="label">
-                  <span className="label-text">Confirm Password</span>
-                </label>
-                <input
-                  id="signup-confirm-password"
-                  type="password"
-                  className="input input-bordered"
-                  {...signupForm.register('confirmPassword')}
-                />
-                {signupForm.formState.errors.confirmPassword && (
-                  <div className="label">
-                    <span className="label-text-alt text-error">
-                      {signupForm.formState.errors.confirmPassword.message}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <button type="submit" className="btn btn-primary w-full">
-                Sign Up
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
-              <div className="form-control">
-                <label htmlFor="login-email" className="label">
-                  <span className="label-text">Email</span>
-                </label>
-                <input
-                  id="login-email"
-                  type="email"
-                  placeholder="john@example.com"
-                  className="input input-bordered"
-                  {...loginForm.register('email')}
-                />
-                {loginForm.formState.errors.email && (
-                  <div className="label">
-                    <span className="label-text-alt text-error">
-                      {loginForm.formState.errors.email.message}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <div className="form-control">
-                <label htmlFor="login-password" className="label">
-                  <span className="label-text">Password</span>
-                </label>
-                <input
-                  id="login-password"
-                  type="password"
-                  className="input input-bordered"
-                  {...loginForm.register('password')}
-                />
-                {loginForm.formState.errors.password && (
-                  <div className="label">
-                    <span className="label-text-alt text-error">
-                      {loginForm.formState.errors.password.message}
-                    </span>
-                  </div>
-                )}
-              </div>
-
-              <button type="submit" className="btn btn-primary w-full">
-                Login
-              </button>
-            </form>
-          )}
-
-          <div className="mt-4 text-center text-sm">
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setAuthError('');
-                loginForm.reset();
-                signupForm.reset();
-              }}
-              className="link link-primary"
-            >
-              {isSignUp ? 'Already have an account? Login' : "Don't have an account? Sign Up"}
-            </button>
+    <PageContainer>
+      <BrandLogo
+        size="lg"
+        direction="vertical"
+        showTitle={true}
+        titleClassName="font-kapakana text-[75px] leading-none tracking-normal [word-spacing:0.40em]"
+        titlePosition="above"
+        gapClassName="gap-0"
+        titleSpacing={-55}
+      />
+      <TitleCard>
+        <h1>{isSignUp ? 'Sign Up' : 'Sign In'}</h1>
+      </TitleCard>
+      <GreenCard>
+        {authError && (
+          <div className="alert alert-error">
+            <span>{authError}</span>
           </div>
-        </div>
+        )}
+
+        {isSignUp ? (
+          <form onSubmit={signupForm.handleSubmit(onSignUp)} className="space-y-4">
+            <div className="form-control">
+              <label htmlFor="signup-username" className="label">
+                <span className="label-text">Username</span>
+              </label>
+              <input
+                id="signup-username"
+                type="text"
+                placeholder="johndoe"
+                className="input input-bordered"
+                {...signupForm.register('username')}
+              />
+              {signupForm.formState.errors.username && (
+                <div className="label">
+                  <span className="label-text-alt text-error">
+                    {signupForm.formState.errors.username.message}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="form-control">
+              <label htmlFor="signup-email" className="label">
+                <span className="label-text">Email</span>
+              </label>
+              <input
+                id="signup-email"
+                type="email"
+                placeholder="john@example.com"
+                className="input input-bordered"
+                {...signupForm.register('email')}
+              />
+              {signupForm.formState.errors.email && (
+                <div className="label">
+                  <span className="label-text-alt text-error">
+                    {signupForm.formState.errors.email.message}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="form-control">
+              <label htmlFor="signup-password" className="label">
+                <span className="label-text">Password</span>
+              </label>
+              <input
+                id="signup-password"
+                type="password"
+                className="input input-bordered"
+                {...signupForm.register('password')}
+              />
+              {signupForm.formState.errors.password && (
+                <div className="label">
+                  <span className="label-text-alt text-error">
+                    {signupForm.formState.errors.password.message}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="form-control">
+              <label htmlFor="signup-confirm-password" className="label">
+                <span className="label-text">Confirm Password</span>
+              </label>
+              <input
+                id="signup-confirm-password"
+                type="password"
+                className="input input-bordered"
+                {...signupForm.register('confirmPassword')}
+              />
+              {signupForm.formState.errors.confirmPassword && (
+                <div className="label">
+                  <span className="label-text-alt text-error">
+                    {signupForm.formState.errors.confirmPassword.message}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <GrnButton type="submit">Sign Up</GrnButton>
+          </form>
+        ) : (
+          <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
+            <div className="form-control">
+              <label htmlFor="login-email" className="label">
+                <span className="label-text">Email</span>
+              </label>
+              <input
+                id="login-email"
+                type="email"
+                placeholder="john@example.com"
+                className="input input-bordered"
+                {...loginForm.register('email')}
+              />
+              {loginForm.formState.errors.email && (
+                <div className="label">
+                  <span className="label-text-alt text-error">
+                    {loginForm.formState.errors.email.message}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <div className="form-control">
+              <label htmlFor="login-password" className="label">
+                <span className="label-text">Password</span>
+              </label>
+              <input
+                id="login-password"
+                type="password"
+                className="input input-bordered"
+                {...loginForm.register('password')}
+              />
+              {loginForm.formState.errors.password && (
+                <div className="label">
+                  <span className="label-text-alt text-error">
+                    {loginForm.formState.errors.password.message}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            <GrnButton type="submit">Sign In</GrnButton>
+          </form>
+        )}
+      </GreenCard>
+      <div className="text-center">
+        <p className='pb-2 px-[7.2rem] font-inria text-[1.25rem]'>Or</p>
+        <GreyButton
+          type="button"
+          onClick={() => {
+            setIsSignUp(!isSignUp);
+            setAuthError('');
+            loginForm.reset();
+            signupForm.reset();
+          }}
+        >
+          {isSignUp ? 'Login' : 'Sign Up'}
+        </GreyButton>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 
