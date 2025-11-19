@@ -10,6 +10,7 @@ import GreyButton from '@/components/ui/GreyButton';
 import GrnButton from '@/components/ui/GrnButton';
 import { PageContainer } from '@/components/ui/page-container';
 import TitleCard from '@/components/ui/TitleCard';
+import { BrandLogo } from '@/components/ui/title';
 import { auth } from '$lib/firebase/firebase.app';
 import { BrandLogo } from '@/components/ui';
 import { auth } from '$lib/firebase/firebase.app';
@@ -158,15 +159,15 @@ const AuthenticationPage: React.FC = () => {
     }
   };
 
-  const handleGuestSignIn = () => {
-    // TODO: Implement guest sign in logic
-    console.log('Sign in as guest');
-  };
+  // const handleGuestSignIn = () => {
+  //   // TODO: Implement guest sign in logic
+  //   console.log('Sign in as guest');
+  // };
 
-  const handleForgotPassword = () => {
-    // TODO: Implement forgot password logic
-    console.log('Forgot password');
-  };
+  // const handleForgotPassword = () => {
+  //   // TODO: Implement forgot password logic
+  //   console.log('Forgot password');
+  // };
 
   return (
     <PageContainer>
