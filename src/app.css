@@ -1,5 +1,28 @@
 @import "tailwindcss";
 
+/* I apologize for this monstrosity of an import statement. Trying to make it multiline didn't work. */
+@import url('https://fonts.googleapis.com/css2?family=Inria+Serif:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Kapakana:wght@300..400&family=Kotta+One&family=Lisu+Bosa:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+
+@theme {
+  /* Custom Colors */
+  --color-btnGreen: #347937;
+  --color-btnGrey: #637B7C;
+  --color-midGreen: #98DA87;
+  --color-bgGreen: #E2FDE6;
+
+  /* Custom Font Families */
+  --font-inria: "Inria Serif", sans-serif;
+  --font-inter: "Inter", sans-serif;
+  --font-kapakana: "Kapakana", sans-serif;
+  --font-kotta: "Kotta One", sans-serif;
+  --font-lisu: "Lisu Bosa", sans-serif;
+}
+
+.card h1 {
+  font-family: 'Lisu Bosa', sans-serif;
+  font-size: 37px;
+}
+
 @plugin "daisyui" {
   themes: naturalhighs --default;
   logs: false;
@@ -10,6 +33,11 @@
   default: true;
   prefersdark: false;
   color-scheme: light;
+
+  --color-btnGreen: #347937;
+  --color-btnGrey: #637B7C;
+  --color-midGreen: #98DA87;
+  --color-bgGreen: #E2FDE6;
 
   --color-base-100: #e2fde6;
   --color-base-200: #98da87;

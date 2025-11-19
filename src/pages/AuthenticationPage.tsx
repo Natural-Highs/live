@@ -5,6 +5,12 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Navigate } from 'react-router-dom';
 import { z } from 'zod';
+import GreenCard from '@/components/ui/GreenCard';
+import GreyButton from '@/components/ui/GreyButton';
+import GrnButton from '@/components/ui/GrnButton';
+import { PageContainer } from '@/components/ui/page-container';
+import TitleCard from '@/components/ui/TitleCard';
+import { auth } from '$lib/firebase/firebase.app';
 import { BrandLogo } from '@/components/ui';
 import { auth } from '$lib/firebase/firebase.app';
 import { useAuth } from '../context/AuthContext';
@@ -163,236 +169,168 @@ const AuthenticationPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Header with Logo */}
-        <div className="mb-8">
-          <BrandLogo
-            size="lg"
-            direction="vertical"
-            showTitle={true}
-            titleClassName="font-['Kapakana'] text-[75px] leading-none tracking-normal [word-spacing:0.40em]"
-            titlePosition="above"
-            gapClassName="gap-0"
-            titleSpacing={-55}
-          />
-        </div>
-
-        {/* Progress Dots - Only show on Sign Up */}
-        {isSignUp && (
-          <div className="flex justify-center gap-2 mb-6">
-            <div className="w-3 h-3 rounded-full bg-green-700"></div>
-            <div className="w-3 h-3 rounded-full bg-white border-2 border-green-700"></div>
-            <div className="w-3 h-3 rounded-full bg-white border-2 border-green-700"></div>
-            <div className="w-3 h-3 rounded-full bg-white border-2 border-green-700"></div>
+    <PageContainer>
+      <BrandLogo
+        size="lg"
+        direction="vertical"
+        showTitle={true}
+        titleClassName="font-kapakana text-[75px] leading-none tracking-normal [word-spacing:0.40em]"
+        titlePosition="above"
+        gapClassName="gap-0"
+        titleSpacing={-55}
+      />
+      <TitleCard>
+        <h1>{isSignUp ? 'Sign Up' : 'Sign In'}</h1>
+      </TitleCard>
+      <GreenCard>
+        {authError && (
+          <div className="alert alert-error">
+            <span>{authError}</span>
           </div>
         )}
 
-        {/* Form Container */}
-        <div className="bg-base-200 rounded-3xl p-6 mb-6 shadow-md">
-          <h2 className="text-3xl font-serif text-gray-800 text-center border-b-2 border-gray-800 pb-2 mb-6 inline-block w-full">
-            {isSignUp ? 'Sign Up' : 'Sign In'}
-          </h2>
-
-          {authError && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-lg mb-4 text-sm text-center">
-              {authError}
-            </div>
-          )}
-
-          {isSignUp ? (
-            <form onSubmit={signupForm.handleSubmit(onSignUp)} className="space-y-4">
-              <div>
-                <label htmlFor="signup-username" className="block text-gray-800 font-semibold mb-2">
-                  Username
-                </label>
-                <input
-                  id="signup-username"
-                  type="text"
-                  placeholder="johndoe"
-                  className="w-full bg-white rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-600"
-                  {...signupForm.register('username')}
-                />
-                {signupForm.formState.errors.username && (
-                  <p className="text-red-700 text-sm mt-1">
+        {isSignUp ? (
+          <form onSubmit={signupForm.handleSubmit(onSignUp)} className="space-y-4">
+            <div className="form-control">
+              <label htmlFor="signup-username" className="label">
+                <span className="label-text">Username</span>
+              </label>
+              <input
+                id="signup-username"
+                type="text"
+                placeholder="johndoe"
+                className="input input-bordered"
+                {...signupForm.register('username')}
+              />
+              {signupForm.formState.errors.username && (
+                <div className="label">
+                  <span className="label-text-alt text-error">
                     {signupForm.formState.errors.username.message}
-                  </p>
-                )}
-              </div>
+                  </span>
+                </div>
+              )}
+            </div>
 
-              <div>
-                <label htmlFor="signup-email" className="block text-gray-800 font-semibold mb-2">
-                  Email
-                </label>
-                <input
-                  id="signup-email"
-                  type="email"
-                  placeholder="john@example.com"
-                  className="w-full bg-white rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-600"
-                  {...signupForm.register('email')}
-                />
-                {signupForm.formState.errors.email && (
-                  <p className="text-red-700 text-sm mt-1">
+            <div className="form-control">
+              <label htmlFor="signup-email" className="label">
+                <span className="label-text">Email</span>
+              </label>
+              <input
+                id="signup-email"
+                type="email"
+                placeholder="john@example.com"
+                className="input input-bordered"
+                {...signupForm.register('email')}
+              />
+              {signupForm.formState.errors.email && (
+                <div className="label">
+                  <span className="label-text-alt text-error">
                     {signupForm.formState.errors.email.message}
-                  </p>
-                )}
-              </div>
+                  </span>
+                </div>
+              )}
+            </div>
 
-              <div>
-                <label htmlFor="signup-password" className="block text-gray-800 font-semibold mb-2">
-                  Password
-                </label>
-                <input
-                  id="signup-password"
-                  type="password"
-                  className="w-full bg-white rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-600"
-                  {...signupForm.register('password')}
-                />
-                {signupForm.formState.errors.password && (
-                  <p className="text-red-700 text-sm mt-1">
+            <div className="form-control">
+              <label htmlFor="signup-password" className="label">
+                <span className="label-text">Password</span>
+              </label>
+              <input
+                id="signup-password"
+                type="password"
+                className="input input-bordered"
+                {...signupForm.register('password')}
+              />
+              {signupForm.formState.errors.password && (
+                <div className="label">
+                  <span className="label-text-alt text-error">
                     {signupForm.formState.errors.password.message}
-                  </p>
-                )}
-              </div>
+                  </span>
+                </div>
+              )}
+            </div>
 
-              <div>
-                <label
-                  htmlFor="signup-confirm-password"
-                  className="block text-gray-800 font-semibold mb-2"
-                >
-                  Confirm Password
-                </label>
-                <input
-                  id="signup-confirm-password"
-                  type="password"
-                  className="w-full bg-white rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-600"
-                  {...signupForm.register('confirmPassword')}
-                />
-                {signupForm.formState.errors.confirmPassword && (
-                  <p className="text-red-700 text-sm mt-1">
+            <div className="form-control">
+              <label htmlFor="signup-confirm-password" className="label">
+                <span className="label-text">Confirm Password</span>
+              </label>
+              <input
+                id="signup-confirm-password"
+                type="password"
+                className="input input-bordered"
+                {...signupForm.register('confirmPassword')}
+              />
+              {signupForm.formState.errors.confirmPassword && (
+                <div className="label">
+                  <span className="label-text-alt text-error">
                     {signupForm.formState.errors.confirmPassword.message}
-                  </p>
-                )}
-              </div>
+                  </span>
+                </div>
+              )}
+            </div>
 
-              <button
-                type="submit"
-                disabled={signupForm.formState.isSubmitting}
-                className="w-full bg-green-700 hover:bg-green-800 disabled:bg-green-600 disabled:opacity-50 text-white font-semibold py-3 rounded-full transition-colors duration-200"
-              >
-                {signupForm.formState.isSubmitting ? 'Creating Account...' : 'Create Account'}
-              </button>
-            </form>
-          ) : (
-            <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
-              <div>
-                <label htmlFor="login-email" className="block text-gray-800 font-semibold mb-2">
-                  Email
-                </label>
-                <input
-                  id="login-email"
-                  type="email"
-                  placeholder="john@example.com"
-                  className="w-full bg-white rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-600"
-                  {...loginForm.register('email')}
-                />
-                {loginForm.formState.errors.email && (
-                  <p className="text-red-700 text-sm mt-1">
+            <GrnButton type="submit">Sign Up</GrnButton>
+          </form>
+        ) : (
+          <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
+            <div className="form-control">
+              <label htmlFor="login-email" className="label">
+                <span className="label-text">Email</span>
+              </label>
+              <input
+                id="login-email"
+                type="email"
+                placeholder="john@example.com"
+                className="input input-bordered"
+                {...loginForm.register('email')}
+              />
+              {loginForm.formState.errors.email && (
+                <div className="label">
+                  <span className="label-text-alt text-error">
                     {loginForm.formState.errors.email.message}
-                  </p>
-                )}
-              </div>
+                  </span>
+                </div>
+              )}
+            </div>
 
-              <div>
-                <label htmlFor="login-password" className="block text-gray-800 font-semibold mb-2">
-                  Password
-                </label>
-                <input
-                  id="login-password"
-                  type="password"
-                  className="w-full bg-white rounded-lg px-4 py-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-green-600"
-                  {...loginForm.register('password')}
-                />
-                {loginForm.formState.errors.password && (
-                  <p className="text-red-700 text-sm mt-1">
+            <div className="form-control">
+              <label htmlFor="login-password" className="label">
+                <span className="label-text">Password</span>
+              </label>
+              <input
+                id="login-password"
+                type="password"
+                className="input input-bordered"
+                {...loginForm.register('password')}
+              />
+              {loginForm.formState.errors.password && (
+                <div className="label">
+                  <span className="label-text-alt text-error">
                     {loginForm.formState.errors.password.message}
-                  </p>
-                )}
-              </div>
+                  </span>
+                </div>
+              )}
+            </div>
 
-              <button
-                type="submit"
-                disabled={loginForm.formState.isSubmitting}
-                className="w-full bg-green-700 hover:bg-green-800 disabled:bg-green-600 disabled:opacity-50 text-white font-semibold py-3 rounded-full transition-colors duration-200"
-              >
-                {loginForm.formState.isSubmitting ? 'Signing in...' : 'Sign in'}
-              </button>
-
-              <button
-                type="button"
-                onClick={handleForgotPassword}
-                className="w-full text-center text-green-800 italic text-sm hover:underline"
-              >
-                Forgot password?
-              </button>
-            </form>
-          )}
-        </div>
-
-        {/* Divider */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="flex-1 h-0.5 bg-gray-800"></div>
-          <span className="text-gray-800 font-serif">Or</span>
-          <div className="flex-1 h-0.5 bg-gray-800"></div>
-        </div>
-
-        {/* Bottom Buttons */}
-        <div className="space-y-3">
-          {isSignUp ? (
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(false);
-                setAuthError('');
-                loginForm.reset();
-                signupForm.reset();
-              }}
-              className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 rounded-full transition-colors duration-200"
-            >
-              Sign In
-            </button>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSignUp(true);
-                  setAuthError('');
-                  loginForm.reset();
-                  signupForm.reset();
-                }}
-                className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 rounded-full transition-colors duration-200"
-              >
-                Create an Account
-              </button>
-
-              <button
-                type="button"
-                onClick={handleGuestSignIn}
-                className="w-full bg-gray-500 hover:bg-gray-600 text-white font-semibold py-3 rounded-full transition-colors duration-200"
-              >
-                Sign in as a Guest
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="mt-6 text-center text-gray-600 text-sm">
-          <p>naturalhighs.org</p>
-        </div>
+            <GrnButton type="submit">Sign In</GrnButton>
+          </form>
+        )}
+      </GreenCard>
+      <div className="text-center">
+        <p className='pb-2 px-[7.2rem] font-inria text-[1.25rem]'>Or</p>
+        <GreyButton
+          type="button"
+          onClick={() => {
+            setIsSignUp(!isSignUp);
+            setAuthError('');
+            loginForm.reset();
+            signupForm.reset();
+          }}
+        >
+          {isSignUp ? 'Login' : 'Sign Up'}
+        </GreyButton>
       </div>
-    </div>
+    </PageContainer>
   );
 };
 
