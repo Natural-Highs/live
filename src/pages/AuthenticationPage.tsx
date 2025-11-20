@@ -10,8 +10,8 @@ import GreyButton from '@/components/ui/GreyButton';
 import GrnButton from '@/components/ui/GrnButton';
 import { PageContainer } from '@/components/ui/page-container';
 import TitleCard from '@/components/ui/TitleCard';
-import { auth } from '$lib/firebase/firebase.app';
 import { BrandLogo } from '@/components/ui';
+import { auth } from '$lib/firebase/firebase.app';
 import { useAuth } from '../context/AuthContext';
 
 const loginSchema = z.object({
@@ -63,7 +63,7 @@ const AuthenticationPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-base-100">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-green-100 to-green-50">
         <span className="loading loading-spinner loading-lg"></span>
       </div>
     );
@@ -156,6 +156,16 @@ const AuthenticationPage: React.FC = () => {
       }
     }
   };
+
+  // const handleGuestSignIn = () => {
+  //   // TODO: Implement guest sign in logic
+  //   console.log('Sign in as guest');
+  // };
+
+  // const handleForgotPassword = () => {
+  //   // TODO: Implement forgot password logic
+  //   console.log('Forgot password');
+  // };
 
   return (
     <PageContainer>
