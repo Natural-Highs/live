@@ -122,7 +122,7 @@ const SignUpPage2: React.FC = () => {
       </TitleCard>
 
       <GreenCard>
-      
+
         <form onSubmit={handleSubmit} className="bg-base-200 rounded-lg p-6 space-y-4">
           {error && (
             <div className="alert alert-error">
@@ -244,7 +244,7 @@ const SignUpPage2: React.FC = () => {
               <option value="other">Other</option>
             </select>
           </div>
-          
+
 
           <GrnButton
             type="submit"
@@ -252,7 +252,7 @@ const SignUpPage2: React.FC = () => {
           >
             {loading ? 'Saving...' : 'Continue'}
           </GrnButton>
-          
+
           <GreyButton
             type="button"
             onClick={() => navigate(-1)}
