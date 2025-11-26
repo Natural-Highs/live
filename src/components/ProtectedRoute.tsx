@@ -28,6 +28,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { user, loading, consentForm, admin } = useAuth();
   const location = useLocation();
 
+  /*
+  const SKIP_AUTH = true;
+  if (SKIP_AUTH) {
+    return <>{children}</>;
+  }
+  */
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
