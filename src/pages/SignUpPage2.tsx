@@ -5,6 +5,9 @@ import { useAuth } from '../context/AuthContext';
 import { PageContainer } from '@/components/ui/page-container';
 import GrnButton from '@/components/ui/GrnButton';
 import GreyButton from '@/components/ui/GreyButton';
+import { BrandLogo } from '@/components/ui';
+import TitleCard from '@/components/ui/TitleCard';
+import GreenCard from '@/components/ui/GreenCard';
 
 /**
  * SignUpPage2 - About You (Profile Information)
@@ -104,16 +107,21 @@ const SignUpPage2: React.FC = () => {
 
   return (
     <PageContainer>
-      <div className="w-full max-w-md">
-        <div className="text-center mb-6">
-          <div className="mb-4 flex justify-center">
-            <div className="w-28 h-28 bg-base-200 rounded-lg flex items-center justify-center">
-              <span className="text-4xl">🌿</span>
-            </div>
-          </div>
-          <h1 className="text-4xl font-bold text-base-content mb-2">About You</h1>
-          <div className="text-xs opacity-70 mb-4">Step 2 of 3 - Tell us about yourself</div>
-        </div>
+        <BrandLogo
+        size="lg"
+        direction="vertical"
+        showTitle={true}
+        titleClassName="font-kapakana text-[75px] leading-none tracking-normal [word-spacing:0.40em]"
+        titlePosition="above"
+        gapClassName="gap-0"
+        titleSpacing={-55}
+      />
+
+      <TitleCard>
+        <h1>About You</h1>
+      </TitleCard>
+
+      <GreenCard>
 
         <form onSubmit={handleSubmit} className="bg-base-200 rounded-lg p-6 space-y-4">
           {error && (
@@ -133,7 +141,7 @@ const SignUpPage2: React.FC = () => {
               value={formData.firstName}
               onChange={handleChange}
               required
-              className="input input-bordered"
+              className="input input-bordered w-full"
               placeholder="Enter first name"
             />
           </div>
@@ -149,7 +157,7 @@ const SignUpPage2: React.FC = () => {
               value={formData.lastName}
               onChange={handleChange}
               required
-              className="input input-bordered"
+              className="input input-bordered w-full"
               placeholder="Enter last name"
             />
           </div>
@@ -164,7 +172,7 @@ const SignUpPage2: React.FC = () => {
               name="phone"
               value={formData.phone}
               onChange={handleChange}
-              className="input input-bordered"
+              className="input input-bordered w-full"
               placeholder="Enter phone number"
             />
           </div>
@@ -181,7 +189,7 @@ const SignUpPage2: React.FC = () => {
               onChange={handleChange}
               required
               max={new Date().toISOString().split('T')[0]}
-              className="input input-bordered"
+              className="input input-bordered w-full"
             />
           </div>
 
@@ -197,7 +205,7 @@ const SignUpPage2: React.FC = () => {
               name="emergencyContactName"
               value={formData.emergencyContactName}
               onChange={handleChange}
-              className="input input-bordered"
+              className="input input-bordered w-full"
               placeholder="Enter emergency contact name"
             />
           </div>
@@ -212,7 +220,7 @@ const SignUpPage2: React.FC = () => {
               name="emergencyContactPhone"
               value={formData.emergencyContactPhone}
               onChange={handleChange}
-              className="input input-bordered"
+              className="input input-bordered w-full"
               placeholder="Enter emergency contact phone"
             />
           </div>
@@ -226,7 +234,7 @@ const SignUpPage2: React.FC = () => {
               name="emergencyContactRelationship"
               value={formData.emergencyContactRelationship}
               onChange={handleChange}
-              className="select select-bordered"
+              className="select select-bordered w-full"
             >
               <option value="">Select relationship</option>
               <option value="parent">Parent</option>
@@ -237,22 +245,22 @@ const SignUpPage2: React.FC = () => {
             </select>
           </div>
 
+
           <GrnButton
             type="submit"
             disabled={loading}
-            className="btn btn-primary w-full rounded-[20px] shadow-md font-semibold mt-6"
           >
             {loading ? 'Saving...' : 'Continue'}
           </GrnButton>
-          
+
           <GreyButton
             type="button"
             onClick={() => navigate(-1)}
           >
-            Back
+            Back to Sign Up
           </GreyButton>
         </form>
-      </div>
+        </GreenCard>
     </PageContainer>
   );
 };
