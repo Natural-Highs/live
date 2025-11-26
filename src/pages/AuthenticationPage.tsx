@@ -3,14 +3,14 @@ import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'fire
 import type React from 'react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { z } from 'zod';
+import { BrandLogo } from '@/components/ui';
 import GreenCard from '@/components/ui/GreenCard';
 import GreyButton from '@/components/ui/GreyButton';
 import GrnButton from '@/components/ui/GrnButton';
 import { PageContainer } from '@/components/ui/page-container';
 import TitleCard from '@/components/ui/TitleCard';
-import { BrandLogo } from '@/components/ui';
 import { auth } from '$lib/firebase/firebase.app';
 import { useAuth } from '../context/AuthContext';
 
@@ -38,6 +38,7 @@ const AuthenticationPage: React.FC = () => {
   const { user, loading, consentForm } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [authError, setAuthError] = useState('');
+  const navigate = useNavigate();
 
   const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -63,7 +64,7 @@ const AuthenticationPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-green-100 to-green-50">
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-b from-green-100 to-green-50">
         <span className="loading loading-spinner loading-lg"></span>
       </div>
     );
@@ -181,7 +182,7 @@ const AuthenticationPage: React.FC = () => {
       <TitleCard>
         <h1>{isSignUp ? 'Sign Up' : 'Sign In'}</h1>
       </TitleCard>
-      <GreenCard>
+      <GreenCard className="flex flex-col max-w-full!">
         {authError && (
           <div className="alert alert-error">
             <span>{authError}</span>
@@ -190,7 +191,7 @@ const AuthenticationPage: React.FC = () => {
 
         {isSignUp ? (
           <form onSubmit={signupForm.handleSubmit(onSignUp)} className="space-y-4">
-            <div className="form-control">
+            <div className="form-control flex flex-col">
               <label htmlFor="signup-username" className="label">
                 <span className="label-text">Username</span>
               </label>
@@ -198,7 +199,7 @@ const AuthenticationPage: React.FC = () => {
                 id="signup-username"
                 type="text"
                 placeholder="johndoe"
-                className="input input-bordered"
+                className="input input-bordered w-full"
                 {...signupForm.register('username')}
               />
               {signupForm.formState.errors.username && (
@@ -210,15 +211,17 @@ const AuthenticationPage: React.FC = () => {
               )}
             </div>
 
-            <div className="form-control">
+            <div className="form-control flex flex-col gap-1">
               <label htmlFor="signup-email" className="label">
                 <span className="label-text">Email</span>
+                {/* In progress UI change */}
+                {/* <span className="label-text font-[inria] text-lg text-black">Email</span> */}
               </label>
               <input
                 id="signup-email"
                 type="email"
                 placeholder="john@example.com"
-                className="input input-bordered"
+                className="input input-bordered w-full"
                 {...signupForm.register('email')}
               />
               {signupForm.formState.errors.email && (
@@ -230,14 +233,14 @@ const AuthenticationPage: React.FC = () => {
               )}
             </div>
 
-            <div className="form-control">
+            <div className="form-control flex flex-col">
               <label htmlFor="signup-password" className="label">
                 <span className="label-text">Password</span>
               </label>
               <input
                 id="signup-password"
                 type="password"
-                className="input input-bordered"
+                className="input input-bordered w-full"
                 {...signupForm.register('password')}
               />
               {signupForm.formState.errors.password && (
@@ -249,14 +252,14 @@ const AuthenticationPage: React.FC = () => {
               )}
             </div>
 
-            <div className="form-control">
+            <div className="form-control flex flex-col">
               <label htmlFor="signup-confirm-password" className="label">
                 <span className="label-text">Confirm Password</span>
               </label>
               <input
                 id="signup-confirm-password"
                 type="password"
-                className="input input-bordered"
+                className="input input-bordered w-full"
                 {...signupForm.register('confirmPassword')}
               />
               {signupForm.formState.errors.confirmPassword && (
@@ -268,11 +271,11 @@ const AuthenticationPage: React.FC = () => {
               )}
             </div>
 
-            <GrnButton type="submit">Sign Up</GrnButton>
+            <GrnButton type="submit">Create Account</GrnButton>
           </form>
         ) : (
           <form onSubmit={loginForm.handleSubmit(onLogin)} className="space-y-4">
-            <div className="form-control">
+            <div className="form-control flex flex-col">
               <label htmlFor="login-email" className="label">
                 <span className="label-text">Email</span>
               </label>
@@ -280,7 +283,7 @@ const AuthenticationPage: React.FC = () => {
                 id="login-email"
                 type="email"
                 placeholder="john@example.com"
-                className="input input-bordered"
+                className="input input-bordered w-full"
                 {...loginForm.register('email')}
               />
               {loginForm.formState.errors.email && (
@@ -292,14 +295,14 @@ const AuthenticationPage: React.FC = () => {
               )}
             </div>
 
-            <div className="form-control">
+            <div className="form-control flex flex-col">
               <label htmlFor="login-password" className="label">
                 <span className="label-text">Password</span>
               </label>
               <input
                 id="login-password"
                 type="password"
-                className="input input-bordered"
+                className="input input-bordered w-full"
                 {...loginForm.register('password')}
               />
               {loginForm.formState.errors.password && (
@@ -315,8 +318,11 @@ const AuthenticationPage: React.FC = () => {
           </form>
         )}
       </GreenCard>
-      <div className="text-center">
-        <p className='pb-2 px-[7.2rem] font-inria text-[1.25rem]'>Or</p>
+
+      {/* Buttons */}
+      <div className="w-[22.5rem] flex flex-col items-center text-center">
+        <div className="divider">OR</div>
+        {/* <p className="pb-2 px-[7.2rem] font-inria text-[1.25rem]">Or</p> */}
         <GreyButton
           type="button"
           onClick={() => {
@@ -326,7 +332,12 @@ const AuthenticationPage: React.FC = () => {
             signupForm.reset();
           }}
         >
-          {isSignUp ? 'Login' : 'Sign Up'}
+          {isSignUp ? 'Sign In' : 'Sign Up'}
+        </GreyButton>
+
+        <div className="divider">OR</div>
+        <GreyButton type="button" onClick={() => navigate('/guest')}>
+          Continue as Guest
         </GreyButton>
       </div>
     </PageContainer>

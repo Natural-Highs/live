@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 import AdminPage from './pages/AdminPage';
 import AuthenticationPage from './pages/AuthenticationPage';
+import GuestPage from './pages/GuestPage';
 import ConsentFormPage from './pages/ConsentFormPage';
 import DashboardPage from './pages/DashboardPage';
 import HomePage from './pages/HomePage';
@@ -53,6 +54,7 @@ function App() {
           />
           {/* Public routes */}
           <Route path="/authentication" element={<AuthenticationPage />} />
+          <Route path="/guest" element={<GuestPage />} />
           <Route path="/signup" element={<SignUpPage1 />} />
           <Route
             path="/signup/about-you"

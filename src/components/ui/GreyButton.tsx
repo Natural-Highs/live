@@ -7,7 +7,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 const GreyButton = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, children, ...props }, ref) => {
     const baseClasses =
-      'bg-btnGrey text-white w-full text-[20px] font-kotta flex justify-center rounded-xl hover:bg-gray-700 active:shadow-sm';
+      'bg-btnGrey text-white w-[75%] min-h-[2.7rem] text-[20px] font-kotta rounded-[1.13rem] flex justify-center mx-auto items-center hover:bg-gray-700 active:shadow-sm cursor-pointer disabled:cursor-not-allowed';
 
     return (
       <button ref={ref} className={`${baseClasses} ${className ?? ''}`} {...props}>

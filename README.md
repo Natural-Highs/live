@@ -48,6 +48,10 @@
 
 5.  Open: http://localhost:5174
 
+
+    **Optional**: Uncomment the code starting at line 31 in src/components/ProtectedRoute.tsx to access restricted pages (input the pages' URLs manually to access them).
+
+
 ## Docs
 
 For detailed notes see [docs/RUNBOOK.md](docs/RUNBOOK.md):
