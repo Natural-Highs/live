@@ -11,6 +11,7 @@ import DashboardPage from './pages/DashboardPage';
 import HomePage from './pages/HomePage';
 import SignUpPage1 from './pages/SignUpPage1';
 import SignUpPage2 from './pages/SignUpPage2';
+import AccountInfoPage from './pages/AccountInformation';
 import AnalyticsPage from './pages/AnalyticsPage';
 
 function App() {
@@ -32,6 +33,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/account"
+            element={
+              <ProtectedRoute>
+                <AccountInfoPage />
               </ProtectedRoute>
             }
           />

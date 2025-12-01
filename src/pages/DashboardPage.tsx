@@ -1,6 +1,7 @@
 import type React from 'react';
 import { useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+// import { useAuth } from '../context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import Greencard from '@/components/ui/GreenCard';
 import GreyButton from '@/components/ui/GreyButton';
 import GrnButton from '@/components/ui/GrnButton';
@@ -18,7 +19,8 @@ interface Event {
 }
 
 const DashboardPage: React.FC = () => {
-  //const { user } = useAuth();
+  const navigate = useNavigate();
+  // const { user } = useAuth();
   const [events, setEvents] = useState<Event[]>([]);
   const [eventCode, setEventCode] = useState('');
   const [loading, setLoading] = useState(true);
@@ -161,7 +163,7 @@ const DashboardPage: React.FC = () => {
 
       {/* Navigation Buttons */}
       <div className="text-center space-y-3 w-1/5">
-        <GreyButton type="button" onClick={() => console.log('Account Information')}>
+        <GreyButton type="button" onClick={() => navigate("/account")}>
           Account Information
         </GreyButton>
 
