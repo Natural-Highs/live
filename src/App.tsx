@@ -11,6 +11,7 @@ import DashboardPage from './pages/DashboardPage';
 import HomePage from './pages/HomePage';
 import SignUpPage1 from './pages/SignUpPage1';
 import SignUpPage2 from './pages/SignUpPage2';
+import AnalyticsPage from './pages/AnalyticsPage';
 
 function App() {
   return (
@@ -40,6 +41,14 @@ function App() {
             element={
               <AdminRoute>
                 <AdminPage />
+              </AdminRoute>
+            }
+          />
+          <Route
+            path="/admin/analytics"
+            element={
+              <AdminRoute>
+                <AnalyticsPage />
               </AdminRoute>
             }
           />
