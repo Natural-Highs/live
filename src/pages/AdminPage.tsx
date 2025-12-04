@@ -1,6 +1,6 @@
 import type React from 'react';
 import { Route, Routes } from 'react-router-dom';
-import Chart from '@/components/ui/chart';
+import Chart from '@/components/dataComponents/chart';
 import { PageContainer } from '@/components/ui/page-container';
 
 const AdminHome: React.FC = () => {

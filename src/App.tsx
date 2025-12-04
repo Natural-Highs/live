@@ -8,8 +8,6 @@ import AuthenticationPage from './pages/AuthenticationPage';
 import GuestPage from './pages/GuestPage';
 import ConsentFormPage from './pages/ConsentFormPage';
 import DashboardPage from './pages/DashboardPage';
-import HomePage from './pages/HomePage';
-import SignUpPage1 from './pages/SignUpPage1';
 import SignUpPage2 from './pages/SignUpPage2';
 import AccountInfoPage from './pages/AccountInformation';
 import AnalyticsPage from './pages/AnalyticsPage';
@@ -24,7 +22,7 @@ function App() {
             path="/"
             element={
               <ProtectedRoute>
-                <HomePage />
+                <DashboardPage />
               </ProtectedRoute>
             }
           />
@@ -73,7 +71,6 @@ function App() {
           {/* Public routes */}
           <Route path="/authentication" element={<AuthenticationPage />} />
           <Route path="/guest" element={<GuestPage />} />
-          <Route path="/signup" element={<SignUpPage1 />} />
           <Route
             path="/signup/about-you"
             element={
