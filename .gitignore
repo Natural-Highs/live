@@ -22,3 +22,6 @@ serviceAccount.json
 .trunk/logs/
 .trunk/plugins/
 .trunk/tools/
+
+# User-only content (not for git history)
+.local/
