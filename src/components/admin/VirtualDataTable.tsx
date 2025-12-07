@@ -5,12 +5,12 @@ import {
 	flexRender,
 	getCoreRowModel,
 	getFilteredRowModel,
-	getPaginationRowModel,
 	getSortedRowModel,
 	type RowSelectionState,
 	useReactTable,
 	type VisibilityState
 } from '@tanstack/react-table'
+import {useVirtualizer} from '@tanstack/react-virtual'
 import {type JSX, useEffect, useRef, useState} from 'react'
 
 const fuzzyFilter: FilterFn<unknown> = (row, columnId, value, addMeta) => {
@@ -54,26 +54,24 @@ interface DataTableProps<TData> {
 	columns: ColumnDef<TData, unknown>[]
 	searchPlaceholder?: string
 	pageSize?: number
-	// Row selection
 	enableRowSelection?: boolean
 	onSelectionChange?: (selectedIds: string[]) => void
 	getRowId?: (row: TData) => string
-	// Column visibility
 	enableColumnVisibility?: boolean
 	defaultColumnVisibility?: Record<string, boolean>
 }
 
-export function DataTable<TData>({
+export function VirtualDataTable<TData>({
 	data,
 	columns,
 	searchPlaceholder = 'Search...',
-	pageSize = 10,
 	enableRowSelection = false,
 	onSelectionChange,
 	getRowId,
 	enableColumnVisibility = false,
 	defaultColumnVisibility = {}
 }: DataTableProps<TData>) {
+	const tableContainerRef = useRef<HTMLDivElement>(null)
 	const [globalFilter, setGlobalFilter] = useState('')
 	const [rowSelection, setRowSelection] = useState<RowSelectionState>({})
 	const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(
@@ -95,9 +93,9 @@ export function DataTable<TData>({
 		id: 'select',
 		header: ({table}) => (
 			<IndeterminateCheckbox
-				checked={table.getIsAllPageRowsSelected()}
-				indeterminate={table.getIsSomePageRowsSelected()}
-				onChange={table.getToggleAllPageRowsSelectedHandler()}
+				checked={table.getIsAllRowsSelected()}
+				indeterminate={table.getIsSomeRowsSelected()}
+				onChange={table.getToggleAllRowsSelectedHandler()}
 			/>
 		),
 		cell: ({row}) => (
@@ -134,14 +132,29 @@ export function DataTable<TData>({
 		globalFilterFn: fuzzyFilter as FilterFn<TData>,
 		getCoreRowModel: getCoreRowModel(),
 		getFilteredRowModel: getFilteredRowModel(),
-		getSortedRowModel: getSortedRowModel(),
-		getPaginationRowModel: getPaginationRowModel(),
-		initialState: {
-			pagination: {
-				pageSize
-			}
-		}
+		getSortedRowModel: getSortedRowModel()
 	})
+
+	const {rows} = table.getRowModel()
+
+	// Virtual scrolling setup
+	const rowVirtualizer = useVirtualizer({
+		count: rows.length,
+		getScrollElement: () => tableContainerRef.current,
+		estimateSize: () => 48,
+		overscan: 10
+	})
+
+	const virtualRows = rowVirtualizer.getVirtualItems()
+	const totalSize = rowVirtualizer.getTotalSize()
+
+	// Padding for virtual scroll positioning
+	const paddingTop = virtualRows.length > 0 ? virtualRows[0]?.start || 0 : 0
+	const paddingBottom =
+		virtualRows.length > 0
+			? // biome-ignore lint/style/useAtIndex: TypeScript doesn't recognize .at() with current lib config
+				totalSize - (virtualRows[virtualRows.length - 1]?.end || 0)
+			: 0
 
 	return (
 		<div className='space-y-4'>
@@ -200,10 +213,13 @@ export function DataTable<TData>({
 				)}
 			</div>
 
-			{/* Table */}
-			<div className='overflow-x-auto'>
+			{/* Virtual scrolling container */}
+			<div
+				className='h-[600px] overflow-auto rounded-lg border border-base-300'
+				ref={tableContainerRef}
+			>
 				<table className='table-zebra table w-full'>
-					<thead>
+					<thead className='sticky top-0 z-10 bg-base-200'>
 						{table.getHeaderGroups().map(headerGroup => (
 							<tr key={headerGroup.id}>
 								{headerGroup.headers.map(header => (
@@ -233,78 +249,53 @@ export function DataTable<TData>({
 						))}
 					</thead>
 					<tbody>
-						{table.getRowModel().rows.length === 0 ? (
+						{paddingTop > 0 && (
+							<tr>
+								<td style={{height: paddingTop}} />
+							</tr>
+						)}
+						{rows.length === 0 ? (
 							<tr>
 								<td className='text-center' colSpan={allColumns.length}>
 									No data available
 								</td>
 							</tr>
 						) : (
-							table.getRowModel().rows.map(row => (
-								<tr key={row.id}>
-									{row.getVisibleCells().map(cell => (
-										<td key={cell.id}>
-											{flexRender(
-												cell.column.columnDef.cell,
-												cell.getContext()
-											)}
-										</td>
-									))}
-								</tr>
-							))
+							virtualRows.map(virtualRow => {
+								const row = rows[virtualRow.index]
+								return (
+									<tr key={row.id}>
+										{row.getVisibleCells().map(cell => (
+											<td key={cell.id}>
+												{flexRender(
+													cell.column.columnDef.cell,
+													cell.getContext()
+												)}
+											</td>
+										))}
+									</tr>
+								)
+							})
+						)}
+						{paddingBottom > 0 && (
+							<tr>
+								<td style={{height: paddingBottom}} />
+							</tr>
 						)}
 					</tbody>
 				</table>
 			</div>
 
-			{/* Pagination */}
-			<div className='flex items-center justify-between'>
-				<div className='text-sm'>
-					Showing {table.getState().pagination.pageIndex * pageSize + 1} to{' '}
-					{Math.min(
-						(table.getState().pagination.pageIndex + 1) * pageSize,
-						table.getFilteredRowModel().rows.length
-					)}{' '}
-					of {table.getFilteredRowModel().rows.length} entries
-				</div>
-				<div className='join'>
-					<button
-						className='btn join-item btn-sm'
-						disabled={!table.getCanPreviousPage()}
-						onClick={() => table.setPageIndex(0)}
-						type='button'
-					>
-						First
-					</button>
-					<button
-						className='btn join-item btn-sm'
-						disabled={!table.getCanPreviousPage()}
-						onClick={() => table.previousPage()}
-						type='button'
-					>
-						Previous
-					</button>
-					<button className='btn join-item btn-sm' type='button'>
-						Page {table.getState().pagination.pageIndex + 1} of{' '}
-						{table.getPageCount()}
-					</button>
-					<button
-						className='btn join-item btn-sm'
-						disabled={!table.getCanNextPage()}
-						onClick={() => table.nextPage()}
-						type='button'
-					>
-						Next
-					</button>
-					<button
-						className='btn join-item btn-sm'
-						disabled={!table.getCanNextPage()}
-						onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-						type='button'
-					>
-						Last
-					</button>
-				</div>
+			{/* Row count */}
+			<div className='text-base-content/70 text-sm'>
+				{rows.length} total rows
+				{enableRowSelection && Object.keys(rowSelection).length > 0 && (
+					<span>
+						{' '}
+						({Object.keys(rowSelection).filter(k => rowSelection[k]).length}{' '}
+						selected)
+					</span>
+				)}
 			</div>
 		</div>
 	)

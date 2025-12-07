@@ -1,3 +1,4 @@
+import {useQuery} from '@tanstack/react-query'
 import {createFileRoute} from '@tanstack/react-router'
 import type React from 'react'
 import {useState} from 'react'
@@ -8,42 +9,23 @@ import {PageContainer} from '@/components/ui/page-container'
 import Titlecard from '@/components/ui/TitleCard'
 import {WebsiteLogo} from '@/components/ui/website-logo'
 import {authGuard} from '@/lib/auth-guard'
-
-interface Event {
-	id: string
-	name: string
-	eventDate?: string
-	code?: string
-	isActive?: boolean
-	[key: string]: unknown
-}
+import {
+	type Event as EventData,
+	eventsQueryOptions
+} from '@/lib/queries/index.js'
 
 export const Route = createFileRoute('/dashboard')({
 	beforeLoad: async ctx => {
 		await authGuard(ctx, {requireAuth: true, requireConsent: true})
 	},
-	loader: async () => {
-		// Fetch events data
-		const response = await fetch('/api/events')
-		const data = (await response.json()) as {
-			success: boolean
-			events?: Event[]
-			error?: string
-		}
-
-		if (!(response.ok && data.success)) {
-			throw new Error(data.error || 'Failed to load events')
-		}
-
-		return {
-			events: data.events || []
-		}
+	loader: async ({context}) => {
+		await context.queryClient.prefetchQuery(eventsQueryOptions())
 	},
 	component: DashboardComponent
 })
 
 function DashboardComponent() {
-	const {events} = Route.useLoaderData()
+	const {data: events = []} = useQuery(eventsQueryOptions())
 	const [eventCode, setEventCode] = useState('')
 	const [submittingCode, setSubmittingCode] = useState(false)
 	const [error, setError] = useState('')
@@ -185,7 +167,7 @@ function DashboardComponent() {
 						My Events
 					</h2>
 					<div className='space-y-3'>
-						{events.map((event: Event) => (
+						{events.map((event: EventData) => (
 							<div className='rounded-lg bg-gray-100 p-4' key={event.id}>
 								<h3 className='font-semibold text-gray-800'>{event.name}</h3>
 								<p className='text-gray-600 text-sm'>

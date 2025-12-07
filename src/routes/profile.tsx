@@ -15,7 +15,7 @@ interface UserProfile {
 	phone?: string
 	dateOfBirth?: string
 	createdAt?: string | Date
-	[key: string]: unknown
+	[key: string]: {} | undefined
 }
 
 interface UserEvent {
@@ -29,7 +29,7 @@ interface UserEvent {
 		eventDate?: string
 		code?: string
 		isActive?: boolean
-		[key: string]: unknown
+		[key: string]: {} | undefined
 	}
 }
 
