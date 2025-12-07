@@ -5,7 +5,6 @@
  * Tests component rendering, loading states, error handling, and survey display
  */
 import {act, render, screen, waitFor} from '@testing-library/react'
-import {BrowserRouter} from 'react-router-dom'
 import SurveyListPage from './SurveyListPage'
 
 // Mock dependencies
@@ -14,6 +13,14 @@ vi.mock('../context/AuthContext', () => ({
 		user: {email: 'test@example.com', userId: 'test-user-id'},
 		loading: false
 	}))
+}))
+
+// Mock TanStack Router
+vi.mock('@tanstack/react-router', () => ({
+	useNavigate: () => vi.fn(),
+	Link: ({children, to}: {children: React.ReactNode; to: string}) => (
+		<a href={to}>{children}</a>
+	)
 }))
 
 // Mock fetch globally
@@ -32,11 +39,7 @@ describe('SurveyListPage', () => {
 				})
 		)
 
-		const {container} = render(
-			<BrowserRouter>
-				<SurveyListPage />
-			</BrowserRouter>
-		)
+		const {container} = render(<SurveyListPage />)
 
 		// Loading spinner is present (checking for spinner class)
 		const spinner = container.querySelector('.loading-spinner')
@@ -50,11 +53,7 @@ describe('SurveyListPage', () => {
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SurveyListPage />
-				</BrowserRouter>
-			)
+			render(<SurveyListPage />)
 		})
 
 		await waitFor(() => {
@@ -69,11 +68,7 @@ describe('SurveyListPage', () => {
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SurveyListPage />
-				</BrowserRouter>
-			)
+			render(<SurveyListPage />)
 		})
 
 		await waitFor(() => {
@@ -104,11 +99,7 @@ describe('SurveyListPage', () => {
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SurveyListPage />
-				</BrowserRouter>
-			)
+			render(<SurveyListPage />)
 		})
 
 		await waitFor(() => {
@@ -135,11 +126,7 @@ describe('SurveyListPage', () => {
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SurveyListPage />
-				</BrowserRouter>
-			)
+			render(<SurveyListPage />)
 		})
 
 		await waitFor(() => {
@@ -165,11 +152,7 @@ describe('SurveyListPage', () => {
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SurveyListPage />
-				</BrowserRouter>
-			)
+			render(<SurveyListPage />)
 		})
 
 		await waitFor(() => {
@@ -199,11 +182,7 @@ describe('SurveyListPage', () => {
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SurveyListPage />
-				</BrowserRouter>
-			)
+			render(<SurveyListPage />)
 		})
 
 		await waitFor(() => {
@@ -215,11 +194,7 @@ describe('SurveyListPage', () => {
 		vi.mocked(global.fetch).mockRejectedValueOnce(new Error('Network error'))
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SurveyListPage />
-				</BrowserRouter>
-			)
+			render(<SurveyListPage />)
 		})
 
 		await waitFor(() => {
@@ -246,11 +221,7 @@ describe('SurveyListPage', () => {
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SurveyListPage />
-				</BrowserRouter>
-			)
+			render(<SurveyListPage />)
 		})
 
 		await waitFor(() => {

@@ -1,6 +1,6 @@
+import {useNavigate, useParams} from '@tanstack/react-router'
 import type React from 'react'
 import {useEffect, useState} from 'react'
-import {useNavigate, useParams} from 'react-router-dom'
 import {
 	type SurveyJSJson,
 	SurveyRenderer
@@ -13,7 +13,7 @@ import {useAuth} from '../context/AuthContext'
 const SurveyFormPage: React.FC = () => {
 	useAuth()
 	const navigate = useNavigate()
-	const {surveyId} = useParams<{surveyId: string}>()
+	const {surveyId} = useParams({strict: false}) as {surveyId?: string}
 	// Note: eventId from searchParams may be used for future event-specific logic
 
 	const [surveyJson, setSurveyJson] = useState<SurveyJSJson | null>(null)
@@ -143,7 +143,7 @@ const SurveyFormPage: React.FC = () => {
 				return
 			}
 
-			navigate('/surveys', {replace: true})
+			navigate({to: '/surveys', replace: true})
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'Failed to submit survey')
 			setSubmitting(false)

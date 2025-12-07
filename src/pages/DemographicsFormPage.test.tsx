@@ -6,7 +6,6 @@
  */
 import {act, render, screen, waitFor} from '@testing-library/react'
 import type React from 'react'
-import {BrowserRouter} from 'react-router-dom'
 import {convertTemplateToSurveyJS} from '@/lib/forms/template-converter'
 import DemographicsFormPage from './DemographicsFormPage'
 
@@ -58,19 +57,14 @@ vi.mock('@/lib/forms/template-converter', () => ({
 	}))
 }))
 
-// Mock useNavigate
+// Mock TanStack Router
 const mockNavigate = vi.fn()
-vi.mock('react-router-dom', async () => {
-	const actual = await vi.importActual('react-router-dom')
-	return {
-		...actual,
-		useNavigate: () => mockNavigate
-	}
-})
-
-// Helper to render component with router
-const renderWithRouter = (component: React.ReactElement) =>
-	render(<BrowserRouter>{component}</BrowserRouter>)
+vi.mock('@tanstack/react-router', () => ({
+	useNavigate: () => mockNavigate,
+	Link: ({children, to}: {children: React.ReactNode; to: string}) => (
+		<a href={to}>{children}</a>
+	)
+}))
 
 describe('DemographicsFormPage', () => {
 	beforeEach(() => {
@@ -87,7 +81,7 @@ describe('DemographicsFormPage', () => {
 				})
 		) as typeof fetch
 
-		renderWithRouter(<DemographicsFormPage />)
+		render(<DemographicsFormPage />)
 
 		// Check for loading spinner by class name
 		const loadingSpinner = document.querySelector('.loading.loading-spinner')
@@ -134,7 +128,7 @@ describe('DemographicsFormPage', () => {
 			})
 		}) as typeof fetch
 
-		renderWithRouter(<DemographicsFormPage />)
+		render(<DemographicsFormPage />)
 
 		// Wait for loading to complete
 		await waitFor(() => {
@@ -161,7 +155,7 @@ describe('DemographicsFormPage', () => {
 			})
 		}) as typeof fetch
 
-		renderWithRouter(<DemographicsFormPage />)
+		render(<DemographicsFormPage />)
 
 		await waitFor(() => {
 			expect(
@@ -173,7 +167,7 @@ describe('DemographicsFormPage', () => {
 	it('should display error message when API call throws error', async () => {
 		global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network error'))
 
-		renderWithRouter(<DemographicsFormPage />)
+		render(<DemographicsFormPage />)
 
 		await waitFor(() => {
 			expect(screen.getByText(/network error/i)).toBeInTheDocument()
@@ -189,7 +183,7 @@ describe('DemographicsFormPage', () => {
 			})
 		}) as typeof fetch
 
-		renderWithRouter(<DemographicsFormPage />)
+		render(<DemographicsFormPage />)
 
 		await waitFor(() => {
 			expect(
@@ -224,7 +218,7 @@ describe('DemographicsFormPage', () => {
 			})
 		}) as typeof fetch
 
-		renderWithRouter(<DemographicsFormPage />)
+		render(<DemographicsFormPage />)
 
 		await waitFor(() => {
 			expect(convertTemplateToSurveyJS).toHaveBeenCalledWith(mockTemplate)
@@ -263,7 +257,7 @@ describe('DemographicsFormPage', () => {
 				})
 			}) as typeof fetch
 
-		renderWithRouter(<DemographicsFormPage />)
+		render(<DemographicsFormPage />)
 
 		// Wait for form to render
 		await waitFor(() => {
@@ -287,7 +281,7 @@ describe('DemographicsFormPage', () => {
 
 		// Verify navigation is called (DemographicsFormPage navigates to /profile, not /dashboard)
 		await waitFor(() => {
-			expect(mockNavigate).toHaveBeenCalledWith('/profile', {replace: true})
+			expect(mockNavigate).toHaveBeenCalledWith({to: '/profile', replace: true})
 		})
 	})
 
@@ -324,7 +318,7 @@ describe('DemographicsFormPage', () => {
 				})
 			}) as typeof fetch
 
-		renderWithRouter(<DemographicsFormPage />)
+		render(<DemographicsFormPage />)
 
 		// Wait for form to render
 		await waitFor(() => {
@@ -365,7 +359,7 @@ describe('DemographicsFormPage', () => {
 			})
 		}) as typeof fetch
 
-		renderWithRouter(<DemographicsFormPage />)
+		render(<DemographicsFormPage />)
 
 		// Wait for form to render
 		await waitFor(() => {

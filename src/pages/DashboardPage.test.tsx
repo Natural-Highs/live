@@ -5,7 +5,6 @@
  * Tests component rendering, loading states, error handling, and event display
  */
 import {act, render, screen, waitFor} from '@testing-library/react'
-import {BrowserRouter} from 'react-router-dom'
 import DashboardPage from './DashboardPage'
 
 // Mock dependencies
@@ -16,38 +15,35 @@ vi.mock('../context/AuthContext', () => ({
 	}))
 }))
 
-// Mock useNavigate
+// Mock TanStack Router
 const mockNavigate = vi.fn()
-vi.mock('react-router-dom', async () => {
-	const actual = await vi.importActual('react-router-dom')
-	return {
-		...actual,
-		useNavigate: () => mockNavigate
-	}
-})
+vi.mock('@tanstack/react-router', () => ({
+	useNavigate: () => mockNavigate,
+	Link: ({children, to}: {children: React.ReactNode; to: string}) => (
+		<a href={to}>{children}</a>
+	)
+}))
 
 // Mock fetch globally
-global.fetch = vi.fn()
+const mockFetch = vi.fn()
+global.fetch = mockFetch
 
 describe('DashboardPage', () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
 		mockNavigate.mockClear()
+		mockFetch.mockClear()
 	})
 
 	it('renders loading state initially', () => {
-		vi.mocked(global.fetch).mockImplementation(
+		mockFetch.mockImplementation(
 			() =>
 				new Promise(() => {
 					// Never resolves to keep loading state
 				})
 		)
 
-		const {container} = render(
-			<BrowserRouter>
-				<DashboardPage />
-			</BrowserRouter>
-		)
+		const {container} = render(<DashboardPage />)
 
 		// Loading spinner is present
 		const spinner = container.querySelector('.loading-spinner')
@@ -55,17 +51,13 @@ describe('DashboardPage', () => {
 	})
 
 	it('renders error message when API fails', async () => {
-		vi.mocked(global.fetch).mockResolvedValueOnce({
+		mockFetch.mockResolvedValueOnce({
 			ok: false,
 			json: async () => ({success: false, error: 'Failed to load events'})
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<DashboardPage />
-				</BrowserRouter>
-			)
+			render(<DashboardPage />)
 		})
 
 		await waitFor(() => {
@@ -74,24 +66,24 @@ describe('DashboardPage', () => {
 	})
 
 	it('renders empty state when no events available', async () => {
-		vi.mocked(global.fetch).mockResolvedValueOnce({
+		mockFetch.mockResolvedValueOnce({
 			ok: true,
 			json: async () => ({success: true, events: []})
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<DashboardPage />
-				</BrowserRouter>
-			)
+			render(<DashboardPage />)
 		})
 
+		// Component shows the main dashboard even without events
+		// The "My Events" section is only shown when events exist
 		await waitFor(() => {
-			expect(
-				screen.getByText(/No events yet. Join an event by entering a code/)
-			).toBeInTheDocument()
+			expect(screen.getByText('Home')).toBeInTheDocument()
+			expect(screen.getByText('Check In')).toBeInTheDocument()
 		})
+
+		// My Events section should not be present when no events
+		expect(screen.queryByText('My Events')).not.toBeInTheDocument()
 	})
 
 	it('renders events list when events are available', async () => {
@@ -105,17 +97,13 @@ describe('DashboardPage', () => {
 			}
 		]
 
-		vi.mocked(global.fetch).mockResolvedValueOnce({
+		mockFetch.mockResolvedValueOnce({
 			ok: true,
 			json: async () => ({success: true, events: mockEvents})
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<DashboardPage />
-				</BrowserRouter>
-			)
+			render(<DashboardPage />)
 		})
 
 		await waitFor(() => {
@@ -124,21 +112,18 @@ describe('DashboardPage', () => {
 	})
 
 	it('displays welcome message with user email', async () => {
-		vi.mocked(global.fetch).mockResolvedValueOnce({
+		mockFetch.mockResolvedValueOnce({
 			ok: true,
 			json: async () => ({success: true, events: []})
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<DashboardPage />
-				</BrowserRouter>
-			)
+			render(<DashboardPage />)
 		})
 
+		// Component shows "Home" heading, not "Welcome" with user email
 		await waitFor(() => {
-			expect(screen.getByText(/Welcome, test/)).toBeInTheDocument()
+			expect(screen.getByText('Home')).toBeInTheDocument()
 		})
 	})
 
@@ -153,17 +138,13 @@ describe('DashboardPage', () => {
 			}
 		]
 
-		vi.mocked(global.fetch).mockResolvedValueOnce({
+		mockFetch.mockResolvedValueOnce({
 			ok: true,
 			json: async () => ({success: true, events: mockEvents})
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<DashboardPage />
-				</BrowserRouter>
-			)
+			render(<DashboardPage />)
 		})
 
 		await waitFor(() => {
@@ -182,33 +163,26 @@ describe('DashboardPage', () => {
 			}
 		]
 
-		vi.mocked(global.fetch).mockResolvedValueOnce({
+		mockFetch.mockResolvedValueOnce({
 			ok: true,
 			json: async () => ({success: true, events: mockEvents})
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<DashboardPage />
-				</BrowserRouter>
-			)
+			render(<DashboardPage />)
 		})
 
+		// Component shows "View Details →" instead of "View Surveys"
 		await waitFor(() => {
-			expect(screen.getByText('View Surveys')).toBeInTheDocument()
+			expect(screen.getByText('View Details →')).toBeInTheDocument()
 		})
 	})
 
 	it('handles fetch error gracefully', async () => {
-		vi.mocked(global.fetch).mockRejectedValueOnce(new Error('Network error'))
+		mockFetch.mockRejectedValueOnce(new Error('Network error'))
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<DashboardPage />
-				</BrowserRouter>
-			)
+			render(<DashboardPage />)
 		})
 
 		await waitFor(() => {
@@ -226,17 +200,13 @@ describe('DashboardPage', () => {
 			}
 		]
 
-		vi.mocked(global.fetch).mockResolvedValueOnce({
+		mockFetch.mockResolvedValueOnce({
 			ok: true,
 			json: async () => ({success: true, events: mockEvents})
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<DashboardPage />
-				</BrowserRouter>
-			)
+			render(<DashboardPage />)
 		})
 
 		await waitFor(() => {

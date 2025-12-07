@@ -1,5 +1,5 @@
+import {Navigate, useLocation} from '@tanstack/react-router'
 import type React from 'react'
-import {Navigate, useLocation} from 'react-router-dom'
 import {useAuth} from '../context/AuthContext'
 
 interface ProtectedRouteProps {
@@ -46,9 +46,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 	const protectedRoutes = ['/dashboard', '/', '/admin', '/consent']
 
 	if (!user) {
-		return (
-			<Navigate replace={true} state={{from: location}} to='/authentication' />
-		)
+		return <Navigate replace={true} to='/authentication' />
 	}
 
 	if (consentForm) {

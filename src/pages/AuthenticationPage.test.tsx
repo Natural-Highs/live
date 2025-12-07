@@ -6,7 +6,6 @@
  */
 import {act, render, screen, waitFor} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import {BrowserRouter} from 'react-router-dom'
 import AuthenticationPage from './AuthenticationPage'
 
 // Mock dependencies
@@ -26,6 +25,16 @@ vi.mock('firebase/auth', () => ({
 	signInWithEmailAndPassword: vi.fn()
 }))
 
+// Mock TanStack Router
+const mockNavigate = vi.fn()
+vi.mock('@tanstack/react-router', () => ({
+	useNavigate: () => mockNavigate,
+	Navigate: ({to}: {to: string}) => <div data-testid='navigate' data-to={to} />,
+	Link: ({children, to}: {children: React.ReactNode; to: string}) => (
+		<a href={to}>{children}</a>
+	)
+}))
+
 // Mock fetch globally
 global.fetch = vi.fn()
 
@@ -41,28 +50,20 @@ describe('AuthenticationPage', () => {
 
 	it('renders login form by default', async () => {
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<AuthenticationPage />
-				</BrowserRouter>
-			)
+			render(<AuthenticationPage />)
 		})
 
 		await waitFor(() => {
 			expect(screen.getByLabelText(/^Email$/i)).toBeInTheDocument()
 			expect(screen.getByLabelText(/^Password$/i)).toBeInTheDocument()
-			expect(screen.getByRole('button', {name: /Login/i})).toBeInTheDocument()
+			expect(screen.getByRole('button', {name: /Sign In/i})).toBeInTheDocument()
 		})
 	})
 
 	it('switches to signup form when signup tab is clicked', async () => {
 		const user = userEvent.setup()
 
-		render(
-			<BrowserRouter>
-				<AuthenticationPage />
-			</BrowserRouter>
-		)
+		render(<AuthenticationPage />)
 
 		const signupTab = screen.getByText(/Sign Up/i)
 		await user.click(signupTab)
@@ -79,11 +80,7 @@ describe('AuthenticationPage', () => {
 		const user = userEvent.setup()
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<AuthenticationPage />
-				</BrowserRouter>
-			)
+			render(<AuthenticationPage />)
 		})
 
 		await waitFor(() => {
@@ -96,7 +93,7 @@ describe('AuthenticationPage', () => {
 		const passwordInput = screen.getByLabelText(/^Password$/i)
 		await user.type(passwordInput, 'password123')
 
-		const submitButton = screen.getByRole('button', {name: /Login/i})
+		const submitButton = screen.getByRole('button', {name: /Sign In/i})
 		await user.click(submitButton)
 
 		await waitFor(
@@ -113,11 +110,7 @@ describe('AuthenticationPage', () => {
 	it('validates password length in login form', async () => {
 		const user = userEvent.setup()
 
-		render(
-			<BrowserRouter>
-				<AuthenticationPage />
-			</BrowserRouter>
-		)
+		render(<AuthenticationPage />)
 
 		const emailInput = screen.getByLabelText(/Email/i)
 		await user.type(emailInput, 'test@example.com')
@@ -125,7 +118,7 @@ describe('AuthenticationPage', () => {
 		const passwordInput = screen.getByLabelText(/Password/i)
 		await user.type(passwordInput, '12345') // Less than 6 characters
 
-		const submitButton = screen.getByRole('button', {name: /Login/i})
+		const submitButton = screen.getByRole('button', {name: /Sign In/i})
 		await user.click(submitButton)
 
 		await waitFor(() => {
@@ -138,14 +131,14 @@ describe('AuthenticationPage', () => {
 	it('validates password confirmation in signup form', async () => {
 		const user = userEvent.setup()
 
-		render(
-			<BrowserRouter>
-				<AuthenticationPage />
-			</BrowserRouter>
-		)
+		render(<AuthenticationPage />)
 
-		const signupTab = screen.getByText(/Sign Up/i)
-		await user.click(signupTab)
+		// Click the "Sign Up" button in the OR section to switch to signup mode
+		const signupButtons = screen.getAllByText(/Sign Up/i)
+		const switchButton = signupButtons.find(
+			btn => btn.tagName === 'BUTTON' || btn.closest('button')
+		)
+		await user.click(switchButton!)
 
 		await waitFor(() => {
 			expect(screen.getByLabelText(/Username/i)).toBeInTheDocument()
@@ -163,7 +156,7 @@ describe('AuthenticationPage', () => {
 		const confirmInput = screen.getByLabelText(/^Confirm Password$/i)
 		await user.type(confirmInput, 'password456') // Different password
 
-		const submitButton = screen.getByRole('button', {name: /Sign Up/i})
+		const submitButton = screen.getByRole('button', {name: /Create Account/i})
 		await user.click(submitButton)
 
 		await waitFor(() => {
@@ -184,11 +177,7 @@ describe('AuthenticationPage', () => {
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<AuthenticationPage />
-				</BrowserRouter>
-			)
+			render(<AuthenticationPage />)
 		})
 
 		// Should redirect to dashboard (Navigate component)
@@ -199,23 +188,12 @@ describe('AuthenticationPage', () => {
 
 	it('shows loading state while checking session', () => {
 		mockUseAuth.mockReturnValue({
-			user: {email: 'test@example.com', userId: 'test-user-id'},
-			loading: false,
+			user: null,
+			loading: true,
 			consentForm: null
 		})
 
-		vi.mocked(global.fetch).mockImplementation(
-			() =>
-				new Promise(() => {
-					// Never resolves to keep loading state
-				})
-		)
-
-		const {container} = render(
-			<BrowserRouter>
-				<AuthenticationPage />
-			</BrowserRouter>
-		)
+		const {container} = render(<AuthenticationPage />)
 
 		// Loading spinner is present
 		const spinner = container.querySelector('.loading-spinner')

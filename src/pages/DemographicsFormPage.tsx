@@ -1,6 +1,6 @@
+import {useNavigate} from '@tanstack/react-router'
 import type React from 'react'
 import {useEffect, useState} from 'react'
-import {useNavigate} from 'react-router-dom'
 import {
 	type SurveyJSJson,
 	SurveyRenderer
@@ -103,7 +103,7 @@ const DemographicsFormPage: React.FC = () => {
 			}
 
 			// Navigate to profile page after successful submission
-			navigate('/profile', {replace: true})
+			navigate({to: '/profile', replace: true})
 		} catch (err) {
 			setError(
 				err instanceof Error

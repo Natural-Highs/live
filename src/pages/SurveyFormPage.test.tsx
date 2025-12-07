@@ -5,7 +5,6 @@
  * Tests component rendering, loading states, error handling, survey loading, and form submission
  */
 import {act, render, screen, waitFor} from '@testing-library/react'
-import {BrowserRouter} from 'react-router-dom'
 import SurveyFormPage from './SurveyFormPage'
 
 // Mock dependencies
@@ -16,17 +15,16 @@ vi.mock('../context/AuthContext', () => ({
 	}))
 }))
 
-// Mock useNavigate and useParams
+// Mock TanStack Router with useNavigate and useParams
 const mockNavigate = vi.fn()
 const mockUseParams = vi.fn(() => ({surveyId: 'survey-1'}))
-vi.mock('react-router-dom', async () => {
-	const actual = await vi.importActual('react-router-dom')
-	return {
-		...actual,
-		useNavigate: () => mockNavigate,
-		useParams: () => mockUseParams()
-	}
-})
+vi.mock('@tanstack/react-router', () => ({
+	useNavigate: () => mockNavigate,
+	useParams: () => mockUseParams(),
+	Link: ({children, to}: {children: React.ReactNode; to: string}) => (
+		<a href={to}>{children}</a>
+	)
+}))
 
 // Mock SurveyRenderer
 vi.mock('@/components/forms/SurveyRenderer', () => ({
@@ -77,11 +75,7 @@ describe('SurveyFormPage', () => {
 				})
 		)
 
-		const {container} = render(
-			<BrowserRouter>
-				<SurveyFormPage />
-			</BrowserRouter>
-		)
+		const {container} = render(<SurveyFormPage />)
 
 		// Loading spinner is present
 		const spinner = container.querySelector('.loading-spinner')
@@ -92,11 +86,7 @@ describe('SurveyFormPage', () => {
 		mockUseParams.mockReturnValueOnce({})
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SurveyFormPage />
-				</BrowserRouter>
-			)
+			render(<SurveyFormPage />)
 		})
 
 		await waitFor(() => {
@@ -111,11 +101,7 @@ describe('SurveyFormPage', () => {
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SurveyFormPage />
-				</BrowserRouter>
-			)
+			render(<SurveyFormPage />)
 		})
 
 		await waitFor(() => {
@@ -142,11 +128,7 @@ describe('SurveyFormPage', () => {
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SurveyFormPage />
-				</BrowserRouter>
-			)
+			render(<SurveyFormPage />)
 		})
 
 		await waitFor(() => {
@@ -179,11 +161,7 @@ describe('SurveyFormPage', () => {
 			} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SurveyFormPage />
-				</BrowserRouter>
-			)
+			render(<SurveyFormPage />)
 		})
 
 		await waitFor(() => {
@@ -196,7 +174,7 @@ describe('SurveyFormPage', () => {
 		})
 
 		await waitFor(() => {
-			expect(mockNavigate).toHaveBeenCalledWith('/surveys', {replace: true})
+			expect(mockNavigate).toHaveBeenCalledWith({to: '/surveys', replace: true})
 		})
 	})
 
@@ -224,11 +202,7 @@ describe('SurveyFormPage', () => {
 			} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SurveyFormPage />
-				</BrowserRouter>
-			)
+			render(<SurveyFormPage />)
 		})
 
 		await waitFor(() => {
@@ -264,11 +238,7 @@ describe('SurveyFormPage', () => {
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SurveyFormPage />
-				</BrowserRouter>
-			)
+			render(<SurveyFormPage />)
 		})
 
 		await waitFor(() => {
@@ -311,11 +281,7 @@ describe('SurveyFormPage', () => {
 			)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SurveyFormPage />
-				</BrowserRouter>
-			)
+			render(<SurveyFormPage />)
 		})
 
 		await waitFor(() => {

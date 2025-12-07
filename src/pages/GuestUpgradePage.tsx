@@ -1,9 +1,9 @@
 import {zodResolver} from '@hookform/resolvers/zod'
+import {useNavigate} from '@tanstack/react-router'
 import {signInWithCustomToken} from 'firebase/auth'
 import type React from 'react'
 import {useEffect, useState} from 'react'
 import {useForm} from 'react-hook-form'
-import {useNavigate} from 'react-router-dom'
 import {z} from 'zod'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
@@ -41,7 +41,7 @@ const GuestUpgradePage: React.FC = () => {
 		const guestId = sessionStorage.getItem('guestId')
 		if (!guestId) {
 			// Redirect to guest entry if no guest ID
-			navigate('/guests/entry', {replace: true})
+			navigate({to: '/guests/entry', replace: true})
 		}
 	}, [navigate])
 
@@ -53,7 +53,7 @@ const GuestUpgradePage: React.FC = () => {
 		if (!guestId) {
 			setError('Guest session expired. Please start over.')
 			setLoading(false)
-			await navigate('/guests/entry', {replace: true})
+			await navigate({to: '/guests/entry', replace: true})
 			return
 		}
 
@@ -127,7 +127,7 @@ const GuestUpgradePage: React.FC = () => {
 					setLoading(false)
 					// Redirect to login after a delay
 					setTimeout(() => {
-						navigate('/authentication', {replace: true})
+						navigate({to: '/authentication', replace: true})
 					}, 3000)
 				}
 			} else {
@@ -138,7 +138,7 @@ const GuestUpgradePage: React.FC = () => {
 				setLoading(false)
 				// Redirect to login after a delay
 				setTimeout(() => {
-					navigate('/authentication', {replace: true})
+					navigate({to: '/authentication', replace: true})
 				}, 3000)
 			}
 		} catch (err: unknown) {
@@ -256,7 +256,7 @@ const GuestUpgradePage: React.FC = () => {
 					<div className='mt-4 text-center text-sm'>
 						<button
 							className='link link-primary'
-							onClick={() => navigate(-1)}
+							onClick={() => window.history.back()}
 							type='button'
 						>
 							Cancel

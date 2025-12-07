@@ -1,5 +1,5 @@
+import {Link} from '@tanstack/react-router'
 import type React from 'react'
-import {Link} from 'react-router-dom'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
 import {useAuth} from '../context/AuthContext'

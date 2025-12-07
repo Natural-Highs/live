@@ -1,6 +1,6 @@
+import {useNavigate} from '@tanstack/react-router'
 import type React from 'react'
 import {useEffect, useState} from 'react'
-import {useNavigate} from 'react-router-dom'
 import {
 	type SurveyJSJson,
 	SurveyRenderer
@@ -22,7 +22,7 @@ const GuestRegistrationPage: React.FC = () => {
 		const storedEventCode = sessionStorage.getItem('guestEventCode')
 
 		if (!(storedEventId && storedEventCode)) {
-			navigate('/guests/entry', {replace: true})
+			navigate({to: '/guests/entry', replace: true})
 			return
 		}
 
@@ -72,7 +72,7 @@ const GuestRegistrationPage: React.FC = () => {
 		if (!(eventId && storedEventCode)) {
 			setError('Event information missing. Please start over.')
 			setSubmitting(false)
-			navigate('/guests/entry', {replace: true})
+			navigate({to: '/guests/entry', replace: true})
 			return
 		}
 
@@ -106,7 +106,7 @@ const GuestRegistrationPage: React.FC = () => {
 			}
 
 			// Navigate to guest consent form
-			navigate('/guests/consent', {replace: true})
+			navigate({to: '/guests/consent', replace: true})
 		} catch (err) {
 			setError(
 				err instanceof Error ? err.message : 'Failed to register as guest'

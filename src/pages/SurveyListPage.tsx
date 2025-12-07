@@ -1,6 +1,6 @@
+import {Link} from '@tanstack/react-router'
 import type React from 'react'
 import {useEffect, useState} from 'react'
-import {Link} from 'react-router-dom'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'

@@ -1,7 +1,7 @@
+import {useNavigate} from '@tanstack/react-router'
 import {createUserWithEmailAndPassword} from 'firebase/auth'
 import type React from 'react'
 import {useState} from 'react'
-import {useNavigate} from 'react-router-dom'
 import GreyButton from '@/components/ui/GreyButton'
 import GrnButton from '@/components/ui/GrnButton'
 import {PageContainer} from '@/components/ui/page-container'
@@ -66,8 +66,8 @@ const SignUpPage1: React.FC = () => {
 			})
 
 			if (sessionResponse.ok) {
-				await navigate('/signup/about-you', {
-					state: {email: formData.email, username: formData.username}
+				await navigate({
+					to: '/signup/about-you'
 				})
 			} else {
 				setError('Failed to create session')
@@ -189,7 +189,10 @@ const SignUpPage1: React.FC = () => {
 
 					<div className='divider'>Or</div>
 
-					<GreyButton onClick={() => navigate('/authentication')} type='button'>
+					<GreyButton
+						onClick={() => navigate({to: '/authentication'})}
+						type='button'
+					>
 						Sign In
 					</GreyButton>
 				</form>
