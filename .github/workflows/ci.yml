@@ -6,6 +6,9 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -81,6 +84,10 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, test, e2e]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      contents: read
+      deployments: write
+      statuses: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
