@@ -20,12 +20,7 @@
 		"forceConsistentCasingInFileNames": true,
 		"sourceMap": true,
 		"baseUrl": ".",
-		"types": [
-			"vitest/globals",
-			"@testing-library/jest-dom",
-			"bun-types",
-			"vinxi/types/client"
-		],
+		"types": ["vitest/globals", "@testing-library/jest-dom", "bun-types"],
 		"paths": {
 			"$lib/*": ["./src/lib/*", "./app/lib/*"],
 			"@/*": ["./src/*", "./app/*"]
