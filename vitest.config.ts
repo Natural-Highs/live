@@ -14,6 +14,6 @@ export default defineConfig({
 			'**/*.spec.ts' // Playwright convention
 		],
 		include: ['**/*.test.{ts,tsx}'],
-		setupFiles: ['./src/test-setup.ts']
+		setupFiles: ['./vitest-env-setup.ts', './src/test-setup.ts']
 	}
 })
