@@ -1,23 +1,25 @@
+import {useQuery} from '@tanstack/react-query'
 import {createFileRoute} from '@tanstack/react-router'
 import type {ColumnDef} from '@tanstack/react-table'
-import {useCallback, useEffect, useMemo, useState} from 'react'
+import {useMemo, useState} from 'react'
+import {eventsQueryOptions, responsesQueryOptions} from '@/lib/queries'
 import {DataTable} from '../../components/admin/DataTable'
 
 export const Route = createFileRoute('/_admin/survey-responses')({
+	loader: async ({context}) => {
+		// Prefetch default data
+		await Promise.all([
+			context.queryClient.prefetchQuery(responsesQueryOptions()),
+			context.queryClient.prefetchQuery(eventsQueryOptions())
+		])
+	},
 	component: SurveysPage
 })
-
-interface Event {
-	id: string
-	name: string
-	[key: string]: unknown
-}
 
 interface QuestionResponse {
 	id: string
 	questionId: string
 	responseText: string
-	[key: string]: unknown
 }
 
 interface SurveyResponse {
@@ -38,14 +40,9 @@ interface SurveyResponse {
 		name: string
 	} | null
 	questionResponses: QuestionResponse[]
-	[key: string]: unknown
 }
 
 function SurveysPage() {
-	const [responses, setResponses] = useState<SurveyResponse[]>([])
-	const [events, setEvents] = useState<Event[]>([])
-	const [loading, setLoading] = useState(true)
-	const [error, setError] = useState('')
 	const [selectedEventId, setSelectedEventId] = useState<string>('')
 	const [startDate, setStartDate] = useState('')
 	const [endDate, setEndDate] = useState('')
@@ -53,69 +50,24 @@ function SurveysPage() {
 		useState<SurveyResponse | null>(null)
 	const [showDetailsModal, setShowDetailsModal] = useState(false)
 
-	const fetchEvents = useCallback(async () => {
-		try {
-			const response = await fetch('/api/events')
-			const data = (await response.json()) as {
-				success: boolean
-				events?: Event[]
-				error?: string
-			}
+	// Filter object for query key
+	const filters = useMemo(
+		() => ({
+			eventId: selectedEventId || undefined,
+			startDate: startDate || undefined,
+			endDate: endDate || undefined
+		}),
+		[selectedEventId, startDate, endDate]
+	)
 
-			if (response.ok && data.success && data.events) {
-				setEvents(data.events)
-			}
-		} catch {}
-	}, [])
+	// Replace fetch with useQuery
+	const {
+		data: responses = [],
+		isLoading,
+		error
+	} = useQuery(responsesQueryOptions(filters))
 
-	const fetchResponses = useCallback(async () => {
-		setLoading(true)
-		setError('')
-		try {
-			const params = new URLSearchParams()
-			if (selectedEventId) params.append('eventId', selectedEventId)
-			if (startDate) params.append('startDate', startDate)
-			if (endDate) params.append('endDate', endDate)
-
-			const url = `/api/admin/responses${params.toString() ? `?${params.toString()}` : ''}`
-			const response = await fetch(url)
-			const data = (await response.json()) as {
-				success: boolean
-				responses?: SurveyResponse[]
-				error?: string
-			}
-
-			if (!(response.ok && data.success)) {
-				setError(data.error || 'Failed to load responses')
-				return
-			}
-
-			if (data.responses) {
-				// Convert Firestore timestamps to Date objects
-				const processedResponses = data.responses.map(response => ({
-					...response,
-					createdAt:
-						typeof response.createdAt === 'object' &&
-						'toDate' in response.createdAt
-							? response.createdAt.toDate()
-							: new Date(response.createdAt)
-				}))
-				setResponses(processedResponses)
-			}
-		} catch (err) {
-			setError(err instanceof Error ? err.message : 'Failed to load responses')
-		} finally {
-			setLoading(false)
-		}
-	}, [selectedEventId, startDate, endDate])
-
-	useEffect(() => {
-		fetchEvents()
-	}, [fetchEvents])
-
-	useEffect(() => {
-		fetchResponses()
-	}, [fetchResponses])
+	const {data: events = []} = useQuery(eventsQueryOptions())
 
 	const handleExportCSV = () => {
 		if (responses.length === 0) {
@@ -274,7 +226,7 @@ function SurveysPage() {
 		[]
 	)
 
-	if (loading) {
+	if (isLoading) {
 		return (
 			<div className='container mx-auto p-4'>
 				<span className='loading loading-spinner loading-lg' />
@@ -373,7 +325,7 @@ function SurveysPage() {
 			{/* Error Message */}
 			{error && (
 				<div className='alert alert-error mb-4'>
-					<span>{error}</span>
+					<span>{error.message}</span>
 				</div>
 			)}
 
