@@ -7,7 +7,8 @@ import {z} from 'zod'
 export const submitResponseSchema = z.object({
 	eventId: z.string().min(1),
 	surveyType: z.enum(['pre', 'post']),
-	responses: z.record(z.string(), z.unknown())
+	// Use z.any() to allow broader types that satisfy TanStack Start's {} requirement
+	responses: z.record(z.string(), z.any())
 })
 
 export const getSurveyQuestionsSchema = z.object({

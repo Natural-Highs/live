@@ -112,7 +112,7 @@ function SurveysListComponent() {
 					</FormContainer>
 				) : (
 					<div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-						{surveys.map(survey => {
+						{surveys.map((survey: EventSurvey) => {
 							const timeUntil = getTimeUntilAccessible(survey.accessibleAt)
 							return (
 								<div
@@ -139,9 +139,9 @@ function SurveysListComponent() {
 										) : survey.isAccessible ? (
 											<div className='card-actions mt-4 justify-end'>
 												<Link
-													to={`/surveys/$surveyId`}
 													params={{surveyId: survey.surveyId}}
 													search={{eventId: survey.eventId}}
+													to={'/surveys/$surveyId'}
 												>
 													<PrimaryButton>Start Survey</PrimaryButton>
 												</Link>

@@ -185,7 +185,7 @@ function DashboardComponent() {
 						My Events
 					</h2>
 					<div className='space-y-3'>
-						{events.map(event => (
+						{events.map((event: Event) => (
 							<div className='rounded-lg bg-gray-100 p-4' key={event.id}>
 								<h3 className='font-semibold text-gray-800'>{event.name}</h3>
 								<p className='text-gray-600 text-sm'>

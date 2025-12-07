@@ -1,4 +1,4 @@
-import {getWebRequest} from '@tanstack/react-start/server'
+import {getRequest} from '@tanstack/react-start/server'
 import {auth} from '../../../lib/firebase/firebase'
 import type {SessionUser} from '../auth'
 import {AuthenticationError} from './errors'
@@ -8,7 +8,7 @@ import {AuthenticationError} from './errors'
  * Reads __session cookie from request and verifies with Firebase Admin SDK
  */
 export async function validateSession(): Promise<SessionUser> {
-	const request = getWebRequest()
+	const request = getRequest()
 	const cookieHeader = request.headers.get('cookie')
 
 	if (!cookieHeader) {
@@ -74,7 +74,7 @@ export async function requireConsent(): Promise<SessionUser> {
 function parseCookies(cookieHeader: string): Record<string, string> {
 	const cookies: Record<string, string> = {}
 
-	cookieHeader.split(';').forEach((cookie) => {
+	cookieHeader.split(';').forEach(cookie => {
 		const [name, value] = cookie.trim().split('=')
 		if (name && value) {
 			cookies[name] = decodeURIComponent(value)

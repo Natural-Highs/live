@@ -4,9 +4,9 @@ import {ConsentForm} from '@/components/forms/ConsentForm'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
-import {auth} from '$lib/firebase/firebase.app'
 import {authGuard} from '@/lib/auth-guard'
 import type {ConsentFormData} from '@/lib/schemas/consent'
+import {auth} from '$lib/firebase/firebase.app'
 
 interface ConsentFormTemplate {
 	id: string
@@ -50,7 +50,7 @@ function ConsentComponent() {
 	const [submitting, setSubmitting] = useState(false)
 	const [error, setError] = useState('')
 
-	const handleSubmit = async (data: ConsentFormData) => {
+	const handleSubmit = async (_data: ConsentFormData) => {
 		setError('')
 		setSubmitting(true)
 
