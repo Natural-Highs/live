@@ -14,12 +14,12 @@ import {requireAdmin} from './utils/auth'
  * Export survey response data
  * Admin only
  */
-export const exportData = createServerFn({method: 'GET'})
-	.validator(exportDataSchema)
-	.handler(async ({data}) => {
+export const exportData = createServerFn({method: 'GET'}).handler(
+	async ({data}: {data: unknown}) => {
 		await requireAdmin()
 
-		const {eventId, format, surveyType} = data
+		const validated = exportDataSchema.parse(data)
+		const {eventId, format, surveyType} = validated
 
 		// Query responses
 		let query = db.collection('responses').orderBy('submittedAt', 'desc')
@@ -59,18 +59,19 @@ export const exportData = createServerFn({method: 'GET'})
 			format: 'json',
 			data: responses
 		}
-	})
+	}
+)
 
 /**
  * Set admin custom claim for user
  * Admin only
  */
-export const setAdminClaim = createServerFn({method: 'POST'})
-	.validator(setAdminClaimSchema)
-	.handler(async ({data}) => {
+export const setAdminClaim = createServerFn({method: 'POST'}).handler(
+	async ({data}: {data: unknown}) => {
 		await requireAdmin()
 
-		const {userId, isAdmin} = data
+		const validated = setAdminClaimSchema.parse(data)
+		const {userId, isAdmin} = validated
 
 		// Get current user record
 		const userRecord = await auth.getUser(userId)
@@ -86,18 +87,19 @@ export const setAdminClaim = createServerFn({method: 'POST'})
 		await auth.setCustomUserClaims(userId, newClaims)
 
 		return {success: true, claims: newClaims}
-	})
+	}
+)
 
 /**
  * Get survey responses with filtering
  * Admin only
  */
-export const getResponses = createServerFn({method: 'GET'})
-	.validator(getResponsesSchema)
-	.handler(async ({data}) => {
+export const getResponses = createServerFn({method: 'GET'}).handler(
+	async ({data}: {data: unknown}) => {
 		await requireAdmin()
 
-		const {eventId, userId, surveyType, limit, offset} = data
+		const validated = getResponsesSchema.parse(data)
+		const {eventId, userId, surveyType, limit, offset} = validated
 
 		let query = db.collection('responses').orderBy('submittedAt', 'desc')
 
@@ -136,18 +138,19 @@ export const getResponses = createServerFn({method: 'GET'})
 			count: responses.length,
 			hasMore: responses.length === limit
 		}
-	})
+	}
+)
 
 /**
  * Get user by email address
  * Admin only
  */
-export const getUserByEmail = createServerFn({method: 'GET'})
-	.validator(getUserByEmailSchema)
-	.handler(async ({data}) => {
+export const getUserByEmail = createServerFn({method: 'GET'}).handler(
+	async ({data}: {data: unknown}) => {
 		await requireAdmin()
 
-		const {email} = data
+		const validated = getUserByEmailSchema.parse(data)
+		const {email} = validated
 
 		try {
 			const userRecord = await auth.getUserByEmail(email)
@@ -167,7 +170,8 @@ export const getUserByEmail = createServerFn({method: 'GET'})
 			}
 			throw error
 		}
-	})
+	}
+)
 
 /**
  * Convert array of objects to CSV format
