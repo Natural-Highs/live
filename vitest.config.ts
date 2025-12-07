@@ -18,9 +18,26 @@ export default defineConfig({
 			'**/node_modules/**',
 			'**/dist/**',
 			'**/tests/**', // Playwright tests
-			'**/*.spec.ts' // Playwright convention
+			'**/*.spec.ts', // Playwright convention
+			'.trunk/**' // Trunk plugins (symlinks to cache)
 		],
 		include: ['**/*.test.{ts,tsx}'],
-		setupFiles: ['./vitest-env-setup.ts', './src/test-setup.ts']
+		setupFiles: ['./vitest-env-setup.ts', './src/test-setup.ts'],
+		coverage: {
+			provider: 'v8',
+			reporter: ['text', 'json-summary', 'html'],
+			reportsDirectory: './coverage',
+			exclude: [
+				'**/node_modules/**',
+				'**/dist/**',
+				'**/tests/**',
+				'**/*.spec.ts',
+				'**/*.test.{ts,tsx}',
+				'**/*.config.{ts,js}',
+				'**/test-setup.ts',
+				'**/vitest-env-setup.ts',
+				'.trunk/**'
+			]
+		}
 	}
 })
