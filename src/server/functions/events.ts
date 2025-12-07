@@ -14,10 +14,10 @@ import {requireAdmin, validateSession} from './utils/auth'
  * Get event by 4-digit event code
  * Public endpoint - no auth required
  */
-export const getEventByCode = createServerFn({method: 'GET'})
-	.validator(getEventByCodeSchema)
-	.handler(async ({data}) => {
-		const {code} = data
+export const getEventByCode = createServerFn({method: 'GET'}).handler(
+	async ({data}: {data: unknown}) => {
+		const validated = getEventByCodeSchema.parse(data)
+		const {code} = validated
 
 		if (!isValidEventCodeFormat(code)) {
 			throw new ValidationError('Invalid event code format')
@@ -40,12 +40,16 @@ export const getEventByCode = createServerFn({method: 'GET'})
 		return {
 			id: doc.id,
 			...eventData,
-			startDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
+			startDate:
+				eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
 			endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
-			createdAt: eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
-			updatedAt: eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
+			createdAt:
+				eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
+			updatedAt:
+				eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
 		} as EventDocument
-	})
+	}
+)
 
 /**
  * Get all events for authenticated user
@@ -69,10 +73,13 @@ export const getEvents = createServerFn({method: 'GET'}).handler(async () => {
 		return {
 			id: doc.id,
 			...eventData,
-			startDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
+			startDate:
+				eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
 			endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
-			createdAt: eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
-			updatedAt: eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
+			createdAt:
+				eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
+			updatedAt:
+				eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
 		} as EventDocument
 	})
 })
@@ -81,12 +88,12 @@ export const getEvents = createServerFn({method: 'GET'}).handler(async () => {
  * Activate event and generate 4-digit event code
  * Admin only
  */
-export const activateEvent = createServerFn({method: 'POST'})
-	.validator(activateEventSchema)
-	.handler(async ({data}) => {
+export const activateEvent = createServerFn({method: 'POST'}).handler(
+	async ({data}: {data: unknown}) => {
 		await requireAdmin()
 
-		const {eventId} = data
+		const validated = activateEventSchema.parse(data)
+		const {eventId} = validated
 
 		// Generate unique 4-digit event code
 		const eventCode = await generateUniqueEventCode()
@@ -101,18 +108,19 @@ export const activateEvent = createServerFn({method: 'POST'})
 			})
 
 		return {eventCode}
-	})
+	}
+)
 
 /**
  * Override survey timing for an event
  * Admin only
  */
-export const overrideSurveyTiming = createServerFn({method: 'POST'})
-	.validator(overrideSurveyTimingSchema)
-	.handler(async ({data}) => {
+export const overrideSurveyTiming = createServerFn({method: 'POST'}).handler(
+	async ({data}: {data: unknown}) => {
 		await requireAdmin()
 
-		const {eventId, surveyType, enabled} = data
+		const validated = overrideSurveyTimingSchema.parse(data)
+		const {eventId, surveyType, enabled} = validated
 
 		const updateField =
 			surveyType === 'pre' ? 'preSurveyEnabled' : 'postSurveyEnabled'
@@ -126,7 +134,8 @@ export const overrideSurveyTiming = createServerFn({method: 'POST'})
 			})
 
 		return {success: true}
-	})
+	}
+)
 
 /**
  * Generate unique 4-digit event code

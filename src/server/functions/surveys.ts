@@ -12,12 +12,12 @@ import {requireConsent, validateSession} from './utils/auth'
  * Submit survey response
  * Requires consent form to be signed
  */
-export const submitResponse = createServerFn({method: 'POST'})
-	.validator(submitResponseSchema)
-	.handler(async ({data}) => {
+export const submitResponse = createServerFn({method: 'POST'}).handler(
+	async ({data}: {data: unknown}) => {
 		const user = await requireConsent()
 
-		const {eventId, surveyType, responses} = data
+		const validated = submitResponseSchema.parse(data)
+		const {eventId, surveyType, responses} = validated
 
 		// Check if user is registered for event
 		const eventDoc = await db.collection('events').doc(eventId).get()
@@ -66,16 +66,17 @@ export const submitResponse = createServerFn({method: 'POST'})
 			submittedAt: responseData.submittedAt.toISOString(),
 			createdAt: responseData.createdAt.toISOString()
 		}
-	})
+	}
+)
 
 /**
  * Get survey questions template
  * Public endpoint - no auth required
  */
-export const getSurveyQuestions = createServerFn({method: 'GET'})
-	.validator(getSurveyQuestionsSchema)
-	.handler(async ({data}) => {
-		const {surveyType} = data
+export const getSurveyQuestions = createServerFn({method: 'GET'}).handler(
+	async ({data}: {data: unknown}) => {
+		const validated = getSurveyQuestionsSchema.parse(data)
+		const {surveyType} = validated
 
 		const snapshot = await db
 			.collection('surveyTemplates')
@@ -94,21 +95,26 @@ export const getSurveyQuestions = createServerFn({method: 'GET'})
 		return {
 			id: doc.id,
 			...templateData,
-			createdAt: templateData.createdAt?.toDate?.()?.toISOString() ?? templateData.createdAt,
-			updatedAt: templateData.updatedAt?.toDate?.()?.toISOString() ?? templateData.updatedAt
+			createdAt:
+				templateData.createdAt?.toDate?.()?.toISOString() ??
+				templateData.createdAt,
+			updatedAt:
+				templateData.updatedAt?.toDate?.()?.toISOString() ??
+				templateData.updatedAt
 		}
-	})
+	}
+)
 
 /**
  * Get accessible surveys for user and event
  * Returns which surveys (pre/post) are available based on timing and status
  */
-export const getAccessibleSurveys = createServerFn({method: 'GET'})
-	.validator(getAccessibleSurveysSchema)
-	.handler(async ({data}) => {
+export const getAccessibleSurveys = createServerFn({method: 'GET'}).handler(
+	async ({data}: {data: unknown}) => {
 		const user = await validateSession()
 
-		const {eventId} = data
+		const validated = getAccessibleSurveysSchema.parse(data)
+		const {eventId} = validated
 
 		// Get event data
 		const eventDoc = await db.collection('events').doc(eventId).get()
@@ -119,8 +125,10 @@ export const getAccessibleSurveys = createServerFn({method: 'GET'})
 
 		const eventData = eventDoc.data()!
 		const now = new Date()
-		const startDate = eventData.startDate?.toDate?.() ?? new Date(eventData.startDate)
-		const endDate = eventData.endDate?.toDate?.() ?? new Date(eventData.endDate)
+		const startDate =
+			eventData.startDate?.toDate?.() ?? new Date(eventData.startDate)
+		const endDate =
+			eventData.endDate?.toDate?.() ?? new Date(eventData.endDate)
 
 		// Check if user is registered
 		const participants = eventData.participants || []
@@ -166,4 +174,5 @@ export const getAccessibleSurveys = createServerFn({method: 'GET'})
 			eventStarted: now >= startDate,
 			eventEnded: now >= endDate
 		}
-	})
+	}
+)

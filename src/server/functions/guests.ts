@@ -13,10 +13,10 @@ import {validateSession} from './utils/auth'
  * Public endpoint - no auth required
  * Returns event info if code is valid
  */
-export const validateGuestCode = createServerFn({method: 'GET'})
-	.validator(validateGuestCodeSchema)
-	.handler(async ({data}) => {
-		const {eventCode} = data
+export const validateGuestCode = createServerFn({method: 'GET'}).handler(
+	async ({data}: {data: unknown}) => {
+		const validated = validateGuestCodeSchema.parse(data)
+		const {eventCode} = validated
 
 		const eventsSnapshot = await db
 			.collection('events')
@@ -37,20 +37,22 @@ export const validateGuestCode = createServerFn({method: 'GET'})
 			eventId: eventDoc.id,
 			eventName: eventData.name,
 			eventDescription: eventData.description,
-			startDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
+			startDate:
+				eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
 			endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate
 		}
-	})
+	}
+)
 
 /**
  * Register as guest user for event
  * Creates anonymous or identified guest account
  * Public endpoint - no auth required
  */
-export const registerGuest = createServerFn({method: 'POST'})
-	.validator(registerGuestSchema)
-	.handler(async ({data}) => {
-		const {eventCode, email, displayName} = data
+export const registerGuest = createServerFn({method: 'POST'}).handler(
+	async ({data}: {data: unknown}) => {
+		const validated = registerGuestSchema.parse(data)
+		const {eventCode, email, displayName} = validated
 
 		// Validate event code
 		const eventsSnapshot = await db
@@ -115,18 +117,19 @@ export const registerGuest = createServerFn({method: 'POST'})
 			eventId: eventDoc.id,
 			eventName: eventData.name
 		}
-	})
+	}
+)
 
 /**
  * Upgrade guest account to full user account
  * Requires current session
  */
-export const upgradeGuest = createServerFn({method: 'POST'})
-	.validator(upgradeGuestSchema)
-	.handler(async ({data}) => {
+export const upgradeGuest = createServerFn({method: 'POST'}).handler(
+	async ({data}: {data: unknown}) => {
 		const user = await validateSession()
 
-		const {email, password} = data
+		const validated = upgradeGuestSchema.parse(data)
+		const {email, password} = validated
 
 		// Verify current user is a guest
 		const userDoc = await db.collection('users').doc(user.uid).get()
@@ -174,4 +177,5 @@ export const upgradeGuest = createServerFn({method: 'POST'})
 			success: true,
 			email
 		}
-	})
+	}
+)
