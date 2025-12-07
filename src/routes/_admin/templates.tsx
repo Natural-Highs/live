@@ -1,4 +1,4 @@
-import type React from 'react'
+import {createFileRoute} from '@tanstack/react-router'
 import {useCallback, useEffect, useState} from 'react'
 import {SurveyCreatorComponent} from '@/components/forms/SurveyCreator'
 
@@ -18,7 +18,11 @@ interface FormTemplate {
 	[key: string]: unknown
 }
 
-const DocumentsPage: React.FC = () => {
+export const Route = createFileRoute('/_admin/templates')({
+	component: TemplatesComponent
+})
+
+function TemplatesComponent() {
 	const [templates, setTemplates] = useState<FormTemplate[]>([])
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState('')
@@ -115,8 +119,6 @@ const DocumentsPage: React.FC = () => {
 		setError('')
 
 		try {
-			// Convert surveyJson to questions format if needed, or send surveyJson directly
-			// For now, we'll send both - the API may need to be updated to accept surveyJson
 			const updatePayload: {
 				name: string
 				questions?: unknown[]
@@ -125,11 +127,9 @@ const DocumentsPage: React.FC = () => {
 				name: formData.name
 			}
 
-			// If surveyJson was edited, include it
 			if (editingSurveyJson) {
 				updatePayload.surveyJson = editingSurveyJson
 			} else {
-				// Fallback to existing questions
 				updatePayload.questions = selectedTemplate.questions
 					? [...selectedTemplate.questions]
 					: []
@@ -212,7 +212,6 @@ const DocumentsPage: React.FC = () => {
 			ageCategory:
 				(template.ageCategory as '' | 'under18' | 'adult' | 'senior') || ''
 		})
-		// Initialize with existing surveyJson or create empty form
 		setEditingSurveyJson(
 			template.surveyJson || {
 				title: template.name,
@@ -565,5 +564,3 @@ const DocumentsPage: React.FC = () => {
 		</div>
 	)
 }
-
-export default DocumentsPage

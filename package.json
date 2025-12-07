@@ -19,7 +19,6 @@
 		"validate": "bun run lint && bun run test:ci && bun run test:e2e:ci"
 	},
 	"dependencies": {
-		"@hookform/resolvers": "5.2.2",
 		"@mdx-js/react": "3.1.1",
 		"@tanstack/match-sorter-utils": "8.19.4",
 		"@tanstack/react-form": "1.27.1",
@@ -28,8 +27,6 @@
 		"@tanstack/react-router": "1.140.0",
 		"@tanstack/react-start": "1.140.0",
 		"@tanstack/react-table": "8.21.3",
-		"@tanstack/router-generator": "1.140.0",
-		"@tanstack/start": "1.120.20",
 		"@tanstack/zod-form-adapter": "0.42.1",
 		"chart.js": "4.5.1",
 		"firebase": "12.6.0",
@@ -38,14 +35,9 @@
 		"react-chartjs-2": "5.3.1",
 		"react-dom": "19.2.1",
 		"react-error-boundary": "6.0.0",
-		"react-hook-form": "7.68.0",
-		"react-router": "7.10.1",
-		"react-router-dom": "7.10.1",
 		"survey-core": "2.4.1",
 		"survey-creator-core": "2.4.1",
 		"survey-react-ui": "2.4.1",
-		"valibot": "1.2.0",
-		"vinxi": "0.5.8",
 		"zod": "4.1.13"
 	},
 	"devDependencies": {
@@ -74,7 +66,7 @@
 		"vite-tsconfig-paths": "5.1.4",
 		"vitest": "4.0.15"
 	},
-	"packageManager": "bun@1.3.3",
+	"packageManager": "bun@1.3.4",
 	"msw": {
 		"workerDirectory": [
 			"public"

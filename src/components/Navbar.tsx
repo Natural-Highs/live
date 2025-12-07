@@ -16,7 +16,7 @@ const Navbar: React.FC = () => {
 				{user ? (
 					<>
 						{admin && (
-							<Link className='btn btn-ghost' to='/admin'>
+							<Link className='btn btn-ghost' to='/admin-dashboard'>
 								Admin
 							</Link>
 						)}

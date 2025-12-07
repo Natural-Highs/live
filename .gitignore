@@ -9,6 +9,7 @@ coverage
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+*.tsbuildinfo
 
 # TanStack Start
 .vinxi

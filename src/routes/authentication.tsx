@@ -1,11 +1,11 @@
-import {zodResolver} from '@hookform/resolvers/zod'
+import {useForm} from '@tanstack/react-form'
 import {createFileRoute, useNavigate} from '@tanstack/react-router'
 import {
 	createUserWithEmailAndPassword,
 	signInWithEmailAndPassword
 } from 'firebase/auth'
+import type React from 'react'
 import {useState} from 'react'
-import {useForm} from 'react-hook-form'
 import {z} from 'zod'
 import {BrandLogo} from '@/components/ui'
 import GreenCard from '@/components/ui/GreenCard'
@@ -46,21 +46,25 @@ function AuthenticationComponent() {
 	const [authError, setAuthError] = useState('')
 	const navigate = useNavigate()
 
-	const loginForm = useForm<LoginFormValues>({
-		resolver: zodResolver(loginSchema),
+	const loginForm = useForm({
 		defaultValues: {
 			email: '',
 			password: ''
+		} as LoginFormValues,
+		onSubmit: async ({value}) => {
+			await onLogin(value)
 		}
 	})
 
-	const signupForm = useForm<SignupFormValues>({
-		resolver: zodResolver(signupSchema),
+	const signupForm = useForm({
 		defaultValues: {
 			username: '',
 			email: '',
 			password: '',
 			confirmPassword: ''
+		} as SignupFormValues,
+		onSubmit: async ({value}) => {
+			await onSignUp(value)
 		}
 	})
 
@@ -188,131 +192,230 @@ function AuthenticationComponent() {
 				{isSignUp ? (
 					<form
 						className='space-y-4'
-						onSubmit={signupForm.handleSubmit(onSignUp)}
+						onSubmit={(e: React.FormEvent) => {
+							e.preventDefault()
+							e.stopPropagation()
+							signupForm.handleSubmit()
+						}}
 					>
-						<div className='form-control flex flex-col'>
-							<label className='label' htmlFor='signup-username'>
-								<span className='label-text'>Username</span>
-							</label>
-							<input
-								className='input input-bordered w-full'
-								id='signup-username'
-								placeholder='johndoe'
-								type='text'
-								{...signupForm.register('username')}
-							/>
-							{signupForm.formState.errors.username && (
-								<div className='label'>
-									<span className='label-text-alt text-error'>
-										{signupForm.formState.errors.username.message}
-									</span>
+						<signupForm.Field
+							name='username'
+							validators={{
+								onChange: signupSchema.shape.username
+							}}
+						>
+							{field => (
+								<div className='form-control flex flex-col'>
+									<label className='label' htmlFor={field.name}>
+										<span className='label-text'>Username</span>
+									</label>
+									<input
+										className='input input-bordered w-full'
+										id={field.name}
+										name={field.name}
+										onBlur={field.handleBlur}
+										onChange={e => field.handleChange(e.target.value)}
+										placeholder='johndoe'
+										type='text'
+										value={field.state.value}
+									/>
+									{field.state.meta.errors.length > 0 && (
+										<div className='label'>
+											<span className='label-text-alt text-error'>
+												{String(field.state.meta.errors[0])}
+											</span>
+										</div>
+									)}
 								</div>
 							)}
-						</div>
+						</signupForm.Field>
 
-						<div className='form-control flex flex-col gap-1'>
-							<label className='label' htmlFor='signup-email'>
-								<span className='label-text'>Email</span>
-							</label>
-							<input
-								className='input input-bordered w-full'
-								id='signup-email'
-								placeholder='john@example.com'
-								type='email'
-								{...signupForm.register('email')}
-							/>
-							{signupForm.formState.errors.email && (
-								<div className='label'>
-									<span className='label-text-alt text-error'>
-										{signupForm.formState.errors.email.message}
-									</span>
+						<signupForm.Field
+							name='email'
+							validators={{
+								onChange: signupSchema.shape.email
+							}}
+						>
+							{field => (
+								<div className='form-control flex flex-col gap-1'>
+									<label className='label' htmlFor={field.name}>
+										<span className='label-text'>Email</span>
+									</label>
+									<input
+										className='input input-bordered w-full'
+										id={field.name}
+										name={field.name}
+										onBlur={field.handleBlur}
+										onChange={e => field.handleChange(e.target.value)}
+										placeholder='john@example.com'
+										type='email'
+										value={field.state.value}
+									/>
+									{field.state.meta.errors.length > 0 && (
+										<div className='label'>
+											<span className='label-text-alt text-error'>
+												{String(field.state.meta.errors[0])}
+											</span>
+										</div>
+									)}
 								</div>
 							)}
-						</div>
+						</signupForm.Field>
 
-						<div className='form-control flex flex-col'>
-							<label className='label' htmlFor='signup-password'>
-								<span className='label-text'>Password</span>
-							</label>
-							<input
-								className='input input-bordered w-full'
-								id='signup-password'
-								type='password'
-								{...signupForm.register('password')}
-							/>
-							{signupForm.formState.errors.password && (
-								<div className='label'>
-									<span className='label-text-alt text-error'>
-										{signupForm.formState.errors.password.message}
-									</span>
+						<signupForm.Field
+							name='password'
+							validators={{
+								onChange: signupSchema.shape.password
+							}}
+						>
+							{field => (
+								<div className='form-control flex flex-col'>
+									<label className='label' htmlFor={field.name}>
+										<span className='label-text'>Password</span>
+									</label>
+									<input
+										className='input input-bordered w-full'
+										id={field.name}
+										name={field.name}
+										onBlur={field.handleBlur}
+										onChange={e => field.handleChange(e.target.value)}
+										type='password'
+										value={field.state.value}
+									/>
+									{field.state.meta.errors.length > 0 && (
+										<div className='label'>
+											<span className='label-text-alt text-error'>
+												{String(field.state.meta.errors[0])}
+											</span>
+										</div>
+									)}
 								</div>
 							)}
-						</div>
+						</signupForm.Field>
 
-						<div className='form-control flex flex-col'>
-							<label className='label' htmlFor='signup-confirm-password'>
-								<span className='label-text'>Confirm Password</span>
-							</label>
-							<input
-								className='input input-bordered w-full'
-								id='signup-confirm-password'
-								type='password'
-								{...signupForm.register('confirmPassword')}
-							/>
-							{signupForm.formState.errors.confirmPassword && (
-								<div className='label'>
-									<span className='label-text-alt text-error'>
-										{signupForm.formState.errors.confirmPassword.message}
-									</span>
+						<signupForm.Field
+							name='confirmPassword'
+							validators={{
+								onChange: signupSchema.shape.confirmPassword
+							}}
+						>
+							{field => (
+								<div className='form-control flex flex-col'>
+									<label className='label' htmlFor={field.name}>
+										<span className='label-text'>Confirm Password</span>
+									</label>
+									<input
+										className='input input-bordered w-full'
+										id={field.name}
+										name={field.name}
+										onBlur={field.handleBlur}
+										onChange={e => field.handleChange(e.target.value)}
+										type='password'
+										value={field.state.value}
+									/>
+									{field.state.meta.errors.length > 0 && (
+										<div className='label'>
+											<span className='label-text-alt text-error'>
+												{String(field.state.meta.errors[0])}
+											</span>
+										</div>
+									)}
 								</div>
 							)}
-						</div>
+						</signupForm.Field>
+
+						<signupForm.Subscribe selector={state => [state.values]}>
+							{([values]) => {
+								const result = signupSchema.safeParse(values)
+								if (!result.success && values.confirmPassword) {
+									const passwordMismatchError = result.error.issues.find(
+										issue => issue.path[0] === 'confirmPassword'
+									)
+									if (passwordMismatchError) {
+										return (
+											<div className='text-error text-sm'>
+												{passwordMismatchError.message}
+											</div>
+										)
+									}
+								}
+								return null
+							}}
+						</signupForm.Subscribe>
 
 						<GrnButton type='submit'>Create Account</GrnButton>
 					</form>
 				) : (
 					<form
 						className='space-y-4'
-						onSubmit={loginForm.handleSubmit(onLogin)}
+						onSubmit={(e: React.FormEvent) => {
+							e.preventDefault()
+							e.stopPropagation()
+							loginForm.handleSubmit()
+						}}
 					>
-						<div className='form-control flex flex-col'>
-							<label className='label' htmlFor='login-email'>
-								<span className='label-text'>Email</span>
-							</label>
-							<input
-								className='input input-bordered w-full'
-								id='login-email'
-								placeholder='john@example.com'
-								type='email'
-								{...loginForm.register('email')}
-							/>
-							{loginForm.formState.errors.email && (
-								<div className='label'>
-									<span className='label-text-alt text-error'>
-										{loginForm.formState.errors.email.message}
-									</span>
+						<loginForm.Field
+							name='email'
+							validators={{
+								onChange: loginSchema.shape.email
+							}}
+						>
+							{field => (
+								<div className='form-control flex flex-col'>
+									<label className='label' htmlFor={field.name}>
+										<span className='label-text'>Email</span>
+									</label>
+									<input
+										className='input input-bordered w-full'
+										id={field.name}
+										name={field.name}
+										onBlur={field.handleBlur}
+										onChange={e => field.handleChange(e.target.value)}
+										placeholder='john@example.com'
+										type='email'
+										value={field.state.value}
+									/>
+									{field.state.meta.errors.length > 0 && (
+										<div className='label'>
+											<span className='label-text-alt text-error'>
+												{String(field.state.meta.errors[0])}
+											</span>
+										</div>
+									)}
 								</div>
 							)}
-						</div>
+						</loginForm.Field>
 
-						<div className='form-control flex flex-col'>
-							<label className='label' htmlFor='login-password'>
-								<span className='label-text'>Password</span>
-							</label>
-							<input
-								className='input input-bordered w-full'
-								id='login-password'
-								type='password'
-								{...loginForm.register('password')}
-							/>
-							{loginForm.formState.errors.password && (
-								<div className='label'>
-									<span className='label-text-alt text-error'>
-										{loginForm.formState.errors.password.message}
-									</span>
+						<loginForm.Field
+							name='password'
+							validators={{
+								onChange: loginSchema.shape.password
+							}}
+						>
+							{field => (
+								<div className='form-control flex flex-col'>
+									<label className='label' htmlFor={field.name}>
+										<span className='label-text'>Password</span>
+									</label>
+									<input
+										className='input input-bordered w-full'
+										id={field.name}
+										name={field.name}
+										onBlur={field.handleBlur}
+										onChange={e => field.handleChange(e.target.value)}
+										type='password'
+										value={field.state.value}
+									/>
+									{field.state.meta.errors.length > 0 && (
+										<div className='label'>
+											<span className='label-text-alt text-error'>
+												{String(field.state.meta.errors[0])}
+											</span>
+										</div>
+									)}
 								</div>
 							)}
-						</div>
+						</loginForm.Field>
 
 						<GrnButton type='submit'>Sign In</GrnButton>
 					</form>

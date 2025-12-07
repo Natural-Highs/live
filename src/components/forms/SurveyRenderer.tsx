@@ -8,11 +8,11 @@ export interface SurveyJSJson {
 	description?: string
 	pages: Array<{
 		name?: string
-		elements: Record<string, unknown>[]
+		// biome-ignore lint/suspicious/noExplicitAny: SurveyJS elements have dynamic structure
+		elements: Record<string, any>[]
 	}>
 	completedHtml?: string
 	showProgressBar?: boolean | string
-	[key: string]: unknown
 }
 
 interface SurveyRendererProps {
