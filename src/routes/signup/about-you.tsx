@@ -1,5 +1,4 @@
-import {createFileRoute, redirect, useNavigate} from '@tanstack/react-router'
-import type React from 'react'
+import {createFileRoute, useNavigate} from '@tanstack/react-router'
 import {useEffect, useState} from 'react'
 import {z} from 'zod'
 import {BrandLogo} from '@/components/ui'
@@ -18,12 +17,6 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute('/signup/about-you')({
 	validateSearch: searchSchema,
-	beforeLoad: ({context, search}) => {
-		// Redirect if no auth and no email in search params
-		if (!context.auth?.user && !search.email) {
-			throw redirect({to: '/signup'})
-		}
-	},
 	component: SignUpAboutYouComponent
 })
 

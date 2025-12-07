@@ -1,10 +1,9 @@
 import {zodResolver} from '@hookform/resolvers/zod'
-import {createFileRoute, redirect, useNavigate} from '@tanstack/react-router'
+import {createFileRoute, useNavigate} from '@tanstack/react-router'
 import {
 	createUserWithEmailAndPassword,
 	signInWithEmailAndPassword
 } from 'firebase/auth'
-import type React from 'react'
 import {useState} from 'react'
 import {useForm} from 'react-hook-form'
 import {z} from 'zod'
@@ -38,18 +37,12 @@ type LoginFormValues = z.infer<typeof loginSchema>
 type SignupFormValues = z.infer<typeof signupSchema>
 
 export const Route = createFileRoute('/authentication')({
-	beforeLoad: ({context}) => {
-		// Redirect to dashboard if already authenticated with consent
-		if (context.auth?.user && context.auth?.consentForm) {
-			throw redirect({to: '/dashboard'})
-		}
-	},
 	component: AuthenticationComponent
 })
 
 // biome-ignore lint/style/useComponentExportOnlyModules: TanStack Router pattern - only Route is exported
 function AuthenticationComponent() {
-	const {user, loading, consentForm} = useAuth()
+	const {loading} = useAuth()
 	const [isSignUp, setIsSignUp] = useState(false)
 	const [authError, setAuthError] = useState('')
 	const navigate = useNavigate()
