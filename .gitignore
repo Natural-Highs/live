@@ -25,3 +25,4 @@ serviceAccount.json
 
 # User-only content (not for git history)
 .local/
+.secrets
