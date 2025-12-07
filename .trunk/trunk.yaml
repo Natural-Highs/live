@@ -19,9 +19,36 @@ repo:
   trunk_branch: main
 # This is the section where you manage your linters. (https://docs.trunk.io/check/configuration)
 lint:
+  # File ignores - skip generated and vendor content
+  ignore:
+    - linters: [ALL]
+      paths:
+        - dist/**
+        - coverage/**
+        - node_modules/**
+        - .firebase/**
+        - public/mockServiceWorker.js # MSW generated file
+        - "*.min.js"
+        - "*.min.css"
+  # Blocking thresholds - gradual adoption for security scanners
+  threshold:
+    - linters: [checkov]
+      level: high # Only block on high-severity security issues
+    - linters: [osv-scanner]
+      level: high
+  # Trigger rules for whole-repo linters
+  triggers:
+    - linters: [checkov]
+      paths:
+        - .github/**
+        - "*.tf"
+        - Dockerfile*
+      targets:
+        - .
   enabled:
     - actionlint@1.7.9
-    - biome@2.3.8
+    - biome@2.3.8:
+        commands: [check, format]
     - checkov@3.2.495
     - git-diff-check
     - markdownlint@0.46.0
