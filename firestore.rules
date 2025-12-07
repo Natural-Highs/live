@@ -1,0 +1,137 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      // Admins and authenticated users can read user documents
+      allow read: if isAuthenticated();
+      
+      // Users can update their own documents, admins can update any
+      allow update: if isAuthenticated() && (
+        request.auth.uid == userId ||
+        isAdmin()
+      ) && (
+        // Prevent non-admins from modifying admin flags
+        (!('isAdmin' in request.resource.data) || isAdmin())
+      );
+      
+      // Only admins can create user documents (registration handled by backend)
+      allow create: if isAdmin();
+      
+      // Only admins can delete users
+      allow delete: if isAdmin();
+    }
+
+    // Events Collection
+    match /events/{eventId} {
+      // Admins and authenticated users can read active events
+      allow read: if isAuthenticated() && (
+        resource.data.isActive == true ||
+        isAdmin()
+      );
+      
+      // Only admins can create/update/delete events
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Event Types Collection
+    match /eventTypes/{eventTypeId} {
+      // Admins and authenticated users can read event types
+      allow read: if isAuthenticated();
+      
+      // Only admins can create/update/delete event types
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Form Templates Collection
+    match /formTemplates/{templateId} {
+      // Admins and authenticated users can read form templates
+      allow read: if isAuthenticated();
+      
+      // Only admins can create/update/delete templates
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Surveys Collection
+    match /surveys/{surveyId} {
+      // Admins and authenticated users can read surveys
+      allow read: if isAuthenticated();
+      
+      // Only admins can create/update/delete surveys
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Questions Collection
+    match /questions/{questionId} {
+      // Admins and authenticated users can read questions
+      allow read: if isAuthenticated();
+      
+      // Only admins can create/update/delete questions
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Survey Responses Collection
+    match /surveyResponses/{responseId} {
+      // Admins and authenticated users can read responses
+      allow read: if isAuthenticated();
+      
+      // Authenticated users can create responses
+      allow create: if isAuthenticated();
+      
+      // Users can update their own responses (before completion)
+      // Admins can update any response
+      allow update: if isAuthenticated() && (
+        (resource.data.userId == request.auth.uid && 
+         resource.data.isComplete == false) ||
+        isAdmin()
+      );
+      
+      // Only admins can delete responses
+      allow delete: if isAdmin();
+    }
+
+    // Responses Collection (Individual Question Responses)
+    match /responses/{responseId} {
+      // Admins and authenticated users can read responses
+      allow read: if isAuthenticated();
+      
+      // Authenticated users can create responses
+      allow create: if isAuthenticated();
+      
+      // Users can update their own responses (before survey completion)
+      // Admins can update any response
+      allow update: if isAuthenticated() && (
+        (get(/databases/$(database)/documents/surveyResponses/$(resource.data.surveyResponseId)).data.userId == request.auth.uid &&
+         get(/databases/$(database)/documents/surveyResponses/$(resource.data.surveyResponseId)).data.isComplete == false) ||
+        isAdmin()
+      );
+      
+      // Only admins can delete responses
+      allow delete: if isAdmin();
+    }
+
+    // User Events Collection
+    match /userEvents/{userEventId} {
+      // Admins and authenticated users can read event registrations
+      allow read: if isAuthenticated();
+      
+      // Authenticated users can create event registrations
+      allow create: if isAuthenticated();
+      
+      // Only admins can update/delete registrations (prevent duplicates)
+      allow update, delete: if isAdmin();
+    }
+  }
+}
+

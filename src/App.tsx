@@ -1,32 +1,73 @@
-import {Suspense} from 'react'
-import {ErrorBoundary, type FallbackProps} from 'react-error-boundary'
-import {Route, Routes} from 'react-router'
-import {LoadingOrError} from '@/components/LoadingOrError'
-import {Head} from '@/components/Head'
+import { Route, Routes } from 'react-router-dom';
+import AdminRoute from './components/AdminRoute';
+import Layout from './components/Layout';
+import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './context/AuthContext';
+import AdminPage from './pages/AdminPage';
+import AuthenticationPage from './pages/AuthenticationPage';
+import GuestPage from './pages/GuestPage';
+import ConsentFormPage from './pages/ConsentFormPage';
+import DashboardPage from './pages/DashboardPage';
+import HomePage from './pages/HomePage';
+import SignUpPage1 from './pages/SignUpPage1';
+import SignUpPage2 from './pages/SignUpPage2';
 
-function renderError({error}: FallbackProps) {
-	return <LoadingOrError error={error} />
+function App() {
+  return (
+    <AuthProvider>
+      <Layout>
+        <Routes>
+          {/* Protected routes - require authentication */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <HomePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* Admin routes - require admin access */}
+          <Route
+            path="/admin/*"
+            element={
+              <AdminRoute>
+                <AdminPage />
+              </AdminRoute>
+            }
+          />
+          {/* Consent form route - protected but doesn't require consent form to be completed */}
+          <Route
+            path="/consent"
+            element={
+              <ProtectedRoute>
+                <ConsentFormPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* Public routes */}
+          <Route path="/authentication" element={<AuthenticationPage />} />
+          <Route path="/guest" element={<GuestPage />} />
+          <Route path="/signup" element={<SignUpPage1 />} />
+          <Route
+            path="/signup/about-you"
+            element={
+              <ProtectedRoute>
+                <SignUpPage2 />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
+      </Layout>
+    </AuthProvider>
+  );
 }
 
-function Home() {
-	return (
-		<>
-			<Head title='Natural Highs' />
-			<div className='grid min-h-screen place-content-center'>
-				<h1 className='text-4xl font-bold'>Natural Highs</h1>
-			</div>
-		</>
-	)
-}
-
-export function App() {
-	return (
-		<ErrorBoundary fallbackRender={renderError}>
-			<Suspense fallback={<LoadingOrError />}>
-				<Routes>
-					<Route element={<Home />} index={true} />
-				</Routes>
-			</Suspense>
-		</ErrorBoundary>
-	)
-}
+export default App;
