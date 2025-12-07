@@ -144,7 +144,7 @@
 			}
 		},
 		{
-			"includes": ["vite.config.ts", "playwright.config.ts"],
+			"includes": ["vite.config.ts", "playwright.config.ts", "vitest.config.ts"],
 			"linter": {
 				"rules": {
 					"correctness": {
@@ -154,7 +154,8 @@
 						"noTernary": "off"
 					},
 					"style": {
-						"noDefaultExport": "off"
+						"noDefaultExport": "off",
+						"useNamingConvention": "off"
 					}
 				}
 			}
