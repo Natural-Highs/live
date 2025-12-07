@@ -1,8 +1,10 @@
 import process from 'node:process'
 import {defineConfig, devices} from '@playwright/test'
 
+const isCI = Boolean(process.env.CI)
+
 export default defineConfig({
-	forbidOnly: Boolean(process.env.CI),
+	forbidOnly: isCI,
 	fullyParallel: true,
 	projects: [
 		{
@@ -15,16 +17,16 @@ export default defineConfig({
 		}
 	],
 	reporter: 'html',
-	retries: process.env.CI ? 2 : 0,
+	retries: isCI ? 2 : 0,
 	testDir: './tests',
 	use: {
-		baseURL: 'http://localhost:5173',
+		baseURL: 'http://localhost:3000',
 		trace: 'on-first-retry'
 	},
 	webServer: {
 		command: 'bun run dev',
-		reuseExistingServer: !process.env.CI,
-		url: 'http://localhost:5173'
+		reuseExistingServer: !isCI,
+		url: 'http://localhost:3000'
 	},
-	workers: process.env.CI ? 1 : undefined
+	workers: isCI ? 1 : undefined
 })
