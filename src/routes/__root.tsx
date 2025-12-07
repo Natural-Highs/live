@@ -41,7 +41,6 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 	component: RootComponent
 })
 
-// biome-ignore lint/style/useComponentExportOnlyModules: TanStack Router pattern - only Route is exported
 function RootComponent() {
 	return (
 		<QueryClientProvider client={queryClient}>

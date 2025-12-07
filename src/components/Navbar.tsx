@@ -1,5 +1,5 @@
-import type React from 'react'
 import {Link} from '@tanstack/react-router'
+import type React from 'react'
 import {useAuth} from '../context/AuthContext'
 
 const Navbar: React.FC = () => {

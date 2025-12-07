@@ -204,7 +204,6 @@ describe('Authentication Business Logic', () => {
 		it('should handle null userRecord (unreachable but covered for completeness)', async () => {
 			// This branch is technically unreachable since getUserByEmail always returns or throws
 			// but we test it for code coverage completeness
-			// biome-ignore lint/suspicious/noExplicitAny: Testing unreachable branch requires type override
 			;(adminAuth.getUserByEmail as ReturnType<typeof vi.fn>).mockResolvedValue(
 				null as any
 			)

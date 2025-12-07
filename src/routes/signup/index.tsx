@@ -3,14 +3,13 @@ import {createUserWithEmailAndPassword} from 'firebase/auth'
 import {useState} from 'react'
 import {SignUpForm} from '@/components/forms/SignUpForm'
 import {PageContainer} from '@/components/ui/page-container'
-import {auth} from '$lib/firebase/firebase.app'
 import type {SignupAccountData} from '@/lib/schemas/signup'
+import {auth} from '$lib/firebase/firebase.app'
 
 export const Route = createFileRoute('/signup/')({
 	component: SignUpComponent
 })
 
-// biome-ignore lint/style/useComponentExportOnlyModules: TanStack Router pattern - only Route is exported
 function SignUpComponent() {
 	const navigate = useNavigate()
 	const [error, setError] = useState('')

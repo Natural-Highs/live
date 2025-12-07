@@ -7,8 +7,8 @@ import {
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
-import {convertTemplateToSurveyJS} from '@/lib/forms/template-converter'
 import {authGuard} from '@/lib/auth-guard'
+import {convertTemplateToSurveyJS} from '@/lib/forms/template-converter'
 
 interface DemographicsFormTemplate {
 	id: string

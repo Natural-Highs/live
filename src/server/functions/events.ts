@@ -1,14 +1,14 @@
 import {createServerFn} from '@tanstack/react-start'
-import {db} from '../../lib/firebase/firebase'
 import {isValidEventCodeFormat} from '../../lib/events/event-validation'
-import type {EventDocument} from '../types/events'
+import {db} from '../../lib/firebase/firebase'
 import {
 	activateEventSchema,
 	getEventByCodeSchema,
 	overrideSurveyTimingSchema
 } from '../schemas/events'
-import {NotFoundError, ValidationError} from './utils/errors'
+import type {EventDocument} from '../types/events'
 import {requireAdmin, validateSession} from './utils/auth'
+import {NotFoundError, ValidationError} from './utils/errors'
 
 /**
  * Get event by 4-digit event code
@@ -42,7 +42,8 @@ export const getEventByCode = createServerFn({method: 'GET'}).handler(
 			...eventData,
 			startDate:
 				eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
-			endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
+			endDate:
+				eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
 			createdAt:
 				eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
 			updatedAt:
@@ -68,14 +69,15 @@ export const getEvents = createServerFn({method: 'GET'}).handler(async () => {
 
 	const snapshot = await query.get()
 
-	return snapshot.docs.map((doc) => {
+	return snapshot.docs.map(doc => {
 		const eventData = doc.data()
 		return {
 			id: doc.id,
 			...eventData,
 			startDate:
 				eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
-			endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
+			endDate:
+				eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
 			createdAt:
 				eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
 			updatedAt:
@@ -98,14 +100,11 @@ export const activateEvent = createServerFn({method: 'POST'}).handler(
 		// Generate unique 4-digit event code
 		const eventCode = await generateUniqueEventCode()
 
-		await db
-			.collection('events')
-			.doc(eventId)
-			.update({
-				isActive: true,
-				eventCode,
-				updatedAt: new Date()
-			})
+		await db.collection('events').doc(eventId).update({
+			isActive: true,
+			eventCode,
+			updatedAt: new Date()
+		})
 
 		return {eventCode}
 	}

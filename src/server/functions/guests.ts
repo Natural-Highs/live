@@ -5,8 +5,8 @@ import {
 	upgradeGuestSchema,
 	validateGuestCodeSchema
 } from '../schemas/guests'
-import {ConflictError, NotFoundError} from './utils/errors'
 import {validateSession} from './utils/auth'
+import {ConflictError, NotFoundError} from './utils/errors'
 
 /**
  * Validate guest event code
@@ -163,15 +163,12 @@ export const upgradeGuest = createServerFn({method: 'POST'}).handler(
 		})
 
 		// Update Firestore document
-		await db
-			.collection('users')
-			.doc(user.uid)
-			.update({
-				isGuest: false,
-				email,
-				upgradedAt: new Date(),
-				updatedAt: new Date()
-			})
+		await db.collection('users').doc(user.uid).update({
+			isGuest: false,
+			email,
+			upgradedAt: new Date(),
+			updatedAt: new Date()
+		})
 
 		return {
 			success: true,

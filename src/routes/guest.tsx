@@ -24,7 +24,6 @@ export const Route = createFileRoute('/guest')({
 	component: GuestComponent
 })
 
-// biome-ignore lint/style/useComponentExportOnlyModules: TanStack Router pattern - only Route is exported
 function GuestComponent() {
 	const navigate = useNavigate()
 	const [template, setTemplate] = useState<ConsentFormTemplate | null>(null)

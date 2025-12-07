@@ -205,7 +205,6 @@ describe('Template Converter', () => {
 					{
 						id: 'q1',
 						text: 'Enter your comments',
-						// biome-ignore lint/suspicious/noExplicitAny: Testing default fallback requires invalid type
 						type: 'unknown' as any // Invalid type that will fall through to default
 					}
 				]

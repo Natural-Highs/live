@@ -141,7 +141,7 @@ function SurveysListComponent() {
 												<Link
 													params={{surveyId: survey.surveyId}}
 													search={{eventId: survey.eventId}}
-													to={'/surveys/$surveyId'}
+													to='/surveys/$surveyId'
 												>
 													<PrimaryButton>Start Survey</PrimaryButton>
 												</Link>

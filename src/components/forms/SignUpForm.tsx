@@ -2,10 +2,7 @@ import {useForm} from '@tanstack/react-form'
 import type React from 'react'
 import GreyButton from '@/components/ui/GreyButton'
 import GrnButton from '@/components/ui/GrnButton'
-import {
-	signupAccountSchema,
-	type SignupAccountData
-} from '@/lib/schemas/signup'
+import {type SignupAccountData, signupAccountSchema} from '@/lib/schemas/signup'
 
 interface SignUpFormProps {
 	onSubmit: (data: SignupAccountData) => Promise<void> | void

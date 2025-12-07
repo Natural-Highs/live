@@ -14,11 +14,9 @@ interface SurveySearch {
 }
 
 export const Route = createFileRoute('/surveys/$surveyId')({
-	validateSearch: (search: Record<string, unknown>): SurveySearch => {
-		return {
-			eventId: (search.eventId as string) || undefined
-		}
-	},
+	validateSearch: (search: Record<string, unknown>): SurveySearch => ({
+		eventId: (search.eventId as string) || undefined
+	}),
 	beforeLoad: async ctx => {
 		await authGuard(ctx, {requireAuth: true, requireConsent: true})
 	},
@@ -50,7 +48,7 @@ export const Route = createFileRoute('/surveys/$surveyId')({
 			throw new Error(data.error || data.message || 'Failed to load survey')
 		}
 
-		if (!data.questions || !data.name) {
+		if (!(data.questions && data.name)) {
 			throw new Error('Survey data not available')
 		}
 

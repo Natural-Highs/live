@@ -7,8 +7,8 @@ import {
 	getUserByEmailSchema,
 	setAdminClaimSchema
 } from '../schemas/admin'
-import {NotFoundError} from './utils/errors'
 import {requireAdmin} from './utils/auth'
+import {NotFoundError} from './utils/errors'
 
 /**
  * Export survey response data
@@ -34,7 +34,7 @@ export const exportData = createServerFn({method: 'GET'}).handler(
 
 		const snapshot = await query.get()
 
-		const responses = snapshot.docs.map((doc) => {
+		const responses = snapshot.docs.map(doc => {
 			const responseData = doc.data()
 			return {
 				id: doc.id,
@@ -119,7 +119,7 @@ export const getResponses = createServerFn({method: 'GET'}).handler(
 
 		const snapshot = await query.get()
 
-		const responses = snapshot.docs.map((doc) => {
+		const responses = snapshot.docs.map(doc => {
 			const responseData = doc.data()
 			return {
 				id: doc.id,
@@ -183,20 +183,22 @@ function convertToCSV(data: any[]): string {
 
 	// Get all unique keys across all objects
 	const allKeys = new Set<string>()
-	data.forEach((item) => {
-		Object.keys(item).forEach((key) => allKeys.add(key))
+	data.forEach(item => {
+		Object.keys(item).forEach(key => allKeys.add(key))
 	})
 
 	const headers = Array.from(allKeys)
 
 	// Build CSV rows
-	const rows = data.map((item) => {
+	const rows = data.map(item => {
 		return headers
-			.map((header) => {
+			.map(header => {
 				const value = item[header]
 				// Handle nested objects/arrays
 				const stringValue =
-					typeof value === 'object' ? JSON.stringify(value) : String(value ?? '')
+					typeof value === 'object'
+						? JSON.stringify(value)
+						: String(value ?? '')
 				// Escape quotes and wrap in quotes if contains comma or quote
 				if (stringValue.includes(',') || stringValue.includes('"')) {
 					return `"${stringValue.replace(/"/g, '""')}"`

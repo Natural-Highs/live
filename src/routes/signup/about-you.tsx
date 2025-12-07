@@ -6,8 +6,8 @@ import {BrandLogo} from '@/components/ui'
 import GreenCard from '@/components/ui/GreenCard'
 import {PageContainer} from '@/components/ui/page-container'
 import TitleCard from '@/components/ui/TitleCard'
-import {useAuth} from '../../context/AuthContext'
 import type {AboutYouData} from '@/lib/schemas/signup'
+import {useAuth} from '../../context/AuthContext'
 
 // Define search params schema
 const searchSchema = z.object({
@@ -20,7 +20,6 @@ export const Route = createFileRoute('/signup/about-you')({
 	component: SignUpAboutYouComponent
 })
 
-// biome-ignore lint/style/useComponentExportOnlyModules: TanStack Router pattern - only Route is exported
 function SignUpAboutYouComponent() {
 	const navigate = useNavigate()
 	const {user} = useAuth()
