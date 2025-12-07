@@ -4,6 +4,8 @@ import {QueryClient, QueryClientProvider} from '@tanstack/react-query'
 import {ReactQueryDevtools} from '@tanstack/react-query-devtools'
 import {createRootRoute, Outlet} from '@tanstack/react-router'
 import {TanStackRouterDevtools} from '@tanstack/router-devtools'
+import {AuthProvider} from '../context/AuthContext'
+import Layout from '../components/Layout'
 import appCss from '../global.css?url'
 
 const queryClient = new QueryClient()
@@ -23,7 +25,11 @@ export const Route = createRootRoute({
 function RootComponent() {
 	return (
 		<QueryClientProvider client={queryClient}>
-			<Outlet />
+			<AuthProvider>
+				<Layout>
+					<Outlet />
+				</Layout>
+			</AuthProvider>
 			<ReactQueryDevtools />
 			<TanStackRouterDevtools position='bottom-right' />
 		</QueryClientProvider>
