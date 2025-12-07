@@ -7,16 +7,14 @@
 import {act, render, screen, waitFor} from '@testing-library/react'
 import GuestConsentFormPage from './GuestConsentFormPage'
 
-// Mock dependencies
-// Mock useNavigate
+// Mock TanStack Router
 const mockNavigate = vi.fn()
-vi.mock('react-router-dom', async () => {
-	const actual = await vi.importActual('react-router-dom')
-	return {
-		...actual,
-		useNavigate: () => mockNavigate
-	}
-})
+vi.mock('@tanstack/react-router', () => ({
+	useNavigate: () => mockNavigate,
+	Link: ({children, to}: {children: React.ReactNode; to: string}) => (
+		<a href={to}>{children}</a>
+	)
+}))
 
 // Mock SurveyRenderer
 vi.mock('@/components/forms/SurveyRenderer', () => ({
@@ -68,13 +66,12 @@ describe('GuestConsentFormPage', () => {
 	})
 
 	it('redirects to entry page when guest ID is missing', () => {
-		render(
-			<BrowserRouter>
-				<GuestConsentFormPage />
-			</BrowserRouter>
-		)
+		render(<GuestConsentFormPage />)
 
-		expect(mockNavigate).toHaveBeenCalledWith('/guests/entry', {replace: true})
+		expect(mockNavigate).toHaveBeenCalledWith({
+			to: '/guests/entry',
+			replace: true
+		})
 	})
 
 	it('renders loading state initially', () => {
@@ -87,11 +84,7 @@ describe('GuestConsentFormPage', () => {
 				})
 		)
 
-		const {container} = render(
-			<BrowserRouter>
-				<GuestConsentFormPage />
-			</BrowserRouter>
-		)
+		const {container} = render(<GuestConsentFormPage />)
 
 		// Loading spinner is present
 		const spinner = container.querySelector('.loading-spinner')
@@ -120,11 +113,7 @@ describe('GuestConsentFormPage', () => {
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<GuestConsentFormPage />
-				</BrowserRouter>
-			)
+			render(<GuestConsentFormPage />)
 		})
 
 		await waitFor(() => {
@@ -142,11 +131,7 @@ describe('GuestConsentFormPage', () => {
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<GuestConsentFormPage />
-				</BrowserRouter>
-			)
+			render(<GuestConsentFormPage />)
 		})
 
 		await waitFor(() => {
@@ -183,11 +168,7 @@ describe('GuestConsentFormPage', () => {
 			} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<GuestConsentFormPage />
-				</BrowserRouter>
-			)
+			render(<GuestConsentFormPage />)
 		})
 
 		await waitFor(() => {
@@ -232,11 +213,7 @@ describe('GuestConsentFormPage', () => {
 			} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<GuestConsentFormPage />
-				</BrowserRouter>
-			)
+			render(<GuestConsentFormPage />)
 		})
 
 		await waitFor(() => {

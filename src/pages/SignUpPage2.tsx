@@ -1,6 +1,6 @@
+import {useLocation, useNavigate} from '@tanstack/react-router'
 import type React from 'react'
 import {useEffect, useState} from 'react'
-import {useLocation, useNavigate} from 'react-router-dom'
 import {BrandLogo} from '@/components/ui'
 import GreenCard from '@/components/ui/GreenCard'
 import GreyButton from '@/components/ui/GreyButton'
@@ -19,7 +19,7 @@ const SignUpPage2: React.FC = () => {
 	const {user} = useAuth()
 
 	// Get data from navigation state (from SignUpPage1)
-	const {email} = location.state || {}
+	const {email} = (location.state as {email?: string}) || {}
 
 	const [formData, setFormData] = useState({
 		firstName: '',
@@ -37,7 +37,7 @@ const SignUpPage2: React.FC = () => {
 	// Redirect if no auth or missing state
 	useEffect(() => {
 		if (!(user || email)) {
-			navigate('/signup', {replace: true})
+			navigate({to: '/signup', replace: true})
 		}
 	}, [user, email, navigate])
 
@@ -88,7 +88,7 @@ const SignUpPage2: React.FC = () => {
 
 			// Navigate to consent form or demographics next
 			// TODO: Determine next step based on user flow requirements
-			navigate('/consent', {replace: true})
+			navigate({to: '/consent', replace: true})
 		} catch (error: unknown) {
 			setError(
 				error instanceof Error ? error.message : 'Failed to update profile'
@@ -255,7 +255,7 @@ const SignUpPage2: React.FC = () => {
 						{loading ? 'Saving...' : 'Continue'}
 					</GrnButton>
 
-					<GreyButton onClick={() => navigate(-1)} type='button'>
+					<GreyButton onClick={() => window.history.back()} type='button'>
 						Back to Sign Up
 					</GreyButton>
 				</form>

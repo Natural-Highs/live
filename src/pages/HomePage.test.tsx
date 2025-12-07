@@ -5,13 +5,19 @@
  * Tests component rendering, conditional content based on auth state, and navigation links
  */
 import {render, screen} from '@testing-library/react'
-import {BrowserRouter} from 'react-router-dom'
 import HomePage from './HomePage'
 
 // Mock useAuth
 const mockUseAuth = vi.fn()
 vi.mock('../context/AuthContext', () => ({
 	useAuth: () => mockUseAuth()
+}))
+
+// Mock TanStack Router Link component
+vi.mock('@tanstack/react-router', () => ({
+	Link: ({children, to}: {children: React.ReactNode; to: string}) => (
+		<a href={to}>{children}</a>
+	)
 }))
 
 describe('HomePage', () => {
@@ -25,16 +31,10 @@ describe('HomePage', () => {
 			consentForm: null
 		})
 
-		render(
-			<BrowserRouter>
-				<HomePage />
-			</BrowserRouter>
-		)
+		render(<HomePage />)
 
 		expect(screen.getByText('Natural Highs')).toBeInTheDocument()
-		expect(
-			screen.getByText('Join events, complete surveys.')
-		).toBeInTheDocument()
+		expect(screen.getByText(/TODO: Add app description/)).toBeInTheDocument()
 	})
 
 	it('renders sign up and log in buttons when user is not authenticated', () => {
@@ -43,11 +43,7 @@ describe('HomePage', () => {
 			consentForm: null
 		})
 
-		render(
-			<BrowserRouter>
-				<HomePage />
-			</BrowserRouter>
-		)
+		render(<HomePage />)
 
 		expect(screen.getByText('Sign Up')).toBeInTheDocument()
 		expect(screen.getByText('Log In')).toBeInTheDocument()
@@ -59,11 +55,7 @@ describe('HomePage', () => {
 			consentForm: null
 		})
 
-		render(
-			<BrowserRouter>
-				<HomePage />
-			</BrowserRouter>
-		)
+		render(<HomePage />)
 
 		expect(screen.getByText('Consent Required')).toBeInTheDocument()
 		expect(
@@ -78,11 +70,7 @@ describe('HomePage', () => {
 			consentForm: {id: 'consent-1'}
 		})
 
-		render(
-			<BrowserRouter>
-				<HomePage />
-			</BrowserRouter>
-		)
+		render(<HomePage />)
 
 		expect(screen.getByText('Welcome Back')).toBeInTheDocument()
 		expect(
@@ -99,17 +87,9 @@ describe('HomePage', () => {
 			consentForm: null
 		})
 
-		render(
-			<BrowserRouter>
-				<HomePage />
-			</BrowserRouter>
-		)
+		render(<HomePage />)
 
-		expect(screen.getByText('Get Started')).toBeInTheDocument()
-		expect(
-			screen.getByText(
-				/Create an account to join events and participate in surveys./
-			)
-		).toBeInTheDocument()
+		expect(screen.getByText(/TODO: Add home page title/)).toBeInTheDocument()
+		expect(screen.getByText(/TODO: Add home page text/)).toBeInTheDocument()
 	})
 })

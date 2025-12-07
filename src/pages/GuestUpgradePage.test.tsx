@@ -4,20 +4,18 @@
  *
  * Tests component rendering, form validation, error handling, and guest upgrade
  */
-import {render, screen, waitFor} from '@testing-library/react'
+import {act, render, screen, waitFor} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import GuestUpgradePage from './GuestUpgradePage'
 
-// Mock dependencies
-// Mock useNavigate
+// Mock TanStack Router
 const mockNavigate = vi.fn()
-vi.mock('react-router-dom', async () => {
-	const actual = await vi.importActual('react-router-dom')
-	return {
-		...actual,
-		useNavigate: () => mockNavigate
-	}
-})
+vi.mock('@tanstack/react-router', () => ({
+	useNavigate: () => mockNavigate,
+	Link: ({children, to}: {children: React.ReactNode; to: string}) => (
+		<a href={to}>{children}</a>
+	)
+}))
 
 // Mock Firebase auth
 vi.mock('$lib/firebase/firebase.app', () => ({
@@ -41,24 +39,19 @@ describe('GuestUpgradePage', () => {
 	})
 
 	it('redirects to entry page when guest ID is missing', () => {
-		render(
-			<BrowserRouter>
-				<GuestUpgradePage />
-			</BrowserRouter>
-		)
+		render(<GuestUpgradePage />)
 
-		expect(mockNavigate).toHaveBeenCalledWith('/guests/entry', {replace: true})
+		expect(mockNavigate).toHaveBeenCalledWith({
+			to: '/guests/entry',
+			replace: true
+		})
 	})
 
 	it('renders upgrade form when guest ID is present', async () => {
 		sessionStorage.setItem('guestId', 'guest-1')
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<GuestUpgradePage />
-				</BrowserRouter>
-			)
+			render(<GuestUpgradePage />)
 		})
 
 		await waitFor(() => {
@@ -80,11 +73,7 @@ describe('GuestUpgradePage', () => {
 		const user = userEvent.setup()
 		sessionStorage.setItem('guestId', 'guest-1')
 
-		render(
-			<BrowserRouter>
-				<GuestUpgradePage />
-			</BrowserRouter>
-		)
+		render(<GuestUpgradePage />)
 
 		const passwordInput = screen.getByLabelText(/^Password$/i)
 		await user.type(passwordInput, '12345') // Less than 6 characters
@@ -109,11 +98,7 @@ describe('GuestUpgradePage', () => {
 		const user = userEvent.setup()
 		sessionStorage.setItem('guestId', 'guest-1')
 
-		render(
-			<BrowserRouter>
-				<GuestUpgradePage />
-			</BrowserRouter>
-		)
+		render(<GuestUpgradePage />)
 
 		const passwordInput = screen.getByLabelText(/^Password$/i)
 		await user.type(passwordInput, 'password123')
@@ -136,11 +121,7 @@ describe('GuestUpgradePage', () => {
 		sessionStorage.setItem('guestId', 'guest-1')
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<GuestUpgradePage />
-				</BrowserRouter>
-			)
+			render(<GuestUpgradePage />)
 		})
 
 		await waitFor(() => {
@@ -163,11 +144,7 @@ describe('GuestUpgradePage', () => {
 		const user = userEvent.setup()
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<GuestUpgradePage />
-				</BrowserRouter>
-			)
+			render(<GuestUpgradePage />)
 		})
 
 		await waitFor(() => {

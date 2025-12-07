@@ -4,19 +4,17 @@
  *
  * Tests component rendering, loading states, error handling, and guest registration
  */
-import {render, screen, waitFor} from '@testing-library/react'
+import {act, render, screen, waitFor} from '@testing-library/react'
 import GuestRegistrationPage from './GuestRegistrationPage'
 
-// Mock dependencies
-// Mock useNavigate
+// Mock TanStack Router
 const mockNavigate = vi.fn()
-vi.mock('react-router-dom', async () => {
-	const actual = await vi.importActual('react-router-dom')
-	return {
-		...actual,
-		useNavigate: () => mockNavigate
-	}
-})
+vi.mock('@tanstack/react-router', () => ({
+	useNavigate: () => mockNavigate,
+	Link: ({children, to}: {children: React.ReactNode; to: string}) => (
+		<a href={to}>{children}</a>
+	)
+}))
 
 // Mock SurveyRenderer
 vi.mock('@/components/forms/SurveyRenderer', () => ({
@@ -53,13 +51,12 @@ describe('GuestRegistrationPage', () => {
 	})
 
 	it('redirects to entry page when event info is missing', () => {
-		render(
-			<BrowserRouter>
-				<GuestRegistrationPage />
-			</BrowserRouter>
-		)
+		render(<GuestRegistrationPage />)
 
-		expect(mockNavigate).toHaveBeenCalledWith('/guests/entry', {replace: true})
+		expect(mockNavigate).toHaveBeenCalledWith({
+			to: '/guests/entry',
+			replace: true
+		})
 	})
 
 	it('renders registration form when event info is present', async () => {
@@ -68,11 +65,7 @@ describe('GuestRegistrationPage', () => {
 		sessionStorage.setItem('guestEventCode', '1234')
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<GuestRegistrationPage />
-				</BrowserRouter>
-			)
+			render(<GuestRegistrationPage />)
 		})
 
 		await waitFor(() => {
@@ -96,11 +89,7 @@ describe('GuestRegistrationPage', () => {
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<GuestRegistrationPage />
-				</BrowserRouter>
-			)
+			render(<GuestRegistrationPage />)
 		})
 
 		await waitFor(() => {
@@ -113,7 +102,8 @@ describe('GuestRegistrationPage', () => {
 		})
 
 		await waitFor(() => {
-			expect(mockNavigate).toHaveBeenCalledWith('/guests/consent', {
+			expect(mockNavigate).toHaveBeenCalledWith({
+				to: '/guests/consent',
 				replace: true
 			})
 		})
@@ -133,11 +123,7 @@ describe('GuestRegistrationPage', () => {
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<GuestRegistrationPage />
-				</BrowserRouter>
-			)
+			render(<GuestRegistrationPage />)
 		})
 
 		await waitFor(() => {

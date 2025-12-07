@@ -6,21 +6,19 @@
  */
 import {act, render, screen, waitFor} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import {BrowserRouter} from 'react-router-dom'
 import SignUpPage1 from './SignUpPage1'
 
-// Mock dependencies
+// Mock TanStack Router
 const mockNavigate = vi.fn()
-vi.mock('react-router-dom', async () => {
-	const actual = await vi.importActual('react-router-dom')
-	return {
-		...actual,
-		useNavigate: () => mockNavigate
-	}
-})
+vi.mock('@tanstack/react-router', () => ({
+	useNavigate: () => mockNavigate,
+	Link: ({children, to}: {children: React.ReactNode; to: string}) => (
+		<a href={to}>{children}</a>
+	)
+}))
 
 // Mock Firebase auth
-const mockSignInWithEmailAndPassword = vi.fn()
+const mockCreateUserWithEmailAndPassword = vi.fn()
 vi.mock('$lib/firebase/firebase.app', () => ({
 	auth: {
 		currentUser: null
@@ -28,8 +26,8 @@ vi.mock('$lib/firebase/firebase.app', () => ({
 }))
 
 vi.mock('firebase/auth', () => ({
-	signInWithEmailAndPassword: (...args: unknown[]) =>
-		mockSignInWithEmailAndPassword(...args)
+	createUserWithEmailAndPassword: (...args: unknown[]) =>
+		mockCreateUserWithEmailAndPassword(...args)
 }))
 
 // Mock fetch globally
@@ -43,11 +41,7 @@ describe('SignUpPage1', () => {
 
 	it('renders signup form with all fields', async () => {
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SignUpPage1 />
-				</BrowserRouter>
-			)
+			render(<SignUpPage1 />)
 		})
 
 		expect(screen.getByText('Sign Up')).toBeInTheDocument()
@@ -64,11 +58,7 @@ describe('SignUpPage1', () => {
 	it('validates password match', async () => {
 		const user = userEvent.setup()
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SignUpPage1 />
-				</BrowserRouter>
-			)
+			render(<SignUpPage1 />)
 		})
 
 		const usernameInput = screen.getByLabelText(/username/i)
@@ -99,7 +89,7 @@ describe('SignUpPage1', () => {
 			}
 		}
 
-		mockSignInWithEmailAndPassword.mockResolvedValue(mockUserCredential)
+		mockCreateUserWithEmailAndPassword.mockResolvedValue(mockUserCredential)
 		global.fetch = vi
 			.fn()
 			.mockResolvedValueOnce({
@@ -112,11 +102,7 @@ describe('SignUpPage1', () => {
 			})
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SignUpPage1 />
-				</BrowserRouter>
-			)
+			render(<SignUpPage1 />)
 		})
 
 		const usernameInput = screen.getByLabelText(/username/i)
@@ -147,12 +133,12 @@ describe('SignUpPage1', () => {
 		})
 
 		await waitFor(() => {
-			expect(mockSignInWithEmailAndPassword).toHaveBeenCalled()
+			expect(mockCreateUserWithEmailAndPassword).toHaveBeenCalled()
 		})
 
 		await waitFor(() => {
-			expect(mockNavigate).toHaveBeenCalledWith('/signup/about-you', {
-				state: {email: 'test@example.com', username: 'testuser'}
+			expect(mockNavigate).toHaveBeenCalledWith({
+				to: '/signup/about-you'
 			})
 		})
 	})
@@ -165,11 +151,7 @@ describe('SignUpPage1', () => {
 		})
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SignUpPage1 />
-				</BrowserRouter>
-			)
+			render(<SignUpPage1 />)
 		})
 
 		const usernameInput = screen.getByLabelText(/username/i)
@@ -198,16 +180,12 @@ describe('SignUpPage1', () => {
 			json: async () => ({success: true})
 		})
 
-		mockSignInWithEmailAndPassword.mockRejectedValueOnce(
+		mockCreateUserWithEmailAndPassword.mockRejectedValueOnce(
 			new Error('auth/email-already-in-use')
 		)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SignUpPage1 />
-				</BrowserRouter>
-			)
+			render(<SignUpPage1 />)
 		})
 
 		const usernameInput = screen.getByLabelText(/username/i)
@@ -238,16 +216,12 @@ describe('SignUpPage1', () => {
 			json: async () => ({success: true})
 		})
 
-		mockSignInWithEmailAndPassword.mockRejectedValueOnce(
+		mockCreateUserWithEmailAndPassword.mockRejectedValueOnce(
 			new Error('auth/weak-password')
 		)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SignUpPage1 />
-				</BrowserRouter>
-			)
+			render(<SignUpPage1 />)
 		})
 
 		const usernameInput = screen.getByLabelText(/username/i)
@@ -272,11 +246,7 @@ describe('SignUpPage1', () => {
 	it('navigates to authentication page when Sign In button is clicked', async () => {
 		const user = userEvent.setup()
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SignUpPage1 />
-				</BrowserRouter>
-			)
+			render(<SignUpPage1 />)
 		})
 
 		const signInButton = screen.getByRole('button', {name: /sign in/i})
@@ -284,7 +254,7 @@ describe('SignUpPage1', () => {
 			await user.click(signInButton)
 		})
 
-		expect(mockNavigate).toHaveBeenCalledWith('/authentication')
+		expect(mockNavigate).toHaveBeenCalledWith({to: '/authentication'})
 	})
 
 	it('shows loading state during submission', async () => {
@@ -295,7 +265,7 @@ describe('SignUpPage1', () => {
 			}
 		}
 
-		mockSignInWithEmailAndPassword.mockResolvedValue(mockUserCredential)
+		mockCreateUserWithEmailAndPassword.mockResolvedValue(mockUserCredential)
 		global.fetch = vi
 			.fn()
 			.mockImplementationOnce(
@@ -317,11 +287,7 @@ describe('SignUpPage1', () => {
 			})
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<SignUpPage1 />
-				</BrowserRouter>
-			)
+			render(<SignUpPage1 />)
 		})
 
 		const usernameInput = screen.getByLabelText(/username/i)

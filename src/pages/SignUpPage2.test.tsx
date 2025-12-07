@@ -4,19 +4,20 @@
  *
  * Tests component rendering, form validation, profile update flow, and error handling
  */
-import {render, screen, waitFor} from '@testing-library/react'
+import {act, render, screen, waitFor} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import SignUpPage2 from './SignUpPage2'
 
-// Mock dependencies
+// Mock TanStack Router
 const mockNavigate = vi.fn()
-vi.mock('react-router-dom', async () => {
-	const actual = await vi.importActual('react-router-dom')
-	return {
-		...actual,
-		useNavigate: () => mockNavigate
-	}
-})
+const mockUseLocation = vi.fn()
+vi.mock('@tanstack/react-router', () => ({
+	useNavigate: () => mockNavigate,
+	useLocation: () => mockUseLocation(),
+	Link: ({children, to}: {children: React.ReactNode; to: string}) => (
+		<a href={to}>{children}</a>
+	)
+}))
 
 const mockUseAuth = vi.fn()
 vi.mock('../context/AuthContext', () => ({
@@ -34,15 +35,17 @@ describe('SignUpPage2', () => {
 			user: {uid: 'user-123', email: 'test@example.com'},
 			loading: false
 		})
+		mockUseLocation.mockReturnValue({
+			pathname: '/signup/about-you',
+			search: '',
+			hash: '',
+			state: {email: 'test@example.com'}
+		})
 	})
 
 	it('renders profile form with all fields', async () => {
 		await act(async () => {
-			render(
-				<MemoryRouter>
-					<SignUpPage2 />
-				</MemoryRouter>
-			)
+			render(<SignUpPage2 />)
 		})
 
 		expect(screen.getByText('About You')).toBeInTheDocument()
@@ -64,28 +67,26 @@ describe('SignUpPage2', () => {
 			user: null,
 			loading: false
 		})
+		mockUseLocation.mockReturnValue({
+			pathname: '/signup/about-you',
+			search: '',
+			hash: '',
+			state: {}
+		})
 
 		await act(async () => {
-			render(
-				<MemoryRouter>
-					<SignUpPage2 />
-				</MemoryRouter>
-			)
+			render(<SignUpPage2 />)
 		})
 
 		await waitFor(() => {
-			expect(mockNavigate).toHaveBeenCalledWith('/signup', {replace: true})
+			expect(mockNavigate).toHaveBeenCalledWith({to: '/signup', replace: true})
 		})
 	})
 
 	it('validates required fields', async () => {
 		const user = userEvent.setup()
 		await act(async () => {
-			render(
-				<MemoryRouter>
-					<SignUpPage2 />
-				</MemoryRouter>
-			)
+			render(<SignUpPage2 />)
 		})
 
 		// HTML5 validation prevents submission when required fields are empty
@@ -117,11 +118,7 @@ describe('SignUpPage2', () => {
 		})
 
 		await act(async () => {
-			render(
-				<MemoryRouter>
-					<SignUpPage2 />
-				</MemoryRouter>
-			)
+			render(<SignUpPage2 />)
 		})
 
 		const firstNameInput = screen.getByLabelText(/first name/i)
@@ -164,11 +161,7 @@ describe('SignUpPage2', () => {
 		})
 
 		await act(async () => {
-			render(
-				<MemoryRouter>
-					<SignUpPage2 />
-				</MemoryRouter>
-			)
+			render(<SignUpPage2 />)
 		})
 
 		const firstNameInput = screen.getByLabelText(/first name/i)
@@ -202,7 +195,7 @@ describe('SignUpPage2', () => {
 		})
 
 		await waitFor(() => {
-			expect(mockNavigate).toHaveBeenCalledWith('/consent', {replace: true})
+			expect(mockNavigate).toHaveBeenCalledWith({to: '/consent', replace: true})
 		})
 	})
 
@@ -214,11 +207,7 @@ describe('SignUpPage2', () => {
 		})
 
 		await act(async () => {
-			render(
-				<MemoryRouter>
-					<SignUpPage2 />
-				</MemoryRouter>
-			)
+			render(<SignUpPage2 />)
 		})
 
 		const firstNameInput = screen.getByLabelText(/first name/i)
@@ -270,11 +259,7 @@ describe('SignUpPage2', () => {
 		})
 
 		await act(async () => {
-			render(
-				<MemoryRouter>
-					<SignUpPage2 />
-				</MemoryRouter>
-			)
+			render(<SignUpPage2 />)
 		})
 
 		const firstNameInput = screen.getByLabelText(/first name/i)
@@ -298,12 +283,12 @@ describe('SignUpPage2', () => {
 
 	it('navigates back when Back button is clicked', async () => {
 		const user = userEvent.setup()
+		const historyBackSpy = vi
+			.spyOn(window.history, 'back')
+			.mockImplementation(() => {})
+
 		await act(async () => {
-			render(
-				<MemoryRouter>
-					<SignUpPage2 />
-				</MemoryRouter>
-			)
+			render(<SignUpPage2 />)
 		})
 
 		const backButton = screen.getByRole('button', {name: /back/i})
@@ -311,7 +296,8 @@ describe('SignUpPage2', () => {
 			await user.click(backButton)
 		})
 
-		expect(mockNavigate).toHaveBeenCalledWith(-1)
+		expect(historyBackSpy).toHaveBeenCalled()
+		historyBackSpy.mockRestore()
 	})
 
 	it('shows loading state during submission', async () => {
@@ -331,11 +317,7 @@ describe('SignUpPage2', () => {
 		)
 
 		await act(async () => {
-			render(
-				<MemoryRouter>
-					<SignUpPage2 />
-				</MemoryRouter>
-			)
+			render(<SignUpPage2 />)
 		})
 
 		const firstNameInput = screen.getByLabelText(/first name/i)

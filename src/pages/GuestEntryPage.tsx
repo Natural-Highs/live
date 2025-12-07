@@ -1,6 +1,6 @@
+import {useNavigate} from '@tanstack/react-router'
 import type React from 'react'
 import {useEffect, useState} from 'react'
-import {useNavigate} from 'react-router-dom'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
@@ -79,7 +79,7 @@ const GuestEntryPage: React.FC = () => {
 			if (isLoggedIn) {
 				// Store event code temporarily and redirect to profile
 				sessionStorage.setItem('pendingEventCode', eventCode)
-				navigate('/profile', {replace: true})
+				navigate({to: '/profile', replace: true})
 				return
 			}
 
@@ -101,13 +101,13 @@ const GuestEntryPage: React.FC = () => {
 	}
 
 	const handleContinueAsGuest = () => {
-		navigate('/guests/register', {replace: true})
+		navigate({to: '/guests/register', replace: true})
 	}
 
 	const handleLogin = () => {
 		// Store event code to use after login
 		sessionStorage.setItem('pendingEventCode', validatedEventCode)
-		navigate('/authentication', {replace: true})
+		navigate({to: '/authentication', replace: true})
 	}
 
 	// Show loading while checking auth and session

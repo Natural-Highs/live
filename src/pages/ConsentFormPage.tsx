@@ -1,6 +1,6 @@
+import {useNavigate} from '@tanstack/react-router'
 import type React from 'react'
 import {useEffect, useState} from 'react'
-import {useNavigate} from 'react-router-dom'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
@@ -90,10 +90,10 @@ const ConsentFormPage: React.FC = () => {
 				// Force token refresh to get updated claims from backend
 				await currentUser.getIdToken(true)
 				// Navigate to dashboard - ProtectedRoute will allow access now that consentForm is true
-				navigate('/dashboard', {replace: true})
+				navigate({to: '/dashboard', replace: true})
 			} else {
 				// TODO: Handle case where user is not authenticated (should not happen)
-				navigate('/authentication', {replace: true})
+				navigate({to: '/authentication', replace: true})
 			}
 		} catch (err) {
 			setError(

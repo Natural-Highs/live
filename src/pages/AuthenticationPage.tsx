@@ -1,4 +1,5 @@
 import {zodResolver} from '@hookform/resolvers/zod'
+import {Navigate, useNavigate} from '@tanstack/react-router'
 import {
 	createUserWithEmailAndPassword,
 	signInWithEmailAndPassword
@@ -6,7 +7,6 @@ import {
 import type React from 'react'
 import {useState} from 'react'
 import {useForm} from 'react-hook-form'
-import {Navigate, useNavigate} from 'react-router-dom'
 import {z} from 'zod'
 import {BrandLogo} from '@/components/ui'
 import GreenCard from '@/components/ui/GreenCard'
@@ -349,7 +349,7 @@ const AuthenticationPage: React.FC = () => {
 				</GreyButton>
 
 				<div className='divider'>OR</div>
-				<GreyButton onClick={() => navigate('/guest')} type='button'>
+				<GreyButton onClick={() => navigate({to: '/guest'})} type='button'>
 					Continue as Guest
 				</GreyButton>
 			</div>

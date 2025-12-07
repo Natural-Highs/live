@@ -1,6 +1,6 @@
+import {useNavigate} from '@tanstack/react-router'
 import type React from 'react'
 import {useEffect, useState} from 'react'
-import {useNavigate} from 'react-router-dom'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
@@ -340,7 +340,7 @@ const ProfilePage: React.FC = () => {
 												<button
 													className='btn btn-sm btn-primary'
 													onClick={() => {
-														navigate('/surveys')
+														navigate({to: '/surveys'})
 													}}
 													type='button'
 												>
@@ -371,7 +371,7 @@ const ProfilePage: React.FC = () => {
 										<button
 											className='btn btn-sm btn-primary'
 											onClick={() => {
-												navigate('/surveys')
+												navigate({to: '/surveys'})
 											}}
 											type='button'
 										>

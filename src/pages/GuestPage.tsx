@@ -1,6 +1,6 @@
+import {useNavigate} from '@tanstack/react-router'
 import type React from 'react'
 import {useEffect, useState} from 'react'
-import {useNavigate} from 'react-router-dom'
 import {BrandLogo, PageContainer} from '@/components/ui'
 import {FormContainer} from '@/components/ui/form-container'
 import GreenCard from '@/components/ui/GreenCard'
@@ -168,12 +168,12 @@ const GuestPage: React.FC = () => {
 				// Force token refresh to get updated claims from backend
 				await currentUser.getIdToken(true)
 				// Navigate to dashboard - ProtectedRoute will allow access now that consentForm is true
-				navigate('/dashboard', {replace: true})
+				navigate({to: '/dashboard', replace: true})
 			}
 			/* (User authentication not necessary for guest)
             else {
                 // TODO: Handle case where user is not authenticated (should not happen)
-                navigate('/authentication', { replace: true });
+                navigate({to: '/authentication', replace: true});
             }*/
 		} catch (err) {
 			setConsentError(
@@ -347,7 +347,7 @@ const GuestPage: React.FC = () => {
 					<div className='child flex w-full flex-col items-center justify-center gap-[.7rem]'>
 						<GrnButton>Finish</GrnButton>
 						<GreyButton
-							onClick={() => navigate('/authentication')}
+							onClick={() => navigate({to: '/authentication'})}
 							type='button'
 						>
 							Back to Login

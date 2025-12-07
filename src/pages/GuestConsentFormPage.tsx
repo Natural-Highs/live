@@ -1,6 +1,6 @@
+import {useNavigate} from '@tanstack/react-router'
 import type React from 'react'
 import {useEffect, useState} from 'react'
-import {useNavigate} from 'react-router-dom'
 import {
 	type SurveyJSJson,
 	SurveyRenderer
@@ -45,7 +45,7 @@ const GuestConsentFormPage: React.FC = () => {
 		const guestId = sessionStorage.getItem('guestId')
 		if (!guestId) {
 			// Redirect to guest entry if no guest ID
-			navigate('/guests/entry', {replace: true})
+			navigate({to: '/guests/entry', replace: true})
 			return
 		}
 
@@ -90,7 +90,7 @@ const GuestConsentFormPage: React.FC = () => {
 		if (!guestId) {
 			setError('Guest session expired. Please start over.')
 			setSubmitting(false)
-			navigate('/guests/entry', {replace: true})
+			navigate({to: '/guests/entry', replace: true})
 			return
 		}
 
@@ -116,9 +116,9 @@ const GuestConsentFormPage: React.FC = () => {
 			// Guests can optionally upgrade to member status by visiting /guests/upgrade
 			const eventId = sessionStorage.getItem('guestEventId')
 			if (eventId) {
-				navigate(`/guests/surveys?eventId=${eventId}`, {replace: true})
+				navigate({to: `/guests/surveys?eventId=${eventId}`, replace: true})
 			} else {
-				navigate('/guests/dashboard', {replace: true})
+				navigate({to: '/guests/dashboard', replace: true})
 			}
 		} catch (err) {
 			setError(

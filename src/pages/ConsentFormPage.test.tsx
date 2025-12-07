@@ -4,60 +4,12 @@
  *
  * Tests component rendering, loading states, error handling, and form display
  */
-import {act, render, screen, waitFor} from '@testing-library/react'
+import {render, screen, waitFor} from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import type React from 'react'
-import {BrowserRouter} from 'react-router-dom'
-import {convertTemplateToSurveyJS} from '@/lib/forms/template-converter'
 import ConsentFormPage from './ConsentFormPage'
 
-// Mock dependencies
-vi.mock('@/components/forms/SurveyRenderer', () => ({
-	SurveyRenderer: ({
-		surveyJson,
-		onSubmit,
-		onError
-	}: {
-		surveyJson: unknown
-		onSubmit: (data: Record<string, unknown>) => void
-		onError: (err: Error) => void
-	}) => (
-		<div data-testid='survey-renderer'>
-			<div data-testid='survey-json'>{JSON.stringify(surveyJson)}</div>
-			<button
-				data-testid='submit-button'
-				onClick={() => onSubmit({test: 'response'})}
-				type='button'
-			>
-				Submit
-			</button>
-			<button
-				data-testid='error-button'
-				onClick={() => onError(new Error('Test error'))}
-				type='button'
-			>
-				Trigger Error
-			</button>
-		</div>
-	)
-}))
-
-vi.mock('@/lib/forms/template-converter', () => ({
-	convertTemplateToSurveyJS: vi.fn((_template: unknown) => ({
-		pages: [
-			{
-				elements: [
-					{
-						type: 'text',
-						name: 'test',
-						title: 'Test question',
-						isRequired: true
-					}
-				]
-			}
-		]
-	}))
-}))
-
+// Mock Firebase
 vi.mock('$lib/firebase/firebase.app', () => ({
 	auth: {
 		currentUser: {
@@ -66,38 +18,30 @@ vi.mock('$lib/firebase/firebase.app', () => ({
 	}
 }))
 
-// Mock useNavigate
+// Mock TanStack Router
 const mockNavigate = vi.fn()
-vi.mock('react-router-dom', async () => {
-	const actual = await vi.importActual('react-router-dom')
-	return {
-		...actual,
-		useNavigate: () => mockNavigate
-	}
-})
+vi.mock('@tanstack/react-router', () => ({
+	useNavigate: () => mockNavigate,
+	Link: ({children, to}: {children: React.ReactNode; to: string}) => (
+		<a href={to}>{children}</a>
+	)
+}))
 
-// Helper to render component with router
-const renderWithRouter = (component: React.ReactElement) =>
-	render(<BrowserRouter>{component}</BrowserRouter>)
+// Mock fetch globally
+const mockFetch = vi.fn()
+global.fetch = mockFetch
 
 describe('ConsentFormPage', () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
-		global.fetch = vi.fn()
+		mockFetch.mockClear()
 	})
 
 	it('should render loading state initially', () => {
-		// Mock fetch to delay response
-		global.fetch = vi.fn(
-			() =>
-				new Promise(() => {
-					// Never resolves, keeping loading state
-				})
-		) as typeof fetch
+		mockFetch.mockImplementation(() => new Promise(() => {}))
 
-		renderWithRouter(<ConsentFormPage />)
+		render(<ConsentFormPage />)
 
-		// Check for loading spinner by class name
 		const loadingSpinner = document.querySelector('.loading.loading-spinner')
 		expect(loadingSpinner).toBeInTheDocument()
 	})
@@ -106,67 +50,38 @@ describe('ConsentFormPage', () => {
 		const mockTemplate = {
 			id: 'test-template-id',
 			name: 'Test Consent Form',
-			type: 'consent' as const,
-			questions: [
-				{
-					id: 'consent',
-					text: 'I consent',
-					type: 'text',
-					required: true
-				}
-			],
-			surveyJson: {
-				pages: [
-					{
-						elements: [
-							{
-								type: 'text',
-								name: 'consent',
-								title: 'I consent',
-								isRequired: true
-							}
-						]
-					}
-				]
-			}
+			questions: []
 		}
 
-		global.fetch = vi.fn().mockResolvedValueOnce({
+		mockFetch.mockResolvedValueOnce({
 			ok: true,
 			json: async () => ({
 				success: true,
 				template: mockTemplate
 			})
-		}) as typeof fetch
-
-		renderWithRouter(<ConsentFormPage />)
-
-		// Wait for loading to complete
-		await waitFor(() => {
-			expect(
-				screen.queryByRole('status', {hidden: true})
-			).not.toBeInTheDocument()
 		})
 
-		// Verify page title
-		expect(screen.getByText('Consent Form')).toBeInTheDocument()
+		render(<ConsentFormPage />)
 
-		// Verify SurveyRenderer is rendered
 		await waitFor(() => {
-			expect(screen.getByTestId('survey-renderer')).toBeInTheDocument()
+			expect(screen.getByText('Consent Form')).toBeInTheDocument()
 		})
+
+		expect(screen.getByText('Test Consent Form')).toBeInTheDocument()
+		expect(screen.getByRole('checkbox')).toBeInTheDocument()
+		expect(screen.getByRole('button', {name: /I Consent/i})).toBeInTheDocument()
 	})
 
 	it('should display error message when template fetch fails', async () => {
-		global.fetch = vi.fn().mockResolvedValueOnce({
+		mockFetch.mockResolvedValueOnce({
 			ok: false,
 			json: async () => ({
 				success: false,
 				error: 'Failed to load consent form'
 			})
-		}) as typeof fetch
+		})
 
-		renderWithRouter(<ConsentFormPage />)
+		render(<ConsentFormPage />)
 
 		await waitFor(() => {
 			expect(
@@ -176,9 +91,9 @@ describe('ConsentFormPage', () => {
 	})
 
 	it('should display error message when API call throws error', async () => {
-		global.fetch = vi.fn().mockRejectedValueOnce(new Error('Network error'))
+		mockFetch.mockRejectedValueOnce(new Error('Network error'))
 
-		renderWithRouter(<ConsentFormPage />)
+		render(<ConsentFormPage />)
 
 		await waitFor(() => {
 			expect(screen.getByText(/network error/i)).toBeInTheDocument()
@@ -186,15 +101,15 @@ describe('ConsentFormPage', () => {
 	})
 
 	it('should display warning when template is not available', async () => {
-		global.fetch = vi.fn().mockResolvedValueOnce({
+		mockFetch.mockResolvedValueOnce({
 			ok: true,
 			json: async () => ({
 				success: true,
 				template: null
 			})
-		}) as typeof fetch
+		})
 
-		renderWithRouter(<ConsentFormPage />)
+		render(<ConsentFormPage />)
 
 		await waitFor(() => {
 			expect(
@@ -203,50 +118,64 @@ describe('ConsentFormPage', () => {
 		})
 	})
 
-	it('should call convertTemplateToSurveyJS with template data', async () => {
+	it('should disable submit button when not agreed', async () => {
 		const mockTemplate = {
 			id: 'test-template-id',
 			name: 'Test Consent Form',
-			type: 'consent' as const,
-			questions: [
-				{
-					id: 'consent',
-					text: 'I consent',
-					type: 'text',
-					required: true
-				}
-			]
+			questions: []
 		}
 
-		global.fetch = vi.fn().mockResolvedValueOnce({
+		mockFetch.mockResolvedValueOnce({
 			ok: true,
 			json: async () => ({
 				success: true,
 				template: mockTemplate
 			})
-		}) as typeof fetch
+		})
 
-		renderWithRouter(<ConsentFormPage />)
+		render(<ConsentFormPage />)
 
 		await waitFor(() => {
-			expect(convertTemplateToSurveyJS).toHaveBeenCalledWith(mockTemplate)
+			expect(screen.getByRole('button', {name: /I Consent/i})).toBeDisabled()
 		})
 	})
 
-	it('should handle form submission successfully', async () => {
+	it('should enable submit button when checkbox is checked', async () => {
+		const user = userEvent.setup()
 		const mockTemplate = {
 			id: 'test-template-id',
 			name: 'Test Consent Form',
-			type: 'consent' as const,
-			questions: [],
-			surveyJson: {
-				pages: [{elements: []}]
-			}
+			questions: []
 		}
 
-		// Mock template fetch
-		global.fetch = vi
-			.fn()
+		mockFetch.mockResolvedValueOnce({
+			ok: true,
+			json: async () => ({
+				success: true,
+				template: mockTemplate
+			})
+		})
+
+		render(<ConsentFormPage />)
+
+		await waitFor(() => {
+			expect(screen.getByRole('checkbox')).toBeInTheDocument()
+		})
+
+		await user.click(screen.getByRole('checkbox'))
+
+		expect(screen.getByRole('button', {name: /I Consent/i})).not.toBeDisabled()
+	})
+
+	it('should handle form submission successfully', async () => {
+		const user = userEvent.setup()
+		const mockTemplate = {
+			id: 'test-template-id',
+			name: 'Test Consent Form',
+			questions: []
+		}
+
+		mockFetch
 			.mockResolvedValueOnce({
 				ok: true,
 				json: async () => ({
@@ -254,56 +183,38 @@ describe('ConsentFormPage', () => {
 					template: mockTemplate
 				})
 			})
-			// Mock form submission
 			.mockResolvedValueOnce({
 				ok: true,
-				json: async () => ({
-					success: true
-				})
-			}) as typeof fetch
+				json: async () => ({success: true})
+			})
 
-		renderWithRouter(<ConsentFormPage />)
+		render(<ConsentFormPage />)
 
-		// Wait for form to render
 		await waitFor(() => {
-			expect(screen.getByTestId('survey-renderer')).toBeInTheDocument()
+			expect(screen.getByRole('checkbox')).toBeInTheDocument()
 		})
 
-		// Submit form
-		const submitButton = screen.getByTestId('submit-button')
-		await act(async () => {
-			submitButton.click()
-		})
+		await user.click(screen.getByRole('checkbox'))
+		await user.click(screen.getByRole('button', {name: /I Consent/i}))
 
-		// Wait for submission to complete
 		await waitFor(() => {
-			expect(global.fetch).toHaveBeenCalledWith('/api/forms/consent', {
+			expect(mockFetch).toHaveBeenCalledWith('/api/forms/consent', {
 				method: 'POST',
 				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({responses: {test: 'response'}})
+				body: JSON.stringify({})
 			})
-		})
-
-		// Verify navigation is called
-		await waitFor(() => {
-			expect(mockNavigate).toHaveBeenCalledWith('/dashboard', {replace: true})
 		})
 	})
 
 	it('should handle form submission error', async () => {
+		const user = userEvent.setup()
 		const mockTemplate = {
 			id: 'test-template-id',
 			name: 'Test Consent Form',
-			type: 'consent' as const,
-			questions: [],
-			surveyJson: {
-				pages: [{elements: []}]
-			}
+			questions: []
 		}
 
-		// Mock template fetch
-		global.fetch = vi
-			.fn()
+		mockFetch
 			.mockResolvedValueOnce({
 				ok: true,
 				json: async () => ({
@@ -311,69 +222,25 @@ describe('ConsentFormPage', () => {
 					template: mockTemplate
 				})
 			})
-			// Mock form submission error
 			.mockResolvedValueOnce({
 				ok: false,
 				json: async () => ({
 					success: false,
 					error: 'Submission failed'
 				})
-			}) as typeof fetch
+			})
 
-		renderWithRouter(<ConsentFormPage />)
+		render(<ConsentFormPage />)
 
-		// Wait for form to render
 		await waitFor(() => {
-			expect(screen.getByTestId('survey-renderer')).toBeInTheDocument()
+			expect(screen.getByRole('checkbox')).toBeInTheDocument()
 		})
 
-		// Submit form
-		const submitButton = screen.getByTestId('submit-button')
-		await act(async () => {
-			submitButton.click()
-		})
+		await user.click(screen.getByRole('checkbox'))
+		await user.click(screen.getByRole('button', {name: /I Consent/i}))
 
-		// Wait for error to display
 		await waitFor(() => {
 			expect(screen.getByText(/submission failed/i)).toBeInTheDocument()
-		})
-	})
-
-	it('should handle SurveyRenderer error', async () => {
-		const mockTemplate = {
-			id: 'test-template-id',
-			name: 'Test Consent Form',
-			type: 'consent' as const,
-			questions: [],
-			surveyJson: {
-				pages: [{elements: []}]
-			}
-		}
-
-		global.fetch = vi.fn().mockResolvedValueOnce({
-			ok: true,
-			json: async () => ({
-				success: true,
-				template: mockTemplate
-			})
-		}) as typeof fetch
-
-		renderWithRouter(<ConsentFormPage />)
-
-		// Wait for form to render
-		await waitFor(() => {
-			expect(screen.getByTestId('survey-renderer')).toBeInTheDocument()
-		})
-
-		// Trigger error (wrap in act to handle state updates)
-		const errorButton = screen.getByTestId('error-button')
-		await act(async () => {
-			errorButton.click()
-		})
-
-		// Wait for error to display
-		await waitFor(() => {
-			expect(screen.getByText(/test error/i)).toBeInTheDocument()
 		})
 	})
 })

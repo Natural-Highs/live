@@ -14,15 +14,14 @@ vi.mock('../context/AuthContext', () => ({
 	useAuth: () => mockUseAuth()
 }))
 
-// Mock useNavigate
+// Mock TanStack Router
 const mockNavigate = vi.fn()
-vi.mock('react-router-dom', async () => {
-	const actual = await vi.importActual('react-router-dom')
-	return {
-		...actual,
-		useNavigate: () => mockNavigate
-	}
-})
+vi.mock('@tanstack/react-router', () => ({
+	useNavigate: () => mockNavigate,
+	Link: ({children, to}: {children: React.ReactNode; to: string}) => (
+		<a href={to}>{children}</a>
+	)
+}))
 
 // Mock fetch globally
 global.fetch = vi.fn()
@@ -38,11 +37,7 @@ describe('GuestEntryPage', () => {
 	})
 
 	it('renders event code entry form', () => {
-		render(
-			<BrowserRouter>
-				<GuestEntryPage />
-			</BrowserRouter>
-		)
+		render(<GuestEntryPage />)
 
 		expect(screen.getByText('Event Code Entry')).toBeInTheDocument()
 		expect(screen.getByLabelText(/Event Code/i)).toBeInTheDocument()
@@ -60,11 +55,7 @@ describe('GuestEntryPage', () => {
 			})
 		} as Response)
 
-		render(
-			<BrowserRouter>
-				<GuestEntryPage />
-			</BrowserRouter>
-		)
+		render(<GuestEntryPage />)
 
 		const input = screen.getByLabelText(/Event Code/i)
 		await user.type(input, '1234')
@@ -94,11 +85,7 @@ describe('GuestEntryPage', () => {
 			})
 		} as Response)
 
-		render(
-			<BrowserRouter>
-				<GuestEntryPage />
-			</BrowserRouter>
-		)
+		render(<GuestEntryPage />)
 
 		const input = screen.getByLabelText(/Event Code/i)
 		await user.type(input, '9999')
@@ -133,11 +120,7 @@ describe('GuestEntryPage', () => {
 
 		const user = userEvent.setup()
 
-		render(
-			<BrowserRouter>
-				<GuestEntryPage />
-			</BrowserRouter>
-		)
+		render(<GuestEntryPage />)
 
 		await waitFor(() => {
 			expect(screen.getByLabelText(/Event Code/i)).toBeInTheDocument()
@@ -150,7 +133,7 @@ describe('GuestEntryPage', () => {
 		await user.click(submitButton)
 
 		await waitFor(() => {
-			expect(mockNavigate).toHaveBeenCalledWith('/profile', {replace: true})
+			expect(mockNavigate).toHaveBeenCalledWith({to: '/profile', replace: true})
 		})
 	})
 })

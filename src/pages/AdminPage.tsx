@@ -1,5 +1,4 @@
 import type React from 'react'
-import {Route, Routes} from 'react-router-dom'
 import Chart from '@/components/ui/chart'
 import {PageContainer} from '@/components/ui/page-container'
 
@@ -50,9 +49,7 @@ const AdminHome: React.FC = () => {
 const AdminPage: React.FC = () => (
 	<div className='container mx-auto p-4'>
 		<h1 className='font-bold text-2xl'>Admin</h1>
-		<Routes>
-			<Route element={<AdminHome />} path='/' />
-		</Routes>
+		<AdminHome />
 	</div>
 )
 

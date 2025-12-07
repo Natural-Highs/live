@@ -6,7 +6,6 @@
  */
 import {act, render, screen, waitFor} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import {BrowserRouter} from 'react-router-dom'
 import ProfilePage from './ProfilePage'
 
 // Mock dependencies
@@ -17,15 +16,14 @@ vi.mock('../context/AuthContext', () => ({
 	}))
 }))
 
-// Mock useNavigate
+// Mock TanStack Router
 const mockNavigate = vi.fn()
-vi.mock('react-router-dom', async () => {
-	const actual = await vi.importActual('react-router-dom')
-	return {
-		...actual,
-		useNavigate: () => mockNavigate
-	}
-})
+vi.mock('@tanstack/react-router', () => ({
+	useNavigate: () => mockNavigate,
+	Link: ({children, to}: {children: React.ReactNode; to: string}) => (
+		<a href={to}>{children}</a>
+	)
+}))
 
 // Mock fetch globally
 global.fetch = vi.fn()
@@ -53,11 +51,7 @@ describe('ProfilePage', () => {
 				})
 		)
 
-		const {container} = render(
-			<BrowserRouter>
-				<ProfilePage />
-			</BrowserRouter>
-		)
+		const {container} = render(<ProfilePage />)
 
 		// Loading spinner is present
 		const spinner = container.querySelector('.loading-spinner')
@@ -86,11 +80,7 @@ describe('ProfilePage', () => {
 			} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<ProfilePage />
-				</BrowserRouter>
-			)
+			render(<ProfilePage />)
 		})
 
 		await waitFor(() => {
@@ -106,11 +96,7 @@ describe('ProfilePage', () => {
 		} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<ProfilePage />
-				</BrowserRouter>
-			)
+			render(<ProfilePage />)
 		})
 
 		await waitFor(() => {
@@ -133,11 +119,7 @@ describe('ProfilePage', () => {
 			} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<ProfilePage />
-				</BrowserRouter>
-			)
+			render(<ProfilePage />)
 		})
 
 		await waitFor(() => {
@@ -170,11 +152,7 @@ describe('ProfilePage', () => {
 			} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<ProfilePage />
-				</BrowserRouter>
-			)
+			render(<ProfilePage />)
 		})
 
 		await waitFor(() => {
@@ -215,11 +193,7 @@ describe('ProfilePage', () => {
 			} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<ProfilePage />
-				</BrowserRouter>
-			)
+			render(<ProfilePage />)
 		})
 
 		await waitFor(() => {
@@ -267,11 +241,7 @@ describe('ProfilePage', () => {
 			} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<ProfilePage />
-				</BrowserRouter>
-			)
+			render(<ProfilePage />)
 		})
 
 		await waitFor(() => {
@@ -294,11 +264,7 @@ describe('ProfilePage', () => {
 			} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<ProfilePage />
-				</BrowserRouter>
-			)
+			render(<ProfilePage />)
 		})
 
 		await waitFor(() => {
@@ -327,11 +293,7 @@ describe('ProfilePage', () => {
 			} as Response)
 
 		await act(async () => {
-			render(
-				<BrowserRouter>
-					<ProfilePage />
-				</BrowserRouter>
-			)
+			render(<ProfilePage />)
 		})
 
 		await waitFor(() => {
