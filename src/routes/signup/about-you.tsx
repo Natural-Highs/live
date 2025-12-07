@@ -1,13 +1,13 @@
 import {createFileRoute, useNavigate} from '@tanstack/react-router'
 import {useEffect, useState} from 'react'
 import {z} from 'zod'
+import {AboutYouForm} from '@/components/forms/AboutYouForm'
 import {BrandLogo} from '@/components/ui'
 import GreenCard from '@/components/ui/GreenCard'
-import GreyButton from '@/components/ui/GreyButton'
-import GrnButton from '@/components/ui/GrnButton'
 import {PageContainer} from '@/components/ui/page-container'
 import TitleCard from '@/components/ui/TitleCard'
 import {useAuth} from '../../context/AuthContext'
+import type {AboutYouData} from '@/lib/schemas/signup'
 
 // Define search params schema
 const searchSchema = z.object({
@@ -26,16 +26,6 @@ function SignUpAboutYouComponent() {
 	const {user} = useAuth()
 	const {email} = Route.useSearch()
 
-	const [formData, setFormData] = useState({
-		firstName: '',
-		lastName: '',
-		phone: '',
-		dateOfBirth: '',
-		emergencyContactName: '',
-		emergencyContactPhone: '',
-		emergencyContactRelationship: ''
-	})
-
 	const [error, setError] = useState('')
 	const [loading, setLoading] = useState(false)
 
@@ -46,26 +36,9 @@ function SignUpAboutYouComponent() {
 		}
 	}, [user, email, navigate])
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault()
+	const handleSubmit = async (formData: AboutYouData) => {
 		setError('')
 		setLoading(true)
-
-		// Basic validation
-		if (!(formData.firstName && formData.lastName && formData.dateOfBirth)) {
-			setError('First name, last name, and date of birth are required')
-			setLoading(false)
-			return
-		}
-
-		// Validate date of birth (must be in the past)
-		const dob = new Date(formData.dateOfBirth)
-		const today = new Date()
-		if (dob >= today) {
-			setError('Date of birth must be in the past')
-			setLoading(false)
-			return
-		}
 
 		try {
 			const response = await fetch('/api/users/profile', {
@@ -102,15 +75,8 @@ function SignUpAboutYouComponent() {
 		}
 	}
 
-	const handleChange = (
-		e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-	) => {
-		setFormData({
-			...formData,
-			[e.target.name]: e.target.value
-		})
-		// Clear error when user starts typing
-		if (error) setError('')
+	const handleBack = () => {
+		navigate({to: '..', replace: true})
 	}
 
 	return (
@@ -130,142 +96,17 @@ function SignUpAboutYouComponent() {
 			</TitleCard>
 
 			<GreenCard>
-				<form
-					className='space-y-4 rounded-lg bg-base-200 p-6'
+				{error && (
+					<div className='alert alert-error mb-4'>
+						<span>{error}</span>
+					</div>
+				)}
+
+				<AboutYouForm
+					loading={loading}
+					onBack={handleBack}
 					onSubmit={handleSubmit}
-				>
-					{error && (
-						<div className='alert alert-error'>
-							<span>{error}</span>
-						</div>
-					)}
-
-					<div className='form-control'>
-						<label className='label' htmlFor='firstName'>
-							<span className='label-text'>First Name *</span>
-						</label>
-						<input
-							className='input input-bordered w-full'
-							id='firstName'
-							name='firstName'
-							onChange={handleChange}
-							placeholder='Enter first name'
-							required={true}
-							type='text'
-							value={formData.firstName}
-						/>
-					</div>
-
-					<div className='form-control'>
-						<label className='label' htmlFor='lastName'>
-							<span className='label-text'>Last Name *</span>
-						</label>
-						<input
-							className='input input-bordered w-full'
-							id='lastName'
-							name='lastName'
-							onChange={handleChange}
-							placeholder='Enter last name'
-							required={true}
-							type='text'
-							value={formData.lastName}
-						/>
-					</div>
-
-					<div className='form-control'>
-						<label className='label' htmlFor='phone'>
-							<span className='label-text'>Phone Number</span>
-						</label>
-						<input
-							className='input input-bordered w-full'
-							id='phone'
-							name='phone'
-							onChange={handleChange}
-							placeholder='Enter phone number'
-							type='tel'
-							value={formData.phone}
-						/>
-					</div>
-
-					<div className='form-control'>
-						<label className='label' htmlFor='dateOfBirth'>
-							<span className='label-text'>Date of Birth *</span>
-						</label>
-						<input
-							className='input input-bordered w-full'
-							id='dateOfBirth'
-							max={new Date().toISOString().split('T')[0]}
-							name='dateOfBirth'
-							onChange={handleChange}
-							required={true}
-							type='date'
-							value={formData.dateOfBirth}
-						/>
-					</div>
-
-					<div className='divider'>Emergency Contact</div>
-
-					<div className='form-control'>
-						<label className='label' htmlFor='emergencyContactName'>
-							<span className='label-text'>Emergency Contact Name</span>
-						</label>
-						<input
-							className='input input-bordered w-full'
-							id='emergencyContactName'
-							name='emergencyContactName'
-							onChange={handleChange}
-							placeholder='Enter emergency contact name'
-							type='text'
-							value={formData.emergencyContactName}
-						/>
-					</div>
-
-					<div className='form-control'>
-						<label className='label' htmlFor='emergencyContactPhone'>
-							<span className='label-text'>Emergency Contact Phone</span>
-						</label>
-						<input
-							className='input input-bordered w-full'
-							id='emergencyContactPhone'
-							name='emergencyContactPhone'
-							onChange={handleChange}
-							placeholder='Enter emergency contact phone'
-							type='tel'
-							value={formData.emergencyContactPhone}
-						/>
-					</div>
-
-					<div className='form-control'>
-						<label className='label' htmlFor='emergencyContactRelationship'>
-							<span className='label-text'>Relationship</span>
-						</label>
-						<select
-							className='select select-bordered w-full'
-							id='emergencyContactRelationship'
-							name='emergencyContactRelationship'
-							onChange={handleChange}
-							value={formData.emergencyContactRelationship}
-						>
-							<option value=''>Select relationship</option>
-							<option value='parent'>Parent</option>
-							<option value='spouse'>Spouse</option>
-							<option value='sibling'>Sibling</option>
-							<option value='friend'>Friend</option>
-							<option value='other'>Other</option>
-						</select>
-					</div>
-
-					<GrnButton disabled={loading} type='submit'>
-						{loading ? 'Saving...' : 'Continue'}
-					</GrnButton>
-
-					<GreyButton
-						onClick={() => navigate({to: '..', replace: true})}
-						type='button'
-					>
-						Back to Sign Up
-					</GreyButton>
-				</form>
+				/>
 			</GreenCard>
 		</PageContainer>
 	)

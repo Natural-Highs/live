@@ -1,11 +1,10 @@
 import {createFileRoute, useNavigate} from '@tanstack/react-router'
 import {createUserWithEmailAndPassword} from 'firebase/auth'
-import type React from 'react'
 import {useState} from 'react'
-import GreyButton from '@/components/ui/GreyButton'
-import GrnButton from '@/components/ui/GrnButton'
+import {SignUpForm} from '@/components/forms/SignUpForm'
 import {PageContainer} from '@/components/ui/page-container'
 import {auth} from '$lib/firebase/firebase.app'
+import type {SignupAccountData} from '@/lib/schemas/signup'
 
 export const Route = createFileRoute('/signup/')({
 	component: SignUpComponent
@@ -14,25 +13,12 @@ export const Route = createFileRoute('/signup/')({
 // biome-ignore lint/style/useComponentExportOnlyModules: TanStack Router pattern - only Route is exported
 function SignUpComponent() {
 	const navigate = useNavigate()
-	const [formData, setFormData] = useState({
-		username: '',
-		email: '',
-		password: '',
-		confirmPassword: ''
-	})
 	const [error, setError] = useState('')
 	const [loading, setLoading] = useState(false)
 
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault()
+	const handleSubmit = async (formData: SignupAccountData) => {
 		setError('')
 		setLoading(true)
-
-		if (formData.password !== formData.confirmPassword) {
-			setError('Passwords do not match')
-			setLoading(false)
-			return
-		}
 
 		try {
 			const registerResponse = await fetch('/api/auth/register', {
@@ -95,12 +81,8 @@ function SignUpComponent() {
 		}
 	}
 
-	const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-		setFormData({
-			...formData,
-			[e.target.name]: e.target.value
-		})
-		if (error) setError('')
+	const handleNavigateToSignIn = () => {
+		navigate({to: '/authentication'})
 	}
 
 	return (
@@ -116,93 +98,17 @@ function SignUpComponent() {
 					<div className='mb-4 text-xs opacity-70'>Page indicators</div>
 				</div>
 
-				<form
-					className='relative space-y-4 rounded-lg bg-base-200 p-6'
+				{error && (
+					<div className='alert alert-error mb-4'>
+						<span>{error}</span>
+					</div>
+				)}
+
+				<SignUpForm
+					loading={loading}
+					onNavigateToSignIn={handleNavigateToSignIn}
 					onSubmit={handleSubmit}
-				>
-					{error && (
-						<div className='alert alert-error'>
-							<span>{error}</span>
-						</div>
-					)}
-
-					<div className='form-control'>
-						<label className='label' htmlFor='username'>
-							<span className='label-text'>Username</span>
-						</label>
-						<input
-							className='input input-bordered'
-							id='username'
-							name='username'
-							onChange={handleChange}
-							placeholder='Enter username'
-							required={true}
-							type='text'
-							value={formData.username}
-						/>
-					</div>
-
-					<div className='form-control'>
-						<label className='label' htmlFor='email'>
-							<span className='label-text'>Email</span>
-						</label>
-						<input
-							className='input input-bordered'
-							id='email'
-							name='email'
-							onChange={handleChange}
-							placeholder='Enter email'
-							required={true}
-							type='email'
-							value={formData.email}
-						/>
-					</div>
-
-					<div className='form-control'>
-						<label className='label' htmlFor='password'>
-							<span className='label-text'>Password</span>
-						</label>
-						<input
-							className='input input-bordered'
-							id='password'
-							name='password'
-							onChange={handleChange}
-							placeholder='Enter password'
-							required={true}
-							type='password'
-							value={formData.password}
-						/>
-					</div>
-
-					<div className='form-control'>
-						<label className='label' htmlFor='confirmPassword'>
-							<span className='label-text'>Confirm Password</span>
-						</label>
-						<input
-							className='input input-bordered'
-							id='confirmPassword'
-							name='confirmPassword'
-							onChange={handleChange}
-							placeholder='Confirm password'
-							required={true}
-							type='password'
-							value={formData.confirmPassword}
-						/>
-					</div>
-
-					<GrnButton disabled={loading} type='submit'>
-						{loading ? 'Creating Account...' : 'Create Account'}
-					</GrnButton>
-
-					<div className='divider'>Or</div>
-
-					<GreyButton
-						onClick={() => navigate({to: '/authentication'})}
-						type='button'
-					>
-						Sign In
-					</GreyButton>
-				</form>
+				/>
 			</div>
 		</PageContainer>
 	)
