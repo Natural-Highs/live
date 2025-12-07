@@ -1,68 +1,24 @@
+import {useQuery, useQueryClient} from '@tanstack/react-query'
 import {createFileRoute} from '@tanstack/react-router'
 import type {ColumnDef} from '@tanstack/react-table'
-import {useCallback, useEffect, useMemo, useState} from 'react'
+import {useMemo, useState} from 'react'
+import {type User, usersQueryOptions} from '@/lib/queries/index.js'
 import {DataTable} from '../../components/admin/DataTable'
 
 export const Route = createFileRoute('/_admin/users')({
+	loader: async ({context}) => {
+		await context.queryClient.prefetchQuery(usersQueryOptions())
+	},
 	component: UsersPage
 })
 
-interface User {
-	id: string
-	email: string
-	firstName?: string
-	lastName?: string
-	createdAt: Date | string | {toDate: () => Date}
-	admin?: boolean
-	signedConsentForm?: boolean
-	[key: string]: unknown
-}
-
 function UsersPage() {
-	const [users, setUsers] = useState<User[]>([])
-	const [loading, setLoading] = useState(true)
+	const queryClient = useQueryClient()
+	const {data: users = [], isLoading} = useQuery(usersQueryOptions())
 	const [error, setError] = useState('')
 	const [selectedUser, setSelectedUser] = useState<User | null>(null)
 	const [showDetailsModal, setShowDetailsModal] = useState(false)
 	const [showToggleAdminModal, setShowToggleAdminModal] = useState(false)
-
-	const fetchUsers = useCallback(async () => {
-		setLoading(true)
-		setError('')
-		try {
-			const response = await fetch('/api/admin/users')
-			const data = (await response.json()) as {
-				success: boolean
-				users?: User[]
-				error?: string
-			}
-
-			if (!(response.ok && data.success)) {
-				setError(data.error || 'Failed to load users')
-				return
-			}
-
-			if (data.users) {
-				// Convert Firestore timestamps to Date objects
-				const processedUsers = data.users.map(user => ({
-					...user,
-					createdAt:
-						typeof user.createdAt === 'object' && 'toDate' in user.createdAt
-							? user.createdAt.toDate()
-							: new Date(user.createdAt)
-				}))
-				setUsers(processedUsers)
-			}
-		} catch (err) {
-			setError(err instanceof Error ? err.message : 'Failed to load users')
-		} finally {
-			setLoading(false)
-		}
-	}, [])
-
-	useEffect(() => {
-		fetchUsers()
-	}, [fetchUsers])
 
 	const handleViewDetails = (user: User) => {
 		setSelectedUser(user)
@@ -103,7 +59,7 @@ function UsersPage() {
 
 			setShowToggleAdminModal(false)
 			setSelectedUser(null)
-			await fetchUsers()
+			await queryClient.invalidateQueries({queryKey: ['users']})
 		} catch (err) {
 			setError(
 				err instanceof Error ? err.message : 'Failed to update admin status'
@@ -191,7 +147,7 @@ function UsersPage() {
 		[]
 	)
 
-	if (loading) {
+	if (isLoading) {
 		return (
 			<div className='container mx-auto p-4'>
 				<span className='loading loading-spinner loading-lg' />
