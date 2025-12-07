@@ -1,9 +1,6 @@
 import {useForm} from '@tanstack/react-form'
 import type React from 'react'
-import {
-	consentFormSchema,
-	type ConsentFormData
-} from '@/lib/schemas/consent'
+import {type ConsentFormData, consentFormSchema} from '@/lib/schemas/consent'
 
 interface ConsentFormProps {
 	onSubmit: (data: ConsentFormData) => Promise<void> | void

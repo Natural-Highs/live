@@ -5,7 +5,6 @@ export const Route = createFileRoute('/_admin')({
 	component: AdminLayout
 })
 
-// biome-ignore lint/style/useComponentExportOnlyModules: TanStack Router pattern - only Route is exported
 function AdminLayout() {
 	const {user, loading, admin} = useAuth()
 

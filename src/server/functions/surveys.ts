@@ -5,8 +5,8 @@ import {
 	getSurveyQuestionsSchema,
 	submitResponseSchema
 } from '../schemas/surveys'
-import {ConflictError, NotFoundError} from './utils/errors'
 import {requireConsent, validateSession} from './utils/auth'
+import {ConflictError, NotFoundError} from './utils/errors'
 
 /**
  * Submit survey response
@@ -43,9 +43,7 @@ export const submitResponse = createServerFn({method: 'POST'}).handler(
 			.get()
 
 		if (!existingResponse.empty) {
-			throw new ConflictError(
-				`${surveyType} survey response already submitted`
-			)
+			throw new ConflictError(`${surveyType} survey response already submitted`)
 		}
 
 		// Create response document
@@ -129,8 +127,7 @@ export const getAccessibleSurveys = createServerFn({method: 'GET'}).handler(
 		const now = new Date()
 		const startDate =
 			eventData.startDate?.toDate?.() ?? new Date(eventData.startDate)
-		const endDate =
-			eventData.endDate?.toDate?.() ?? new Date(eventData.endDate)
+		const endDate = eventData.endDate?.toDate?.() ?? new Date(eventData.endDate)
 
 		// Check if user is registered
 		const participants = eventData.participants || []
@@ -152,10 +149,10 @@ export const getAccessibleSurveys = createServerFn({method: 'GET'}).handler(
 			.get()
 
 		const hasPreResponse = responsesSnapshot.docs.some(
-			(doc) => doc.data().surveyType === 'pre'
+			doc => doc.data().surveyType === 'pre'
 		)
 		const hasPostResponse = responsesSnapshot.docs.some(
-			(doc) => doc.data().surveyType === 'post'
+			doc => doc.data().surveyType === 'post'
 		)
 
 		// Pre-survey: accessible before event starts (unless already submitted)

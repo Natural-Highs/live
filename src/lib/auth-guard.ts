@@ -37,7 +37,12 @@ export async function authGuard(
 	{context, location}: BeforeLoadContext,
 	options: AuthGuardOptions = {}
 ) {
-	const {requireAuth = true, requireConsent = true, requireAdmin = false, redirectIfAuthenticated = false} = options
+	const {
+		requireAuth = true,
+		requireConsent = true,
+		requireAdmin = false,
+		redirectIfAuthenticated = false
+	} = options
 	const {user, loading, consentForm, admin} = context.auth
 
 	// Don't redirect while loading

@@ -37,7 +37,7 @@ export async function validateSession(): Promise<SessionUser> {
 				signedConsentForm: decodedToken.signedConsentForm === true
 			}
 		}
-	} catch (error) {
+	} catch (_error) {
 		throw new AuthenticationError('Invalid or expired session cookie')
 	}
 }

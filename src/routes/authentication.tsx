@@ -40,7 +40,6 @@ export const Route = createFileRoute('/authentication')({
 	component: AuthenticationComponent
 })
 
-// biome-ignore lint/style/useComponentExportOnlyModules: TanStack Router pattern - only Route is exported
 function AuthenticationComponent() {
 	const {loading} = useAuth()
 	const [isSignUp, setIsSignUp] = useState(false)

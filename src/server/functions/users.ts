@@ -1,14 +1,14 @@
 import {createServerFn} from '@tanstack/react-start'
+import {validateEventRegistration} from '../../lib/events/event-validation'
 import {auth, db} from '../../lib/firebase/firebase'
 import {buildCustomClaims} from '../../lib/utils/custom-claims'
-import {validateEventRegistration} from '../../lib/events/event-validation'
 import {
 	getProfileSchema,
 	registerForEventSchema,
 	updateConsentStatusSchema
 } from '../schemas/users'
-import {ConflictError, NotFoundError, ValidationError} from './utils/errors'
 import {validateSession} from './utils/auth'
+import {ConflictError, NotFoundError, ValidationError} from './utils/errors'
 
 /**
  * Get user profile
@@ -152,28 +152,31 @@ export const registerForEvent = createServerFn({method: 'POST'}).handler(
 /**
  * Get user's registered events
  */
-export const getUserEvents = createServerFn({method: 'GET'}).handler(async () => {
-	const user = await validateSession()
+export const getUserEvents = createServerFn({method: 'GET'}).handler(
+	async () => {
+		const user = await validateSession()
 
-	// Get events where user is a participant
-	const eventsSnapshot = await db
-		.collection('events')
-		.where('participants', 'array-contains', user.uid)
-		.orderBy('startDate', 'asc')
-		.get()
+		// Get events where user is a participant
+		const eventsSnapshot = await db
+			.collection('events')
+			.where('participants', 'array-contains', user.uid)
+			.orderBy('startDate', 'asc')
+			.get()
 
-	return eventsSnapshot.docs.map((doc) => {
-		const eventData = doc.data()
-		return {
-			id: doc.id,
-			...eventData,
-			startDate:
-				eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
-			endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
-			createdAt:
-				eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
-			updatedAt:
-				eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
-		}
-	})
-})
+		return eventsSnapshot.docs.map(doc => {
+			const eventData = doc.data()
+			return {
+				id: doc.id,
+				...eventData,
+				startDate:
+					eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
+				endDate:
+					eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
+				createdAt:
+					eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
+				updatedAt:
+					eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
+			}
+		})
+	}
+)

@@ -7,7 +7,6 @@ export const Route = createFileRoute('/')({
 	component: HomeComponent
 })
 
-// biome-ignore lint/style/useComponentExportOnlyModules: TanStack Router pattern - only Route is exported
 function HomeComponent() {
 	const {user, consentForm} = useAuth()
 

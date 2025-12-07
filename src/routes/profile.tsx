@@ -60,7 +60,8 @@ export const Route = createFileRoute('/profile')({
 
 		return {
 			profile: profileData.data || null,
-			userEvents: (eventsResponse.ok && eventsData.success && eventsData.events) || []
+			userEvents:
+				(eventsResponse.ok && eventsData.success && eventsData.events) || []
 		}
 	},
 	component: ProfileComponent

@@ -1,5 +1,5 @@
-import type {ColumnDef} from '@tanstack/react-table'
 import {createFileRoute} from '@tanstack/react-router'
+import type {ColumnDef} from '@tanstack/react-table'
 import {useCallback, useEffect, useMemo, useState} from 'react'
 import {DataTable} from '../../components/admin/DataTable'
 
@@ -18,7 +18,6 @@ interface User {
 	[key: string]: unknown
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: TanStack Router pattern - only Route is exported
 function UsersPage() {
 	const [users, setUsers] = useState<User[]>([])
 	const [loading, setLoading] = useState(true)
@@ -81,13 +80,16 @@ function UsersPage() {
 		setError('')
 
 		try {
-			const response = await fetch(`/api/admin/users/${selectedUser.id}/admin`, {
-				method: 'PATCH',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({
-					admin: !selectedUser.admin
-				})
-			})
+			const response = await fetch(
+				`/api/admin/users/${selectedUser.id}/admin`,
+				{
+					method: 'PATCH',
+					headers: {'Content-Type': 'application/json'},
+					body: JSON.stringify({
+						admin: !selectedUser.admin
+					})
+				}
+			)
 
 			const data = (await response.json()) as {
 				success: boolean
@@ -265,7 +267,8 @@ function UsersPage() {
 								</span>
 							</p>
 							<p>
-								<strong>Created At:</strong> {formatDate(selectedUser.createdAt)}
+								<strong>Created At:</strong>{' '}
+								{formatDate(selectedUser.createdAt)}
 							</p>
 						</div>
 						<div className='modal-action'>
@@ -286,11 +289,15 @@ function UsersPage() {
 				<div className='modal modal-open'>
 					<div className='modal-box'>
 						<h3 className='mb-4 font-bold text-lg'>
-							{selectedUser.admin ? 'Remove Admin Rights' : 'Grant Admin Rights'}
+							{selectedUser.admin
+								? 'Remove Admin Rights'
+								: 'Grant Admin Rights'}
 						</h3>
 						<p className='mb-4'>
 							Are you sure you want to{' '}
-							{selectedUser.admin ? 'remove admin rights from' : 'grant admin rights to'}{' '}
+							{selectedUser.admin
+								? 'remove admin rights from'
+								: 'grant admin rights to'}{' '}
 							<strong>{selectedUser.email}</strong>?
 						</p>
 						<div className='modal-action'>

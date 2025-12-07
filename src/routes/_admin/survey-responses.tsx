@@ -1,5 +1,5 @@
-import type {ColumnDef} from '@tanstack/react-table'
 import {createFileRoute} from '@tanstack/react-router'
+import type {ColumnDef} from '@tanstack/react-table'
 import {useCallback, useEffect, useMemo, useState} from 'react'
 import {DataTable} from '../../components/admin/DataTable'
 
@@ -41,7 +41,6 @@ interface SurveyResponse {
 	[key: string]: unknown
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: TanStack Router pattern - only Route is exported
 function SurveysPage() {
 	const [responses, setResponses] = useState<SurveyResponse[]>([])
 	const [events, setEvents] = useState<Event[]>([])

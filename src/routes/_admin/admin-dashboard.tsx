@@ -1,17 +1,17 @@
 import {createFileRoute} from '@tanstack/react-router'
-import {useEffect, useState} from 'react'
-import {Line} from 'react-chartjs-2'
 import {
 	CategoryScale,
 	Chart as ChartJS,
 	type ChartOptions,
 	Legend,
-	LineElement,
 	LinearScale,
+	LineElement,
 	PointElement,
 	Title,
 	Tooltip
 } from 'chart.js'
+import {useEffect, useState} from 'react'
+import {Line} from 'react-chartjs-2'
 
 ChartJS.register(
 	CategoryScale,
@@ -34,7 +34,6 @@ interface StatsData {
 	activeEvents: number
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: TanStack Router pattern - only Route is exported
 function AdminDashboard() {
 	const [stats, setStats] = useState<StatsData>({
 		totalUsers: 0,
@@ -63,7 +62,9 @@ function AdminDashboard() {
 					setError(data.error || 'Failed to load statistics')
 				}
 			} catch (err) {
-				setError(err instanceof Error ? err.message : 'Failed to load statistics')
+				setError(
+					err instanceof Error ? err.message : 'Failed to load statistics'
+				)
 			} finally {
 				setLoading(false)
 			}

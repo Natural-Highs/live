@@ -1,5 +1,5 @@
-import type {ColumnDef} from '@tanstack/react-table'
 import {createFileRoute} from '@tanstack/react-router'
+import type {ColumnDef} from '@tanstack/react-table'
 import type React from 'react'
 import {useCallback, useEffect, useMemo, useState} from 'react'
 import {DataTable} from '../../components/admin/DataTable'
@@ -46,7 +46,6 @@ interface Event {
 	[key: string]: unknown
 }
 
-// biome-ignore lint/style/useComponentExportOnlyModules: TanStack Router pattern - only Route is exported
 function EventsPage() {
 	const [activeTab, setActiveTab] = useState<'events' | 'eventTypes'>('events')
 	const [events, setEvents] = useState<Event[]>([])
@@ -505,15 +504,16 @@ function EventsPage() {
 								Activate
 							</button>
 						)}
-						{row.original.isActive && !row.original.surveyAccessibleOverride && (
-							<button
-								className='btn btn-sm btn-warning'
-								onClick={() => handleOverrideSurvey(row.original.id)}
-								type='button'
-							>
-								Make Surveys Accessible
-							</button>
-						)}
+						{row.original.isActive &&
+							!row.original.surveyAccessibleOverride && (
+								<button
+									className='btn btn-sm btn-warning'
+									onClick={() => handleOverrideSurvey(row.original.id)}
+									type='button'
+								>
+									Make Surveys Accessible
+								</button>
+							)}
 						{row.original.surveyAccessibleOverride && (
 							<span className='badge badge-warning'>Override Active</span>
 						)}
