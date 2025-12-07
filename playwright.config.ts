@@ -1,39 +1,30 @@
-import { devices, type PlaywrightTestConfig } from '@playwright/test';
+import process from 'node:process'
+import {defineConfig, devices} from '@playwright/test'
 
-const config: PlaywrightTestConfig = {
-  testDir: './tests',
-  testMatch: /(.+\.)?(test|spec)\.[jt]s/,
-  timeout: 30000,
-  use: {
-    baseURL: 'http://localhost:5174',
-    trace: 'on-first-retry',
-  },
-  projects: [
-    {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
-    },
-  ],
-  webServer: [
-    {
-      command: 'doppler run -- bunx firebase-tools emulators:start',
-      port: 9099,
-      timeout: 120000,
-      reuseExistingServer: !process.env.CI,
-    },
-    {
-      command: 'doppler run -- bun src/server/index.ts',
-      port: 3000,
-      timeout: 120000,
-      reuseExistingServer: !process.env.CI,
-    },
-    {
-      command: 'doppler run -- bun run dev',
-      port: 5174,
-      timeout: 120000,
-      reuseExistingServer: !process.env.CI,
-    },
-  ],
-};
-
-export default config;
+export default defineConfig({
+	forbidOnly: Boolean(process.env.CI),
+	fullyParallel: true,
+	projects: [
+		{
+			name: 'chromium',
+			use: {...devices['Desktop Chrome']}
+		},
+		{
+			name: 'Mobile Chrome',
+			use: {...devices['Pixel 5']}
+		}
+	],
+	reporter: 'html',
+	retries: process.env.CI ? 2 : 0,
+	testDir: './tests',
+	use: {
+		baseURL: 'http://localhost:5173',
+		trace: 'on-first-retry'
+	},
+	webServer: {
+		command: 'bun run dev',
+		reuseExistingServer: !process.env.CI,
+		url: 'http://localhost:5173'
+	},
+	workers: process.env.CI ? 1 : undefined
+})

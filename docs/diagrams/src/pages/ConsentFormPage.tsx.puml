@@ -1,6 +1,0 @@
-@startuml pages__ConsentFormPage_tsx
-title pages/ConsentFormPage.tsx
-class "pages/ConsentFormPage.tsx" as pages_ConsentFormPage_tsx <<Artifact>> {
-  -- no exports --
-}
-@enduml

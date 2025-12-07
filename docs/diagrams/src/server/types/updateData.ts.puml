@@ -1,8 +1,0 @@
-@startuml server__types__updateData_ts
-title server/types/updateData.ts
-class "server/types/updateData.ts" as server_types_updateData_ts <<Module>> {
-  + interface EventTypeUpdateData
-  + interface FormTemplateUpdateData
-  + interface UserProfileUpdateData
-}
-@enduml

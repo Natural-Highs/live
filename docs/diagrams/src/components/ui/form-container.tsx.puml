@@ -1,6 +1,0 @@
-@startuml components__ui__form_container_tsx
-title components/ui/form-container.tsx
-class "components/ui/form-container.tsx" as components_ui_form_container_tsx <<Artifact>> {
-  -- no exports --
-}
-@enduml

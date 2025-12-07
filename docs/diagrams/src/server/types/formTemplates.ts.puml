@@ -1,8 +1,0 @@
-@startuml server__types__formTemplates_ts
-title server/types/formTemplates.ts
-class "server/types/formTemplates.ts" as server_types_formTemplates_ts <<Module>> {
-  + type FormTemplateTypeValue
-  + interface FormTemplateCreationRequest
-  + interface FormTemplateUpdateRequest
-}
-@enduml
