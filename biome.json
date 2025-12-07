@@ -28,7 +28,18 @@
 			"quoteStyle": "single",
 			"semicolons": "asNeeded",
 			"trailingCommas": "none"
-		}
+		},
+		"globals": [
+			"vi",
+			"describe",
+			"it",
+			"test",
+			"expect",
+			"beforeEach",
+			"afterEach",
+			"beforeAll",
+			"afterAll"
+		]
 	},
 	"linter": {
 		"domains": {
@@ -139,6 +150,9 @@
 					"correctness": {
 						"noNodejsModules": "off"
 					},
+					"nursery": {
+						"noTernary": "off"
+					},
 					"style": {
 						"noDefaultExport": "off"
 					}
@@ -146,9 +160,12 @@
 			}
 		},
 		{
-			"includes": ["src/**/*.test.tsx"],
+			"includes": ["src/**/*.test.ts", "src/**/*.test.tsx"],
 			"linter": {
 				"rules": {
+					"complexity": {
+						"noExcessiveLinesPerFunction": "off"
+					},
 					"performance": {
 						"useTopLevelRegex": "off"
 					}
