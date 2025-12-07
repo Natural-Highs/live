@@ -1,5 +1,5 @@
 // import { auth, db } from '$lib/firebase/firebase'; // Adjust the import path as needed
-import { adminAuth, adminDb } from '$lib/firebase/firebase.admin';
+import {adminAuth, adminDb} from '$lib/firebase/firebase.admin'
 
 /**
  * Creates a new user with email and password. Validates that password and confirmPassword match.
@@ -9,34 +9,33 @@ import { adminAuth, adminDb } from '$lib/firebase/firebase.admin';
  * @returns A promise that resolves with the created user record or rejects with an error.
  */
 export async function registerUser(
-  email: string,
-  password: string,
-  confirmPassword: string
+	email: string,
+	password: string,
+	confirmPassword: string
 ): Promise<boolean> {
-  if (password !== confirmPassword) {
-    return false;
-  }
+	if (password !== confirmPassword) {
+		return false
+	}
 
-  try {
-    // Create a new user with the provided email and password
-    const userRecord = await adminAuth.createUser({
-      email: email,
-      password: password,
-    });
+	try {
+		// Create a new user with the provided email and password
+		const userRecord = await adminAuth.createUser({
+			email,
+			password
+		})
 
-    await adminDb.collection('users').doc(userRecord.uid).set({
-      email: email,
-      createdAt: new Date(),
-      uid: userRecord.uid,
-      isAdmin: false,
-      signedConsentForm: false,
-    });
+		await adminDb.collection('users').doc(userRecord.uid).set({
+			email,
+			createdAt: new Date(),
+			uid: userRecord.uid,
+			isAdmin: false,
+			signedConsentForm: false
+		})
 
-    return true;
-  } catch (error) {
-    console.error('Error creating new user:', error);
-    return false;
-  }
+		return true
+	} catch {
+		return false
+	}
 }
 
 /**
@@ -45,19 +44,17 @@ export async function registerUser(
  * @param password - The password of the user.
  * @returns A promise that resolves with a sign-in result or rejects with an error.
  */
-export async function signInUser(email: string, _password: string): Promise<boolean> {
-  try {
-    const userRecord = await adminAuth.getUserByEmail(email);
-    if (userRecord) {
-      console.log('correct credentials');
-      return true;
-    } else {
-      console.log('incorrect username or password');
-      return false;
-    }
-  } catch (error) {
-    // Handle any errors that occur during user sign-in
-    console.error('Error signing in user:', error);
-    return false;
-  }
+export async function signInUser(
+	email: string,
+	_password: string
+): Promise<boolean> {
+	try {
+		const userRecord = await adminAuth.getUserByEmail(email)
+		if (userRecord) {
+			return true
+		}
+		return false
+	} catch {
+		return false
+	}
 }

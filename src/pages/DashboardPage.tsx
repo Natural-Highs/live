@@ -1,220 +1,228 @@
-import type React from 'react';
-import { useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import Greencard from '@/components/ui/GreenCard';
-import GreyButton from '@/components/ui/GreyButton';
-import GrnButton from '@/components/ui/GrnButton';
-import { PageContainer } from '@/components/ui/page-container';
-import Titlecard from '@/components/ui/TitleCard';
-import { WebsiteLogo } from '@/components/ui/website-logo';
+import type React from 'react'
+import {useEffect, useState} from 'react'
+import Greencard from '@/components/ui/GreenCard'
+import GreyButton from '@/components/ui/GreyButton'
+import GrnButton from '@/components/ui/GrnButton'
+import {PageContainer} from '@/components/ui/page-container'
+import Titlecard from '@/components/ui/TitleCard'
+import {WebsiteLogo} from '@/components/ui/website-logo'
 
 interface Event {
-  id: string;
-  name: string;
-  eventDate?: string;
-  code?: string;
-  isActive?: boolean;
-  [key: string]: unknown;
+	id: string
+	name: string
+	eventDate?: string
+	code?: string
+	isActive?: boolean
+	[key: string]: unknown
 }
 
 const DashboardPage: React.FC = () => {
-  //const { user } = useAuth();
-  const [events, setEvents] = useState<Event[]>([]);
-  const [eventCode, setEventCode] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [submittingCode, setSubmittingCode] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+	//const { user } = useAuth();
+	const [events, setEvents] = useState<Event[]>([])
+	const [eventCode, setEventCode] = useState('')
+	const [loading, setLoading] = useState(true)
+	const [submittingCode, setSubmittingCode] = useState(false)
+	const [error, setError] = useState('')
+	const [success, setSuccess] = useState('')
 
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const response = await fetch('/api/events');
-        const data = (await response.json()) as {
-          success: boolean;
-          events?: Event[];
-          error?: string;
-        };
+	useEffect(() => {
+		const fetchEvents = async () => {
+			try {
+				const response = await fetch('/api/events')
+				const data = (await response.json()) as {
+					success: boolean
+					events?: Event[]
+					error?: string
+				}
 
-        if (!response.ok || !data.success) {
-          setError(data.error || 'Failed to load events');
-          return;
-        }
+				if (!(response.ok && data.success)) {
+					setError(data.error || 'Failed to load events')
+					return
+				}
 
-        if (data.events) {
-          setEvents(data.events);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load events');
-      } finally {
-        setLoading(false);
-      }
-    };
+				if (data.events) {
+					setEvents(data.events)
+				}
+			} catch (err) {
+				setError(err instanceof Error ? err.message : 'Failed to load events')
+			} finally {
+				setLoading(false)
+			}
+		}
 
-    fetchEvents();
-  }, []);
+		fetchEvents()
+	}, [])
 
-  const handleEventCodeSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setSuccess('');
-    setSubmittingCode(true);
+	const handleEventCodeSubmit = async (e: React.FormEvent) => {
+		e.preventDefault()
+		setError('')
+		setSuccess('')
+		setSubmittingCode(true)
 
-    try {
-      const response = await fetch('/api/users/eventCode', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ eventCode }),
-      });
+		try {
+			const response = await fetch('/api/users/eventCode', {
+				method: 'POST',
+				headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify({eventCode})
+			})
 
-      const data = (await response.json()) as {
-        success: boolean;
-        message?: string;
-        error?: string;
-      };
+			const data = (await response.json()) as {
+				success: boolean
+				message?: string
+				error?: string
+			}
 
-      if (!response.ok || !data.success) {
-        setError(data.error || 'Failed to register for event');
-        setSubmittingCode(false);
-        return;
-      }
+			if (!(response.ok && data.success)) {
+				setError(data.error || 'Failed to register for event')
+				setSubmittingCode(false)
+				return
+			}
 
-      setSuccess(data.message || 'Successfully registered for event');
-      setEventCode('');
-      window.location.reload();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to register for event');
-      setSubmittingCode(false);
-    }
-  };
+			setSuccess(data.message || 'Successfully registered for event')
+			setEventCode('')
+			window.location.reload()
+		} catch (err) {
+			setError(
+				err instanceof Error ? err.message : 'Failed to register for event'
+			)
+			setSubmittingCode(false)
+		}
+	}
 
-  const formatDate = (dateString?: string): string => {
-    if (!dateString) return 'TODO: Date TBD';
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
-    } catch {
-      return dateString;
-    }
-  };
+	const formatDate = (dateString?: string): string => {
+		if (!dateString) return 'TODO: Date TBD'
+		try {
+			const date = new Date(dateString)
+			return date.toLocaleDateString('en-US', {
+				year: 'numeric',
+				month: 'long',
+				day: 'numeric'
+			})
+		} catch {
+			return dateString
+		}
+	}
 
-  if (loading) {
-    return (
-      <PageContainer>
-        <span className="loading loading-spinner loading-lg"></span>
-      </PageContainer>
-    );
-  }
+	if (loading) {
+		return (
+			<PageContainer>
+				<span className='loading loading-spinner loading-lg' />
+			</PageContainer>
+		)
+	}
 
-  return (
-    <PageContainer gap-2>
-      {/* Header with Logo */}
-      <div className="flex flex-col items-center mb-6">
-        <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center mb-4 shadow-lg">
-          <WebsiteLogo size="lg" />
-        </div>
-        <h1 className="text-4xl font-serif text-gray-800 border-b-2 border-gray-800 pb-2">Home</h1>
-      </div>
+	return (
+		<PageContainer gap-2={true}>
+			{/* Header with Logo */}
+			<div className='mb-6 flex flex-col items-center'>
+				<div className='mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-lg'>
+					<WebsiteLogo size='lg' />
+				</div>
+				<h1 className='border-gray-800 border-b-2 pb-2 font-serif text-4xl text-gray-800'>
+					Home
+				</h1>
+			</div>
 
-      {/* Check In Section */}
+			{/* Check In Section */}
 
-      <Titlecard>
-        <h1>Check In</h1>
-      </Titlecard>
+			<Titlecard>
+				<h1>Check In</h1>
+			</Titlecard>
 
-      <Greencard className="">
-        {error && (
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded-lg mb-3 text-sm text-center">
-            {error}
-          </div>
-        )}
+			<Greencard className=''>
+				{error && (
+					<div className='mb-3 rounded-lg border border-red-400 bg-red-100 px-4 py-2 text-center text-red-700 text-sm'>
+						{error}
+					</div>
+				)}
 
-        {success && (
-          <div className="text-center text-green-800 italic mb-3">
-            <p className="font-semibold">Success!</p>
-            <p>You've checked in</p>
-          </div>
-        )}
+				{success && (
+					<div className='mb-3 text-center text-green-800 italic'>
+						<p className='font-semibold'>Success!</p>
+						<p>You've checked in</p>
+					</div>
+				)}
 
-        <form onSubmit={handleEventCodeSubmit}>
-          <input
-            //style={{borderColor:'green', borderWidth:'2px'}}
-            type="text"
-            value={eventCode}
-            onChange={e => setEventCode(e.target.value)}
-            placeholder="Enter 4-digit code"
-            maxLength={4}
-            //className="w-full bg-white rounded-lg px-4 py-3 text-center text-xl text-gray-700 mb-4 focus:outline-none focus:ring-2 focus:ring-green-600 tracking-widest"
-            className="w-full bg-white border-[2.2px] border-btnGreen rounded-lg px-4 py-3 text-center text-2xl text-[#2A2A2Ae5] font-inria mb-4 focus:outline-none tracking-widest"
-            required
-          />
+				<form onSubmit={handleEventCodeSubmit}>
+					<input
+						//style={{borderColor:'green', borderWidth:'2px'}}
+						className='mb-4 w-full rounded-lg border-[2.2px] border-btnGreen bg-white px-4 py-3 text-center font-inria text-2xl text-[#2A2A2Ae5] tracking-widest focus:outline-none'
+						maxLength={4}
+						onChange={e => setEventCode(e.target.value)}
+						placeholder='Enter 4-digit code'
+						required={true}
+						//className="w-full bg-white rounded-lg px-4 py-3 text-center text-xl text-gray-700 mb-4 focus:outline-none focus:ring-2 focus:ring-green-600 tracking-widest"
+						type='text'
+						value={eventCode}
+					/>
 
-          <GrnButton type="submit" disabled={submittingCode || eventCode.length !== 4}>
-            {submittingCode ? 'Registering...' : 'Submit'}
-          </GrnButton>
-        </form>
-      </Greencard>
+					<GrnButton
+						disabled={submittingCode || eventCode.length !== 4}
+						type='submit'
+					>
+						{submittingCode ? 'Registering...' : 'Submit'}
+					</GrnButton>
+				</form>
+			</Greencard>
 
-      {/* Navigation Buttons */}
-      <div className="text-center space-y-3 w-1/5">
-        <GreyButton type="button" onClick={() => console.log('Account Information')}>
-          Account Information
-        </GreyButton>
+			{/* Navigation Buttons */}
+			<div className='w-1/5 space-y-3 text-center'>
+				<GreyButton onClick={() => {}} type='button'>
+					Account Information
+				</GreyButton>
 
-        <GreyButton type="button" onClick={() => console.log('Feedback Forms')}>
-          Feedback Forms
-        </GreyButton>
+				<GreyButton onClick={() => {}} type='button'>
+					Feedback Forms
+				</GreyButton>
 
-        <GreyButton type="button" onClick={() => console.log('Acudetox Form')}>
-          Acudetox Form
-        </GreyButton>
+				<GreyButton onClick={() => {}} type='button'>
+					Acudetox Form
+				</GreyButton>
 
-        <button
-          type="button"
-          onClick={() => console.log('Download Consent Form')}
-          className="text-center w-full text-gray-700 text-sm pt-2 underline cursor-pointer hover:text-gray-900 bg-transparent"
-        >
-          Download Consent Form
-        </button>
-      </div>
+				<button
+					className='w-full cursor-pointer bg-transparent pt-2 text-center text-gray-700 text-sm underline hover:text-gray-900'
+					onClick={() => {}}
+					type='button'
+				>
+					Download Consent Form
+				</button>
+			</div>
 
-      {/* Footer */}
-      <div className="mt-6 text-center text-gray-600 text-sm">
-        <p>naturalhighs.org</p>
-      </div>
+			{/* Footer */}
+			<div className='mt-6 text-center text-gray-600 text-sm'>
+				<p>naturalhighs.org</p>
+			</div>
 
-      {/* My Events Section - Hidden by default, can be toggled */}
-      {events.length > 0 && (
-        <div className="mt-8 bg-white rounded-2xl p-6 shadow-md">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-4">My Events</h2>
-          <div className="space-y-3">
-            {events.map(event => (
-              <div key={event.id} className="bg-gray-100 rounded-lg p-4">
-                <h3 className="font-semibold text-gray-800">{event.name}</h3>
-                <p className="text-sm text-gray-600">
-                  Date: {formatDate(event.eventDate as string | undefined)}
-                </p>
-                {event.code && <p className="text-sm text-gray-600">Code: {event.code}</p>}
-                <button
-                  type="button"
-                  className="mt-2 text-sm text-green-700 hover:text-green-800 font-semibold"
-                  onClick={() => {
-                    console.log('Event clicked:', event.id);
-                  }}
-                >
-                  View Details →
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </PageContainer>
-  );
-};
+			{/* My Events Section - Hidden by default, can be toggled */}
+			{events.length > 0 && (
+				<div className='mt-8 rounded-2xl bg-white p-6 shadow-md'>
+					<h2 className='mb-4 font-semibold text-2xl text-gray-800'>
+						My Events
+					</h2>
+					<div className='space-y-3'>
+						{events.map(event => (
+							<div className='rounded-lg bg-gray-100 p-4' key={event.id}>
+								<h3 className='font-semibold text-gray-800'>{event.name}</h3>
+								<p className='text-gray-600 text-sm'>
+									Date: {formatDate(event.eventDate as string | undefined)}
+								</p>
+								{event.code && (
+									<p className='text-gray-600 text-sm'>Code: {event.code}</p>
+								)}
+								<button
+									className='mt-2 font-semibold text-green-700 text-sm hover:text-green-800'
+									onClick={() => {}}
+									type='button'
+								>
+									View Details →
+								</button>
+							</div>
+						))}
+					</div>
+				</div>
+			)}
+		</PageContainer>
+	)
+}
 
-export default DashboardPage;
+export default DashboardPage

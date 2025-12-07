@@ -1,24 +1,30 @@
-import * as React from 'react';
+import type * as React from 'react'
 
 export interface PageHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
-  title: string;
-  subtitle?: string;
-  showIndicators?: boolean;
-  children?: React.ReactNode;
+	title: string
+	subtitle?: string
+	showIndicators?: boolean
+	children?: React.ReactNode
 }
 
-const PageHeader = React.forwardRef<HTMLDivElement, PageHeaderProps>(
-  ({ className, title, subtitle, showIndicators, children, ...props }, ref) => {
-    return (
-      <div ref={ref} className={`text-center mb-6 ${className || ''}`} {...props}>
-        {children}
-        <h1 className="text-4xl font-bold text-[#1e1e1e] mb-2">{title}</h1>
-        {subtitle && <div className="text-xs text-gray-600 mb-4">{subtitle}</div>}
-        {showIndicators && <div className="text-xs text-gray-600 mb-4">Page indicators</div>}
-      </div>
-    );
-  }
-);
-PageHeader.displayName = 'PageHeader';
+const PageHeader = ({
+	className,
+	title,
+	subtitle,
+	showIndicators,
+	children,
+	ref,
+	...props
+}: PageHeaderProps & {ref?: React.RefObject<HTMLDivElement | null>}) => (
+	<div className={`mb-6 text-center ${className || ''}`} ref={ref} {...props}>
+		{children}
+		<h1 className='mb-2 font-bold text-4xl text-[#1e1e1e]'>{title}</h1>
+		{subtitle && <div className='mb-4 text-gray-600 text-xs'>{subtitle}</div>}
+		{showIndicators && (
+			<div className='mb-4 text-gray-600 text-xs'>Page indicators</div>
+		)}
+	</div>
+)
+PageHeader.displayName = 'PageHeader'
 
-export { PageHeader };
+export {PageHeader}

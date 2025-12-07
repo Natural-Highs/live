@@ -4,5 +4,5 @@
  */
 
 export interface AuthContextUserData {
-  readonly [key: string]: string | number | Date | boolean;
+	readonly [key: string]: string | number | Date | boolean
 }

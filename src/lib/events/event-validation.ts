@@ -3,7 +3,7 @@
  * Following Test Pyramid Balance directive: Unit tests for business logic functions
  */
 
-import type { EventDocument } from '../../server/types/events';
+import type {EventDocument} from '../../server/types/events'
 
 /**
  * Validate that an event can be registered for
@@ -14,22 +14,22 @@ import type { EventDocument } from '../../server/types/events';
  * @returns Object with isValid flag and error message if invalid
  */
 export function validateEventRegistration(
-  event: EventDocument | { isActive?: boolean } | null | undefined,
-  isAlreadyRegistered: boolean
-): { isValid: boolean; error?: string } {
-  if (!event) {
-    return { isValid: false, error: 'Event not found' };
-  }
+	event: EventDocument | {isActive?: boolean} | null | undefined,
+	isAlreadyRegistered: boolean
+): {isValid: boolean; error?: string} {
+	if (!event) {
+		return {isValid: false, error: 'Event not found'}
+	}
 
-  if (!event.isActive) {
-    return { isValid: false, error: 'Event is not active' };
-  }
+	if (!event.isActive) {
+		return {isValid: false, error: 'Event is not active'}
+	}
 
-  if (isAlreadyRegistered) {
-    return { isValid: false, error: 'Already registered for this event' };
-  }
+	if (isAlreadyRegistered) {
+		return {isValid: false, error: 'Already registered for this event'}
+	}
 
-  return { isValid: true };
+	return {isValid: true}
 }
 
 /**
@@ -38,9 +38,11 @@ export function validateEventRegistration(
  * @param code - Event code to validate
  * @returns True if code is valid format, false otherwise
  */
-export function isValidEventCodeFormat(code: string | null | undefined): boolean {
-  if (!code) {
-    return false;
-  }
-  return /^\d{4}$/.test(code);
+export function isValidEventCodeFormat(
+	code: string | null | undefined
+): boolean {
+	if (!code) {
+		return false
+	}
+	return /^\d{4}$/.test(code)
 }

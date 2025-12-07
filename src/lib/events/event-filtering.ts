@@ -3,7 +3,7 @@
  * Following Test Pyramid Balance directive: Unit tests for business logic functions
  */
 
-import type { EventDocument } from '../../server/types/events';
+import type {EventDocument} from '../../server/types/events'
 
 /**
  * Determine if user should see all events (admin) or only active events (regular user)
@@ -12,7 +12,7 @@ import type { EventDocument } from '../../server/types/events';
  * @returns True if user should see all events, false if only active events
  */
 export function shouldShowAllEvents(isAdmin: boolean): boolean {
-  return isAdmin;
+	return isAdmin
 }
 
 /**
@@ -22,9 +22,12 @@ export function shouldShowAllEvents(isAdmin: boolean): boolean {
  * @param isAdmin - Whether the user is an admin
  * @returns True if event should be included, false otherwise
  */
-export function shouldIncludeEvent(event: EventDocument, isAdmin: boolean): boolean {
-  if (isAdmin) {
-    return true; // Admins see all events
-  }
-  return event.isActive === true; // Regular users only see active events
+export function shouldIncludeEvent(
+	event: EventDocument,
+	isAdmin: boolean
+): boolean {
+	if (isAdmin) {
+		return true // Admins see all events
+	}
+	return event.isActive === true // Regular users only see active events
 }
