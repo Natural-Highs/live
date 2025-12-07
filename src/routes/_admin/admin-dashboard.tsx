@@ -23,7 +23,7 @@ ChartJS.register(
 	Legend
 )
 
-export const Route = createFileRoute('/_admin/')({
+export const Route = createFileRoute('/_admin/admin-dashboard')({
 	component: AdminDashboard
 })
 

@@ -64,7 +64,9 @@ export const submitResponse = createServerFn({method: 'POST'}).handler(
 			id: responseRef.id,
 			...responseData,
 			submittedAt: responseData.submittedAt.toISOString(),
-			createdAt: responseData.createdAt.toISOString()
+			createdAt: responseData.createdAt.toISOString(),
+			// Cast responses to satisfy TanStack Start type requirements
+			responses: responseData.responses as Record<string, {}>
 		}
 	}
 )

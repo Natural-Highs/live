@@ -11,5 +11,6 @@ export interface EventDocument {
 	isActive?: boolean
 	maxParticipants?: number
 	currentParticipants?: number
-	[key: string]: unknown
+	// TanStack Start requires {} instead of unknown for index signatures
+	[key: string]: {} | undefined
 }

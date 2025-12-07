@@ -1,6 +1,5 @@
 import {rankItem} from '@tanstack/match-sorter-utils'
 import {
-	type Column,
 	type ColumnDef,
 	type FilterFn,
 	flexRender,
@@ -12,6 +11,7 @@ import {
 } from '@tanstack/react-table'
 import {useState} from 'react'
 
+// biome-ignore lint/suspicious/noExplicitAny: TanStack Table generic filter function requires any
 const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
 	const itemRank = rankItem(row.getValue(columnId), value)
 	addMeta({itemRank})
@@ -20,6 +20,7 @@ const fuzzyFilter: FilterFn<any> = (row, columnId, value, addMeta) => {
 
 interface DataTableProps<TData> {
 	data: TData[]
+	// biome-ignore lint/suspicious/noExplicitAny: TanStack Table column definition requires any for generic value type
 	columns: ColumnDef<TData, any>[]
 	searchPlaceholder?: string
 	pageSize?: number

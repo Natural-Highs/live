@@ -2,15 +2,25 @@
 
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query'
 import {ReactQueryDevtools} from '@tanstack/react-query-devtools'
-import {createRootRoute, Outlet} from '@tanstack/react-router'
+import {createRootRouteWithContext, Outlet} from '@tanstack/react-router'
 import {TanStackRouterDevtools} from '@tanstack/router-devtools'
-import {AuthProvider} from '../context/AuthContext'
+import type {User} from 'firebase/auth'
 import Layout from '../components/Layout'
+import {AuthProvider} from '../context/AuthContext'
 import appCss from '../global.css?url'
 
 const queryClient = new QueryClient()
 
-export const Route = createRootRoute({
+export interface RouterContext {
+	auth: {
+		user: User | null
+		loading: boolean
+		consentForm: boolean
+		admin: boolean
+	}
+}
+
+export const Route = createRootRouteWithContext<RouterContext>()({
 	head: () => ({
 		meta: [
 			{charSet: 'utf-8'},
