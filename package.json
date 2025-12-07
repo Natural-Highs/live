@@ -22,6 +22,7 @@
 		"@hookform/resolvers": "5.2.2",
 		"@mdx-js/react": "3.1.1",
 		"@tanstack/match-sorter-utils": "8.19.4",
+		"@tanstack/react-form": "1.27.1",
 		"@tanstack/react-query": "5.90.12",
 		"@tanstack/react-query-devtools": "5.91.1",
 		"@tanstack/react-router": "1.140.0",
@@ -29,6 +30,7 @@
 		"@tanstack/react-table": "8.21.3",
 		"@tanstack/router-generator": "1.140.0",
 		"@tanstack/start": "1.120.20",
+		"@tanstack/zod-form-adapter": "0.42.1",
 		"chart.js": "4.5.1",
 		"firebase": "12.6.0",
 		"firebase-admin": "13.6.0",
@@ -67,6 +69,7 @@
 		"tailwindcss": "4.1.17",
 		"typescript": "5.9.3",
 		"vite": "7.2.6",
+		"vite-plugin-pwa": "1.2.0",
 		"vite-tsconfig-paths": "5.1.4",
 		"vitest": "4.0.15"
 	},

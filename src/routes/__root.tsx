@@ -14,9 +14,19 @@ export const Route = createRootRoute({
 	head: () => ({
 		meta: [
 			{charSet: 'utf-8'},
-			{name: 'viewport', content: 'width=device-width, initial-scale=1'}
+			{name: 'viewport', content: 'width=device-width, initial-scale=1'},
+			{name: 'theme-color', content: '#22c55e'},
+			{name: 'apple-mobile-web-app-capable', content: 'yes'},
+			{name: 'apple-mobile-web-app-status-bar-style', content: 'default'},
+			{name: 'apple-mobile-web-app-title', content: 'Natural Highs'},
+			{name: 'description', content: 'Track and celebrate your natural highs'}
 		],
-		links: [{rel: 'stylesheet', href: appCss}]
+		links: [
+			{rel: 'stylesheet', href: appCss},
+			{rel: 'manifest', href: '/manifest.webmanifest'},
+			{rel: 'icon', href: '/favicon.png'},
+			{rel: 'apple-touch-icon', href: '/icon-192x192.png'}
+		]
 	}),
 	component: RootComponent
 })
