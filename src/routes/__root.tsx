@@ -18,6 +18,7 @@ export interface RouterContext {
 		consentForm: boolean
 		admin: boolean
 	}
+	queryClient: QueryClient
 }
 
 export const Route = createRootRouteWithContext<RouterContext>()({
