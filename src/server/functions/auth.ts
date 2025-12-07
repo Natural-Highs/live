@@ -1,4 +1,5 @@
 import {createServerFn} from '@tanstack/react-start'
+import {validateSession} from './utils/auth'
 
 export interface SessionUser {
 	uid: string
@@ -14,14 +15,15 @@ export interface SessionUser {
 /**
  * Server function to validate auth token from __session cookie
  * and return user data with custom claims.
- * 
- * Note: Full implementation with cookie parsing will be added in Issue #7.
- * For now, returns null (auth handled client-side via AuthContext).
  */
 export const getSessionUser = createServerFn({method: 'GET'}).handler(
 	async (): Promise<SessionUser | null> => {
-		// TODO: Issue #7 - Implement server-side auth validation
-		// Will use Firebase Admin SDK to verify __session cookie
-		return null
+		try {
+			const user = await validateSession()
+			return user
+		} catch {
+			// No valid session
+			return null
+		}
 	}
 )
