@@ -1,25 +1,27 @@
-import * as React from 'react';
+import type * as React from 'react'
 
-export interface PageContainerProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode;
+export interface PageContainerProps
+	extends React.HTMLAttributes<HTMLDivElement> {
+	children: React.ReactNode
 }
 
-const PageContainer = React.forwardRef<HTMLDivElement, PageContainerProps>(
-  ({ className, children, ...props }, ref) => {
-    return (
-      <div
-        ref={ref}
-        className={`min-h-screen flex flex-col items-center justify-center py-8 px-4 bg-bgGreen ${
-          className || ''
-        }`}
-        {...props}
-      >
-        {children}
-      </div>
-    );
-  }
-);
+const PageContainer = ({
+	className,
+	children,
+	ref,
+	...props
+}: PageContainerProps & {ref?: React.RefObject<HTMLDivElement | null>}) => (
+	<div
+		className={`flex min-h-screen flex-col items-center justify-center bg-bgGreen px-4 py-8 ${
+			className || ''
+		}`}
+		ref={ref}
+		{...props}
+	>
+		{children}
+	</div>
+)
 
-PageContainer.displayName = 'PageContainer';
+PageContainer.displayName = 'PageContainer'
 
-export { PageContainer };
+export {PageContainer}

@@ -11,11 +11,14 @@
  * @param signedConsentForm - Whether the guest has already signed the consent form
  * @returns True if consent form is required, false otherwise
  */
-export function requiresConsentForm(isNewGuest: boolean, signedConsentForm?: boolean): boolean {
-  if (isNewGuest) {
-    return true;
-  }
-  return !signedConsentForm;
+export function requiresConsentForm(
+	isNewGuest: boolean,
+	signedConsentForm?: boolean
+): boolean {
+	if (isNewGuest) {
+		return true
+	}
+	return !signedConsentForm
 }
 
 /**
@@ -26,16 +29,16 @@ export function requiresConsentForm(isNewGuest: boolean, signedConsentForm?: boo
  * @returns The field name ('email' or 'phone') and the identifier value
  */
 export function getGuestIdentifier(
-  email?: string,
-  phone?: string
-): { field: 'email' | 'phone'; value: string } | null {
-  if (email) {
-    return { field: 'email', value: email };
-  }
-  if (phone) {
-    return { field: 'phone', value: phone };
-  }
-  return null;
+	email?: string,
+	phone?: string
+): {field: 'email' | 'phone'; value: string} | null {
+	if (email) {
+		return {field: 'email', value: email}
+	}
+	if (phone) {
+		return {field: 'phone', value: phone}
+	}
+	return null
 }
 
 /**
@@ -46,9 +49,12 @@ export function getGuestIdentifier(
  * @param eventId - Event ID to check
  * @returns True if event should be added, false if already present
  */
-export function shouldAddEventToGuest(guestEvents: string[] | undefined, eventId: string): boolean {
-  if (!guestEvents || guestEvents.length === 0) {
-    return true;
-  }
-  return !guestEvents.includes(eventId);
+export function shouldAddEventToGuest(
+	guestEvents: string[] | undefined,
+	eventId: string
+): boolean {
+	if (!guestEvents || guestEvents.length === 0) {
+		return true
+	}
+	return !guestEvents.includes(eventId)
 }

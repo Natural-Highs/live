@@ -1,22 +1,24 @@
-import * as React from 'react';
+import type * as React from 'react'
 
-export interface FormContainerProps extends React.HTMLAttributes<HTMLDivElement> {
-  children: React.ReactNode;
+export interface FormContainerProps
+	extends React.HTMLAttributes<HTMLDivElement> {
+	children: React.ReactNode
 }
 
-const FormContainer = React.forwardRef<HTMLDivElement, FormContainerProps>(
-  ({ className, children, ...props }, ref) => {
-    return (
-      <div
-        ref={ref}
-        className={`bg-base-200 rounded-lg p-6 space-y-4 relative ${className || ''}`}
-        {...props}
-      >
-        {children}
-      </div>
-    );
-  }
-);
-FormContainer.displayName = 'FormContainer';
+const FormContainer = ({
+	className,
+	children,
+	ref,
+	...props
+}: FormContainerProps & {ref?: React.RefObject<HTMLDivElement | null>}) => (
+	<div
+		className={`relative space-y-4 rounded-lg bg-base-200 p-6 ${className || ''}`}
+		ref={ref}
+		{...props}
+	>
+		{children}
+	</div>
+)
+FormContainer.displayName = 'FormContainer'
 
-export { FormContainer };
+export {FormContainer}

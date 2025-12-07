@@ -4,8 +4,8 @@
  */
 
 export interface EventData {
-  surveyAccessibleOverride?: boolean;
-  surveyAccessibleAt?: Date | { toDate: () => Date };
+	surveyAccessibleOverride?: boolean
+	surveyAccessibleAt?: Date | {toDate: () => Date}
 }
 
 /**
@@ -19,28 +19,28 @@ export interface EventData {
  * @returns True if surveys are accessible, false otherwise
  */
 export function isSurveyAccessible(
-  eventData: EventData | null | undefined,
-  currentTime: Date = new Date()
+	eventData: EventData | null | undefined,
+	currentTime: Date = new Date()
 ): boolean {
-  if (!eventData) {
-    return false;
-  }
+	if (!eventData) {
+		return false
+	}
 
-  // Override takes precedence
-  if (eventData.surveyAccessibleOverride) {
-    return true;
-  }
+	// Override takes precedence
+	if (eventData.surveyAccessibleOverride) {
+		return true
+	}
 
-  // Check if survey accessible time has passed
-  if (eventData.surveyAccessibleAt) {
-    const accessibleAt =
-      eventData.surveyAccessibleAt instanceof Date
-        ? eventData.surveyAccessibleAt
-        : eventData.surveyAccessibleAt.toDate();
-    return accessibleAt <= currentTime;
-  }
+	// Check if survey accessible time has passed
+	if (eventData.surveyAccessibleAt) {
+		const accessibleAt =
+			eventData.surveyAccessibleAt instanceof Date
+				? eventData.surveyAccessibleAt
+				: eventData.surveyAccessibleAt.toDate()
+		return accessibleAt <= currentTime
+	}
 
-  return false;
+	return false
 }
 
 /**
@@ -51,6 +51,6 @@ export function isSurveyAccessible(
  * @returns Date when surveys become accessible
  */
 export function calculateSurveyAccessibleTime(activatedAt: Date): Date {
-  const oneHourInMs = 60 * 60 * 1000;
-  return new Date(activatedAt.getTime() + oneHourInMs);
+	const oneHourInMs = 60 * 60 * 1000
+	return new Date(activatedAt.getTime() + oneHourInMs)
 }
