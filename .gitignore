@@ -16,3 +16,6 @@ coverage
 .output
 src/routeTree.gen.ts
 serviceAccount.json
+
+# Documentation (local only)
+docs/
