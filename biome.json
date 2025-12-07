@@ -28,7 +28,18 @@
 			"quoteStyle": "single",
 			"semicolons": "asNeeded",
 			"trailingCommas": "none"
-		}
+		},
+		"globals": [
+			"vi",
+			"describe",
+			"it",
+			"test",
+			"expect",
+			"beforeEach",
+			"afterEach",
+			"beforeAll",
+			"afterAll"
+		]
 	},
 	"linter": {
 		"domains": {
@@ -50,6 +61,36 @@
 		}
 	},
 	"overrides": [
+		{
+			"includes": ["src/lib/firebase/firebase.admin.ts", "src/lib/firebase/firebase.ts"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noNodejsModules": "off"
+					},
+					"nursery": {
+						"noTernary": "off",
+						"noFloatingPromises": "off"
+					},
+					"suspicious": {
+						"noEmptyBlockStatements": "off"
+					},
+					"style": {
+						"noCommonJs": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["vitest.config.ts", "tailwind.config.js"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noDefaultExport": "off"
+					}
+				}
+			}
+		},
 		{
 			"includes": ["**/*"],
 			"linter": {
@@ -103,22 +144,29 @@
 			}
 		},
 		{
-			"includes": ["vite.config.ts", "playwright.config.ts"],
+			"includes": ["vite.config.ts", "playwright.config.ts", "vitest.config.ts"],
 			"linter": {
 				"rules": {
 					"correctness": {
 						"noNodejsModules": "off"
 					},
+					"nursery": {
+						"noTernary": "off"
+					},
 					"style": {
-						"noDefaultExport": "off"
+						"noDefaultExport": "off",
+						"useNamingConvention": "off"
 					}
 				}
 			}
 		},
 		{
-			"includes": ["src/**/*.test.tsx"],
+			"includes": ["src/**/*.test.ts", "src/**/*.test.tsx"],
 			"linter": {
 				"rules": {
+					"complexity": {
+						"noExcessiveLinesPerFunction": "off"
+					},
 					"performance": {
 						"useTopLevelRegex": "off"
 					}

@@ -4,21 +4,21 @@
  */
 
 export interface EventTypeData {
-  defaultConsentFormTemplateId?: string | null;
-  defaultDemographicsFormTemplateId?: string | null;
-  defaultSurveyTemplateId?: string | null;
+	defaultConsentFormTemplateId?: string | null
+	defaultDemographicsFormTemplateId?: string | null
+	defaultSurveyTemplateId?: string | null
 }
 
 export interface ProvidedTemplates {
-  consentFormTemplateId?: string | null;
-  demographicsFormTemplateId?: string | null;
-  surveyTemplateId?: string | null;
+	consentFormTemplateId?: string | null
+	demographicsFormTemplateId?: string | null
+	surveyTemplateId?: string | null
 }
 
 export interface ResolvedTemplates {
-  consentFormTemplateId: string | null;
-  demographicsFormTemplateId: string | null;
-  surveyTemplateId: string | null;
+	consentFormTemplateId: string | null
+	demographicsFormTemplateId: string | null
+	surveyTemplateId: string | null
 }
 
 /**
@@ -30,16 +30,22 @@ export interface ResolvedTemplates {
  * @returns Resolved template IDs (provided templates take precedence over defaults)
  */
 export function resolveEventTemplates(
-  eventTypeData: EventTypeData | null | undefined,
-  providedTemplates: ProvidedTemplates = {}
+	eventTypeData: EventTypeData | null | undefined,
+	providedTemplates: ProvidedTemplates = {}
 ): ResolvedTemplates {
-  const { consentFormTemplateId, demographicsFormTemplateId, surveyTemplateId } = providedTemplates;
+	const {consentFormTemplateId, demographicsFormTemplateId, surveyTemplateId} =
+		providedTemplates
 
-  return {
-    consentFormTemplateId:
-      consentFormTemplateId ?? eventTypeData?.defaultConsentFormTemplateId ?? null,
-    demographicsFormTemplateId:
-      demographicsFormTemplateId ?? eventTypeData?.defaultDemographicsFormTemplateId ?? null,
-    surveyTemplateId: surveyTemplateId ?? eventTypeData?.defaultSurveyTemplateId ?? null,
-  };
+	return {
+		consentFormTemplateId:
+			consentFormTemplateId ??
+			eventTypeData?.defaultConsentFormTemplateId ??
+			null,
+		demographicsFormTemplateId:
+			demographicsFormTemplateId ??
+			eventTypeData?.defaultDemographicsFormTemplateId ??
+			null,
+		surveyTemplateId:
+			surveyTemplateId ?? eventTypeData?.defaultSurveyTemplateId ?? null
+	}
 }

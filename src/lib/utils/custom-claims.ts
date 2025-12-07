@@ -3,13 +3,13 @@
  */
 
 export interface UserCustomClaims {
-  admin?: boolean;
-  signedConsentForm?: boolean;
+	admin?: boolean
+	signedConsentForm?: boolean
 }
 
 export interface UserData {
-  isAdmin?: boolean;
-  signedConsentForm?: boolean;
+	isAdmin?: boolean
+	signedConsentForm?: boolean
 }
 
 /**
@@ -17,9 +17,11 @@ export interface UserData {
  * @param userData - User data containing admin and consent form status
  * @returns Custom claims object for Firebase Auth
  */
-export function buildCustomClaims(userData: UserData | null | undefined): UserCustomClaims {
-  return {
-    admin: userData?.isAdmin ?? false,
-    signedConsentForm: userData?.signedConsentForm ?? false,
-  };
+export function buildCustomClaims(
+	userData: UserData | null | undefined
+): UserCustomClaims {
+	return {
+		admin: userData?.isAdmin ?? false,
+		signedConsentForm: userData?.signedConsentForm ?? false
+	}
 }

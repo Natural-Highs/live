@@ -1,25 +1,25 @@
-import { useCallback, useEffect, useMemo } from 'react';
-import 'survey-core/survey-core.css';
-import { Model } from 'survey-core';
-import { Survey } from 'survey-react-ui';
+import {useCallback, useEffect, useMemo} from 'react'
+import 'survey-core/survey-core.css'
+import {Model} from 'survey-core'
+import {Survey} from 'survey-react-ui'
 
 export interface SurveyJSJson {
-  title?: string;
-  description?: string;
-  pages: Array<{
-    name?: string;
-    elements: Array<Record<string, unknown>>;
-  }>;
-  completedHtml?: string;
-  showProgressBar?: boolean | string;
-  [key: string]: unknown;
+	title?: string
+	description?: string
+	pages: Array<{
+		name?: string
+		elements: Record<string, unknown>[]
+	}>
+	completedHtml?: string
+	showProgressBar?: boolean | string
+	[key: string]: unknown
 }
 
 interface SurveyRendererProps {
-  surveyJson: SurveyJSJson;
-  onSubmit: (data: Record<string, unknown>) => Promise<void>;
-  onError?: (error: Error) => void;
-  showProgressBar?: boolean;
+	surveyJson: SurveyJSJson
+	onSubmit: (data: Record<string, unknown>) => Promise<void>
+	onError?: (error: Error) => void
+	showProgressBar?: boolean
 }
 
 /**
@@ -47,15 +47,15 @@ interface SurveyRendererProps {
  * ```
  */
 export function SurveyRenderer({
-  surveyJson,
-  onSubmit,
-  onError,
-  showProgressBar = true,
+	surveyJson,
+	onSubmit,
+	onError,
+	showProgressBar = true
 }: SurveyRendererProps) {
-  // Apply custom CSS to match DaisyUI theme
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
+	// Apply custom CSS to match DaisyUI theme
+	useEffect(() => {
+		const style = document.createElement('style')
+		style.textContent = `
 			.sd-root-modern {
 				--sjs-primary-color: #347937;
 				--sjs-primary-backcolor: #347937;
@@ -92,34 +92,36 @@ export function SurveyRenderer({
 				border-color: #d4d4d4;
 				border-radius: 0.5rem;
 			}
-		`;
-    document.head.appendChild(style);
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
+		`
+		document.head.appendChild(style)
+		return () => {
+			document.head.removeChild(style)
+		}
+	}, [])
 
-  const survey = useMemo(() => {
-    const model = new Model({
-      ...surveyJson,
-      showProgressBar: showProgressBar ? 'bottom' : 'off',
-    });
+	const survey = useMemo(() => {
+		const model = new Model({
+			...surveyJson,
+			showProgressBar: showProgressBar ? 'bottom' : 'off'
+		})
 
-    return model;
-  }, [surveyJson, showProgressBar]);
+		return model
+	}, [surveyJson, showProgressBar])
 
-  const handleComplete = useCallback(
-    async (sender: Model) => {
-      try {
-        await onSubmit(sender.data);
-      } catch (error) {
-        onError?.(error instanceof Error ? error : new Error('Submission failed'));
-      }
-    },
-    [onSubmit, onError]
-  );
+	const handleComplete = useCallback(
+		async (sender: Model) => {
+			try {
+				await onSubmit(sender.data)
+			} catch (error) {
+				onError?.(
+					error instanceof Error ? error : new Error('Submission failed')
+				)
+			}
+		},
+		[onSubmit, onError]
+	)
 
-  survey.onComplete.add(handleComplete);
+	survey.onComplete.add(handleComplete)
 
-  return <Survey model={survey} />;
+	return <Survey model={survey} />
 }
