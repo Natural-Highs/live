@@ -15,7 +15,7 @@ interface Event {
 	eventDate?: string
 	code?: string
 	isActive?: boolean
-	[key: string]: unknown
+	[key: string]: {} | undefined
 }
 
 export const Route = createFileRoute('/dashboard')({

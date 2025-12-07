@@ -105,7 +105,7 @@ function GuestEntryComponent() {
 	}
 
 	const handleContinueAsGuest = () => {
-		navigate({to: '/guests/register', replace: true})
+		navigate({to: '/guest', replace: true})
 	}
 
 	const handleLogin = () => {
