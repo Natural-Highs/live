@@ -1,6 +1,0 @@
-@startuml components__ui__button_test_tsx
-title components/ui/button.test.tsx
-class "components/ui/button.test.tsx" as components_ui_button_test_tsx <<Artifact>> {
-  -- no exports --
-}
-@enduml

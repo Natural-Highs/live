@@ -1,6 +1,0 @@
-@startuml components__ui__page_container_tsx
-title components/ui/page-container.tsx
-class "components/ui/page-container.tsx" as components_ui_page_container_tsx <<Artifact>> {
-  -- no exports --
-}
-@enduml

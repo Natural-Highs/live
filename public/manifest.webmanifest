@@ -1,0 +1,24 @@
+{
+	"background_color": "#ffffff",
+	"display": "standalone",
+	"icons": [
+		{
+			"purpose": "maskable",
+			"sizes": "192x192",
+			"src": "/icon-192x192.png",
+			"type": "image/png"
+		},
+		{
+			"sizes": "512x512",
+			"src": "/icon-512x512.png",
+			"type": "image/png"
+		}
+	],
+	"id": "/",
+	"lang": "en",
+	"name": "Natural Highs",
+	"scope": "/",
+	"short_name": "Natural Highs",
+	"start_url": "/",
+	"theme_color": "#22c55e"
+}

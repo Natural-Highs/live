@@ -1,6 +1,0 @@
-@startuml pages__HomePage_tsx
-title pages/HomePage.tsx
-class "pages/HomePage.tsx" as pages_HomePage_tsx <<Artifact>> {
-  -- no exports --
-}
-@enduml

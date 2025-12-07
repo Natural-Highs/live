@@ -1,6 +1,0 @@
-@startuml components__ui__logo_tsx
-title components/ui/logo.tsx
-class "components/ui/logo.tsx" as components_ui_logo_tsx <<Artifact>> {
-  -- no exports --
-}
-@enduml

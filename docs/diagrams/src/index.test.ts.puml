@@ -1,6 +1,0 @@
-@startuml index_test_ts
-title index.test.ts
-class "index.test.ts" as index_test_ts <<Module>> {
-  -- no exports --
-}
-@enduml

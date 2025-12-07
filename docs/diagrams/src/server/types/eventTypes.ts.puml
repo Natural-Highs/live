@@ -1,7 +1,0 @@
-@startuml server__types__eventTypes_ts
-title server/types/eventTypes.ts
-class "server/types/eventTypes.ts" as server_types_eventTypes_ts <<Module>> {
-  + interface EventTypeCreationRequest
-  + interface EventTypeUpdateRequest
-}
-@enduml

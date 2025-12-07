@@ -1,6 +1,0 @@
-@startuml components__ui__divider_tsx
-title components/ui/divider.tsx
-class "components/ui/divider.tsx" as components_ui_divider_tsx <<Artifact>> {
-  -- no exports --
-}
-@enduml

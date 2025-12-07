@@ -1,6 +1,0 @@
-@startuml lib__index_ts
-title lib/index.ts
-class "lib/index.ts" as lib_index_ts <<Module>> {
-  -- no exports --
-}
-@enduml

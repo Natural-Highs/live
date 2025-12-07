@@ -1,8 +1,0 @@
-@startuml server__types__surveyData_ts
-title server/types/surveyData.ts
-class "server/types/surveyData.ts" as server_types_surveyData_ts <<Module>> {
-  + interface SurveyQuestion
-  + interface QuestionResponse
-  + interface QuestionResponseWithText
-}
-@enduml

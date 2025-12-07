@@ -1,6 +1,0 @@
-@startuml pages__AdminPage_tsx
-title pages/AdminPage.tsx
-class "pages/AdminPage.tsx" as pages_AdminPage_tsx <<Artifact>> {
-  -- no exports --
-}
-@enduml

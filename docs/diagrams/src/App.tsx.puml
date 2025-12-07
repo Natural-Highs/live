@@ -1,6 +1,0 @@
-@startuml App_tsx
-title App.tsx
-class "App.tsx" as App_tsx <<Artifact>> {
-  -- no exports --
-}
-@enduml
