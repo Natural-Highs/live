@@ -1,57 +1,43 @@
+import {useQuery, useQueryClient} from '@tanstack/react-query'
 import {createFileRoute} from '@tanstack/react-router'
 import type {ColumnDef} from '@tanstack/react-table'
 import type React from 'react'
-import {useCallback, useEffect, useMemo, useState} from 'react'
+import {useMemo, useState} from 'react'
+import {
+	type Event as EventData,
+	type EventType,
+	eventsQueryOptions,
+	eventTypesQueryOptions,
+	formTemplatesQueryOptions
+} from '@/lib/queries/index.js'
 import {DataTable} from '../../components/admin/DataTable'
 
 export const Route = createFileRoute('/_admin/events')({
+	loader: async ({context}) => {
+		await Promise.all([
+			context.queryClient.prefetchQuery(eventsQueryOptions()),
+			context.queryClient.prefetchQuery(eventTypesQueryOptions()),
+			context.queryClient.prefetchQuery(formTemplatesQueryOptions())
+		])
+	},
 	component: EventsPage
 })
 
-type FormTemplateType = 'consent' | 'demographics' | 'survey'
-
-interface FormTemplate {
-	id: string
-	type: FormTemplateType
-	name: string
-	description?: string
-	[key: string]: unknown
-}
-
-interface EventType {
-	id: string
-	name: string
-	defaultConsentFormTemplateId?: string
-	defaultDemographicsFormTemplateId?: string
-	defaultSurveyTemplateId?: string | null
-	createdAt?: Date | string
-	[key: string]: unknown
-}
-
-interface Event {
-	id: string
-	name: string
-	eventTypeId: string
-	eventDate: Date | string
-	consentFormTemplateId: string
-	demographicsFormTemplateId: string
-	surveyTemplateId: string | null
-	collectAdditionalDemographics?: boolean
-	isActive: boolean
-	code: string | null
-	activatedAt: Date | string | null
-	surveyAccessibleAt: Date | string | null
-	surveyAccessibleOverride: boolean
-	createdAt?: Date | string
-	[key: string]: unknown
-}
-
 function EventsPage() {
+	const queryClient = useQueryClient()
+	const {data: events = [], isLoading: eventsLoading} = useQuery(
+		eventsQueryOptions()
+	)
+	const {data: eventTypes = [], isLoading: eventTypesLoading} = useQuery(
+		eventTypesQueryOptions()
+	)
+	const {data: templates = [], isLoading: templatesLoading} = useQuery(
+		formTemplatesQueryOptions()
+	)
+
+	const loading = eventsLoading || eventTypesLoading || templatesLoading
+
 	const [activeTab, setActiveTab] = useState<'events' | 'eventTypes'>('events')
-	const [events, setEvents] = useState<Event[]>([])
-	const [eventTypes, setEventTypes] = useState<EventType[]>([])
-	const [templates, setTemplates] = useState<FormTemplate[]>([])
-	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState('')
 	const [showCreateEventModal, setShowCreateEventModal] = useState(false)
 	const [showCreateEventTypeModal, setShowCreateEventTypeModal] =
@@ -60,7 +46,7 @@ function EventsPage() {
 	const [showDeleteEventTypeModal, setShowDeleteEventTypeModal] =
 		useState(false)
 	const [showActivateModal, setShowActivateModal] = useState(false)
-	const [selectedEvent, setSelectedEvent] = useState<Event | null>(null)
+	const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null)
 	const [selectedEventType, setSelectedEventType] = useState<EventType | null>(
 		null
 	)
@@ -79,80 +65,6 @@ function EventsPage() {
 		defaultDemographicsFormTemplateId: '',
 		defaultSurveyTemplateId: ''
 	})
-
-	const fetchEvents = useCallback(async () => {
-		setLoading(true)
-		setError('')
-		try {
-			const response = await fetch('/api/events')
-			const data = (await response.json()) as {
-				success: boolean
-				events?: Event[]
-				error?: string
-			}
-
-			if (!(response.ok && data.success)) {
-				setError(data.error || 'Failed to load events')
-				return
-			}
-
-			if (data.events) {
-				setEvents(data.events)
-			}
-		} catch (err) {
-			setError(err instanceof Error ? err.message : 'Failed to load events')
-		} finally {
-			setLoading(false)
-		}
-	}, [])
-
-	const fetchEventTypes = useCallback(async () => {
-		setError('')
-		try {
-			const response = await fetch('/api/eventTypes')
-			const data = (await response.json()) as {
-				success: boolean
-				eventTypes?: EventType[]
-				error?: string
-			}
-
-			if (!(response.ok && data.success)) {
-				setError(data.error || 'Failed to load event types')
-				return
-			}
-
-			if (data.eventTypes) {
-				setEventTypes(data.eventTypes)
-			}
-		} catch (err) {
-			setError(
-				err instanceof Error ? err.message : 'Failed to load event types'
-			)
-		}
-	}, [])
-
-	const fetchTemplates = useCallback(async () => {
-		try {
-			const response = await fetch('/api/formTemplates')
-			const data = (await response.json()) as {
-				success: boolean
-				templates?: FormTemplate[]
-				error?: string
-			}
-
-			if (response.ok && data.success && data.templates) {
-				setTemplates(data.templates)
-			}
-		} catch {
-			// Silently fail - templates are optional
-		}
-	}, [])
-
-	useEffect(() => {
-		fetchEvents()
-		fetchEventTypes()
-		fetchTemplates()
-	}, [fetchEvents, fetchEventTypes, fetchTemplates])
 
 	const handleCreateEvent = async (e: React.FormEvent) => {
 		e.preventDefault()
@@ -196,7 +108,7 @@ function EventsPage() {
 				surveyTemplateId: '',
 				collectAdditionalDemographics: false
 			})
-			await fetchEvents()
+			await queryClient.invalidateQueries({queryKey: ['events']})
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'Failed to create event')
 		}
@@ -238,7 +150,7 @@ function EventsPage() {
 				defaultDemographicsFormTemplateId: '',
 				defaultSurveyTemplateId: ''
 			})
-			await fetchEventTypes()
+			await queryClient.invalidateQueries({queryKey: ['eventTypes']})
 		} catch (err) {
 			setError(
 				err instanceof Error ? err.message : 'Failed to create event type'
@@ -279,7 +191,7 @@ function EventsPage() {
 
 			setShowEditEventTypeModal(false)
 			setSelectedEventType(null)
-			await fetchEventTypes()
+			await queryClient.invalidateQueries({queryKey: ['eventTypes']})
 		} catch (err) {
 			setError(
 				err instanceof Error ? err.message : 'Failed to update event type'
@@ -309,7 +221,7 @@ function EventsPage() {
 
 			setShowDeleteEventTypeModal(false)
 			setSelectedEventType(null)
-			await fetchEventTypes()
+			await queryClient.invalidateQueries({queryKey: ['eventTypes']})
 		} catch (err) {
 			setError(
 				err instanceof Error ? err.message : 'Failed to delete event type'
@@ -340,7 +252,7 @@ function EventsPage() {
 				return
 			}
 
-			await fetchEvents()
+			await queryClient.invalidateQueries({queryKey: ['events']})
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'Failed to activate event')
 		}
@@ -364,7 +276,7 @@ function EventsPage() {
 				return
 			}
 
-			await fetchEvents()
+			await queryClient.invalidateQueries({queryKey: ['events']})
 		} catch (err) {
 			setError(
 				err instanceof Error ? err.message : 'Failed to override survey timing'
@@ -390,7 +302,7 @@ function EventsPage() {
 		setShowDeleteEventTypeModal(true)
 	}
 
-	const openActivateModal = (event: Event) => {
+	const openActivateModal = (event: EventData) => {
 		setSelectedEvent(event)
 		setShowActivateModal(true)
 	}
@@ -429,7 +341,7 @@ function EventsPage() {
 	const surveyTemplates = templates.filter(t => t.type === 'survey')
 
 	// Define columns for events table
-	const eventColumns = useMemo<ColumnDef<Event>[]>(
+	const eventColumns = useMemo<ColumnDef<EventData>[]>(
 		() => [
 			{
 				accessorKey: 'name',
@@ -439,8 +351,9 @@ function EventsPage() {
 				accessorKey: 'eventTypeId',
 				header: 'Type',
 				cell: ({row}) => {
+					const eventData = row.original as EventData
 					const eventType = eventTypes.find(
-						et => et.id === row.original.eventTypeId
+						et => et.id === eventData.eventTypeId
 					)
 					return eventType?.name || 'Unknown'
 				}
@@ -463,12 +376,14 @@ function EventsPage() {
 			{
 				accessorKey: 'collectAdditionalDemographics',
 				header: 'Additional Demographics',
-				cell: ({row}) =>
-					row.original.collectAdditionalDemographics ? (
+				cell: ({row}) => {
+					const eventData = row.original as EventData
+					return eventData.collectAdditionalDemographics ? (
 						<span className='badge badge-info'>Enabled</span>
 					) : (
 						<span className='badge badge-ghost'>Disabled</span>
 					)
+				}
 			},
 			{
 				accessorKey: 'code',
@@ -493,32 +408,34 @@ function EventsPage() {
 			{
 				id: 'actions',
 				header: 'Actions',
-				cell: ({row}) => (
-					<div className='flex gap-2'>
-						{!row.original.isActive && (
-							<button
-								className='btn btn-sm btn-primary'
-								onClick={() => openActivateModal(row.original)}
-								type='button'
-							>
-								Activate
-							</button>
-						)}
-						{row.original.isActive &&
-							!row.original.surveyAccessibleOverride && (
+				cell: ({row}) => {
+					const eventData = row.original as EventData
+					return (
+						<div className='flex gap-2'>
+							{!eventData.isActive && (
+								<button
+									className='btn btn-sm btn-primary'
+									onClick={() => openActivateModal(eventData)}
+									type='button'
+								>
+									Activate
+								</button>
+							)}
+							{eventData.isActive && !eventData.surveyAccessibleOverride && (
 								<button
 									className='btn btn-sm btn-warning'
-									onClick={() => handleOverrideSurvey(row.original.id)}
+									onClick={() => handleOverrideSurvey(eventData.id)}
 									type='button'
 								>
 									Make Surveys Accessible
 								</button>
 							)}
-						{row.original.surveyAccessibleOverride && (
-							<span className='badge badge-warning'>Override Active</span>
-						)}
-					</div>
-				)
+							{eventData.surveyAccessibleOverride && (
+								<span className='badge badge-warning'>Override Active</span>
+							)}
+						</div>
+					)
+				}
 			}
 		],
 		[eventTypes]

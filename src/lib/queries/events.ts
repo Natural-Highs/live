@@ -3,9 +3,19 @@ import {queryOptions} from '@tanstack/react-query'
 export interface Event {
 	id: string
 	name: string
-	eventDate?: string
-	code?: string
-	isActive?: boolean
+	eventTypeId: string
+	eventDate: Date | string
+	consentFormTemplateId: string
+	demographicsFormTemplateId: string
+	surveyTemplateId: string | null
+	collectAdditionalDemographics?: boolean
+	isActive: boolean
+	code: string | null
+	activatedAt: Date | string | null
+	surveyAccessibleAt: Date | string | null
+	surveyAccessibleOverride: boolean
+	createdAt?: Date | string
+	[key: string]: unknown
 }
 
 interface ApiResponse {
