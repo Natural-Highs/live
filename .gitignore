@@ -19,3 +19,9 @@ serviceAccount.json
 
 # Documentation (local only)
 docs/
+
+# Trunk
+.trunk/out/
+.trunk/logs/
+.trunk/plugins/
+.trunk/tools/
