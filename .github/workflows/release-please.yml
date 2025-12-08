@@ -33,18 +33,12 @@ jobs:
           manifest-file: .release-please-manifest.json
 
       - name: Style release PR
+        if: steps.release.outputs.pr
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
           GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ steps.release.outputs.pr }}
         run: |
-          # Find any open release PR
-          PR_NUMBER=$(gh pr list --repo "$GH_REPO" --search "release in:title" --state open --json number -q '.[0].number' || echo "")
-          
-          if [ -z "$PR_NUMBER" ]; then
-            echo "No open release PR found"
-            exit 0
-          fi
-          
           echo "Styling PR #$PR_NUMBER"
           
           # Get current PR body
