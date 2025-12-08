@@ -24,7 +24,9 @@ export default defineConfig({
 		trace: 'on-first-retry'
 	},
 	webServer: {
-		command: 'bun run dev',
+		// In CI, use dev:bare (just vite) since env vars are set directly
+		// Locally, use dev (with doppler) for secrets management
+		command: isCI ? 'bun run dev:bare' : 'bun run dev',
 		reuseExistingServer: !isCI,
 		url: 'http://localhost:3000',
 		timeout: 120_000

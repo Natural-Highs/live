@@ -1,8 +1,14 @@
+import type {FirebaseApp} from 'firebase/app'
 import {getApp, getApps, initializeApp} from 'firebase/app'
+import type {Auth} from 'firebase/auth'
 import {connectAuthEmulator, getAuth} from 'firebase/auth'
+import type {Firestore} from 'firebase/firestore'
 import {connectFirestoreEmulator, getFirestore} from 'firebase/firestore'
 
-// Firebase configuration (client-side)
+// SSR-safe: Only initialize Firebase on the client
+const isClient = typeof window !== 'undefined'
+
+// Firebase configuration (client-side only)
 const firebaseConfig = {
 	apiKey: import.meta.env.VITE_APIKEY,
 	authDomain: import.meta.env.VITE_AUTH_DOMAIN,
@@ -12,32 +18,35 @@ const firebaseConfig = {
 	appId: import.meta.env.VITE_APP_ID
 }
 
-let firebaseApp: ReturnType<typeof initializeApp> | undefined
-if (getApps().length > 0) {
-	// If an app has already been initialized, use the existing one
-	firebaseApp = getApp()
-} else {
-	firebaseApp = initializeApp(firebaseConfig)
+let app: FirebaseApp | null = null
+let db: Firestore | null = null
+let auth: Auth | null = null
+
+if (isClient) {
+	if (getApps().length > 0) {
+		app = getApp()
+	} else {
+		app = initializeApp(firebaseConfig)
+	}
+
+	db = getFirestore(app)
+	auth = getAuth(app)
+
+	// Connect to emulators in development or when explicitly enabled (CI/tests)
+	const shouldConnectEmulators =
+		import.meta.env.MODE === 'development' ||
+		import.meta.env.VITE_USE_EMULATORS === 'true'
+
+	// Track if emulators are already connected (prevents errors on hot reload)
+	let emulatorsConnected = false
+
+	if (shouldConnectEmulators && !emulatorsConnected) {
+		try {
+			connectFirestoreEmulator(db, 'localhost', 8080)
+			connectAuthEmulator(auth, 'http://localhost:9099')
+			emulatorsConnected = true
+		} catch (_error) {}
+	}
 }
 
-// Initialize Firestore and Auth
-export const db = getFirestore(firebaseApp)
-export const auth = getAuth(firebaseApp)
-
-// Connect to emulators in development or when explicitly enabled (CI/tests)
-// Note: This is client-side detection using Vite env vars, distinct from
-// server-side environment.ts which uses Node.js process.env
-const shouldConnectEmulators =
-	import.meta.env.MODE === 'development' ||
-	import.meta.env.VITE_USE_EMULATORS === 'true'
-
-// Track if emulators are already connected (prevents errors on hot reload)
-let emulatorsConnected = false
-
-if (shouldConnectEmulators && !emulatorsConnected) {
-	try {
-		connectFirestoreEmulator(db, 'localhost', 8080)
-		connectAuthEmulator(auth, 'http://localhost:9099')
-		emulatorsConnected = true
-	} catch (_error) {}
-}
+export {app, db, auth}
