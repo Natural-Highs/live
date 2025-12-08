@@ -64,13 +64,14 @@ jobs:
     name: E2E Tests
     runs-on: ubuntu-latest
     env:
-      # Placeholder Firebase config for emulator mode
-      VITE_APIKEY: test-api-key
+      # Placeholder Firebase config for emulator mode (not real secrets)
+      # checkov:skip=CKV_SECRET_6:Intentional placeholder values for Firebase emulator testing
+      VITE_APIKEY: demo-test-key
       VITE_AUTH_DOMAIN: localhost
       VITE_PROJECT_ID: demo-natural-highs
       VITE_STORAGE_BUCKET: demo-natural-highs.appspot.com
-      VITE_MESSAGING_SENDER_ID: 123456789
-      VITE_APP_ID: 1:123456789:web:abc123
+      VITE_MESSAGING_SENDER_ID: "000000000000"
+      VITE_APP_ID: demo-app-id
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
