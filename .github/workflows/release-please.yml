@@ -35,9 +35,10 @@ jobs:
       - name: Style release PR
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
         run: |
           # Find any open release PR
-          PR_NUMBER=$(gh pr list --search "release in:title" --state open --json number -q '.[0].number' || echo "")
+          PR_NUMBER=$(gh pr list --repo "$GH_REPO" --search "release in:title" --state open --json number -q '.[0].number' || echo "")
           
           if [ -z "$PR_NUMBER" ]; then
             echo "No open release PR found"
@@ -47,7 +48,7 @@ jobs:
           echo "Styling PR #$PR_NUMBER"
           
           # Get current PR body
-          BODY=$(gh pr view "$PR_NUMBER" --json body -q '.body')
+          BODY=$(gh pr view "$PR_NUMBER" --repo "$GH_REPO" --json body -q '.body')
           
           # Check if already styled (no robot emoji)
           if ! echo "$BODY" | head -1 | grep -q ":robot:"; then
@@ -59,6 +60,6 @@ jobs:
           CLEAN_BODY=$(echo "$BODY" | sed '1{/^:robot:/d}' | sed '1{/^---$/d}' | sed '/^---$/,/release-please/d')
           
           # Update PR with clean body
-          echo "$CLEAN_BODY" | gh pr edit "$PR_NUMBER" --body-file -
+          echo "$CLEAN_BODY" | gh pr edit "$PR_NUMBER" --repo "$GH_REPO" --body-file -
           
           echo "Styled PR #$PR_NUMBER"
