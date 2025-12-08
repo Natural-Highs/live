@@ -13,7 +13,7 @@ export default defineConfig({
 	plugins: [
 		tsConfigPaths(),
 		tanstackStart(),
-		nitro(),
+		nitro({preset: 'bun'}),
 		// react's vite plugin must come after start's vite plugin
 		viteReact(),
 		tailwindcss(),
