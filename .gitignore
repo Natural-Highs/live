@@ -26,3 +26,7 @@ serviceAccount.json
 # User-only content (not for git history)
 .local/
 .secrets
+
+# Firebase emulator logs
+firebase-debug.log
+firestore-debug.log
