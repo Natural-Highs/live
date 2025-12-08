@@ -21,6 +21,9 @@ test('navigation to authentication page works', async ({page}) => {
 	const spinner = page.locator('.loading-spinner')
 	await expect(spinner).toBeHidden({timeout: 15_000})
 
-	// Now the heading should be visible
-	await expect(page.getByRole('heading', {name: /sign in/i})).toBeVisible()
+	// Wait for page to fully render and check for the heading
+	// The heading is inside TitleCard: <h1>Sign In</h1>
+	await expect(page.getByRole('heading', {name: /sign in/i})).toBeVisible({
+		timeout: 10_000
+	})
 })
