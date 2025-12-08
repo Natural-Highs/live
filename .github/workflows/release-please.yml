@@ -1,4 +1,4 @@
-name: Release
+name: Release Please
 
 on:
   push:
@@ -9,41 +9,11 @@ permissions:
   pull-requests: write
 
 jobs:
-  release:
+  release-please:
     runs-on: ubuntu-latest
-    outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
-      pr: ${{ steps.release.outputs.pr }}
     steps:
-      - name: Generate token
-        id: app-token
-        uses: actions/create-github-app-token@v1
+      - uses: googleapis/release-please-action@v4
         with:
-          app-id: ${{ secrets.RELEASE_APP_ID }}
-          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
-
-      - name: Run release-please
-        id: release
-        uses: googleapis/release-please-action@v4
-        with:
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
-
-      - name: Style release PR
-        if: steps.release.outputs.pr
-        env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          PR_NUMBER: ${{ steps.release.outputs.pr }}
-        run: |
-          # Get current PR body
-          BODY=$(gh pr view "$PR_NUMBER" --json body -q '.body')
-
-          # Remove robot header and release-please footer
-          CLEAN_BODY=$(echo "$BODY" | sed '1{/^:robot:/d}' | sed '2{/^---$/d}' | sed '/^---$/,/release-please/d')
-
-          # Update PR with clean body
-          echo "$CLEAN_BODY" | gh pr edit "$PR_NUMBER" --body-file -
-
-          echo "Styled PR #$PR_NUMBER"
