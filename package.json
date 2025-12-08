@@ -16,7 +16,10 @@
 		"lint:biome": "biome check --write --unsafe",
 		"lint": "bun run lint:tsc && bun run lint:biome",
 		"format": "biome format --write",
-		"validate": "bun run lint && bun run test:ci && bun run test:e2e:ci"
+		"validate": "bun run lint && bun run test:ci && bun run test:e2e:ci",
+		"trunk": "trunk",
+		"trunk:check": "trunk check",
+		"trunk:fmt": "trunk fmt"
 	},
 	"dependencies": {
 		"@mdx-js/react": "3.1.1",

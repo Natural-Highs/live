@@ -17,5 +17,12 @@ coverage
 src/routeTree.gen.ts
 serviceAccount.json
 
-# Documentation (local only)
-docs/
+# Trunk
+.trunk/out/
+.trunk/logs/
+.trunk/plugins/
+.trunk/tools/
+
+# User-only content (not for git history)
+.local/
+.secrets
