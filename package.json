@@ -5,9 +5,13 @@
 	"private": true,
 	"version": "0.0.0",
 	"scripts": {
-		"dev": "vite",
+		"dev": "doppler run -c dev -- vite",
+		"dev:bare": "vite",
 		"build": "vite build",
+		"build:stg": "doppler run -c stg -- vite build",
+		"build:prd": "doppler run -c prd -- vite build",
 		"start": "vite preview",
+		"emulators": "firebase emulators:start",
 		"test": "vitest",
 		"test:e2e": "playwright test --ui",
 		"test:ci": "vitest run",
@@ -17,6 +21,7 @@
 		"lint": "bun run lint:tsc && bun run lint:biome",
 		"format": "biome format --write",
 		"validate": "bun run lint && bun run test:ci && bun run test:e2e:ci",
+		"setup": "doppler login && doppler setup",
 		"trunk": "trunk",
 		"trunk:check": "trunk check",
 		"trunk:fmt": "trunk fmt"
