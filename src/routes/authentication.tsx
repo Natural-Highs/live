@@ -78,6 +78,10 @@ function AuthenticationComponent() {
 
 	const onLogin = async (values: LoginFormValues) => {
 		setAuthError('')
+		if (!auth) {
+			setAuthError('Authentication not available')
+			return
+		}
 		try {
 			const userCredential = await signInWithEmailAndPassword(
 				auth,
@@ -116,6 +120,10 @@ function AuthenticationComponent() {
 
 	const onSignUp = async (values: SignupFormValues) => {
 		setAuthError('')
+		if (!auth) {
+			setAuthError('Authentication not available')
+			return
+		}
 		try {
 			const registerResponse = await fetch('/api/auth/register', {
 				method: 'POST',

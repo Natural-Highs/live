@@ -44,14 +44,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
 	const hasResolved = useRef(false)
 
 	useEffect(() => {
-		// Timeout fallback: if auth doesn't resolve within 10s, assume no user
+		// SSR-safe: Skip auth subscription if auth is not initialized
+		if (!auth) {
+			setAuthState(prev => ({...prev, loading: false}))
+			return
+		}
+
+		// Timeout fallback: if auth doesn't resolve within 5s, assume no user
 		// This prevents infinite loading in CI/test environments where
 		// Firebase might not connect properly
 		const timeoutId = setTimeout(() => {
 			if (!hasResolved.current) {
 				setAuthState(prev => ({...prev, loading: false}))
 			}
-		}, 10_000)
+		}, 5000)
 
 		const unsubscribe = onAuthStateChanged(auth, async user => {
 			hasResolved.current = true

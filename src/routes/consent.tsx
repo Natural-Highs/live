@@ -73,7 +73,7 @@ function ConsentComponent() {
 			}
 
 			// Refresh auth token to get updated custom claims (signedConsentForm)
-			const currentUser = auth.currentUser
+			const currentUser = auth?.currentUser
 			if (currentUser) {
 				// Force token refresh to get updated claims from backend
 				await currentUser.getIdToken(true)
