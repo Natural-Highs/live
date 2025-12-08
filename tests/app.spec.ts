@@ -16,9 +16,11 @@ test('navigation to authentication page works', async ({page}) => {
 	await page.getByRole('link', {name: 'Log In'}).click()
 	await expect(page).toHaveURL('/authentication')
 
-	// Wait for auth loading state to complete and heading to appear
+	// Wait for auth loading to complete (spinner to disappear)
 	// The auth page shows a loading spinner until useAuth() initializes
-	await expect(page.getByRole('heading', {name: /sign in/i})).toBeVisible({
-		timeout: 15_000
-	})
+	const spinner = page.locator('.loading-spinner')
+	await expect(spinner).toBeHidden({timeout: 15_000})
+
+	// Now the heading should be visible
+	await expect(page.getByRole('heading', {name: /sign in/i})).toBeVisible()
 })
