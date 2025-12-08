@@ -63,6 +63,14 @@ jobs:
   e2e:
     name: E2E Tests
     runs-on: ubuntu-latest
+    env:
+      # Placeholder Firebase config for emulator mode
+      VITE_APIKEY: test-api-key
+      VITE_AUTH_DOMAIN: localhost
+      VITE_PROJECT_ID: demo-natural-highs
+      VITE_STORAGE_BUCKET: demo-natural-highs.appspot.com
+      VITE_MESSAGING_SENDER_ID: 123456789
+      VITE_APP_ID: 1:123456789:web:abc123
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -70,8 +78,22 @@ jobs:
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
 
+      - name: Setup Java (for Firebase emulators)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
+
+      - name: Install Firebase CLI
+        run: bun add -g firebase-tools
+
+      - name: Start Firebase emulators
+        run: |
+          firebase emulators:start --only auth,firestore --project demo-natural-highs &
+          sleep 5
 
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps
@@ -88,6 +110,13 @@ jobs:
       contents: read
       deployments: write
       statuses: write
+    env:
+      VITE_APIKEY: ${{ secrets.VITE_APIKEY }}
+      VITE_AUTH_DOMAIN: ${{ secrets.VITE_AUTH_DOMAIN }}
+      VITE_PROJECT_ID: ${{ secrets.VITE_PROJECT_ID }}
+      VITE_STORAGE_BUCKET: ${{ secrets.VITE_STORAGE_BUCKET }}
+      VITE_MESSAGING_SENDER_ID: ${{ secrets.VITE_MESSAGING_SENDER_ID }}
+      VITE_APP_ID: ${{ secrets.VITE_APP_ID }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
