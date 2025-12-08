@@ -23,7 +23,15 @@ if (getApps().length > 0) {
 // Initialize Firestore and Auth
 export const db = getFirestore(firebaseApp)
 export const auth = getAuth(firebaseApp)
-if (import.meta.env.MODE === 'development') {
-	connectFirestoreEmulator(db, 'localhost', 8080) // Use correct Firestore emulator port if different
-	connectAuthEmulator(auth, 'http://localhost:9099') // Use correct Auth emulator port if different
+
+// Connect to emulators in development or when explicitly enabled (CI/tests)
+// Note: This is client-side detection using Vite env vars, distinct from
+// server-side environment.ts which uses Node.js process.env
+const shouldConnectEmulators =
+	import.meta.env.MODE === 'development' ||
+	import.meta.env.VITE_USE_EMULATORS === 'true'
+
+if (shouldConnectEmulators) {
+	connectFirestoreEmulator(db, 'localhost', 8080)
+	connectAuthEmulator(auth, 'http://localhost:9099')
 }

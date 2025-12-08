@@ -83,6 +83,7 @@ jobs:
       VITE_STORAGE_BUCKET: demo-natural-highs.appspot.com
       VITE_MESSAGING_SENDER_ID: "000000000000"
       VITE_APP_ID: demo-app-id
+      VITE_USE_EMULATORS: "true"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -105,7 +106,17 @@ jobs:
       - name: Start Firebase emulators
         run: |
           firebase emulators:start --only auth,firestore --project demo-natural-highs &
-          sleep 5
+          # Wait for emulators to be ready with health check
+          for i in {1..30}; do
+            if curl -s http://localhost:9099 > /dev/null 2>&1; then
+              echo "Auth emulator ready"
+              break
+            fi
+            echo "Waiting for emulators... ($i/30)"
+            sleep 1
+          done
+          # Additional wait for full initialization
+          sleep 2
 
       - name: Install Playwright browsers
         run: bunx playwright install --with-deps
