@@ -3,7 +3,7 @@
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query'
 import {ReactQueryDevtools} from '@tanstack/react-query-devtools'
 import {createRootRouteWithContext, Outlet} from '@tanstack/react-router'
-import {TanStackRouterDevtools} from '@tanstack/router-devtools'
+import {TanStackRouterDevtools} from '@tanstack/react-router-devtools'
 import type {User} from 'firebase/auth'
 import Layout from '../components/Layout'
 import {AuthProvider} from '../context/AuthContext'
