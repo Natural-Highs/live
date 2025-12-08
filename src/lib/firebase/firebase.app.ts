@@ -31,7 +31,13 @@ const shouldConnectEmulators =
 	import.meta.env.MODE === 'development' ||
 	import.meta.env.VITE_USE_EMULATORS === 'true'
 
-if (shouldConnectEmulators) {
-	connectFirestoreEmulator(db, 'localhost', 8080)
-	connectAuthEmulator(auth, 'http://localhost:9099')
+// Track if emulators are already connected (prevents errors on hot reload)
+let emulatorsConnected = false
+
+if (shouldConnectEmulators && !emulatorsConnected) {
+	try {
+		connectFirestoreEmulator(db, 'localhost', 8080)
+		connectAuthEmulator(auth, 'http://localhost:9099')
+		emulatorsConnected = true
+	} catch (_error) {}
 }

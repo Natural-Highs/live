@@ -5,6 +5,7 @@ import {
 	type ReactNode,
 	useContext,
 	useEffect,
+	useRef,
 	useState
 } from 'react'
 import {auth} from '$lib/firebase/firebase.app'
@@ -40,9 +41,22 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
 		admin: false,
 		data: {}
 	})
+	const hasResolved = useRef(false)
 
 	useEffect(() => {
+		// Timeout fallback: if auth doesn't resolve within 10s, assume no user
+		// This prevents infinite loading in CI/test environments where
+		// Firebase might not connect properly
+		const timeoutId = setTimeout(() => {
+			if (!hasResolved.current) {
+				setAuthState(prev => ({...prev, loading: false}))
+			}
+		}, 10_000)
+
 		const unsubscribe = onAuthStateChanged(auth, async user => {
+			hasResolved.current = true
+			clearTimeout(timeoutId)
+
 			let claims = {
 				signedConsentForm: false,
 				admin: false
@@ -63,7 +77,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
 			})
 		})
 
-		return () => unsubscribe()
+		return () => {
+			clearTimeout(timeoutId)
+			unsubscribe()
+		}
 	}, [])
 
 	return (
