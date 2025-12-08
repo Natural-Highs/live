@@ -17,6 +17,10 @@ coverage
 src/routeTree.gen.ts
 serviceAccount.json
 
+# Build-generated config files
+vite.config.js
+vite.config.d.ts
+
 # Trunk
 .trunk/out/
 .trunk/logs/
