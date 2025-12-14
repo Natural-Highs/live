@@ -1,5 +1,73 @@
 @import "tailwindcss";
 
+@import url("https://fonts.googleapis.com/css2?family=Inria+Serif:ital,wght@0,300;0,400;0,700;1,300;1,400;1,700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Kapakana:wght@300..400&family=Kotta+One&family=Lisu+Bosa:ital,wght@0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap");
+
 @theme {
-	--font-sans: Inter, sans-serif;
+	/* Custom Colors */
+	--color-btnGreen: #347937;
+	--color-btnGrey: #637b7c;
+	--color-midGreen: #98da87;
+	--color-bgGreen: #e2fde6;
+
+	/* Custom Font Families */
+	--font-inria: "Inria Serif", sans-serif;
+	--font-inter: "Inter", sans-serif;
+	--font-kapakana: "Kapakana", sans-serif;
+	--font-kotta: "Kotta One", sans-serif;
+	--font-lisu: "Lisu Bosa", sans-serif;
+}
+
+.card h1 {
+	font-family: "Lisu Bosa", sans-serif;
+	font-size: 37px;
+}
+
+@plugin "daisyui" {
+	themes: naturalhighs --default;
+	logs: false;
+}
+
+@plugin "daisyui/theme" {
+	name: "naturalhighs";
+	default: true;
+	prefersdark: false;
+	color-scheme: light;
+
+	--color-btnGreen: #347937;
+	--color-btnGrey: #637b7c;
+	--color-midGreen: #98da87;
+	--color-bgGreen: #e2fde6;
+
+	--color-base-100: #e2fde6;
+	--color-base-200: #98da87;
+	--color-base-300: #d4d4d4;
+	--color-base-content: #1e1e1e;
+	--color-primary: #347937;
+	--color-primary-content: #ffffff;
+	--color-secondary: #637b7c;
+	--color-secondary-content: #ffffff;
+	--color-accent: #98da87;
+	--color-accent-content: #1e1e1e;
+	--color-neutral: #1e1e1e;
+	--color-neutral-content: #ffffff;
+	--color-info: #3b82f6;
+	--color-info-content: #ffffff;
+	--color-success: #10b981;
+	--color-success-content: #ffffff;
+	--color-warning: #f59e0b;
+	--color-warning-content: #ffffff;
+	--color-error: #ef4444;
+	--color-error-content: #ffffff;
+
+	--radius-selector: 0.25rem;
+	--radius-field: 0.5rem;
+	--radius-box: 0.5rem;
+
+	--size-selector: 0.25rem;
+	--size-field: 0.25rem;
+
+	--border: 1px;
+
+	--depth: 1;
+	--noise: 0;
 }

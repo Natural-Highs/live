@@ -33,6 +33,12 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 			{name: 'description', content: 'Track and celebrate your natural highs'}
 		],
 		links: [
+			{rel: 'preconnect', href: 'https://fonts.googleapis.com'},
+			{
+				rel: 'preconnect',
+				href: 'https://fonts.gstatic.com',
+				crossOrigin: 'anonymous'
+			},
 			{rel: 'stylesheet', href: appCss},
 			{rel: 'manifest', href: '/manifest.webmanifest'},
 			{rel: 'icon', href: '/favicon.png'},
