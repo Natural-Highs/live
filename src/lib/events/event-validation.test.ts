@@ -4,10 +4,7 @@
  */
 
 import type {EventDocument} from '../../server/types/events'
-import {
-	isValidEventCodeFormat,
-	validateEventRegistration
-} from './event-validation'
+import {isValidEventCodeFormat, validateEventRegistration} from './event-validation'
 
 describe('Event Validation', () => {
 	describe('validateEventRegistration', () => {

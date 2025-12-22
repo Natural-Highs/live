@@ -24,11 +24,7 @@ describe('Authentication Business Logic', () => {
 
 	describe('registerUser', () => {
 		it('should return false when passwords do not match', async () => {
-			const result = await registerUser(
-				'test@example.com',
-				'password123',
-				'differentPassword'
-			)
+			const result = await registerUser('test@example.com', 'password123', 'differentPassword')
 
 			expect(result).toBe(false)
 			expect(adminAuth.createUser).not.toHaveBeenCalled()
@@ -44,18 +40,10 @@ describe('Authentication Business Logic', () => {
 				doc: vi.fn().mockReturnValue(mockDoc)
 			}
 
-			;(adminAuth.createUser as ReturnType<typeof vi.fn>).mockResolvedValue(
-				mockUserRecord
-			)
-			;(adminDb.collection as ReturnType<typeof vi.fn>).mockReturnValue(
-				mockCollection as never
-			)
+			;(adminAuth.createUser as ReturnType<typeof vi.fn>).mockResolvedValue(mockUserRecord)
+			;(adminDb.collection as ReturnType<typeof vi.fn>).mockReturnValue(mockCollection as never)
 
-			const result = await registerUser(
-				'test@example.com',
-				'password123',
-				'password123'
-			)
+			const result = await registerUser('test@example.com', 'password123', 'password123')
 
 			expect(result).toBe(true)
 			expect(adminAuth.createUser).toHaveBeenCalledWith({
@@ -84,12 +72,8 @@ describe('Authentication Business Logic', () => {
 				doc: vi.fn().mockReturnValue(mockDoc)
 			}
 
-			;(adminAuth.createUser as ReturnType<typeof vi.fn>).mockResolvedValue(
-				mockUserRecord
-			)
-			;(adminDb.collection as ReturnType<typeof vi.fn>).mockReturnValue(
-				mockCollection as never
-			)
+			;(adminAuth.createUser as ReturnType<typeof vi.fn>).mockResolvedValue(mockUserRecord)
+			;(adminDb.collection as ReturnType<typeof vi.fn>).mockReturnValue(mockCollection as never)
 
 			const beforeTime = new Date()
 			await registerUser('test@example.com', 'password123', 'password123')
@@ -112,11 +96,7 @@ describe('Authentication Business Logic', () => {
 				new Error('User creation failed')
 			)
 
-			const result = await registerUser(
-				'test@example.com',
-				'password123',
-				'password123'
-			)
+			const result = await registerUser('test@example.com', 'password123', 'password123')
 
 			expect(result).toBe(false)
 		})
@@ -131,18 +111,10 @@ describe('Authentication Business Logic', () => {
 				doc: vi.fn().mockReturnValue(mockDoc)
 			}
 
-			;(adminAuth.createUser as ReturnType<typeof vi.fn>).mockResolvedValue(
-				mockUserRecord
-			)
-			;(adminDb.collection as ReturnType<typeof vi.fn>).mockReturnValue(
-				mockCollection as never
-			)
+			;(adminAuth.createUser as ReturnType<typeof vi.fn>).mockResolvedValue(mockUserRecord)
+			;(adminDb.collection as ReturnType<typeof vi.fn>).mockReturnValue(mockCollection as never)
 
-			const result = await registerUser(
-				'test@example.com',
-				'password123',
-				'password123'
-			)
+			const result = await registerUser('test@example.com', 'password123', 'password123')
 
 			expect(result).toBe(false)
 		})
@@ -152,9 +124,7 @@ describe('Authentication Business Logic', () => {
 		it('should return true when user exists', async () => {
 			const mockUserRecord = {uid: 'user123', email: 'test@example.com'}
 
-			;(adminAuth.getUserByEmail as ReturnType<typeof vi.fn>).mockResolvedValue(
-				mockUserRecord
-			)
+			;(adminAuth.getUserByEmail as ReturnType<typeof vi.fn>).mockResolvedValue(mockUserRecord)
 
 			const result = await signInUser('test@example.com', 'password123')
 
@@ -170,9 +140,7 @@ describe('Authentication Business Logic', () => {
 			const result = await signInUser('nonexistent@example.com', 'password123')
 
 			expect(result).toBe(false)
-			expect(adminAuth.getUserByEmail).toHaveBeenCalledWith(
-				'nonexistent@example.com'
-			)
+			expect(adminAuth.getUserByEmail).toHaveBeenCalledWith('nonexistent@example.com')
 		})
 
 		it('should return false when getUserByEmail throws error', async () => {
@@ -188,14 +156,9 @@ describe('Authentication Business Logic', () => {
 		it('should ignore password parameter (not used in implementation)', async () => {
 			const mockUserRecord = {uid: 'user123', email: 'test@example.com'}
 
-			;(adminAuth.getUserByEmail as ReturnType<typeof vi.fn>).mockResolvedValue(
-				mockUserRecord
-			)
+			;(adminAuth.getUserByEmail as ReturnType<typeof vi.fn>).mockResolvedValue(mockUserRecord)
 
-			const result = await signInUser(
-				'test@example.com',
-				'any-password-or-empty'
-			)
+			const result = await signInUser('test@example.com', 'any-password-or-empty')
 
 			expect(result).toBe(true)
 			// Password is not used in the implementation (prefixed with _)
@@ -204,9 +167,7 @@ describe('Authentication Business Logic', () => {
 		it('should handle null userRecord (unreachable but covered for completeness)', async () => {
 			// This branch is technically unreachable since getUserByEmail always returns or throws
 			// but we test it for code coverage completeness
-			;(adminAuth.getUserByEmail as ReturnType<typeof vi.fn>).mockResolvedValue(
-				null as any
-			)
+			;(adminAuth.getUserByEmail as ReturnType<typeof vi.fn>).mockResolvedValue(null as any)
 
 			const result = await signInUser('test@example.com', 'password123')
 

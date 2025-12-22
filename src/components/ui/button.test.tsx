@@ -1,5 +1,6 @@
 import {render, screen} from '@testing-library/react'
 import type React from 'react'
+import {describe, expect, it} from 'vitest'
 
 const Button: React.FC<{children: React.ReactNode; className?: string}> = ({
 	children,

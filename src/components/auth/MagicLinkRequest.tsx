@@ -66,13 +66,11 @@ export function MagicLinkRequest({onSuccess, onError}: MagicLinkRequestProps) {
 			await sendSignInLinkToEmail(auth, values.email, actionCodeSettings)
 
 			onSuccess(values.email)
-		} catch (error) {
+		} catch (_error) {
 			// Always call onSuccess to show "check email" screen
 			// This prevents timing attacks that could reveal account existence
 			// Note: Errors should be logged server-side for security monitoring (without PII)
 			// Client-side: intentionally suppress error details to prevent user enumeration
-			const errorCode = error && typeof error === 'object' && 'code' in error ? String(error.code) : 'Unknown'
-			console.error('Magic link request failed (hidden from user):', errorCode)
 			onSuccess(values.email)
 		} finally {
 			setIsLoading(false)
