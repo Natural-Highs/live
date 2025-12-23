@@ -17,9 +17,7 @@ export interface UserData {
  * @param userData - User data containing admin and consent form status
  * @returns Custom claims object for Firebase Auth
  */
-export function buildCustomClaims(
-	userData: UserData | null | undefined
-): UserCustomClaims {
+export function buildCustomClaims(userData: UserData | null | undefined): UserCustomClaims {
 	return {
 		admin: userData?.isAdmin ?? false,
 		signedConsentForm: userData?.signedConsentForm ?? false

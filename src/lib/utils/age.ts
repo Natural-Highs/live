@@ -23,9 +23,7 @@ export function calculateAge(
 	const age = today.getFullYear() - dob.getFullYear()
 	const monthDiff = today.getMonth() - dob.getMonth()
 	const adjustedAge =
-		monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())
-			? age - 1
-			: age
+		monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate()) ? age - 1 : age
 
 	return adjustedAge
 }

@@ -3,7 +3,7 @@
  * Following Test Pyramid Balance directive: Unit tests for business logic functions
  */
 
-import type {EventDocument} from '../../server/types/events'
+import type {EventDocument} from '@/types/events'
 
 /**
  * Validate that an event can be registered for
@@ -38,9 +38,7 @@ export function validateEventRegistration(
  * @param code - Event code to validate
  * @returns True if code is valid format, false otherwise
  */
-export function isValidEventCodeFormat(
-	code: string | null | undefined
-): boolean {
+export function isValidEventCodeFormat(code: string | null | undefined): boolean {
 	if (!code) {
 		return false
 	}
