@@ -14,9 +14,24 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  BUN_VERSION: latest
+  # Placeholder Firebase config for emulator mode
+  # checkov:skip=CKV_SECRET_6:Intentional placeholder values for Firebase emulator testing
+  VITE_APIKEY: demo-test-key
+  VITE_AUTH_DOMAIN: localhost
+  VITE_PROJECT_ID: demo-natural-highs
+  VITE_STORAGE_BUCKET: demo-natural-highs.appspot.com
+  VITE_MESSAGING_SENDER_ID: "000000000000"
+  VITE_APP_ID: demo-app-id
+  VITE_USE_EMULATORS: "true"
+
 jobs:
+  # ============================================
+  # Stage 1: Code Quality (Trunk.io)
+  # ============================================
   lint:
-    name: Lint
+    name: Code Quality
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -36,8 +51,12 @@ jobs:
       - name: Trunk Check
         uses: trunk-io/trunk-action@v1
         with:
-          post-annotations: false
+          post-annotations: true
+          arguments: --ci
 
+  # ============================================
+  # Stage 2: Security Scanning
+  # ============================================
   security:
     name: Security Scan
     runs-on: ubuntu-latest
@@ -50,6 +69,8 @@ jobs:
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -68,15 +89,36 @@ jobs:
         with:
           sarif_file: snyk.sarif
 
-  test:
+  # ============================================
+  # Stage 3: Unit Tests
+  # ============================================
+  test-unit:
     name: Unit Tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -84,15 +126,70 @@ jobs:
       - name: Run tests with coverage
         run: bun run test:ci -- --coverage
 
+      - name: Coverage Threshold Check
+        run: |
+          if [ -f coverage/coverage-summary.json ]; then
+            LINES=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
+            BRANCHES=$(cat coverage/coverage-summary.json | jq -r '.total.branches.pct')
+            FUNCTIONS=$(cat coverage/coverage-summary.json | jq -r '.total.functions.pct')
+            STATEMENTS=$(cat coverage/coverage-summary.json | jq -r '.total.statements.pct')
+
+            echo "Line coverage: ${LINES}%"
+            echo "Branch coverage: ${BRANCHES}%"
+            echo "Function coverage: ${FUNCTIONS}%"
+            echo "Statement coverage: ${STATEMENTS}%"
+
+            FAILED=0
+
+            # Threshold check (70% for all metrics - matches vitest.config.ts)
+            # Using awk for portable float comparison
+            if awk "BEGIN {exit !($LINES < 70)}"; then
+              echo "::error::Line coverage ${LINES}% is below 70% threshold"
+              FAILED=1
+            fi
+
+            if awk "BEGIN {exit !($BRANCHES < 70)}"; then
+              echo "::error::Branch coverage ${BRANCHES}% is below 70% threshold"
+              FAILED=1
+            fi
+
+            if awk "BEGIN {exit !($FUNCTIONS < 70)}"; then
+              echo "::error::Function coverage ${FUNCTIONS}% is below 70% threshold"
+              FAILED=1
+            fi
+
+            if awk "BEGIN {exit !($STATEMENTS < 70)}"; then
+              echo "::error::Statement coverage ${STATEMENTS}% is below 70% threshold"
+              FAILED=1
+            fi
+
+            if [ $FAILED -eq 1 ]; then
+              exit 1
+            fi
+
+            echo "::notice::Coverage thresholds passed (70% for all metrics)"
+          else
+            echo "::warning::Coverage report not found"
+          fi
+
       - name: Coverage Summary
         if: always()
         run: |
           echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
           if [ -f coverage/coverage-summary.json ]; then
-            cat coverage/coverage-summary.json | jq -r '.total | "- Lines: \(.lines.pct)%\n- Branches: \(.branches.pct)%\n- Functions: \(.functions.pct)%\n- Statements: \(.statements.pct)%"' >> $GITHUB_STEP_SUMMARY
+            cat coverage/coverage-summary.json | jq -r '.total | "- Lines: \(.lines.pct)% (threshold: 70%)\n- Branches: \(.branches.pct)% (threshold: 70%)\n- Functions: \(.functions.pct)% (threshold: 70%)\n- Statements: \(.statements.pct)% (threshold: 70%)"' >> $GITHUB_STEP_SUMMARY
           else
             echo "Coverage report not found" >> $GITHUB_STEP_SUMMARY
           fi
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          flags: unittests
+          fail_ci_if_error: false
+          verbose: true
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
@@ -102,25 +199,26 @@ jobs:
           path: coverage/
           retention-days: 7
 
-  e2e:
-    name: E2E Tests
+  # ============================================
+  # Stage 4: E2E Tests (Sharded)
+  # ============================================
+  test-e2e:
+    name: E2E Tests (Shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
-    env:
-      # Placeholder Firebase config for emulator mode (not real secrets)
-      # checkov:skip=CKV_SECRET_6:Intentional placeholder values for Firebase emulator testing
-      VITE_APIKEY: demo-test-key
-      VITE_AUTH_DOMAIN: localhost
-      VITE_PROJECT_ID: demo-natural-highs
-      VITE_STORAGE_BUCKET: demo-natural-highs.appspot.com
-      VITE_MESSAGING_SENDER_ID: "000000000000"
-      VITE_APP_ID: demo-app-id
-      VITE_USE_EMULATORS: "true"
+    needs: [lint, test-unit]
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
 
       - name: Setup Java (for Firebase emulators)
         uses: actions/setup-java@v4
@@ -128,16 +226,40 @@ jobs:
           distribution: temurin
           java-version: 21
 
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            bun-${{ runner.os }}-
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+          restore-keys: |
+            playwright-${{ runner.os }}-
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
       - name: Install Firebase CLI
         run: npm install -g firebase-tools
 
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: bunx playwright install --with-deps
+
+      - name: Install Playwright system deps only
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: bunx playwright install-deps
+
       - name: Start Firebase emulators
         run: |
           firebase emulators:start --only auth,firestore --project demo-natural-highs &
-          # Wait for emulators to be ready with health check
           for i in {1..30}; do
             if curl -s http://localhost:9099 > /dev/null 2>&1; then
               echo "Auth emulator ready"
@@ -146,20 +268,135 @@ jobs:
             echo "Waiting for emulators... ($i/30)"
             sleep 1
           done
-          # Additional wait for full initialization
           sleep 2
 
-      - name: Install Playwright browsers
-        run: bunx playwright install --with-deps
+      - name: Run E2E tests (shard ${{ matrix.shard }}/4)
+        run: bun run test:e2e:ci -- --shard=${{ matrix.shard }}/4
+        env:
+          CI: true
 
-      - name: Run E2E tests
-        run: bun run test:e2e:ci
+      - name: Upload test results on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results-shard-${{ matrix.shard }}
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 30
 
-  # Firestore rules deployment (runs on main branch push only)
+  # ============================================
+  # Stage 5: Burn-In (Flaky Detection) - PRs Only
+  # ============================================
+  burn-in:
+    name: Flaky Test Detection
+    runs-on: ubuntu-latest
+    needs: [test-e2e]
+    if: github.event_name == 'pull_request'
+    timeout-minutes: 45
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ env.BUN_VERSION }}
+
+      - name: Setup Java (for Firebase emulators)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Install Playwright system deps
+        run: bunx playwright install-deps
+
+      - name: Start Firebase emulators
+        run: |
+          firebase emulators:start --only auth,firestore --project demo-natural-highs &
+          for i in {1..30}; do
+            if curl -s http://localhost:9099 > /dev/null 2>&1; then
+              echo "Auth emulator ready"
+              break
+            fi
+            echo "Waiting for emulators... ($i/30)"
+            sleep 1
+          done
+          sleep 2
+
+      - name: Detect changed test files
+        id: changed-tests
+        run: |
+          CHANGED_SPECS=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(spec|test)\.(ts|js)$' || echo "")
+          echo "specs=${CHANGED_SPECS}" >> $GITHUB_OUTPUT
+          if [ -n "$CHANGED_SPECS" ]; then
+            echo "## Changed Test Files" >> $GITHUB_STEP_SUMMARY
+            echo "$CHANGED_SPECS" | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Run burn-in loop (5 iterations)
+        if: steps.changed-tests.outputs.specs != ''
+        run: |
+          echo "Running burn-in: 5 iterations on changed specs"
+          SPECS="${{ steps.changed-tests.outputs.specs }}"
+          for i in {1..5}; do
+            echo "=========================================="
+            echo "Burn-in iteration $i/5"
+            echo "=========================================="
+            bun run test:e2e:ci -- $SPECS || {
+              echo "Burn-in failed on iteration $i"
+              exit 1
+            }
+          done
+          echo "All 5 burn-in iterations passed"
+          echo "## Burn-In Result" >> $GITHUB_STEP_SUMMARY
+          echo "All 5 iterations passed - tests are stable" >> $GITHUB_STEP_SUMMARY
+
+      - name: Skip burn-in (no test changes)
+        if: steps.changed-tests.outputs.specs == ''
+        run: |
+          echo "No test files changed, skipping burn-in"
+          echo "## Burn-In Skipped" >> $GITHUB_STEP_SUMMARY
+          echo "No test files changed in this PR" >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload burn-in artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: burn-in-failures
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 30
+
+  # ============================================
+  # Stage 6: Deploy Firestore Rules (main only)
+  # ============================================
   deploy-firestore-rules:
     name: Deploy Firestore Rules
     runs-on: ubuntu-latest
-    needs: [lint, security, test, e2e]
+    needs: [lint, security, test-unit, test-e2e]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: prd
     permissions:
@@ -177,8 +414,7 @@ jobs:
         run: |
           echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > /tmp/sa.json
           export GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa.json
-          
-          # Retry logic for intermittent Firebase API failures
+
           max_attempts=3
           attempt=1
           while [ $attempt -le $max_attempts ]; do
@@ -196,5 +432,5 @@ jobs:
             sleep $((attempt * 10))
             attempt=$((attempt + 1))
           done
-          
+
           rm /tmp/sa.json

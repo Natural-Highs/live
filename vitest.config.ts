@@ -17,7 +17,8 @@ export default defineConfig({
 		exclude: [
 			'**/node_modules/**',
 			'**/dist/**',
-			'**/tests/**', // Playwright tests
+			'**/tests/e2e/**', // Playwright E2E tests
+			'**/tests/fixtures/**', // Test fixtures
 			'**/*.spec.ts', // Playwright convention
 			'.trunk/**' // Trunk plugins (symlinks to cache)
 		],
@@ -25,8 +26,8 @@ export default defineConfig({
 		setupFiles: ['./vitest-env-setup.ts', './src/test-setup.ts'],
 		coverage: {
 			provider: 'v8',
-			reporter: ['text', 'json-summary', 'html'],
-			reportsDirectory: './coverage',
+			reporter: ['text', 'json-summary', 'html', 'lcov'],
+			reportsDirectory: './tests/coverage',
 			exclude: [
 				'**/node_modules/**',
 				'**/dist/**',
@@ -37,7 +38,33 @@ export default defineConfig({
 				'**/test-setup.ts',
 				'**/vitest-env-setup.ts',
 				'.trunk/**'
-			]
+			],
+			thresholds: {
+				// Global thresholds
+				statements: 70,
+				branches: 70,
+				functions: 70,
+				lines: 70,
+				// Layer-specific thresholds
+				'src/lib/queries/**': {
+					statements: 100,
+					branches: 100,
+					functions: 100,
+					lines: 100
+				},
+				'src/server/functions/utils/**': {
+					statements: 100,
+					branches: 100,
+					functions: 100,
+					lines: 100
+				},
+				'src/components/admin/**': {
+					statements: 80,
+					branches: 70,
+					functions: 80,
+					lines: 80
+				}
+			}
 		}
 	}
 })
