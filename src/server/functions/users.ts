@@ -2,11 +2,7 @@ import {createServerFn} from '@tanstack/react-start'
 import {validateEventRegistration} from '../../lib/events/event-validation'
 import {auth, db} from '../../lib/firebase/firebase'
 import {buildCustomClaims} from '../../lib/utils/custom-claims'
-import {
-	getProfileSchema,
-	registerForEventSchema,
-	updateConsentStatusSchema
-} from '../schemas/users'
+import {getProfileSchema, registerForEventSchema, updateConsentStatusSchema} from '../schemas/users'
 import {validateSession} from './utils/auth'
 import {ConflictError, NotFoundError, ValidationError} from './utils/errors'
 
@@ -32,7 +28,10 @@ export const getProfile = createServerFn({method: 'GET'}).handler(
 			throw new NotFoundError('User profile not found')
 		}
 
-		const userData = userDoc.data()!
+		const userData = userDoc.data()
+		if (!userData) {
+			throw new NotFoundError('User data not found')
+		}
 
 		return {
 			uid: userId,
@@ -40,10 +39,8 @@ export const getProfile = createServerFn({method: 'GET'}).handler(
 			displayName: currentUser.displayName,
 			photoURL: currentUser.photoURL,
 			...userData,
-			createdAt:
-				userData.createdAt?.toDate?.()?.toISOString() ?? userData.createdAt,
-			updatedAt:
-				userData.updatedAt?.toDate?.()?.toISOString() ?? userData.updatedAt
+			createdAt: userData.createdAt?.toDate?.()?.toISOString() ?? userData.createdAt,
+			updatedAt: userData.updatedAt?.toDate?.()?.toISOString() ?? userData.updatedAt
 		}
 	}
 )
@@ -120,7 +117,7 @@ export const registerForEvent = createServerFn({method: 'POST'}).handler(
 		const validation = validateEventRegistration(eventData, isAlreadyRegistered)
 
 		if (!validation.isValid) {
-			throw new ConflictError(validation.error!)
+			throw new ConflictError(validation.error ?? 'Invalid registration')
 		}
 
 		// Add user to participants
@@ -152,31 +149,25 @@ export const registerForEvent = createServerFn({method: 'POST'}).handler(
 /**
  * Get user's registered events
  */
-export const getUserEvents = createServerFn({method: 'GET'}).handler(
-	async () => {
-		const user = await validateSession()
+export const getUserEvents = createServerFn({method: 'GET'}).handler(async () => {
+	const user = await validateSession()
 
-		// Get events where user is a participant
-		const eventsSnapshot = await db
-			.collection('events')
-			.where('participants', 'array-contains', user.uid)
-			.orderBy('startDate', 'asc')
-			.get()
+	// Get events where user is a participant
+	const eventsSnapshot = await db
+		.collection('events')
+		.where('participants', 'array-contains', user.uid)
+		.orderBy('startDate', 'asc')
+		.get()
 
-		return eventsSnapshot.docs.map(doc => {
-			const eventData = doc.data()
-			return {
-				id: doc.id,
-				...eventData,
-				startDate:
-					eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
-				endDate:
-					eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
-				createdAt:
-					eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
-				updatedAt:
-					eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
-			}
-		})
-	}
-)
+	return eventsSnapshot.docs.map(doc => {
+		const eventData = doc.data()
+		return {
+			id: doc.id,
+			...eventData,
+			startDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
+			endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
+			createdAt: eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
+			updatedAt: eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
+		}
+	})
+})
