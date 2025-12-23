@@ -1,6 +1,7 @@
 import {useEffect, useRef, useState} from 'react'
 import 'survey-creator-core/survey-creator-core.min.css'
-// Note: survey-core CSS is included by survey-creator-core, no need to import separately
+import {Button} from '@/components/ui/button'
+import {Spinner} from '@/components/ui/spinner'
 
 interface SurveyCreatorProps {
 	surveyJson: unknown
@@ -31,15 +32,9 @@ interface SurveyCreatorProps {
  * />
  * ```
  */
-export function SurveyCreatorComponent({
-	surveyJson,
-	onSave,
-	onCancel
-}: SurveyCreatorProps) {
+export function SurveyCreatorComponent({surveyJson, onSave, onCancel}: SurveyCreatorProps) {
 	const creatorRef = useRef<HTMLDivElement>(null)
-	const surveyCreatorRef = useRef<
-		import('survey-creator-core').SurveyCreatorModel | null
-	>(null)
+	const surveyCreatorRef = useRef<import('survey-creator-core').SurveyCreatorModel | null>(null)
 	const [isLoading, setIsLoading] = useState(true)
 
 	useEffect(() => {
@@ -99,7 +94,7 @@ export function SurveyCreatorComponent({
 		return (
 			<div className='survey-creator-container'>
 				<div className='flex items-center justify-center p-8'>
-					<span className='loading loading-spinner loading-lg' />
+					<Spinner size='lg' />
 				</div>
 			</div>
 		)
@@ -109,17 +104,13 @@ export function SurveyCreatorComponent({
 		<div className='survey-creator-container'>
 			<div className='mb-4 flex justify-end gap-2'>
 				{onCancel && (
-					<button className='btn btn-sm' onClick={onCancel} type='button'>
+					<Button size='sm' onClick={onCancel} type='button'>
 						Cancel
-					</button>
+					</Button>
 				)}
-				<button
-					className='btn btn-sm btn-primary'
-					onClick={handleSave}
-					type='button'
-				>
+				<Button size='sm' variant='default' onClick={handleSave} type='button'>
 					Save Form
-				</button>
+				</Button>
 			</div>
 			<div className='survey-creator' ref={creatorRef} />
 		</div>

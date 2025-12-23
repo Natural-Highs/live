@@ -1,7 +1,9 @@
 import {useForm} from '@tanstack/react-form'
 import type React from 'react'
-import GreyButton from '@/components/ui/GreyButton'
-import GrnButton from '@/components/ui/GrnButton'
+import {Button} from '@/components/ui/button'
+import {Input} from '@/components/ui/input'
+import {Label} from '@/components/ui/label'
+import {Separator} from '@/components/ui/separator'
 import {type AboutYouData, aboutYouSchema} from '@/lib/schemas/signup'
 
 interface AboutYouFormProps {
@@ -10,11 +12,7 @@ interface AboutYouFormProps {
 	loading?: boolean
 }
 
-export function AboutYouForm({
-	onSubmit,
-	onBack,
-	loading = false
-}: AboutYouFormProps) {
+export function AboutYouForm({onSubmit, onBack, loading = false}: AboutYouFormProps) {
 	const form = useForm({
 		defaultValues: {
 			firstName: '',
@@ -34,7 +32,8 @@ export function AboutYouForm({
 
 	return (
 		<form
-			className='space-y-4 rounded-lg bg-base-200 p-6'
+			className='space-y-4 rounded-lg bg-muted p-6'
+			data-testid='about-you-form'
 			onSubmit={(e: React.FormEvent) => {
 				e.preventDefault()
 				e.stopPropagation()
@@ -48,12 +47,11 @@ export function AboutYouForm({
 				}}
 			>
 				{field => (
-					<div className='form-control'>
-						<label className='label' htmlFor={field.name}>
-							<span className='label-text'>First Name *</span>
-						</label>
-						<input
-							className='input input-bordered w-full'
+					<div className='space-y-2'>
+						<Label htmlFor={field.name}>First Name *</Label>
+						<Input
+							className='w-full'
+							data-testid='about-you-firstname-input'
 							id={field.name}
 							name={field.name}
 							onBlur={field.handleBlur}
@@ -63,11 +61,7 @@ export function AboutYouForm({
 							value={field.state.value}
 						/>
 						{field.state.meta.errors.length > 0 && (
-							<label className='label' htmlFor={field.name}>
-								<span className='label-text-alt text-error'>
-									{String(field.state.meta.errors[0])}
-								</span>
-							</label>
+							<p className='text-destructive text-sm'>{String(field.state.meta.errors[0])}</p>
 						)}
 					</div>
 				)}
@@ -80,12 +74,11 @@ export function AboutYouForm({
 				}}
 			>
 				{field => (
-					<div className='form-control'>
-						<label className='label' htmlFor={field.name}>
-							<span className='label-text'>Last Name *</span>
-						</label>
-						<input
-							className='input input-bordered w-full'
+					<div className='space-y-2'>
+						<Label htmlFor={field.name}>Last Name *</Label>
+						<Input
+							className='w-full'
+							data-testid='about-you-lastname-input'
 							id={field.name}
 							name={field.name}
 							onBlur={field.handleBlur}
@@ -95,11 +88,7 @@ export function AboutYouForm({
 							value={field.state.value}
 						/>
 						{field.state.meta.errors.length > 0 && (
-							<label className='label' htmlFor={field.name}>
-								<span className='label-text-alt text-error'>
-									{String(field.state.meta.errors[0])}
-								</span>
-							</label>
+							<p className='text-destructive text-sm'>{String(field.state.meta.errors[0])}</p>
 						)}
 					</div>
 				)}
@@ -112,12 +101,11 @@ export function AboutYouForm({
 				}}
 			>
 				{field => (
-					<div className='form-control'>
-						<label className='label' htmlFor={field.name}>
-							<span className='label-text'>Phone Number</span>
-						</label>
-						<input
-							className='input input-bordered w-full'
+					<div className='space-y-2'>
+						<Label htmlFor={field.name}>Phone Number</Label>
+						<Input
+							className='w-full'
+							data-testid='about-you-phone-input'
 							id={field.name}
 							name={field.name}
 							onBlur={field.handleBlur}
@@ -127,11 +115,7 @@ export function AboutYouForm({
 							value={field.state.value}
 						/>
 						{field.state.meta.errors.length > 0 && (
-							<label className='label' htmlFor={field.name}>
-								<span className='label-text-alt text-error'>
-									{String(field.state.meta.errors[0])}
-								</span>
-							</label>
+							<p className='text-destructive text-sm'>{String(field.state.meta.errors[0])}</p>
 						)}
 					</div>
 				)}
@@ -144,12 +128,11 @@ export function AboutYouForm({
 				}}
 			>
 				{field => (
-					<div className='form-control'>
-						<label className='label' htmlFor={field.name}>
-							<span className='label-text'>Date of Birth *</span>
-						</label>
-						<input
-							className='input input-bordered w-full'
+					<div className='space-y-2'>
+						<Label htmlFor={field.name}>Date of Birth *</Label>
+						<Input
+							className='w-full'
+							data-testid='about-you-dob-input'
 							id={field.name}
 							max={maxDate}
 							name={field.name}
@@ -159,17 +142,17 @@ export function AboutYouForm({
 							value={field.state.value}
 						/>
 						{field.state.meta.errors.length > 0 && (
-							<label className='label' htmlFor={field.name}>
-								<span className='label-text-alt text-error'>
-									{String(field.state.meta.errors[0])}
-								</span>
-							</label>
+							<p className='text-destructive text-sm'>{String(field.state.meta.errors[0])}</p>
 						)}
 					</div>
 				)}
 			</form.Field>
 
-			<div className='divider'>Emergency Contact</div>
+			<div className='flex items-center gap-4 py-2'>
+				<Separator className='flex-1' />
+				<span className='text-muted-foreground text-sm'>Emergency Contact</span>
+				<Separator className='flex-1' />
+			</div>
 
 			<form.Field
 				name='emergencyContactName'
@@ -178,12 +161,10 @@ export function AboutYouForm({
 				}}
 			>
 				{field => (
-					<div className='form-control'>
-						<label className='label' htmlFor={field.name}>
-							<span className='label-text'>Emergency Contact Name</span>
-						</label>
-						<input
-							className='input input-bordered w-full'
+					<div className='space-y-2'>
+						<Label htmlFor={field.name}>Emergency Contact Name</Label>
+						<Input
+							className='w-full'
 							id={field.name}
 							name={field.name}
 							onBlur={field.handleBlur}
@@ -193,11 +174,7 @@ export function AboutYouForm({
 							value={field.state.value}
 						/>
 						{field.state.meta.errors.length > 0 && (
-							<label className='label' htmlFor={field.name}>
-								<span className='label-text-alt text-error'>
-									{String(field.state.meta.errors[0])}
-								</span>
-							</label>
+							<p className='text-destructive text-sm'>{String(field.state.meta.errors[0])}</p>
 						)}
 					</div>
 				)}
@@ -210,12 +187,10 @@ export function AboutYouForm({
 				}}
 			>
 				{field => (
-					<div className='form-control'>
-						<label className='label' htmlFor={field.name}>
-							<span className='label-text'>Emergency Contact Phone</span>
-						</label>
-						<input
-							className='input input-bordered w-full'
+					<div className='space-y-2'>
+						<Label htmlFor={field.name}>Emergency Contact Phone</Label>
+						<Input
+							className='w-full'
 							id={field.name}
 							name={field.name}
 							onBlur={field.handleBlur}
@@ -225,11 +200,7 @@ export function AboutYouForm({
 							value={field.state.value}
 						/>
 						{field.state.meta.errors.length > 0 && (
-							<label className='label' htmlFor={field.name}>
-								<span className='label-text-alt text-error'>
-									{String(field.state.meta.errors[0])}
-								</span>
-							</label>
+							<p className='text-destructive text-sm'>{String(field.state.meta.errors[0])}</p>
 						)}
 					</div>
 				)}
@@ -242,12 +213,10 @@ export function AboutYouForm({
 				}}
 			>
 				{field => (
-					<div className='form-control'>
-						<label className='label' htmlFor={field.name}>
-							<span className='label-text'>Relationship</span>
-						</label>
+					<div className='space-y-2'>
+						<Label htmlFor={field.name}>Relationship</Label>
 						<select
-							className='select select-bordered w-full'
+							className='flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
 							id={field.name}
 							name={field.name}
 							onBlur={field.handleBlur}
@@ -262,24 +231,25 @@ export function AboutYouForm({
 							<option value='other'>Other</option>
 						</select>
 						{field.state.meta.errors.length > 0 && (
-							<label className='label' htmlFor={field.name}>
-								<span className='label-text-alt text-error'>
-									{String(field.state.meta.errors[0])}
-								</span>
-							</label>
+							<p className='text-destructive text-sm'>{String(field.state.meta.errors[0])}</p>
 						)}
 					</div>
 				)}
 			</form.Field>
 
-			<GrnButton disabled={loading} type='submit'>
+			<Button data-testid='about-you-submit-button' disabled={loading} type='submit'>
 				{loading ? 'Saving...' : 'Continue'}
-			</GrnButton>
+			</Button>
 
 			{onBack && (
-				<GreyButton onClick={onBack} type='button'>
+				<Button
+					data-testid='about-you-back-button'
+					onClick={onBack}
+					type='button'
+					variant='secondary'
+				>
 					Back to Sign Up
-				</GreyButton>
+				</Button>
 			)}
 		</form>
 	)

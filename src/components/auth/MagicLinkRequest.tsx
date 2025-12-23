@@ -2,8 +2,12 @@ import {useForm} from '@tanstack/react-form'
 import {sendSignInLinkToEmail} from 'firebase/auth'
 import {useState} from 'react'
 import {z} from 'zod'
+import {Alert, AlertDescription} from '@/components/ui/alert'
+import {Button} from '@/components/ui/button'
 import GreenCard from '@/components/ui/GreenCard'
-import GrnButton from '@/components/ui/GrnButton'
+import {Input} from '@/components/ui/input'
+import {Label} from '@/components/ui/label'
+import {Spinner} from '@/components/ui/spinner'
 import {setEmailForSignIn} from '$lib/auth/magic-link'
 import {auth} from '$lib/firebase/firebase.app'
 
@@ -80,14 +84,14 @@ export function MagicLinkRequest({onSuccess, onError}: MagicLinkRequestProps) {
 	return (
 		<GreenCard className='flex max-w-full! flex-col' data-testid='magic-link-form'>
 			<h2 className='mb-4 font-semibold text-lg'>Sign in with Magic Link</h2>
-			<p className='mb-4 text-gray-600 text-sm'>
+			<p className='mb-4 text-muted-foreground text-sm'>
 				Enter your email and we'll send you a sign-in link. No password needed.
 			</p>
 
 			{error && (
-				<div className='alert alert-error mb-4' role='alert'>
-					<span>{error}</span>
-				</div>
+				<Alert variant='error' className='mb-4'>
+					<AlertDescription>{error}</AlertDescription>
+				</Alert>
 			)}
 
 			<form
@@ -105,16 +109,14 @@ export function MagicLinkRequest({onSuccess, onError}: MagicLinkRequestProps) {
 					}}
 				>
 					{field => (
-						<div className='form-control flex flex-col'>
-							<label className='label' htmlFor={field.name}>
-								<span className='label-text'>Email</span>
-							</label>
-							<input
+						<div className='flex flex-col space-y-2'>
+							<Label htmlFor={field.name}>Email</Label>
+							<Input
 								aria-describedby={
 									field.state.meta.errors.length > 0 ? `${field.name}-error` : undefined
 								}
 								autoComplete='email'
-								className='input input-bordered w-full'
+								className='w-full'
 								data-testid='magic-link-email-input'
 								disabled={isLoading}
 								id={field.name}
@@ -126,23 +128,21 @@ export function MagicLinkRequest({onSuccess, onError}: MagicLinkRequestProps) {
 								value={field.state.value}
 							/>
 							{field.state.meta.errors.length > 0 && (
-								<div
-									className='label'
+								<p
+									className='text-destructive text-sm'
 									data-testid='magic-link-email-error'
 									id={`${field.name}-error`}
 								>
-									<span className='label-text-alt text-error'>
-										{String(field.state.meta.errors[0])}
-									</span>
-								</div>
+									{String(field.state.meta.errors[0])}
+								</p>
 							)}
 						</div>
 					)}
 				</form.Field>
 
-				<GrnButton data-testid='send-magic-link-button' disabled={isLoading} type='submit'>
-					{isLoading ? <span className='loading loading-spinner loading-sm' /> : 'Send Magic Link'}
-				</GrnButton>
+				<Button data-testid='send-magic-link-button' disabled={isLoading} type='submit'>
+					{isLoading ? <Spinner size='sm' /> : 'Send Magic Link'}
+				</Button>
 			</form>
 		</GreenCard>
 	)
