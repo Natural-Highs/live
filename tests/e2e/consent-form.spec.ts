@@ -1,9 +1,6 @@
 /**
  * Consent Form E2E Tests
  *
- * Tests the consent form flow that users must complete after authentication.
- * This is a critical path - users cannot access protected routes without consent.
- *
  * Test Strategy:
  * - Use auth fixtures to simulate authenticated user state
  * - Mock Firebase Auth and session endpoints

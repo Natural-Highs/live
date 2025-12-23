@@ -17,9 +17,7 @@ export function render(
 		user: userEvent.setup(),
 		...rtlRender(ui, {
 			wrapper: ({children}: PropsWithChildren) => (
-				<QueryClientProvider client={queryClient}>
-					{children}
-				</QueryClientProvider>
+				<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
 			),
 			...options
 		})
@@ -27,17 +25,12 @@ export function render(
 }
 
 // Simple render without router for isolated component tests
-export function renderComponent(
-	ui: ReactElement,
-	options?: Omit<RenderOptions, 'wrapper'>
-) {
+export function renderComponent(ui: ReactElement, options?: Omit<RenderOptions, 'wrapper'>) {
 	return {
 		user: userEvent.setup(),
 		...rtlRender(ui, {
 			wrapper: ({children}: PropsWithChildren) => (
-				<QueryClientProvider client={queryClient}>
-					{children}
-				</QueryClientProvider>
+				<QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
 			),
 			...options
 		})

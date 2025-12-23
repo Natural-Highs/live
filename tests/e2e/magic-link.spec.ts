@@ -1,9 +1,6 @@
 /**
  * Magic Link Authentication E2E Tests
  *
- * Story: 1-1-magic-link-authentication
- * Epic: Epic 1 - User Authentication & Identity
- *
  * These tests verify the magic link authentication flow including:
  * - Requesting a magic link from the sign-in page
  * - Same-device sign-in (email stored in localStorage)

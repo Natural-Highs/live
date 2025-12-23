@@ -1,4 +1,36 @@
 import '@testing-library/jest-dom'
+import {beforeEach, vi} from 'vitest'
+
+// Polyfill localStorage for Happy DOM
+const localStorageStore: Record<string, string> = {}
+const localStorageMock = {
+	getItem: (key: string) => localStorageStore[key] ?? null,
+	setItem: (key: string, value: string) => {
+		localStorageStore[key] = value
+	},
+	removeItem: (key: string) => {
+		delete localStorageStore[key]
+	},
+	clear: () => {
+		for (const key of Object.keys(localStorageStore)) {
+			delete localStorageStore[key]
+		}
+	},
+	get length() {
+		return Object.keys(localStorageStore).length
+	},
+	key: (index: number) => Object.keys(localStorageStore)[index] ?? null
+}
+
+Object.defineProperty(globalThis, 'localStorage', {
+	value: localStorageMock,
+	writable: true
+})
+
+Object.defineProperty(window, 'localStorage', {
+	value: localStorageMock,
+	writable: true
+})
 
 // Mock Firebase Auth
 vi.mock('firebase/auth', () => ({
@@ -14,6 +46,9 @@ vi.mock('firebase/auth', () => ({
 	signInWithEmailAndPassword: vi.fn(),
 	createUserWithEmailAndPassword: vi.fn(),
 	signInWithCustomToken: vi.fn(),
+	signInWithEmailLink: vi.fn(),
+	sendSignInLinkToEmail: vi.fn(),
+	isSignInWithEmailLink: vi.fn(() => true),
 	signOut: vi.fn()
 }))
 
