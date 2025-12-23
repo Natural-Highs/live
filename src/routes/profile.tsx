@@ -1,6 +1,9 @@
 import {createFileRoute, useNavigate} from '@tanstack/react-router'
 import type React from 'react'
 import {useEffect, useState} from 'react'
+import {Alert, Input, Label} from '@/components/ui'
+import {Button} from '@/components/ui/button'
+import {Card, CardContent} from '@/components/ui/card'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
@@ -15,7 +18,7 @@ interface UserProfile {
 	phone?: string
 	dateOfBirth?: string
 	createdAt?: string | Date
-	[key: string]: {} | undefined
+	[key: string]: string | Date | undefined
 }
 
 interface UserEvent {
@@ -29,7 +32,7 @@ interface UserEvent {
 		eventDate?: string
 		code?: string
 		isActive?: boolean
-		[key: string]: {} | undefined
+		[key: string]: string | boolean | undefined
 	}
 }
 
@@ -60,8 +63,7 @@ export const Route = createFileRoute('/profile')({
 
 		return {
 			profile: profileData.data || null,
-			userEvents:
-				(eventsResponse.ok && eventsData.success && eventsData.events) || []
+			userEvents: (eventsResponse.ok && eventsData.success && eventsData.events) || []
 		}
 	},
 	component: ProfileComponent
@@ -84,9 +86,7 @@ function ProfileComponent() {
 			sessionStorage.removeItem('pendingEventCode')
 			// Auto-submit if code is valid
 			setTimeout(() => {
-				const form = document.querySelector(
-					'form[onsubmit]'
-				) as HTMLFormElement | null
+				const form = document.querySelector('form[onsubmit]') as HTMLFormElement | null
 				if (form && pendingCode.length === 4) {
 					form.requestSubmit()
 				}
@@ -124,16 +124,12 @@ function ProfileComponent() {
 			// Reload to refresh events list
 			window.location.reload()
 		} catch (err) {
-			setError(
-				err instanceof Error ? err.message : 'Failed to register for event'
-			)
+			setError(err instanceof Error ? err.message : 'Failed to register for event')
 			setSubmittingCode(false)
 		}
 	}
 
-	const formatDate = (
-		dateString?: string | Date | {toDate?: () => Date}
-	): string => {
+	const formatDate = (dateString?: string | Date | {toDate?: () => Date}): string => {
 		if (!dateString) return 'Date TBD'
 		try {
 			let date: Date
@@ -168,15 +164,13 @@ function ProfileComponent() {
 					<div className='mb-4 flex justify-center'>
 						<Logo size='md' />
 					</div>
-					<h1 className='mb-2 font-bold text-4xl text-base-content'>Profile</h1>
+					<h1 className='mb-2 font-bold text-4xl text-foreground'>Profile</h1>
 				</div>
 
 				<div className='space-y-6'>
 					{/* User Information */}
 					<FormContainer>
-						<h2 className='mb-4 font-semibold text-2xl text-base-content'>
-							User Information
-						</h2>
+						<h2 className='mb-4 font-semibold text-2xl text-foreground'>User Information</h2>
 						{profile ? (
 							<div className='space-y-2'>
 								<div>
@@ -217,40 +211,32 @@ function ProfileComponent() {
 								)}
 							</div>
 						) : (
-							<p className='text-base-content opacity-70'>
-								No profile information available
-							</p>
+							<p className='text-foreground opacity-70'>No profile information available</p>
 						)}
 					</FormContainer>
 
 					{/* Event Code Entry */}
 					<FormContainer>
-						<h2 className='mb-4 font-semibold text-2xl text-base-content'>
-							Join an Event
-						</h2>
-						<p className='mb-4 text-sm opacity-70'>
-							Enter your 4-digit event code to register
-						</p>
+						<h2 className='mb-4 font-semibold text-2xl text-foreground'>Join an Event</h2>
+						<p className='mb-4 text-sm opacity-70'>Enter your 4-digit event code to register</p>
 
 						{error && (
-							<div className='alert alert-error mb-4'>
+							<Alert className='mb-4' variant='error'>
 								<span>{error}</span>
-							</div>
+							</Alert>
 						)}
 
 						{success && (
-							<div className='alert alert-success mb-4'>
+							<Alert className='mb-4' variant='success'>
 								<span>{success}</span>
-							</div>
+							</Alert>
 						)}
 
 						<form className='space-y-4' onSubmit={handleEventCodeSubmit}>
-							<div className='form-control'>
-								<label className='label' htmlFor='eventCode'>
-									<span className='label-text'>Event Code</span>
-								</label>
-								<input
-									className='input input-bordered text-center text-2xl tracking-widest'
+							<div className='flex flex-col gap-1'>
+								<Label htmlFor='eventCode'>Event Code</Label>
+								<Input
+									className='text-center text-2xl tracking-widest'
 									id='eventCode'
 									maxLength={4}
 									onChange={e => setEventCode(e.target.value)}
@@ -260,49 +246,42 @@ function ProfileComponent() {
 									value={eventCode}
 								/>
 							</div>
-							<button
-								className='btn btn-primary w-full rounded-[20px] font-semibold shadow-md'
+							<Button
+								data-testid='button-primary'
 								disabled={submittingCode || eventCode.length !== 4}
 								type='submit'
 							>
 								{submittingCode ? 'Registering...' : 'Join Event'}
-							</button>
+							</Button>
 						</form>
 					</FormContainer>
 
 					{/* Registered Events */}
 					<div>
-						<h2 className='mb-4 font-semibold text-2xl text-base-content'>
-							Registered Events
-						</h2>
+						<h2 className='mb-4 font-semibold text-2xl text-foreground'>Registered Events</h2>
 						{userEvents.length === 0 ? (
-							<div className='card bg-base-200 shadow-xl'>
-								<div className='card-body'>
-									<p className='text-base-content opacity-70'>
+							<Card data-testid='card-container'>
+								<CardContent className='pt-6'>
+									<p className='text-foreground opacity-70'>
 										No events registered yet. Join an event using a code above.
 									</p>
-								</div>
-							</div>
+								</CardContent>
+							</Card>
 						) : (
 							<div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
 								{userEvents.map(userEvent => (
-									<div
-										className='card bg-base-200 shadow-xl'
-										key={userEvent.id}
-									>
-										<div className='card-body'>
+									<Card data-testid='card-container' key={userEvent.id}>
+										<CardContent className='pt-6'>
 											{userEvent.event ? (
 												<>
-													<h3 className='card-title text-base-content'>
+													<h3 className='font-semibold text-lg text-foreground'>
 														{userEvent.event.name}
 													</h3>
 													<p className='text-sm opacity-70'>
 														Date: {formatDate(userEvent.event.eventDate)}
 													</p>
 													{userEvent.event.code && (
-														<p className='text-sm opacity-70'>
-															Code: {userEvent.event.code}
-														</p>
+														<p className='text-sm opacity-70'>Code: {userEvent.event.code}</p>
 													)}
 													<p className='text-sm opacity-70'>
 														Registered: {formatDate(userEvent.registeredAt)}
@@ -310,7 +289,7 @@ function ProfileComponent() {
 												</>
 											) : (
 												<>
-													<h3 className='card-title text-base-content'>
+													<h3 className='font-semibold text-lg text-foreground'>
 														Event {userEvent.eventCode}
 													</h3>
 													<p className='text-sm opacity-70'>
@@ -318,19 +297,20 @@ function ProfileComponent() {
 													</p>
 												</>
 											)}
-											<div className='card-actions mt-4 justify-end'>
-												<button
-													className='btn btn-sm btn-primary'
+											<div className='mt-4 flex justify-end'>
+												<Button
+													data-testid='button-primary'
 													onClick={() => {
 														navigate({to: '/surveys'})
 													}}
+													size='sm'
 													type='button'
 												>
 													View Details
-												</button>
+												</Button>
 											</div>
-										</div>
-									</div>
+										</CardContent>
+									</Card>
 								))}
 							</div>
 						)}
@@ -338,31 +318,30 @@ function ProfileComponent() {
 
 					{/* Surveys Link */}
 					<div>
-						<h2 className='mb-4 font-semibold text-2xl text-base-content'>
-							Surveys
-						</h2>
-						<div className='card bg-base-200 shadow-xl'>
-							<div className='card-body'>
-								<p className='text-base-content opacity-70'>
+						<h2 className='mb-4 font-semibold text-2xl text-foreground'>Surveys</h2>
+						<Card data-testid='card-container'>
+							<CardContent className='pt-6'>
+								<p className='text-foreground opacity-70'>
 									{userEvents.length === 0
 										? 'Complete surveys for your registered events here'
 										: 'Surveys become available 1 hour after event activation'}
 								</p>
 								{userEvents.length > 0 && (
-									<div className='card-actions mt-4 justify-end'>
-										<button
-											className='btn btn-sm btn-primary'
+									<div className='mt-4 flex justify-end'>
+										<Button
+											data-testid='button-primary'
 											onClick={() => {
 												navigate({to: '/surveys'})
 											}}
+											size='sm'
 											type='button'
 										>
 											View Surveys
-										</button>
+										</Button>
 									</div>
 								)}
-							</div>
-						</div>
+							</CardContent>
+						</Card>
 					</div>
 				</div>
 			</div>

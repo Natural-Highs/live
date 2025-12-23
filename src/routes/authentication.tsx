@@ -6,10 +6,9 @@ import {useState} from 'react'
 import {z} from 'zod'
 import {MagicLinkRequest} from '@/components/auth/MagicLinkRequest'
 import {MagicLinkSent} from '@/components/auth/MagicLinkSent'
-import {BrandLogo} from '@/components/ui'
+import {Alert, BrandLogo, Input, Label, Spinner} from '@/components/ui'
+import {Button} from '@/components/ui/button'
 import GreenCard from '@/components/ui/GreenCard'
-import GreyButton from '@/components/ui/GreyButton'
-import GrnButton from '@/components/ui/GrnButton'
 import {PageContainer} from '@/components/ui/page-container'
 import TitleCard from '@/components/ui/TitleCard'
 import {auth} from '$lib/firebase/firebase.app'
@@ -73,7 +72,7 @@ function AuthenticationComponent() {
 	if (loading) {
 		return (
 			<div className='flex min-h-screen items-center justify-center bg-linear-to-b from-green-100 to-green-50'>
-				<span className='loading loading-spinner loading-lg' />
+				<Spinner size='lg' />
 			</div>
 		)
 	}
@@ -221,20 +220,21 @@ function AuthenticationComponent() {
 
 					<div className='flex w-[22.5rem] flex-col items-center text-center'>
 						<div className='divider'>OR</div>
-						<GreyButton
+						<Button
 							onClick={() => {
 								setAuthView('password')
 								setAuthError('')
 							}}
 							type='button'
+							variant='secondary'
 						>
 							Sign in with Password
-						</GreyButton>
+						</Button>
 
 						<div className='divider'>OR</div>
-						<GreyButton onClick={() => navigate({to: '/guest'})} type='button'>
+						<Button onClick={() => navigate({to: '/guest'})} type='button' variant='secondary'>
 							Continue as Guest
-						</GreyButton>
+						</Button>
 					</div>
 				</>
 			)}
@@ -249,9 +249,9 @@ function AuthenticationComponent() {
 				<>
 					<GreenCard className='flex max-w-full! flex-col' data-testid='password-login-form'>
 						{authError && (
-							<div className='alert alert-error'>
+							<Alert variant='error' className='mb-4'>
 								<span>{authError}</span>
-							</div>
+							</Alert>
 						)}
 
 						<form
@@ -269,12 +269,9 @@ function AuthenticationComponent() {
 								}}
 							>
 								{field => (
-									<div className='form-control flex flex-col'>
-										<label className='label' htmlFor={field.name}>
-											<span className='label-text'>Email</span>
-										</label>
-										<input
-											className='input input-bordered w-full'
+									<div className='flex flex-col gap-1'>
+										<Label htmlFor={field.name}>Email</Label>
+										<Input
 											id={field.name}
 											name={field.name}
 											onBlur={field.handleBlur}
@@ -284,11 +281,9 @@ function AuthenticationComponent() {
 											value={field.state.value}
 										/>
 										{field.state.meta.errors.length > 0 && (
-											<div className='label'>
-												<span className='label-text-alt text-error'>
-													{String(field.state.meta.errors[0])}
-												</span>
-											</div>
+											<span className='text-destructive text-sm'>
+												{String(field.state.meta.errors[0])}
+											</span>
 										)}
 									</div>
 								)}
@@ -301,12 +296,9 @@ function AuthenticationComponent() {
 								}}
 							>
 								{field => (
-									<div className='form-control flex flex-col'>
-										<label className='label' htmlFor={field.name}>
-											<span className='label-text'>Password</span>
-										</label>
-										<input
-											className='input input-bordered w-full'
+									<div className='flex flex-col gap-1'>
+										<Label htmlFor={field.name}>Password</Label>
+										<Input
 											id={field.name}
 											name={field.name}
 											onBlur={field.handleBlur}
@@ -315,49 +307,49 @@ function AuthenticationComponent() {
 											value={field.state.value}
 										/>
 										{field.state.meta.errors.length > 0 && (
-											<div className='label'>
-												<span className='label-text-alt text-error'>
-													{String(field.state.meta.errors[0])}
-												</span>
-											</div>
+											<span className='text-destructive text-sm'>
+												{String(field.state.meta.errors[0])}
+											</span>
 										)}
 									</div>
 								)}
 							</loginForm.Field>
 
-							<GrnButton type='submit'>Sign In</GrnButton>
+							<Button type='submit'>Sign In</Button>
 						</form>
 					</GreenCard>
 
 					<div className='flex w-[22.5rem] flex-col items-center text-center'>
 						<div className='divider'>OR</div>
-						<GreyButton
+						<Button
 							onClick={() => {
 								setAuthView('magic-link')
 								setAuthError('')
 								loginForm.reset()
 							}}
 							type='button'
+							variant='secondary'
 						>
 							Sign in with Magic Link
-						</GreyButton>
+						</Button>
 
 						<div className='divider'>OR</div>
-						<GreyButton
+						<Button
 							onClick={() => {
 								setAuthView('signup')
 								setAuthError('')
 								loginForm.reset()
 							}}
 							type='button'
+							variant='secondary'
 						>
 							Sign Up
-						</GreyButton>
+						</Button>
 
 						<div className='divider'>OR</div>
-						<GreyButton onClick={() => navigate({to: '/guest'})} type='button'>
+						<Button onClick={() => navigate({to: '/guest'})} type='button' variant='secondary'>
 							Continue as Guest
-						</GreyButton>
+						</Button>
 					</div>
 				</>
 			)}
@@ -367,9 +359,9 @@ function AuthenticationComponent() {
 				<>
 					<GreenCard className='flex max-w-full! flex-col'>
 						{authError && (
-							<div className='alert alert-error'>
+							<Alert variant='error' className='mb-4'>
 								<span>{authError}</span>
-							</div>
+							</Alert>
 						)}
 
 						<signupForm.Field
@@ -379,12 +371,9 @@ function AuthenticationComponent() {
 							}}
 						>
 							{field => (
-								<div className='form-control flex flex-col'>
-									<label className='label' htmlFor={field.name}>
-										<span className='label-text'>Username</span>
-									</label>
-									<input
-										className='input input-bordered w-full'
+								<div className='flex flex-col gap-1'>
+									<Label htmlFor={field.name}>Username</Label>
+									<Input
 										id={field.name}
 										name={field.name}
 										onBlur={field.handleBlur}
@@ -394,11 +383,9 @@ function AuthenticationComponent() {
 										value={field.state.value}
 									/>
 									{field.state.meta.errors.length > 0 && (
-										<div className='label'>
-											<span className='label-text-alt text-error'>
-												{String(field.state.meta.errors[0])}
-											</span>
-										</div>
+										<span className='text-destructive text-sm'>
+											{String(field.state.meta.errors[0])}
+										</span>
 									)}
 								</div>
 							)}
@@ -411,12 +398,9 @@ function AuthenticationComponent() {
 							}}
 						>
 							{field => (
-								<div className='form-control flex flex-col gap-1'>
-									<label className='label' htmlFor={field.name}>
-										<span className='label-text'>Email</span>
-									</label>
-									<input
-										className='input input-bordered w-full'
+								<div className='flex flex-col gap-1'>
+									<Label htmlFor={field.name}>Email</Label>
+									<Input
 										id={field.name}
 										name={field.name}
 										onBlur={field.handleBlur}
@@ -426,11 +410,9 @@ function AuthenticationComponent() {
 										value={field.state.value}
 									/>
 									{field.state.meta.errors.length > 0 && (
-										<div className='label'>
-											<span className='label-text-alt text-error'>
-												{String(field.state.meta.errors[0])}
-											</span>
-										</div>
+										<span className='text-destructive text-sm'>
+											{String(field.state.meta.errors[0])}
+										</span>
 									)}
 								</div>
 							)}
@@ -443,12 +425,9 @@ function AuthenticationComponent() {
 							}}
 						>
 							{field => (
-								<div className='form-control flex flex-col'>
-									<label className='label' htmlFor={field.name}>
-										<span className='label-text'>Password</span>
-									</label>
-									<input
-										className='input input-bordered w-full'
+								<div className='flex flex-col gap-1'>
+									<Label htmlFor={field.name}>Password</Label>
+									<Input
 										id={field.name}
 										name={field.name}
 										onBlur={field.handleBlur}
@@ -457,11 +436,9 @@ function AuthenticationComponent() {
 										value={field.state.value}
 									/>
 									{field.state.meta.errors.length > 0 && (
-										<div className='label'>
-											<span className='label-text-alt text-error'>
-												{String(field.state.meta.errors[0])}
-											</span>
-										</div>
+										<span className='text-destructive text-sm'>
+											{String(field.state.meta.errors[0])}
+										</span>
 									)}
 								</div>
 							)}
@@ -474,12 +451,9 @@ function AuthenticationComponent() {
 							}}
 						>
 							{field => (
-								<div className='form-control flex flex-col'>
-									<label className='label' htmlFor={field.name}>
-										<span className='label-text'>Confirm Password</span>
-									</label>
-									<input
-										className='input input-bordered w-full'
+								<div className='flex flex-col gap-1'>
+									<Label htmlFor={field.name}>Confirm Password</Label>
+									<Input
 										id={field.name}
 										name={field.name}
 										onBlur={field.handleBlur}
@@ -488,11 +462,9 @@ function AuthenticationComponent() {
 										value={field.state.value}
 									/>
 									{field.state.meta.errors.length > 0 && (
-										<div className='label'>
-											<span className='label-text-alt text-error'>
-												{String(field.state.meta.errors[0])}
-											</span>
-										</div>
+										<span className='text-destructive text-sm'>
+											{String(field.state.meta.errors[0])}
+										</span>
 									)}
 								</div>
 							)}
@@ -506,33 +478,38 @@ function AuthenticationComponent() {
 										issue => issue.path[0] === 'confirmPassword'
 									)
 									if (passwordMismatchError) {
-										return <div className='text-error text-sm'>{passwordMismatchError.message}</div>
+										return (
+											<span className='text-destructive text-sm'>
+												{passwordMismatchError.message}
+											</span>
+										)
 									}
 								}
 								return null
 							}}
 						</signupForm.Subscribe>
 
-						<GrnButton type='submit'>Create Account</GrnButton>
+						<Button type='submit'>Create Account</Button>
 					</GreenCard>
 
 					<div className='flex w-[22.5rem] flex-col items-center text-center'>
 						<div className='divider'>OR</div>
-						<GreyButton
+						<Button
 							onClick={() => {
 								setAuthView('magic-link')
 								setAuthError('')
 								signupForm.reset()
 							}}
 							type='button'
+							variant='secondary'
 						>
 							Sign In
-						</GreyButton>
+						</Button>
 
 						<div className='divider'>OR</div>
-						<GreyButton onClick={() => navigate({to: '/guest'})} type='button'>
+						<Button onClick={() => navigate({to: '/guest'})} type='button' variant='secondary'>
 							Continue as Guest
-						</GreyButton>
+						</Button>
 					</div>
 				</>
 			)}

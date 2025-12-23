@@ -1,9 +1,7 @@
 import {createFileRoute, useNavigate} from '@tanstack/react-router'
 import {useState} from 'react'
-import {
-	type SurveyJSJson,
-	SurveyRenderer
-} from '@/components/forms/SurveyRenderer'
+import {type SurveyJSJson, SurveyRenderer} from '@/components/forms/SurveyRenderer'
+import {Alert, Spinner} from '@/components/ui'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
@@ -55,12 +53,7 @@ export const Route = createFileRoute('/surveys/$surveyId')({
 		// Convert questions to SurveyJS JSON format
 		const elements = data.questions.map(q => {
 			const baseElement: Record<string, unknown> = {
-				type:
-					q.type === 'text'
-						? 'text'
-						: q.type === 'textarea'
-							? 'comment'
-							: 'text',
+				type: q.type === 'text' ? 'text' : q.type === 'textarea' ? 'comment' : 'text',
 				name: q.id,
 				title: q.text,
 				isRequired: q.required
@@ -160,19 +153,15 @@ function SurveyFormComponent() {
 					<div className='mb-4 flex justify-center'>
 						<Logo size='md' />
 					</div>
-					<h1 className='mb-2 font-bold text-4xl text-base-content'>
-						{surveyName || 'Survey'}
-					</h1>
-					<p className='text-sm opacity-70'>
-						Please complete all required fields
-					</p>
+					<h1 className='mb-2 font-bold text-4xl text-foreground'>{surveyName || 'Survey'}</h1>
+					<p className='text-sm opacity-70'>Please complete all required fields</p>
 				</div>
 
 				<FormContainer>
 					{error && (
-						<div className='alert alert-error mb-4'>
+						<Alert variant='error' className='mb-4'>
 							<span>{error}</span>
-						</div>
+						</Alert>
 					)}
 
 					{surveyJson && !submitting ? (
@@ -184,15 +173,13 @@ function SurveyFormComponent() {
 						/>
 					) : submitting ? (
 						<div className='py-8 text-center'>
-							<span className='loading loading-spinner loading-lg' />
-							<p className='mt-4 text-base-content opacity-70'>Submitting...</p>
+							<Spinner size='lg' />
+							<p className='mt-4 text-foreground opacity-70'>Submitting...</p>
 						</div>
 					) : (
-						<div className='alert alert-warning'>
-							<span>
-								Survey not available. Please contact an administrator.
-							</span>
-						</div>
+						<Alert variant='warning'>
+							<span>Survey not available. Please contact an administrator.</span>
+						</Alert>
 					)}
 				</FormContainer>
 			</div>
