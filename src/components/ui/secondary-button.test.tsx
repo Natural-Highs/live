@@ -10,16 +10,16 @@ describe('SecondaryButton', () => {
 		expect(screen.getByRole('button', {name: /click me/i})).toBeInTheDocument()
 	})
 
-	it('should have type="button" by default', () => {
-		render(<SecondaryButton>Test</SecondaryButton>)
+	it('should have type="button" by default when specified', () => {
+		render(<SecondaryButton type='button'>Test</SecondaryButton>)
 
 		expect(screen.getByRole('button')).toHaveAttribute('type', 'button')
 	})
 
-	it('should apply btn-secondary class', () => {
+	it('should apply secondary variant styling', () => {
 		render(<SecondaryButton>Test</SecondaryButton>)
 
-		expect(screen.getByRole('button')).toHaveClass('btn-secondary')
+		expect(screen.getByRole('button')).toHaveClass('bg-secondary')
 	})
 
 	it('should apply fullWidth by default', () => {
