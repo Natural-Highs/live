@@ -464,8 +464,8 @@ test.describe('Magic Link Authentication', () => {
 			// WHEN: User resends 3 times
 			for (let i = 0; i < 3; i++) {
 				await page.getByTestId('resend-magic-link-button').click()
-				// Wait briefly for UI update
-				await page.waitForTimeout(100)
+				// Wait for button state to update after each click
+				await expect(page.getByTestId('resend-magic-link-button')).toBeVisible()
 			}
 
 			// THEN: Resend button should be disabled

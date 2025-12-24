@@ -17,6 +17,20 @@ import {expect, test} from '@playwright/test'
 import {TEST_CODES} from '../factories/events.factory'
 
 /**
+ * Helper to mock session check API (required for /guests/entry to render)
+ * This endpoint is called on mount to check if user has a valid session
+ */
+async function mockSessionCheck(page: import('@playwright/test').Page, hasSession = false) {
+	await page.route('**/api/auth/sessionLogin', route => {
+		route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify({token: hasSession})
+		})
+	})
+}
+
+/**
  * Helper to mock event code validation API
  */
 async function mockEventCodeValidation(
@@ -121,17 +135,21 @@ async function mockConsentFormApi(page: import('@playwright/test').Page) {
 test.describe('Guest Check-in Flow', () => {
 	test.describe('AC2: Guest Check-in Flow', () => {
 		test('should display event code entry form on /guests/entry', async ({page}) => {
-			// GIVEN: Guest navigates to guest entry page
-			// WHEN: Page loads
+			// GIVEN: Mock session check (no session = guest)
+			await mockSessionCheck(page, false)
+
+			// WHEN: Guest navigates to guest entry page
 			await page.goto('/guests/entry')
 
 			// THEN: Event code input should be visible
-			await expect(page.getByTestId('guest-entry-code-input')).toBeVisible()
+			// Extended timeout to account for Firebase Auth's 3s timeout in test environments
+			await expect(page.getByTestId('guest-entry-code-input')).toBeVisible({timeout: 10000})
 			await expect(page.getByTestId('guest-entry-continue-button')).toBeVisible()
 		})
 
 		test('should validate event code and show choice screen', async ({page}) => {
-			// GIVEN: Mock valid event code
+			// GIVEN: Mock session check and valid event code
+			await mockSessionCheck(page, false)
 			await mockEventCodeValidation(page, true)
 
 			await page.goto('/guests/entry')
@@ -149,6 +167,7 @@ test.describe('Guest Check-in Flow', () => {
 
 		test('should navigate to /guest when choosing continue as guest', async ({page}) => {
 			// GIVEN: Mock APIs
+			await mockSessionCheck(page, false)
 			await mockEventCodeValidation(page, true)
 			await mockEventsApi(page)
 			await mockConsentFormApi(page)
@@ -170,7 +189,8 @@ test.describe('Guest Check-in Flow', () => {
 		})
 
 		test('should navigate to /authentication when choosing login', async ({page}) => {
-			// GIVEN: Mock valid event code
+			// GIVEN: Mock session check and valid event code
+			await mockSessionCheck(page, false)
 			await mockEventCodeValidation(page, true)
 
 			await page.goto('/guests/entry')
@@ -221,7 +241,8 @@ test.describe('Guest Check-in Flow', () => {
 
 	test.describe('AC6: Error Handling Paths', () => {
 		test('should show error for invalid event code on entry page', async ({page}) => {
-			// GIVEN: Mock invalid event code
+			// GIVEN: Mock session check and invalid event code
+			await mockSessionCheck(page, false)
 			await mockEventCodeValidation(page, false)
 
 			await page.goto('/guests/entry')
@@ -252,7 +273,8 @@ test.describe('Guest Check-in Flow', () => {
 		})
 
 		test('should handle network failure gracefully on entry page', async ({page}) => {
-			// GIVEN: Mock network failure
+			// GIVEN: Mock session check and network failure
+			await mockSessionCheck(page, false)
 			await page.route('**/api/guests/validateCode', route => {
 				route.abort('failed')
 			})
@@ -268,7 +290,8 @@ test.describe('Guest Check-in Flow', () => {
 		})
 
 		test('should allow retry after error on entry page', async ({page}) => {
-			// GIVEN: First attempt fails, second succeeds
+			// GIVEN: Mock session check; first attempt fails, second succeeds
+			await mockSessionCheck(page, false)
 			let attemptCount = 0
 			await page.route('**/api/guests/validateCode', route => {
 				attemptCount++
@@ -304,15 +327,7 @@ test.describe('Guest Check-in Flow', () => {
 
 		test('should handle expired session gracefully', async ({page}) => {
 			// GIVEN: Mock session check that indicates no session
-			await page.route('**/api/auth/sessionLogin', route => {
-				route.fulfill({
-					status: 200,
-					contentType: 'application/json',
-					body: JSON.stringify({token: false})
-				})
-			})
-
-			// Mock event validation
+			await mockSessionCheck(page, false)
 			await mockEventCodeValidation(page, true)
 
 			await page.goto('/guests/entry')
@@ -328,7 +343,8 @@ test.describe('Guest Check-in Flow', () => {
 
 	test.describe('Event Code Storage', () => {
 		test('should store event details in sessionStorage after validation', async ({page}) => {
-			// GIVEN: Mock valid event code
+			// GIVEN: Mock session check and valid event code
+			await mockSessionCheck(page, false)
 			await mockEventCodeValidation(page, true, 'Community Yoga Session')
 
 			await page.goto('/guests/entry')

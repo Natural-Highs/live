@@ -8,96 +8,22 @@
  * - Download completion in measurable time
  *
  * Test Strategy:
- * - Use admin fixtures for admin authentication
+ * - Use admin fixtures for admin authentication (session cookie injection)
  * - Mock API endpoints for survey responses
  * - Use download event capture pattern
  * - Performance timing assertions
  */
 
-import {expect, test} from '@playwright/test'
 import {createEvent} from '../factories/events.factory'
-
-/**
- * Helper to set up admin authentication
- */
-async function setupAdminAuth(
-	page: import('@playwright/test').Page,
-	context: import('@playwright/test').BrowserContext
-) {
-	await page.route('**/api/auth/session', route => {
-		route.fulfill({
-			status: 200,
-			contentType: 'application/json',
-			body: JSON.stringify({
-				user: {
-					uid: 'admin-user-123',
-					email: 'admin@naturalhighs.org',
-					displayName: 'Admin User'
-				},
-				claims: {
-					signedConsentForm: true,
-					admin: true
-				}
-			})
-		})
-	})
-
-	await page.route('**/api/auth/sessionLogin', route => {
-		if (route.request().method() === 'GET') {
-			route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				body: JSON.stringify({token: true})
-			})
-		} else {
-			route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				body: JSON.stringify({success: true})
-			})
-		}
-	})
-
-	await context.addInitScript(() => {
-		window.localStorage.setItem('authState', 'authenticated')
-	})
-}
-
-/**
- * Mock survey response data
- */
-function createMockSurveyResponse(overrides = {}) {
-	return {
-		id: `response-${Date.now()}`,
-		userId: 'user-123',
-		surveyId: 'survey-1',
-		eventId: 'event-1',
-		isComplete: true,
-		createdAt: new Date().toISOString(),
-		user: {
-			id: 'user-123',
-			email: 'participant@example.com',
-			firstName: 'John',
-			lastName: 'Doe'
-		},
-		survey: {
-			id: 'survey-1',
-			name: 'Post-Event Survey'
-		},
-		questionResponses: [
-			{id: 'qr-1', questionId: 'q1', responseText: 'Very satisfied'},
-			{id: 'qr-2', questionId: 'q2', responseText: 'Great experience'}
-		],
-		...overrides
-	}
-}
+import {createSurveyResponse} from '../factories/surveys.factory'
+import {expect, test} from '../fixtures/admin.fixture'
 
 /**
  * Helper to mock survey responses API
  */
 async function mockSurveyResponsesApi(
 	page: import('@playwright/test').Page,
-	responses: ReturnType<typeof createMockSurveyResponse>[] = []
+	responses: ReturnType<typeof createSurveyResponse>[] = []
 ) {
 	await page.route('**/api/surveys/responses**', route => {
 		route.fulfill({
@@ -126,14 +52,16 @@ async function mockEventsApi(
 
 test.describe('Admin Export Flow', () => {
 	test.describe('AC4: Admin Export Flow', () => {
-		test('should display survey responses page for admin users', async ({page, context}) => {
-			// GIVEN: Admin is authenticated
-			await setupAdminAuth(page, context)
+		test('should display survey responses page for admin users', async ({
+			page,
+			adminUser: _adminUser
+		}) => {
+			// GIVEN: Admin is authenticated (via adminUser fixture)
 			await mockSurveyResponsesApi(page, [])
 			await mockEventsApi(page, [])
 
 			// WHEN: Admin navigates to survey responses page
-			await page.goto('/_admin/survey-responses')
+			await page.goto('/survey-responses')
 
 			// THEN: Page should be visible with export buttons
 			await expect(page.getByTestId('admin-survey-responses-page')).toBeVisible()
@@ -141,9 +69,8 @@ test.describe('Admin Export Flow', () => {
 			await expect(page.getByTestId('export-json-button')).toBeVisible()
 		})
 
-		test('should display filters for configuring export', async ({page, context}) => {
+		test('should display filters for configuring export', async ({page, adminUser: _adminUser}) => {
 			// GIVEN: Admin is authenticated
-			await setupAdminAuth(page, context)
 			await mockSurveyResponsesApi(page, [])
 			await mockEventsApi(page, [
 				createEvent({id: 'e1', name: 'Yoga Session'}),
@@ -151,7 +78,7 @@ test.describe('Admin Export Flow', () => {
 			])
 
 			// WHEN: Admin navigates to survey responses page
-			await page.goto('/_admin/survey-responses')
+			await page.goto('/survey-responses')
 
 			// THEN: Filters should be visible
 			await expect(page.getByTestId('filters-card')).toBeVisible()
@@ -160,16 +87,15 @@ test.describe('Admin Export Flow', () => {
 			await expect(page.getByTestId('filter-end-date')).toBeVisible()
 		})
 
-		test('should configure event filter', async ({page, context}) => {
+		test('should configure event filter', async ({page, adminUser: _adminUser}) => {
 			// GIVEN: Admin is on survey responses page with events
-			await setupAdminAuth(page, context)
 			await mockSurveyResponsesApi(page, [])
 			await mockEventsApi(page, [
 				createEvent({id: 'e1', name: 'Yoga Session'}),
 				createEvent({id: 'e2', name: 'Meditation Class'})
 			])
 
-			await page.goto('/_admin/survey-responses')
+			await page.goto('/survey-responses')
 
 			// WHEN: Admin selects an event filter
 			await page.getByTestId('filter-event-select').selectOption('e1')
@@ -178,13 +104,12 @@ test.describe('Admin Export Flow', () => {
 			await expect(page.getByTestId('filter-event-select')).toHaveValue('e1')
 		})
 
-		test('should configure date filters', async ({page, context}) => {
+		test('should configure date filters', async ({page, adminUser: _adminUser}) => {
 			// GIVEN: Admin is on survey responses page
-			await setupAdminAuth(page, context)
 			await mockSurveyResponsesApi(page, [])
 			await mockEventsApi(page, [])
 
-			await page.goto('/_admin/survey-responses')
+			await page.goto('/survey-responses')
 
 			// WHEN: Admin sets date filters
 			await page.getByTestId('filter-start-date').fill('2025-01-01')
@@ -195,13 +120,15 @@ test.describe('Admin Export Flow', () => {
 			await expect(page.getByTestId('filter-end-date')).toHaveValue('2025-01-31')
 		})
 
-		test('should clear filters when clicking clear button', async ({page, context}) => {
+		test('should clear filters when clicking clear button', async ({
+			page,
+			adminUser: _adminUser
+		}) => {
 			// GIVEN: Admin has filters set
-			await setupAdminAuth(page, context)
 			await mockSurveyResponsesApi(page, [])
 			await mockEventsApi(page, [createEvent({id: 'e1', name: 'Yoga Session'})])
 
-			await page.goto('/_admin/survey-responses')
+			await page.goto('/survey-responses')
 
 			// Set filters
 			await page.getByTestId('filter-event-select').selectOption('e1')
@@ -217,47 +144,50 @@ test.describe('Admin Export Flow', () => {
 			await expect(page.getByTestId('filter-end-date')).toHaveValue('')
 		})
 
-		test('should have export buttons disabled when no data', async ({page, context}) => {
+		test('should have export buttons disabled when no data', async ({
+			page,
+			adminUser: _adminUser
+		}) => {
 			// GIVEN: Admin is on page with no survey responses
-			await setupAdminAuth(page, context)
 			await mockSurveyResponsesApi(page, [])
 			await mockEventsApi(page, [])
 
 			// WHEN: Admin navigates to survey responses page
-			await page.goto('/_admin/survey-responses')
+			await page.goto('/survey-responses')
 
 			// THEN: Export buttons should be disabled
 			await expect(page.getByTestId('export-csv-button')).toBeDisabled()
 			await expect(page.getByTestId('export-json-button')).toBeDisabled()
 		})
 
-		test('should have export buttons enabled when data exists', async ({page, context}) => {
+		test('should have export buttons enabled when data exists', async ({
+			page,
+			adminUser: _adminUser
+		}) => {
 			// GIVEN: Admin is on page with survey responses
-			await setupAdminAuth(page, context)
 			await mockSurveyResponsesApi(page, [
-				createMockSurveyResponse(),
-				createMockSurveyResponse({id: 'response-2'})
+				createSurveyResponse(),
+				createSurveyResponse({id: 'response-2'})
 			])
 			await mockEventsApi(page, [])
 
 			// WHEN: Admin navigates to survey responses page
-			await page.goto('/_admin/survey-responses')
+			await page.goto('/survey-responses')
 
-			// Wait for data to load
-			await page.waitForTimeout(500)
-
-			// THEN: Export buttons should be enabled
+			// Wait for data to load by checking button state
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
 			await expect(page.getByTestId('export-json-button')).toBeEnabled()
 		})
 
-		test('should trigger CSV download when clicking export', async ({page, context}) => {
+		test('should trigger CSV download when clicking export', async ({
+			page,
+			adminUser: _adminUser
+		}) => {
 			// GIVEN: Admin is on page with survey responses
-			await setupAdminAuth(page, context)
-			await mockSurveyResponsesApi(page, [createMockSurveyResponse()])
+			await mockSurveyResponsesApi(page, [createSurveyResponse()])
 			await mockEventsApi(page, [])
 
-			await page.goto('/_admin/survey-responses')
+			await page.goto('/survey-responses')
 
 			// Wait for data to load
 			await page.waitForTimeout(500)
@@ -271,13 +201,15 @@ test.describe('Admin Export Flow', () => {
 			expect(download.suggestedFilename()).toMatch(/survey-responses.*\.csv$/)
 		})
 
-		test('should trigger JSON download when clicking export', async ({page, context}) => {
+		test('should trigger JSON download when clicking export', async ({
+			page,
+			adminUser: _adminUser
+		}) => {
 			// GIVEN: Admin is on page with survey responses
-			await setupAdminAuth(page, context)
-			await mockSurveyResponsesApi(page, [createMockSurveyResponse()])
+			await mockSurveyResponsesApi(page, [createSurveyResponse()])
 			await mockEventsApi(page, [])
 
-			await page.goto('/_admin/survey-responses')
+			await page.goto('/survey-responses')
 
 			// Wait for data to load
 			await page.waitForTimeout(500)
@@ -293,20 +225,19 @@ test.describe('Admin Export Flow', () => {
 	})
 
 	test.describe('AC8: Performance Assertions', () => {
-		test('should complete export within 5 seconds', async ({page, context}) => {
+		test('should complete export within 5 seconds', async ({page, adminUser: _adminUser}) => {
 			// GIVEN: Admin is on page with survey responses
-			await setupAdminAuth(page, context)
 			await mockSurveyResponsesApi(page, [
-				createMockSurveyResponse(),
-				createMockSurveyResponse({id: 'response-2'}),
-				createMockSurveyResponse({id: 'response-3'})
+				createSurveyResponse(),
+				createSurveyResponse({id: 'response-2'}),
+				createSurveyResponse({id: 'response-3'})
 			])
 			await mockEventsApi(page, [])
 
-			await page.goto('/_admin/survey-responses')
+			await page.goto('/survey-responses')
 
-			// Wait for data to load
-			await page.waitForTimeout(500)
+			// Wait for data to load by checking button state
+			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
 
 			// WHEN: Admin clicks export CSV and measures time
 			const start = Date.now()
@@ -319,15 +250,14 @@ test.describe('Admin Export Flow', () => {
 			expect(elapsed).toBeLessThan(5000)
 		})
 
-		test('should load page within reasonable time', async ({page, context}) => {
+		test('should load page within reasonable time', async ({page, adminUser: _adminUser}) => {
 			// GIVEN: Admin is authenticated
-			await setupAdminAuth(page, context)
-			await mockSurveyResponsesApi(page, [createMockSurveyResponse()])
+			await mockSurveyResponsesApi(page, [createSurveyResponse()])
 			await mockEventsApi(page, [])
 
 			// WHEN: Admin navigates to survey responses page
 			const start = Date.now()
-			await page.goto('/_admin/survey-responses')
+			await page.goto('/survey-responses')
 			await expect(page.getByTestId('admin-survey-responses-page')).toBeVisible()
 			const elapsed = Date.now() - start
 
@@ -337,9 +267,8 @@ test.describe('Admin Export Flow', () => {
 	})
 
 	test.describe('Error Handling (AC6)', () => {
-		test('should handle API error gracefully', async ({page, context}) => {
+		test('should handle API error gracefully', async ({page, adminUser: _adminUser}) => {
 			// GIVEN: Admin is authenticated
-			await setupAdminAuth(page, context)
 			await mockEventsApi(page, [])
 
 			// Mock error response
@@ -352,7 +281,7 @@ test.describe('Admin Export Flow', () => {
 			})
 
 			// WHEN: Admin navigates to survey responses page
-			await page.goto('/_admin/survey-responses')
+			await page.goto('/survey-responses')
 
 			// THEN: Error should be displayed
 			await expect(page.getByTestId('survey-responses-error')).toBeVisible()
