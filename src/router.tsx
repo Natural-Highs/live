@@ -12,9 +12,9 @@ export function getRouter() {
 		context: {
 			auth: {
 				user: null,
-				loading: true,
-				consentForm: false,
-				admin: false
+				isAuthenticated: false,
+				hasConsent: false,
+				isAdmin: false
 			},
 			queryClient
 		} satisfies RouterContext

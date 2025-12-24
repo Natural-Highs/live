@@ -2,26 +2,45 @@
 
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query'
 import {ReactQueryDevtools} from '@tanstack/react-query-devtools'
-import {createRootRouteWithContext, Outlet} from '@tanstack/react-router'
+import {createRootRouteWithContext, HeadContent, Outlet, Scripts} from '@tanstack/react-router'
 import {TanStackRouterDevtools} from '@tanstack/react-router-devtools'
-import type {User} from 'firebase/auth'
+import type {ReactNode} from 'react'
 import Layout from '../components/Layout'
 import {AuthProvider} from '../context/AuthContext'
 import appCss from '../global.css?url'
+import {getSessionForRoutesFn, type SessionUser} from '@/server/functions/auth'
 
 const queryClient = new QueryClient()
 
+/**
+ * Session auth context provided by beforeLoad.
+ * Available to all routes via route context.
+ */
+export interface SessionAuthContext {
+	user: SessionUser | null
+	isAuthenticated: boolean
+	hasConsent: boolean
+	isAdmin: boolean
+}
+
 export interface RouterContext {
-	auth: {
-		user: User | null
-		loading: boolean
-		consentForm: boolean
-		admin: boolean
-	}
+	/**
+	 * Server-side session auth context.
+	 * Fetched in beforeLoad, available to all child routes.
+	 */
+	auth: SessionAuthContext
 	queryClient: QueryClient
 }
 
 export const Route = createRootRouteWithContext<RouterContext>()({
+	/**
+	 * Fetch session data on every navigation.
+	 * This provides auth state to all routes via context.
+	 */
+	beforeLoad: async () => {
+		const auth = await getSessionForRoutesFn()
+		return {auth}
+	},
 	head: () => ({
 		meta: [
 			{charSet: 'utf-8'},
@@ -48,16 +67,32 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 	component: RootComponent
 })
 
+function RootDocument({children}: {children: ReactNode}) {
+	return (
+		<html lang='en'>
+			<head>
+				<HeadContent />
+			</head>
+			<body>
+				{children}
+				<Scripts />
+			</body>
+		</html>
+	)
+}
+
 function RootComponent() {
 	return (
-		<QueryClientProvider client={queryClient}>
-			<AuthProvider>
-				<Layout>
-					<Outlet />
-				</Layout>
-			</AuthProvider>
-			<ReactQueryDevtools />
-			<TanStackRouterDevtools position='bottom-right' />
-		</QueryClientProvider>
+		<RootDocument>
+			<QueryClientProvider client={queryClient}>
+				<AuthProvider>
+					<Layout>
+						<Outlet />
+					</Layout>
+				</AuthProvider>
+				<ReactQueryDevtools />
+				<TanStackRouterDevtools position='bottom-right' />
+			</QueryClientProvider>
+		</RootDocument>
 	)
 }

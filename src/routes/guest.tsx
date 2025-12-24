@@ -1,6 +1,6 @@
 import {createFileRoute, useNavigate} from '@tanstack/react-router'
 import type React from 'react'
-import {useEffect, useState} from 'react'
+import {useCallback, useEffect, useState} from 'react'
 import {Alert, BrandLogo, Checkbox, Label, PageContainer, Spinner} from '@/components/ui'
 import {Button} from '@/components/ui/button'
 import {FormContainer} from '@/components/ui/form-container'
@@ -37,33 +37,33 @@ function GuestComponent() {
 	const [success, setSuccess] = useState('')
 	const [agreed, setAgreed] = useState(false)
 
-	useEffect(() => {
-		const fetchEvents = async () => {
-			try {
-				const response = await fetch('/api/events')
-				const data = (await response.json()) as {
-					success: boolean
-					events?: Event[]
-					error?: string
-				}
-
-				if (!(response.ok && data.success)) {
-					setEventError(data.error || 'Failed to load events')
-					return
-				}
-
-				if (data.events) {
-					setEvents(data.events)
-				}
-			} catch (err) {
-				setEventError(err instanceof Error ? err.message : 'Failed to load events')
-			} finally {
-				setEventLoading(false)
+	const fetchEvents = useCallback(async () => {
+		try {
+			const response = await fetch('/api/events')
+			const data = (await response.json()) as {
+				success: boolean
+				events?: Event[]
+				error?: string
 			}
-		}
 
-		fetchEvents()
+			if (!(response.ok && data.success)) {
+				setEventError(data.error || 'Failed to load events')
+				return
+			}
+
+			if (data.events) {
+				setEvents(data.events)
+			}
+		} catch (err) {
+			setEventError(err instanceof Error ? err.message : 'Failed to load events')
+		} finally {
+			setEventLoading(false)
+		}
 	}, [])
+
+	useEffect(() => {
+		fetchEvents()
+	}, [fetchEvents])
 
 	useEffect(() => {
 		const fetchTemplate = async () => {
@@ -121,7 +121,9 @@ function GuestComponent() {
 
 			setSuccess(data.message || 'Successfully registered for event')
 			setEventCode('')
-			window.location.reload()
+			// Refresh events list
+			await fetchEvents()
+			setSubmittingCode(false)
 		} catch (err) {
 			setEventError(err instanceof Error ? err.message : 'Failed to register for event')
 			setSubmittingCode(false)
@@ -164,7 +166,7 @@ function GuestComponent() {
 			if (currentUser) {
 				// Force token refresh to get updated claims from backend
 				await currentUser.getIdToken(true)
-				// Navigate to dashboard - ProtectedRoute will allow access now that consentForm is true
+				// Navigate to dashboard - layout route will allow access now that consentForm is true
 				navigate({to: '/dashboard', replace: true})
 			}
 		} catch (err) {

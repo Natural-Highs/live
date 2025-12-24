@@ -8,7 +8,36 @@ import {PageContainer} from '@/components/ui/page-container'
 import TitleCard from '@/components/ui/TitleCard'
 import {clearEmailForSignIn, getEmailForSignIn} from '$lib/auth/magic-link'
 import {auth} from '$lib/firebase/firebase.app'
+import {createSessionFn} from '@/server/functions/auth'
 import {useAuth} from '../context/AuthContext'
+
+/**
+ * Type definition for createSessionFn data parameter.
+ * Extracted to improve type safety at call sites.
+ * Note: TanStack Start's createServerFn type inference doesn't properly
+ * infer the data parameter type, requiring explicit typing here.
+ */
+type CreateSessionData = {
+	uid: string
+	email: string | null
+	displayName: string | null
+	idToken: string
+}
+
+/**
+ * Type-safe wrapper for createSessionFn.
+ * Works around TanStack Start's type inference limitations.
+ */
+type CreateSessionFnType = (opts: {data: CreateSessionData}) => Promise<{
+	success: true
+	user: {
+		uid: string
+		email: string | null
+		displayName: string | null
+		photoURL: null
+		claims: {admin?: boolean; signedConsentForm?: boolean}
+	}
+}>
 
 type MagicLinkState = 'loading' | 'cross-device-prompt' | 'signing-in' | 'success' | 'error'
 
@@ -68,22 +97,32 @@ function MagicLinkComponent() {
 				// Get ID token for session creation
 				const idToken = await result.user.getIdToken()
 
-				// Create server session
-				const sessionResponse = await fetch('/api/auth/sessionLogin', {
-					method: 'POST',
-					headers: {'Content-Type': 'application/json'},
-					body: JSON.stringify({idToken})
+				// Create TanStack server session via createSessionFn
+				// This replaces the legacy /api/auth/sessionLogin endpoint
+				// Type assertion needed because TanStack Start handler type doesn't infer data type from handler signature
+				//
+				// SAFETY: TanStack Start's createServerFn doesn't expose typed call signature.
+				// See type definitions above for explicit contract.
+				const sessionResult = await (createSessionFn as unknown as CreateSessionFnType)({
+					data: {
+						uid: result.user.uid,
+						email: result.user.email ?? null,
+						displayName: result.user.displayName ?? null,
+						idToken
+					}
 				})
 
-				if (!sessionResponse.ok) {
-					const data = await sessionResponse.json()
-					throw new Error(data.error || 'Failed to create session')
+				if (!sessionResult.success) {
+					throw new Error('Failed to create session')
 				}
 
 				// Extract user name for welcome message
 				const displayName = result.user.displayName || result.user.email?.split('@')[0] || 'User'
 				setUserName(displayName)
 				setState('success')
+
+				// Note: AuthContext syncs automatically via onAuthStateChanged
+				// which fires after signInWithEmailLink succeeds (M1)
 
 				// Redirect to dashboard using router navigation
 				// Delay increased to 3000ms for screen reader accessibility
