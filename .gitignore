@@ -35,3 +35,4 @@ firestore-debug.log
 
 # Husky internals
 .husky/_
+dev-dist/
