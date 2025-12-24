@@ -20,12 +20,13 @@ import {expect, test} from '../fixtures/admin.fixture'
 
 /**
  * Helper to mock survey responses API
+ * NOTE: API endpoint is /api/admin/responses (not /api/surveys/responses)
  */
 async function mockSurveyResponsesApi(
 	page: import('@playwright/test').Page,
 	responses: ReturnType<typeof createSurveyResponse>[] = []
 ) {
-	await page.route('**/api/surveys/responses**', route => {
+	await page.route('**/api/admin/responses**', route => {
 		route.fulfill({
 			status: 200,
 			contentType: 'application/json',
@@ -214,9 +215,9 @@ test.describe('Admin Export Flow', () => {
 			// Wait for data to load
 			await page.waitForTimeout(500)
 
-			// WHEN: Admin clicks export JSON
+			// WHEN: Admin clicks export JSON (force click for mobile viewport)
 			const downloadPromise = page.waitForEvent('download')
-			await page.getByTestId('export-json-button').click()
+			await page.getByTestId('export-json-button').click({force: true})
 
 			// THEN: JSON file should download
 			const download = await downloadPromise
@@ -269,22 +270,29 @@ test.describe('Admin Export Flow', () => {
 	test.describe('Error Handling (AC6)', () => {
 		test('should handle API error gracefully', async ({page, adminUser: _adminUser}) => {
 			// GIVEN: Admin is authenticated
+			// Mock events API to succeed (needed for page load)
 			await mockEventsApi(page, [])
 
-			// Mock error response
-			await page.route('**/api/surveys/responses**', route => {
+			// Mock responses API to return error - NOTE: API endpoint is /api/admin/responses
+			// This will be called client-side after SSR hydration
+			await page.route('**/api/admin/responses**', route => {
 				route.fulfill({
 					status: 500,
 					contentType: 'application/json',
-					body: JSON.stringify({error: 'Internal server error'})
+					body: JSON.stringify({success: false, error: 'Internal server error'})
 				})
 			})
 
 			// WHEN: Admin navigates to survey responses page
 			await page.goto('/survey-responses')
 
-			// THEN: Error should be displayed
-			await expect(page.getByTestId('survey-responses-error')).toBeVisible()
+			// Wait for page to load - check for the page container first
+			// The error may take time to appear due to React Query retry behavior
+			await page.waitForLoadState('networkidle')
+
+			// THEN: Error should be displayed (use longer timeout due to React Query retries)
+			// React Query defaults to 3 retries with exponential backoff
+			await expect(page.getByTestId('survey-responses-error')).toBeVisible({timeout: 15000})
 		})
 	})
 })

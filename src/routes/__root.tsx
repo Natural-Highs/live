@@ -2,13 +2,19 @@
 
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query'
 import {ReactQueryDevtools} from '@tanstack/react-query-devtools'
-import {createRootRouteWithContext, HeadContent, Outlet, Scripts} from '@tanstack/react-router'
+import {
+	createRootRouteWithContext,
+	HeadContent,
+	Link,
+	Outlet,
+	Scripts
+} from '@tanstack/react-router'
 import {TanStackRouterDevtools} from '@tanstack/react-router-devtools'
 import type {ReactNode} from 'react'
+import {getSessionForRoutesFn, type SessionUser} from '@/server/functions/auth'
 import Layout from '../components/Layout'
 import {AuthProvider} from '../context/AuthContext'
 import appCss from '../global.css?url'
-import {getSessionForRoutesFn, type SessionUser} from '@/server/functions/auth'
 
 const queryClient = new QueryClient()
 
@@ -64,8 +70,24 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 			{rel: 'apple-touch-icon', href: '/icon-192x192.png'}
 		]
 	}),
-	component: RootComponent
+	component: RootComponent,
+	notFoundComponent: NotFoundComponent
 })
+
+function NotFoundComponent() {
+	return (
+		<div className='flex min-h-screen flex-col items-center justify-center bg-bgGreen px-4'>
+			<h1 className='mb-4 font-bold text-4xl text-gray-800'>Page Not Found</h1>
+			<p className='mb-6 text-gray-600'>The page you are looking for does not exist.</p>
+			<Link
+				to='/'
+				className='rounded-lg bg-green-600 px-6 py-3 font-medium text-white transition-colors hover:bg-green-700'
+			>
+				Go Home
+			</Link>
+		</div>
+	)
+}
 
 function RootDocument({children}: {children: ReactNode}) {
 	return (

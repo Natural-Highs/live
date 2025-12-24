@@ -3,6 +3,7 @@ import {createFileRoute} from '@tanstack/react-router'
 import type {ColumnDef} from '@tanstack/react-table'
 import type React from 'react'
 import {useCallback, useMemo, useState} from 'react'
+import {DataTable} from '@/components/admin/DataTable'
 import {Badge} from '@/components/ui/badge'
 import {Button} from '@/components/ui/button'
 import {Card, CardContent, CardTitle} from '@/components/ui/card'
@@ -18,7 +19,6 @@ import {
 	eventTypesQueryOptions,
 	formTemplatesQueryOptions
 } from '@/queries/index.js'
-import {DataTable} from '@/components/admin/DataTable'
 
 export const Route = createFileRoute('/_authed/_admin/events')({
 	loader: async ({context}) => {
@@ -294,12 +294,14 @@ function EventsPage() {
 	const loadEventTypeDefaults = (eventTypeId: string) => {
 		const eventType = eventTypes.find(et => et.id === eventTypeId)
 		if (eventType) {
-			setEventFormData({
-				...eventFormData,
+			// Use functional update to avoid stale closure issue
+			// Without this, eventFormData would be stale and overwrite the eventTypeId set in onChange
+			setEventFormData(prev => ({
+				...prev,
 				consentFormTemplateId: eventType.defaultConsentFormTemplateId || '',
 				demographicsFormTemplateId: eventType.defaultDemographicsFormTemplateId || '',
 				surveyTemplateId: eventType.defaultSurveyTemplateId || ''
-			})
+			}))
 		}
 	}
 
@@ -573,10 +575,16 @@ function EventsPage() {
 			{/* Create Event Modal */}
 			{showCreateEventModal && (
 				<div
+					role='dialog'
+					aria-modal='true'
 					className='fixed inset-0 z-50 flex items-center justify-center'
 					onClick={e => {
-						// Close when clicking backdrop (not modal content)
 						if (e.target === e.currentTarget) {
+							setShowCreateEventModal(false)
+						}
+					}}
+					onKeyDown={e => {
+						if (e.key === 'Escape') {
 							setShowCreateEventModal(false)
 						}
 					}}
@@ -759,9 +767,16 @@ function EventsPage() {
 			{/* Create Event Type Modal */}
 			{showCreateEventTypeModal && (
 				<div
+					role='dialog'
+					aria-modal='true'
 					className='fixed inset-0 z-50 flex items-center justify-center'
 					onClick={e => {
 						if (e.target === e.currentTarget) {
+							setShowCreateEventTypeModal(false)
+						}
+					}}
+					onKeyDown={e => {
+						if (e.key === 'Escape') {
 							setShowCreateEventTypeModal(false)
 						}
 					}}
@@ -878,9 +893,17 @@ function EventsPage() {
 			{/* Edit Event Type Modal */}
 			{showEditEventTypeModal && selectedEventType && (
 				<div
+					role='dialog'
+					aria-modal='true'
 					className='fixed inset-0 z-50 flex items-center justify-center'
 					onClick={e => {
 						if (e.target === e.currentTarget) {
+							setShowEditEventTypeModal(false)
+							setSelectedEventType(null)
+						}
+					}}
+					onKeyDown={e => {
+						if (e.key === 'Escape') {
 							setShowEditEventTypeModal(false)
 							setSelectedEventType(null)
 						}
@@ -993,9 +1016,17 @@ function EventsPage() {
 			{/* Delete Event Type Modal */}
 			{showDeleteEventTypeModal && selectedEventType && (
 				<div
+					role='dialog'
+					aria-modal='true'
 					className='fixed inset-0 z-50 flex items-center justify-center'
 					onClick={e => {
 						if (e.target === e.currentTarget) {
+							setShowDeleteEventTypeModal(false)
+							setSelectedEventType(null)
+						}
+					}}
+					onKeyDown={e => {
+						if (e.key === 'Escape') {
 							setShowDeleteEventTypeModal(false)
 							setSelectedEventType(null)
 						}
@@ -1030,9 +1061,17 @@ function EventsPage() {
 			{/* Activate Event Modal */}
 			{showActivateModal && selectedEvent && (
 				<div
+					role='dialog'
+					aria-modal='true'
 					className='fixed inset-0 z-50 flex items-center justify-center'
 					onClick={e => {
 						if (e.target === e.currentTarget) {
+							setShowActivateModal(false)
+							setSelectedEvent(null)
+						}
+					}}
+					onKeyDown={e => {
+						if (e.key === 'Escape') {
 							setShowActivateModal(false)
 							setSelectedEvent(null)
 						}

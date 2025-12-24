@@ -16,11 +16,13 @@ tests/
 │   ├── mobile-viewport.spec.ts   # Mobile viewport coverage tests (AC7)
 │   └── profile-creation.spec.ts  # Profile creation flow tests (AC5, AC6)
 ├── factories/              # Test data factories
-│   └── events.factory.ts         # Event data factory functions
+│   ├── events.factory.ts         # Event data factory functions
+│   └── surveys.factory.ts        # Survey response factory functions
 ├── fixtures/               # Playwright fixtures
 │   ├── admin.fixture.ts          # Admin authentication fixture
 │   ├── auth.fixture.ts           # Base authentication fixture
-│   └── events.fixture.ts         # Event-related fixtures
+│   ├── events.fixture.ts         # Event-related fixtures
+│   └── session.fixture.ts        # Session cookie injection helpers
 └── README.md               # This file
 ```
 
@@ -108,6 +110,53 @@ import {expect, test} from '../fixtures/auth.fixture'
 test('authenticated user can access page', async ({authenticatedPage}) => {
   await authenticatedPage.goto('/dashboard')
   await expect(authenticatedPage.getByTestId('dashboard')).toBeVisible()
+})
+```
+
+### Session Cookie Injection
+
+For admin authentication tests, use the session fixture to inject encrypted session cookies:
+
+```typescript
+import {injectSessionCookie, injectAdminSessionCookie} from '../fixtures/session.fixture'
+
+// Inject regular user session
+await injectSessionCookie(context, {
+  uid: 'test-user-123',
+  email: 'test@example.com',
+  displayName: 'Test User'
+}, {signedConsentForm: true})
+
+// Inject admin session (convenience wrapper)
+await injectAdminSessionCookie(context, {
+  uid: 'admin-user-123',
+  email: 'admin@naturalhighs.org',
+  displayName: 'Admin User'
+})
+
+// Then navigate
+await page.goto('/events')
+```
+
+The session fixture uses iron-webcrypto to encrypt session data matching the production useAppSession() format. Key features:
+
+- **Cookie name**: `nh-session` (matches production)
+- **Encryption**: iron-webcrypto seal/unseal with same options as h3/TanStack Start
+- **Session data**: `{userId, email, displayName, claims, env}`
+- **Claims**: `{admin?: boolean, signedConsentForm?: boolean}`
+
+The admin.fixture.ts combines session injection with a test user factory for convenience:
+
+```typescript
+import {expect, test} from '../fixtures/admin.fixture'
+
+test('admin can access events page', async ({page, adminUser}) => {
+  // adminUser fixture automatically injects admin session cookie
+  await page.goto('/events')
+  await expect(page.getByTestId('admin-events-page')).toBeVisible()
+  
+  // Access injected user data
+  expect(adminUser.email).toBe('admin@naturalhighs.org')
 })
 ```
 

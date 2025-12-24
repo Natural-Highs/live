@@ -185,11 +185,21 @@ test.describe('Admin Event Management', () => {
 			await expect(page.getByTestId('create-event-modal')).toBeVisible()
 
 			// WHEN: Admin fills in form and submits
-			// Wait a moment for the modal to fully render
-			await page.waitForTimeout(100)
+			// Wait for hydration and all React Query refetches to complete
+			await page.waitForLoadState('networkidle')
+
+			// Wait for the event type options to be populated by React Query
+			const eventTypeSelect = page.getByTestId('event-type-select')
+			await expect(eventTypeSelect.locator('option[value="et-1"]')).toBeAttached({timeout: 10000})
+
 			await page.getByTestId('event-name-input').fill('Community Yoga')
-			// Select event type using value (et-1)
-			await page.getByTestId('event-type-select').selectOption('et-1')
+
+			// Select event type - now works correctly after fixing the stale closure bug
+			await eventTypeSelect.selectOption({value: 'et-1'})
+
+			// Verify selection took effect
+			await expect(eventTypeSelect).toHaveValue('et-1')
+
 			await page.getByTestId('event-date-input').fill('2025-01-15')
 
 			// Set up response promise before clicking
@@ -314,16 +324,25 @@ test.describe('Admin Event Management', () => {
 			await expect(page.getByTestId('create-event-modal')).toBeVisible()
 
 			// WHEN: Admin tries to create event
-			await page.waitForTimeout(100)
-			await page.getByTestId('event-name-input').fill('Duplicate Event')
-			// Select event type using value (et-1)
-			await page.getByTestId('event-type-select').selectOption('et-1')
-			await page.getByTestId('event-date-input').fill('2025-01-15')
-			// Force click to bypass modal overlay detection
-			await page.getByTestId('submit-create-event').click({force: true})
+			await page.waitForLoadState('networkidle')
 
-			// THEN: Should show error message
-			await expect(page.getByTestId('admin-events-error')).toBeVisible()
+			// Wait for event types to load
+			const eventTypeSelect = page.getByTestId('event-type-select')
+			await expect(eventTypeSelect.locator('option[value="et-1"]')).toBeAttached({timeout: 10000})
+
+			await page.getByTestId('event-name-input').fill('Duplicate Event')
+			await eventTypeSelect.selectOption({value: 'et-1'})
+			await page.getByTestId('event-date-input').fill('2025-01-15')
+
+			// Set up response wait before clicking
+			const responsePromise = page.waitForResponse(
+				response => response.url().includes('/api/events') && response.request().method() === 'POST'
+			)
+			await page.getByTestId('submit-create-event').click({force: true})
+			await responsePromise
+
+			// THEN: Should show error message (wait for state update)
+			await expect(page.getByTestId('admin-events-error')).toBeVisible({timeout: 5000})
 			await expect(page.getByText('Event name already exists')).toBeVisible()
 		})
 
@@ -332,7 +351,7 @@ test.describe('Admin Event Management', () => {
 			await mockEventTypesApi(page, [createEventType({id: 'et-1', name: 'Workshop'})])
 			await mockTemplatesApi(page)
 
-			// First request succeeds (GET), subsequent POST fails
+			// First request succeeds (GET), subsequent POST fails with network error
 			await page.route('**/api/events', route => {
 				if (route.request().method() === 'GET') {
 					route.fulfill({
@@ -341,6 +360,7 @@ test.describe('Admin Event Management', () => {
 						body: JSON.stringify({success: true, events: []})
 					})
 				} else {
+					// Simulate network error - this triggers fetch error handling
 					route.abort('failed')
 				}
 			})
@@ -353,16 +373,19 @@ test.describe('Admin Event Management', () => {
 			await expect(page.getByTestId('create-event-modal')).toBeVisible()
 
 			// WHEN: Admin tries to create event with network failure
-			await page.waitForTimeout(100)
+			await page.waitForLoadState('networkidle')
+
+			// Wait for event types to load
+			const eventTypeSelect = page.getByTestId('event-type-select')
+			await expect(eventTypeSelect.locator('option[value="et-1"]')).toBeAttached({timeout: 10000})
+
 			await page.getByTestId('event-name-input').fill('Test Event')
-			// Select event type using value (et-1)
-			await page.getByTestId('event-type-select').selectOption('et-1')
+			await eventTypeSelect.selectOption({value: 'et-1'})
 			await page.getByTestId('event-date-input').fill('2025-01-15')
-			// Force click to bypass modal overlay detection
 			await page.getByTestId('submit-create-event').click({force: true})
 
-			// THEN: Should show error message
-			await expect(page.getByTestId('admin-events-error')).toBeVisible()
+			// THEN: Should show error message (network errors trigger catch block)
+			await expect(page.getByTestId('admin-events-error')).toBeVisible({timeout: 5000})
 		})
 	})
 

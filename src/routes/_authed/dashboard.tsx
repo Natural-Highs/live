@@ -75,7 +75,7 @@ function DashboardComponent() {
 	}
 
 	return (
-		<PageContainer gap-2={true}>
+		<PageContainer className='gap-2'>
 			{/* Header with Logo */}
 			<div className='mb-6 flex flex-col items-center'>
 				<div className='mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-lg'>
