@@ -20,7 +20,9 @@ export default defineConfig({
 			'**/tests/e2e/**', // Playwright E2E tests
 			'**/tests/fixtures/**', // Test fixtures
 			'**/*.spec.ts', // Playwright convention
-			'.trunk/**' // Trunk plugins (symlinks to cache)
+			'.trunk/**', // Trunk plugins (symlinks to cache)
+			'.local/**', // Claude plugin caches
+			'.claude/**'
 		],
 		include: ['**/*.test.{ts,tsx}'],
 		setupFiles: ['./vitest-env-setup.ts', './src/test-setup.ts'],

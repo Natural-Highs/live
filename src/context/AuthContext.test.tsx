@@ -8,6 +8,15 @@ import {onAuthStateChanged} from 'firebase/auth'
 import type {ReactNode} from 'react'
 import {AuthProvider, useAuth} from './AuthContext'
 
+// Mock TanStack Router to avoid "__store" null error
+vi.mock('@tanstack/react-router', () => ({
+	useRouterState: vi.fn(() => ({
+		matches: [
+			{context: {auth: {user: null, isAuthenticated: false, hasConsent: false, isAdmin: false}}}
+		]
+	}))
+}))
+
 // Mock Firebase auth
 vi.mock('firebase/auth', () => ({
 	getIdTokenResult: vi.fn(),
