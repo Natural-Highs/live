@@ -1,4 +1,4 @@
-import {createFileRoute, useNavigate} from '@tanstack/react-router'
+import {createFileRoute, useNavigate, useRouter} from '@tanstack/react-router'
 import type React from 'react'
 import {useEffect, useState} from 'react'
 import {Alert, Input, Label} from '@/components/ui'
@@ -7,7 +7,6 @@ import {Card, CardContent} from '@/components/ui/card'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
-import {authGuard} from '@/lib/auth-guard'
 
 interface UserProfile {
 	id: string
@@ -36,10 +35,7 @@ interface UserEvent {
 	}
 }
 
-export const Route = createFileRoute('/profile')({
-	beforeLoad: async ctx => {
-		await authGuard(ctx, {requireAuth: true, requireConsent: true})
-	},
+export const Route = createFileRoute('/_authed/profile')({
 	loader: async () => {
 		// Fetch profile data
 		const profileResponse = await fetch('/api/users/profile')
@@ -72,6 +68,7 @@ export const Route = createFileRoute('/profile')({
 function ProfileComponent() {
 	const {profile, userEvents: initialUserEvents} = Route.useLoaderData()
 	const navigate = useNavigate()
+	const router = useRouter()
 	const [userEvents] = useState<UserEvent[]>(initialUserEvents)
 	const [eventCode, setEventCode] = useState('')
 	const [submittingCode, setSubmittingCode] = useState(false)
@@ -121,8 +118,9 @@ function ProfileComponent() {
 
 			setSuccess(data.message || 'Successfully registered for event')
 			setEventCode('')
-			// Reload to refresh events list
-			window.location.reload()
+			// Invalidate router to re-run loader and refresh events list
+			await router.invalidate()
+			setSubmittingCode(false)
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'Failed to register for event')
 			setSubmittingCode(false)

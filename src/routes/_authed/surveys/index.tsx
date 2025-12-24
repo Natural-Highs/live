@@ -5,7 +5,6 @@ import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
 import {PrimaryButton} from '@/components/ui/primary-button'
-import {authGuard} from '@/lib/auth-guard'
 
 interface EventSurvey {
 	eventId: string
@@ -18,10 +17,7 @@ interface EventSurvey {
 	completed?: boolean
 }
 
-export const Route = createFileRoute('/surveys/')({
-	beforeLoad: async ctx => {
-		await authGuard(ctx, {requireAuth: true, requireConsent: true})
-	},
+export const Route = createFileRoute('/_authed/surveys/')({
 	loader: async () => {
 		// Fetch accessible surveys
 		const response = await fetch('/api/surveys/accessible')

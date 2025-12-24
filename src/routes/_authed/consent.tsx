@@ -5,7 +5,6 @@ import {Alert} from '@/components/ui'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
-import {authGuard} from '@/lib/auth-guard'
 import type {ConsentFormData} from '@/lib/schemas/consent'
 import {auth} from '$lib/firebase/firebase.app'
 
@@ -20,11 +19,7 @@ interface ConsentFormTemplate {
 	}[]
 }
 
-export const Route = createFileRoute('/consent')({
-	beforeLoad: async ctx => {
-		// Consent page requires auth but NOT consent form signed
-		await authGuard(ctx, {requireAuth: true, requireConsent: false})
-	},
+export const Route = createFileRoute('/_authed/consent')({
 	loader: async () => {
 		// Fetch consent form template
 		const response = await fetch('/api/forms/consent')

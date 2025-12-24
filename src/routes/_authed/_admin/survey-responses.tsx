@@ -10,14 +10,14 @@ import {Input} from '@/components/ui/input'
 import {Label} from '@/components/ui/label'
 import {Spinner} from '@/components/ui/spinner'
 import {eventsQueryOptions, responsesQueryOptions} from '@/queries'
-import {DataTable} from '../../components/admin/DataTable'
+import {DataTable} from '@/components/admin/DataTable'
 
-export const Route = createFileRoute('/_admin/survey-responses')({
+export const Route = createFileRoute('/_authed/_admin/survey-responses')({
 	loader: async ({context}) => {
-		// Prefetch default data
+		// Prefetch default data - catch errors to allow client-side retry
 		await Promise.all([
-			context.queryClient.prefetchQuery(responsesQueryOptions()),
-			context.queryClient.prefetchQuery(eventsQueryOptions())
+			context.queryClient.prefetchQuery(responsesQueryOptions()).catch(() => {}),
+			context.queryClient.prefetchQuery(eventsQueryOptions()).catch(() => {})
 		])
 	},
 	component: SurveysPage

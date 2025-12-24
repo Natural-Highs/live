@@ -5,19 +5,15 @@ import {Alert, Spinner} from '@/components/ui'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
-import {authGuard} from '@/lib/auth-guard'
 
 interface SurveySearch {
 	eventId?: string
 }
 
-export const Route = createFileRoute('/surveys/$surveyId')({
+export const Route = createFileRoute('/_authed/surveys/$surveyId')({
 	validateSearch: (search: Record<string, unknown>): SurveySearch => ({
 		eventId: (search.eventId as string) || undefined
 	}),
-	beforeLoad: async ctx => {
-		await authGuard(ctx, {requireAuth: true, requireConsent: true})
-	},
 	loader: async ({params}) => {
 		const {surveyId} = params
 

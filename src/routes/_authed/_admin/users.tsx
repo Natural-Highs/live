@@ -7,11 +7,12 @@ import {Button} from '@/components/ui/button'
 import {Card, CardContent} from '@/components/ui/card'
 import {Spinner} from '@/components/ui/spinner'
 import {type User, usersQueryOptions} from '@/queries/index.js'
-import {DataTable} from '../../components/admin/DataTable'
+import {DataTable} from '@/components/admin/DataTable'
 
-export const Route = createFileRoute('/_admin/users')({
+export const Route = createFileRoute('/_authed/_admin/users')({
 	loader: async ({context}) => {
-		await context.queryClient.prefetchQuery(usersQueryOptions())
+		// Prefetch users data - catch errors to allow client-side retry
+		await context.queryClient.prefetchQuery(usersQueryOptions()).catch(() => {})
 	},
 	component: UsersPage
 })

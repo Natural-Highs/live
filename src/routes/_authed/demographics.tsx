@@ -5,7 +5,6 @@ import {Alert, Spinner} from '@/components/ui'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
-import {authGuard} from '@/lib/auth-guard'
 import {convertTemplateToSurveyJS} from '@/lib/forms/template-converter'
 
 interface DemographicsFormTemplate {
@@ -28,10 +27,7 @@ interface DemographicsFormTemplate {
 	[key: string]: unknown
 }
 
-export const Route = createFileRoute('/demographics')({
-	beforeLoad: async ctx => {
-		await authGuard(ctx, {requireAuth: true, requireConsent: true})
-	},
+export const Route = createFileRoute('/_authed/demographics')({
 	loader: async () => {
 		// Fetch demographics form template
 		const response = await fetch('/api/forms/demographics')

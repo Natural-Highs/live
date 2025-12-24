@@ -1,4 +1,4 @@
-import {useQuery} from '@tanstack/react-query'
+import {useQuery, useQueryClient} from '@tanstack/react-query'
 import {createFileRoute} from '@tanstack/react-router'
 import type React from 'react'
 import {useState} from 'react'
@@ -7,13 +7,9 @@ import Greencard from '@/components/ui/GreenCard'
 import {PageContainer} from '@/components/ui/page-container'
 import Titlecard from '@/components/ui/TitleCard'
 import {WebsiteLogo} from '@/components/ui/website-logo'
-import {authGuard} from '@/lib/auth-guard'
 import {type Event as EventData, eventsQueryOptions} from '@/queries/index.js'
 
-export const Route = createFileRoute('/dashboard')({
-	beforeLoad: async ctx => {
-		await authGuard(ctx, {requireAuth: true, requireConsent: true})
-	},
+export const Route = createFileRoute('/_authed/dashboard')({
 	loader: async ({context}) => {
 		await context.queryClient.prefetchQuery(eventsQueryOptions())
 	},
@@ -21,6 +17,7 @@ export const Route = createFileRoute('/dashboard')({
 })
 
 function DashboardComponent() {
+	const queryClient = useQueryClient()
 	const {data: events = []} = useQuery(eventsQueryOptions())
 	const [eventCode, setEventCode] = useState('')
 	const [submittingCode, setSubmittingCode] = useState(false)
@@ -54,7 +51,9 @@ function DashboardComponent() {
 
 			setSuccess(data.message || 'Successfully registered for event')
 			setEventCode('')
-			window.location.reload()
+			// Invalidate events query to refresh the list
+			await queryClient.invalidateQueries({queryKey: ['events']})
+			setSubmittingCode(false)
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'Failed to register for event')
 			setSubmittingCode(false)

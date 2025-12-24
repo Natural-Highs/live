@@ -25,7 +25,7 @@ interface FormTemplate {
 	[key: string]: unknown
 }
 
-export const Route = createFileRoute('/_admin/templates')({
+export const Route = createFileRoute('/_authed/_admin/templates')({
 	component: TemplatesComponent
 })
 

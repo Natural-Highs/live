@@ -18,7 +18,7 @@ import {Spinner} from '@/components/ui/spinner'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend)
 
-export const Route = createFileRoute('/_admin/admin-dashboard')({
+export const Route = createFileRoute('/_authed/_admin/admin-dashboard')({
 	component: AdminDashboard
 })
 
