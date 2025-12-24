@@ -6,6 +6,15 @@ import admin from 'firebase-admin'
 let initialized = false
 let initError: Error | null = null
 
+/**
+ * Single source of truth for server-side emulator configuration.
+ * Uses USE_EMULATORS environment variable (server-side equivalent of VITE_USE_EMULATORS).
+ *
+ * Set USE_EMULATORS=true to connect to Firebase emulators on the server.
+ * This should mirror the client-side VITE_USE_EMULATORS setting.
+ */
+export const shouldUseEmulators = process.env.USE_EMULATORS === 'true'
+
 function initializeAdmin(): void {
 	if (initialized) return
 	if (initError) throw initError
@@ -45,10 +54,10 @@ function initializeAdmin(): void {
 		storageBucket
 	})
 
-	const firestoreEmulatorHost = 'localhost:8080'
-	if (process.env.NODE_ENV === 'development') {
+	// Connect to emulators when explicitly enabled via USE_EMULATORS
+	if (shouldUseEmulators) {
 		admin.firestore().settings({
-			host: firestoreEmulatorHost,
+			host: 'localhost:8080',
 			ssl: false
 		})
 
@@ -58,7 +67,8 @@ function initializeAdmin(): void {
 	initialized = true
 }
 
-if (process.env.NODE_ENV === 'development') {
+// Set Auth emulator host early if emulators are enabled
+if (shouldUseEmulators) {
 	process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099'
 }
 
@@ -89,9 +99,9 @@ export const adminAuth = {
 	}
 } as admin.auth.Auth
 
-// Test function for verifying Firestore and Auth functionality in development mode
+// Test function for verifying Firestore and Auth functionality when using emulators
 export async function testAdminFunctions() {
-	if (process.env.NODE_ENV !== 'development') return
+	if (!shouldUseEmulators) return
 
 	try {
 		initializeAdmin()
@@ -113,6 +123,6 @@ export async function testAdminFunctions() {
 	} catch {}
 }
 
-if (process.env.NODE_ENV === 'development') {
+if (shouldUseEmulators) {
 	testAdminFunctions()
 }
