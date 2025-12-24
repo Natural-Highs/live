@@ -30,6 +30,11 @@ lint:
         - public/mockServiceWorker.js # MSW generated file
         - "*.min.js"
         - "*.min.css"
+    - linters: [osv-scanner]
+      paths:
+        - bun.lock # Generated lockfile - dependencies managed by bun
+        - package-lock.json
+        - yarn.lock
   # Blocking thresholds - gradual adoption for security scanners
   threshold:
     - linters: [checkov]

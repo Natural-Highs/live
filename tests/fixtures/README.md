@@ -6,7 +6,7 @@ This directory contains Playwright test fixtures for E2E testing with session-ba
 
 The fixture architecture follows a layered pattern:
 
-```
+```text
 session.fixture.ts  <- Foundation: Cookie encryption/injection
        ↑
 auth.fixture.ts     <- Regular user authentication

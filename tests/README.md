@@ -4,7 +4,7 @@ This directory contains the test suite for the Natural Highs application.
 
 ## Directory Structure
 
-```
+```text
 tests/
 ├── e2e/                    # Playwright E2E tests
 │   ├── admin-events.spec.ts      # Admin event management tests (AC3, AC6)
@@ -62,7 +62,7 @@ bun run test:coverage
 
 ## Test Strategy
 
-### E2E Tests
+### E2E Test Patterns
 
 E2E tests use Playwright and follow these patterns:
 
