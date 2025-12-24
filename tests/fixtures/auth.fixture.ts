@@ -2,15 +2,22 @@
  * Auth Fixtures for E2E Testing
  *
  * Provides reusable authentication fixtures for Playwright tests.
- * Follows pure function → fixture pattern from fixture-architecture.md
+ * Follows pure function -> fixture pattern from fixture-architecture.md
  *
  * Key patterns:
+ * - Uses session cookie injection (not localStorage) for authenticated state
+ * - Keeps magic link helpers for Firebase auth flow testing
  * - Auto-cleanup after each test
  * - Composable with other fixtures via mergeTests
- * - Mock Firebase Auth for isolated testing
+ *
+ * Architecture:
+ * - session.fixture.ts provides cookie helpers
+ * - auth.fixture.ts uses session helpers for authenticated fixtures
+ * - admin.fixture.ts extends auth with admin claims
  */
 
 import {test as base} from '@playwright/test'
+import {clearSessionCookie, injectSessionCookie, type TestUser} from './session.fixture'
 
 // Types for auth fixtures
 interface MockUser {
@@ -33,6 +40,7 @@ interface AuthFixtures {
 
 	/**
 	 * Mocks Firebase Auth signInWithEmailLink to succeed
+	 * Use for testing the magic link sign-in flow (Firebase auth, not session cookies)
 	 */
 	mockSuccessfulMagicLinkSignIn: (user: MockUser) => Promise<void>
 
@@ -42,13 +50,11 @@ interface AuthFixtures {
 	mockFailedMagicLinkSignIn: (errorCode: string) => Promise<void>
 
 	/**
-	 * Mocks the session login endpoint
-	 */
-	mockSessionLogin: (success: boolean) => Promise<void>
-
-	/**
-	 * Creates a fully authenticated mock user
-	 * Returns mock user data for assertions
+	 * Creates a fully authenticated user with session cookie.
+	 * Returns mock user data for assertions.
+	 *
+	 * Uses session cookie injection (not localStorage) to match
+	 * the actual application auth flow via useAppSession().
 	 */
 	authenticatedUser: MockUser
 }
@@ -69,6 +75,7 @@ export function createMockUser(overrides: Partial<MockUser> = {}): MockUser {
 
 /**
  * Pure function: Build Firebase identity toolkit response
+ * Used for mocking Firebase Auth SDK calls in magic link flow tests
  */
 export function buildFirebaseAuthResponse(user: MockUser): object {
 	return {
@@ -150,67 +157,27 @@ export const test = base.extend<AuthFixtures>({
 		await page.unrouteAll()
 	},
 
-	mockSessionLogin: async ({page}, use) => {
-		const setupMock = async (success: boolean) => {
-			await page.route('**/api/auth/sessionLogin', route => {
-				if (success) {
-					route.fulfill({
-						status: 200,
-						contentType: 'application/json',
-						body: JSON.stringify({success: true})
-					})
-				} else {
-					route.fulfill({
-						status: 401,
-						contentType: 'application/json',
-						body: JSON.stringify({error: 'Session creation failed'})
-					})
-				}
-			})
-		}
-
-		await use(setupMock)
-
-		// Cleanup
-		await page.unrouteAll()
-	},
-
-	authenticatedUser: async ({page, context}, use) => {
+	authenticatedUser: async ({context}, use) => {
 		const mockUser = createMockUser({
 			email: 'authenticated@example.com',
 			displayName: 'Authenticated User'
 		})
 
-		// Set up localStorage with email
-		await context.addInitScript(email => {
-			window.localStorage.setItem('emailForSignIn', email)
-		}, mockUser.email)
+		// Convert MockUser to TestUser format for session injection
+		const testUser: TestUser = {
+			uid: mockUser.uid,
+			email: mockUser.email,
+			displayName: mockUser.displayName
+		}
 
-		// Mock Firebase Auth
-		await page.route('**/identitytoolkit.googleapis.com/**', route => {
-			route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				body: JSON.stringify(buildFirebaseAuthResponse(mockUser))
-			})
-		})
-
-		// Mock session login
-		await page.route('**/api/auth/sessionLogin', route => {
-			route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				body: JSON.stringify({success: true})
-			})
-		})
+		// Inject session cookie with default claims (signedConsentForm: true)
+		// This replaces localStorage testAuthState injection
+		await injectSessionCookie(context, testUser, {signedConsentForm: true})
 
 		await use(mockUser)
 
-		// Cleanup
-		await page.unrouteAll()
-		await page.evaluate(() => {
-			window.localStorage.removeItem('emailForSignIn')
-		})
+		// Cleanup: Clear session cookie
+		await clearSessionCookie(context)
 	}
 })
 
