@@ -70,7 +70,7 @@ export function MagicLinkSent({email, onBack}: MagicLinkSentProps) {
 			</p>
 
 			<p className='mb-6 text-muted-foreground text-sm'>
-				Click the link in your email to sign in. The link will expire in 1 hour.
+				Click the link in your email to sign in. The link will expire in 15 minutes.
 			</p>
 
 			<Separator className='my-4' />

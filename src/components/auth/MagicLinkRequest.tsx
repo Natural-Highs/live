@@ -8,6 +8,7 @@ import GreenCard from '@/components/ui/GreenCard'
 import {Input} from '@/components/ui/input'
 import {Label} from '@/components/ui/label'
 import {Spinner} from '@/components/ui/spinner'
+import {logMagicLinkAttemptFn} from '@/server/functions/auth'
 import {setEmailForSignIn} from '$lib/auth/magic-link'
 import {auth} from '$lib/firebase/firebase.app'
 
@@ -16,6 +17,14 @@ const emailSchema = z.object({
 })
 
 type EmailFormValues = z.infer<typeof emailSchema>
+
+/**
+ * Type wrapper for logMagicLinkAttemptFn.
+ * Workaround for TanStack Start v1.142.5 type inference limitation.
+ */
+type LogMagicLinkAttemptFnType = (opts: {
+	data: {success: boolean; errorCode?: string; emailDomain?: string}
+}) => Promise<{success: true}>
 
 export interface MagicLinkRequestProps {
 	/** Callback when magic link is successfully sent */
@@ -61,6 +70,9 @@ export function MagicLinkRequest({onSuccess, onError}: MagicLinkRequestProps) {
 			const actionCodeSettings = {
 				url: `${appUrl}/magic-link`,
 				handleCodeInApp: true
+				// NOTE: Link expiry (NFR89: 15 minutes) is configured in Firebase Console:
+				// Authentication > Templates > Email link (sign-in) > Customize template settings
+				// Default is 60 minutes - must be manually set to 15 minutes per NFR89
 			}
 
 			// Store email in localStorage for same-device completion
@@ -69,12 +81,31 @@ export function MagicLinkRequest({onSuccess, onError}: MagicLinkRequestProps) {
 			// Use Firebase client SDK - this automatically sends the email
 			await sendSignInLinkToEmail(auth, values.email, actionCodeSettings)
 
+			// Log success for server-side monitoring (non-blocking, no PII)
+			const emailDomain = values.email.split('@')[1]
+			void (logMagicLinkAttemptFn as unknown as LogMagicLinkAttemptFnType)({
+				data: {success: true, emailDomain}
+			}).catch(() => {
+				// Silently fail - logging is best-effort and should never block user flow
+			})
+
 			onSuccess(values.email)
-		} catch (_error) {
+		} catch (error) {
+			// Log failure for server-side monitoring (non-blocking, no PII)
+			const emailDomain = values.email.split('@')[1]
+			const errorCode =
+				error && typeof error === 'object' && 'code' in error
+					? String((error as any).code)
+					: 'unknown'
+			void (logMagicLinkAttemptFn as unknown as LogMagicLinkAttemptFnType)({
+				data: {success: false, errorCode, emailDomain}
+			}).catch(() => {
+				// Silently fail - logging is best-effort
+			})
+
 			// Always call onSuccess to show "check email" screen
 			// This prevents timing attacks that could reveal account existence
-			// Note: Errors should be logged server-side for security monitoring (without PII)
-			// Client-side: intentionally suppress error details to prevent user enumeration
+			// Server-side logging (above) tracks actual failures for admin monitoring
 			onSuccess(values.email)
 		} finally {
 			setIsLoading(false)

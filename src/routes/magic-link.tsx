@@ -6,16 +6,14 @@ import {Button} from '@/components/ui/button'
 import GreenCard from '@/components/ui/GreenCard'
 import {PageContainer} from '@/components/ui/page-container'
 import TitleCard from '@/components/ui/TitleCard'
+import {createSessionFn, type SessionUser} from '@/server/functions/auth'
 import {clearEmailForSignIn, getEmailForSignIn} from '$lib/auth/magic-link'
 import {auth} from '$lib/firebase/firebase.app'
-import {createSessionFn} from '@/server/functions/auth'
 import {useAuth} from '../context/AuthContext'
 
 /**
- * Type definition for createSessionFn data parameter.
- * Extracted to improve type safety at call sites.
- * Note: TanStack Start's createServerFn type inference doesn't properly
- * infer the data parameter type, requiring explicit typing here.
+ * Explicit type for createSessionFn input data.
+ * Required due to TanStack Start v1.142.5 type inference limitation.
  */
 type CreateSessionData = {
 	uid: string
@@ -25,18 +23,12 @@ type CreateSessionData = {
 }
 
 /**
- * Type-safe wrapper for createSessionFn.
- * Works around TanStack Start's type inference limitations.
+ * Type-safe wrapper for createSessionFn call signature.
+ * Workaround for TanStack Start's handler type inference gap.
  */
 type CreateSessionFnType = (opts: {data: CreateSessionData}) => Promise<{
 	success: true
-	user: {
-		uid: string
-		email: string | null
-		displayName: string | null
-		photoURL: null
-		claims: {admin?: boolean; signedConsentForm?: boolean}
-	}
+	user: SessionUser
 }>
 
 type MagicLinkState = 'loading' | 'cross-device-prompt' | 'signing-in' | 'success' | 'error'
@@ -98,11 +90,7 @@ function MagicLinkComponent() {
 				const idToken = await result.user.getIdToken()
 
 				// Create TanStack server session via createSessionFn
-				// This replaces the legacy /api/auth/sessionLogin endpoint
-				// Type assertion needed because TanStack Start handler type doesn't infer data type from handler signature
-				//
-				// SAFETY: TanStack Start's createServerFn doesn't expose typed call signature.
-				// See type definitions above for explicit contract.
+				// Type assertion workaround for TanStack Start v1.142.5 handler type inference
 				const sessionResult = await (createSessionFn as unknown as CreateSessionFnType)({
 					data: {
 						uid: result.user.uid,
