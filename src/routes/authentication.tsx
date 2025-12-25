@@ -231,6 +231,8 @@ function AuthenticationComponent() {
 							onSuccess={() => {
 								// Invalidate router to re-run beforeLoad hooks with new session
 								router.invalidate()
+								// Explicitly navigate
+								navigate({to: '/dashboard'})
 							}}
 							onError={setAuthError}
 							onFallbackToMagicLink={() => {

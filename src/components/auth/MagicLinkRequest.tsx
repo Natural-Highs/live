@@ -95,7 +95,7 @@ export function MagicLinkRequest({onSuccess, onError}: MagicLinkRequestProps) {
 			const emailDomain = values.email.split('@')[1]
 			const errorCode =
 				error && typeof error === 'object' && 'code' in error
-					? String((error as any).code)
+					? String((error as {code: unknown}).code)
 					: 'unknown'
 			void (logMagicLinkAttemptFn as unknown as LogMagicLinkAttemptFnType)({
 				data: {success: false, errorCode, emailDomain}
