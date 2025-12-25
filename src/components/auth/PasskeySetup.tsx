@@ -12,6 +12,14 @@ import {AlertCircle, Check, Key, Loader2, Trash2} from 'lucide-react'
 import {useEffect, useState} from 'react'
 import {Alert} from '@/components/ui/alert'
 import {Button} from '@/components/ui/button'
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle
+} from '@/components/ui/dialog'
 import {beginPasskeyRegistration, getPasskeyCapabilities} from '@/lib/auth/passkey'
 import {
 	getPasskeyRegistrationOptionsFn,
@@ -89,6 +97,8 @@ export function PasskeySetup({onSuccess, onError}: PasskeySetupProps) {
 	const [passkeys, setPasskeys] = useState<PasskeyInfo[]>([])
 	const [capabilityMessage, setCapabilityMessage] = useState<string>('')
 	const [removingId, setRemovingId] = useState<string | null>(null)
+	const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+	const [passkeyToDelete, setPasskeyToDelete] = useState<PasskeyInfo | null>(null)
 
 	// Check capabilities and load existing passkeys on mount
 	useEffect(() => {
@@ -181,6 +191,8 @@ export function PasskeySetup({onSuccess, onError}: PasskeySetupProps) {
 
 	const handleRemovePasskey = async (credentialId: string) => {
 		setRemovingId(credentialId)
+		setDeleteDialogOpen(false)
+		setPasskeyToDelete(null)
 
 		try {
 			const result = await (removePasskeyFn as unknown as RemovePasskeyFnType)({
@@ -199,6 +211,16 @@ export function PasskeySetup({onSuccess, onError}: PasskeySetupProps) {
 		} finally {
 			setRemovingId(null)
 		}
+	}
+
+	const openDeleteDialog = (passkey: PasskeyInfo) => {
+		setPasskeyToDelete(passkey)
+		setDeleteDialogOpen(true)
+	}
+
+	const closeDeleteDialog = () => {
+		setDeleteDialogOpen(false)
+		setPasskeyToDelete(null)
 	}
 
 	const formatDate = (isoString: string) => {
@@ -248,7 +270,7 @@ export function PasskeySetup({onSuccess, onError}: PasskeySetupProps) {
 
 					{/* Error display */}
 					{(state === 'error' || error) && (
-						<Alert variant='error' className='mt-3'>
+						<Alert variant='error' className='mt-3' role='alert' aria-live='assertive'>
 							<AlertCircle className='h-4 w-4' />
 							<span className='ml-2'>{error}</span>
 						</Alert>
@@ -256,7 +278,7 @@ export function PasskeySetup({onSuccess, onError}: PasskeySetupProps) {
 
 					{/* Success display */}
 					{state === 'success' && (
-						<Alert variant='success' className='mt-3'>
+						<Alert variant='success' className='mt-3' role='status' aria-live='polite'>
 							<Check className='h-4 w-4' />
 							<span className='ml-2'>Passkey registered successfully</span>
 						</Alert>
@@ -283,8 +305,9 @@ export function PasskeySetup({onSuccess, onError}: PasskeySetupProps) {
 									<Button
 										variant='ghost'
 										size='sm'
-										onClick={() => handleRemovePasskey(passkey.id)}
+										onClick={() => openDeleteDialog(passkey)}
 										disabled={removingId === passkey.id}
+										aria-label={`Remove passkey ${passkey.deviceInfo || 'Passkey'}`}
 									>
 										{removingId === passkey.id ? (
 											<Loader2 className='h-4 w-4 animate-spin' />
@@ -318,6 +341,46 @@ export function PasskeySetup({onSuccess, onError}: PasskeySetupProps) {
 					</div>
 				</div>
 			</div>
+
+			{/* Delete confirmation dialog */}
+			<Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>Remove Passkey</DialogTitle>
+						<DialogDescription>
+							Are you sure you want to remove this passkey? You can always set up a new one later,
+							but you will need to use magic link or password to sign in until then.
+						</DialogDescription>
+					</DialogHeader>
+					{passkeyToDelete && (
+						<div className='rounded-md bg-muted/50 px-3 py-2'>
+							<p className='text-sm font-medium'>{passkeyToDelete.deviceInfo || 'Passkey'}</p>
+							<p className='text-xs text-muted-foreground'>
+								Added {formatDate(passkeyToDelete.createdAt)}
+							</p>
+						</div>
+					)}
+					<DialogFooter>
+						<Button variant='outline' onClick={closeDeleteDialog}>
+							Cancel
+						</Button>
+						<Button
+							variant='destructive'
+							onClick={() => passkeyToDelete && handleRemovePasskey(passkeyToDelete.id)}
+							disabled={removingId !== null}
+						>
+							{removingId !== null ? (
+								<>
+									<Loader2 className='mr-2 h-4 w-4 animate-spin' />
+									Removing...
+								</>
+							) : (
+								'Remove Passkey'
+							)}
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
 		</div>
 	)
 }

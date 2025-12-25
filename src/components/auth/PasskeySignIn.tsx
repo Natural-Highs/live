@@ -145,7 +145,7 @@ export function PasskeySignIn({onSuccess, onError, onFallbackToMagicLink}: Passk
 		<div className='space-y-4'>
 			{/* Error display */}
 			{state === 'error' && error && (
-				<Alert variant='error'>
+				<Alert variant='error' role='alert' aria-live='assertive'>
 					<span>{error}</span>
 					{onFallbackToMagicLink && (
 						<Button

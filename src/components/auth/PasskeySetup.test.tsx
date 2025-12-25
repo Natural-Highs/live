@@ -316,7 +316,7 @@ describe('PasskeySetup', () => {
 			mockRemovePasskeyFn.mockResolvedValue({success: true})
 		})
 
-		it('removes passkey when delete button clicked', async () => {
+		it('removes passkey when delete button clicked and confirmed', async () => {
 			const user = userEvent.setup()
 
 			render(<PasskeySetup onSuccess={mockOnSuccess} />)
@@ -325,9 +325,20 @@ describe('PasskeySetup', () => {
 				expect(screen.getByText(/platform/i)).toBeInTheDocument()
 			})
 
-			// Find and click the delete button (it's a ghost button with Trash2 icon)
-			const deleteButton = screen.getByRole('button', {name: ''})
+			// Find and click the delete button (now has aria-label)
+			const deleteButton = screen.getByRole('button', {name: /remove passkey platform/i})
 			await user.click(deleteButton)
+
+			// Confirmation dialog should appear
+			await waitFor(() => {
+				expect(
+					screen.getByText(/are you sure you want to remove this passkey/i)
+				).toBeInTheDocument()
+			})
+
+			// Click confirm button in dialog
+			const confirmButton = screen.getByRole('button', {name: /^remove passkey$/i})
+			await user.click(confirmButton)
 
 			await waitFor(() => {
 				expect(mockRemovePasskeyFn).toHaveBeenCalledWith({data: {credentialId: 'cred-123'}})
