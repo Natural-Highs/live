@@ -3,6 +3,7 @@ import {createFileRoute} from '@tanstack/react-router'
 import type {ColumnDef} from '@tanstack/react-table'
 import type React from 'react'
 import {useCallback, useMemo, useState} from 'react'
+import {DataTable} from '@/components/admin/DataTable'
 import {Badge} from '@/components/ui/badge'
 import {Button} from '@/components/ui/button'
 import {Card, CardContent} from '@/components/ui/card'
@@ -10,7 +11,6 @@ import {Input} from '@/components/ui/input'
 import {Label} from '@/components/ui/label'
 import {Spinner} from '@/components/ui/spinner'
 import {eventsQueryOptions, responsesQueryOptions} from '@/queries'
-import {DataTable} from '@/components/admin/DataTable'
 
 export const Route = createFileRoute('/_authed/_admin/survey-responses')({
 	loader: async ({context}) => {
