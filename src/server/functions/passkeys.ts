@@ -130,7 +130,7 @@ export const getPasskeyRegistrationOptionsFn = createServerFn({method: 'POST'}).
 			authenticatorSelection: {
 				authenticatorAttachment: 'platform',
 				residentKey: 'preferred',
-				userVerification: 'preferred'
+				userVerification: 'required'
 			},
 			excludeCredentials: existingCredentialIds.map(id => ({
 				id,
@@ -229,11 +229,9 @@ export const verifyPasskeyRegistrationFn = createServerFn({method: 'POST'}).hand
 		const {credential, aaguid, credentialDeviceType, credentialBackedUp} =
 			verification.registrationInfo
 
-		// Capture user agent for device tracking
-		const userAgent =
-			typeof globalThis !== 'undefined' && 'navigator' in globalThis
-				? (globalThis.navigator as Navigator).userAgent
-				: undefined
+		// Note: User agent cannot be captured server-side in TanStack Start server functions
+		// as they run in Node.js context without access to browser navigator object.
+		// Device info is derived from WebAuthn credentialDeviceType instead.
 
 		// Store credential in Firestore
 		const credentialIdStr = Buffer.from(credential.id).toString('base64url')
@@ -244,8 +242,7 @@ export const verifyPasskeyRegistrationFn = createServerFn({method: 'POST'}).hand
 			transports: registrationResponse.response.transports as AuthenticatorTransportFuture[],
 			createdAt: new Date().toISOString(),
 			deviceInfo: `${credentialDeviceType}${credentialBackedUp ? ' (backed up)' : ''}`,
-			aaguid: aaguid,
-			userAgent: userAgent
+			aaguid: aaguid
 		}
 
 		await adminDb
@@ -421,7 +418,7 @@ export const verifyPasskeyAuthenticationFn = createServerFn({method: 'POST'}).ha
 				expectedOrigin,
 				expectedRPID: rp.id,
 				credential: {
-					id: new Uint8Array(Buffer.from(credentialData.id, 'base64url')),
+					id: credentialData.id,
 					publicKey: new Uint8Array(Buffer.from(credentialData.publicKey, 'base64url')),
 					counter: credentialData.counter,
 					transports: credentialData.transports

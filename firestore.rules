@@ -31,6 +31,28 @@ service cloud.firestore {
       
       // Only admins can delete users
       allow delete: if isAdmin();
+
+      // Passkeys subcollection - user can only access their own passkeys
+      match /passkeys/{credentialId} {
+        // Users can read their own passkeys
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+        
+        // Users can create passkeys for themselves (server-side validation handles security)
+        allow create: if isAuthenticated() && request.auth.uid == userId;
+        
+        // Users can delete their own passkeys
+        allow delete: if isAuthenticated() && request.auth.uid == userId;
+        
+        // No client-side updates - credential updates must go through server functions
+        allow update: if false;
+      }
+    }
+
+    // Passkey Challenges Collection (root level, temporary storage)
+    // Server-only access - clients should never directly access challenges
+    match /passkeyChallenges/{challengeId} {
+      // No client access - all operations via server functions with admin SDK
+      allow read, write: if false;
     }
 
     // Events Collection
