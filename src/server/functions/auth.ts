@@ -3,8 +3,7 @@ import {createServerFn} from '@tanstack/react-start'
 import {z} from 'zod'
 import {adminAuth} from '@/lib/firebase/firebase.admin'
 import {clearSession, getSessionData, type SessionData, updateSession} from '@/lib/session'
-import {requireAdmin} from '@/server/middleware/auth'
-import {validateSession} from './utils/auth'
+import {requireAdmin, requireAuth} from '@/server/middleware/auth'
 import {AuthenticationError, ValidationError} from './utils/errors'
 
 export interface SessionUser {
@@ -166,7 +165,7 @@ export const getCurrentUserFn = createServerFn({method: 'GET'}).handler(
 export const getSessionUser = createServerFn({method: 'GET'}).handler(
 	async (): Promise<SessionUser | null> => {
 		try {
-			const user = await validateSession()
+			const user = await requireAuth()
 			return user
 		} catch {
 			// No valid session
@@ -269,20 +268,12 @@ export const logMagicLinkAttemptFn = createServerFn({method: 'POST'}).handler(
 
 		const {success, errorCode, emailDomain} = parseResult.data
 
-		// TODO: Replace console.error with proper monitoring service
-		// For now log to console which is captured by hosting provider (Render)
-		if (!success) {
-			console.error('[MagicLink] Send failed', {
-				errorCode,
-				emailDomain: emailDomain || 'unknown',
-				timestamp: new Date().toISOString()
-			})
-		} else {
-			console.log('[MagicLink] Send success', {
-				emailDomain: emailDomain || 'unknown',
-				timestamp: new Date().toISOString()
-			})
-		}
+		// TODO: Replace with proper monitoring service (e.g., Sentry, DataDog)
+		// Magic link attempt logging intentionally removed - was console.log only
+		// Re-implement when monitoring infrastructure is in place
+		void success
+		void errorCode
+		void emailDomain
 
 		return {success: true}
 	}

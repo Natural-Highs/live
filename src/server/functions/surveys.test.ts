@@ -3,11 +3,11 @@
  * Tests survey submission, retrieval, and accessibility
  */
 
-import * as authUtils from './utils/auth'
+import * as authMiddleware from '@/server/middleware/auth'
 
 // Mock dependencies
-vi.mock('./utils/auth', () => ({
-	validateSession: vi.fn(),
+vi.mock('@/server/middleware/auth', () => ({
+	requireAuth: vi.fn(),
 	requireConsent: vi.fn()
 }))
 
@@ -33,7 +33,7 @@ describe('surveys server functions', () => {
 	describe('submitResponse behavior', () => {
 		it('should require consent form to be signed', () => {
 			// submitResponse uses requireConsent() guard
-			expect(authUtils.requireConsent).toBeDefined()
+			expect(authMiddleware.requireConsent).toBeDefined()
 		})
 
 		it('should validate event ID is provided', () => {
@@ -87,7 +87,7 @@ describe('surveys server functions', () => {
 
 	describe('getAccessibleSurveys behavior', () => {
 		it('should require authentication', () => {
-			expect(authUtils.validateSession).toBeDefined()
+			expect(authMiddleware.requireAuth).toBeDefined()
 		})
 
 		it('should validate event ID parameter', () => {

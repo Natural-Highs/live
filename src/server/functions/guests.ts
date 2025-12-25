@@ -1,7 +1,7 @@
 import {createServerFn} from '@tanstack/react-start'
+import {requireAuth} from '@/server/middleware/auth'
 import {auth, db} from '../../lib/firebase/firebase'
 import {registerGuestSchema, upgradeGuestSchema, validateGuestCodeSchema} from '../schemas/guests'
-import {validateSession} from './utils/auth'
 import {ConflictError, NotFoundError} from './utils/errors'
 
 /**
@@ -121,7 +121,7 @@ export const registerGuest = createServerFn({method: 'POST'}).handler(
  */
 export const upgradeGuest = createServerFn({method: 'POST'}).handler(
 	async ({data}: {data: unknown}) => {
-		const user = await validateSession()
+		const user = await requireAuth()
 
 		const validated = upgradeGuestSchema.parse(data)
 		const {email, password} = validated
