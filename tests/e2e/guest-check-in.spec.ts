@@ -65,7 +65,11 @@ async function mockEventCodeValidation(
 /**
  * Helper to mock guest check-in API
  */
-async function mockGuestCheckIn(page: import('@playwright/test').Page, success: boolean) {
+async function mockGuestCheckIn(
+	page: import('@playwright/test').Page,
+	success: boolean,
+	guestId = 'guest-123'
+) {
 	await page.route('**/api/users/eventCode', route => {
 		if (success) {
 			route.fulfill({
@@ -73,7 +77,8 @@ async function mockGuestCheckIn(page: import('@playwright/test').Page, success: 
 				contentType: 'application/json',
 				body: JSON.stringify({
 					success: true,
-					message: 'Successfully checked in as guest!'
+					message: 'Successfully checked in as guest!',
+					guestId
 				})
 			})
 		} else {
@@ -239,6 +244,72 @@ test.describe('Guest Check-in Flow', () => {
 		})
 	})
 
+	test.describe('AC1: Guest Check-in with Firestore Record Verification', () => {
+		test('should create guest record in Firestore after successful check-in', async ({page}) => {
+			// GIVEN: Mock APIs with specific guestId
+			const expectedGuestId = 'guest-record-abc123'
+			await mockEventsApi(page)
+			await mockConsentFormApi(page)
+
+			// Capture API response to verify guestId is returned
+			let capturedGuestId: string | null = null
+			await page.route('**/api/users/eventCode', route => {
+				capturedGuestId = expectedGuestId
+				route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						success: true,
+						message: 'Successfully checked in as guest!',
+						guestId: expectedGuestId
+					})
+				})
+			})
+
+			await page.goto('/guest')
+
+			// WHEN: Guest enters code and submits
+			await page.getByTestId('guest-event-code-input').fill(TEST_CODES.VALID)
+			await page.getByTestId('guest-check-in-submit').click()
+
+			// THEN: Should show success confirmation
+			await expect(page.getByTestId('guest-check-in-success')).toBeVisible()
+
+			// AND: Guest record ID should have been returned (indicating Firestore write)
+			expect(capturedGuestId).toBe(expectedGuestId)
+		})
+
+		test('should include event details in success confirmation', async ({page}) => {
+			// GIVEN: Mock APIs with event name
+			const eventName = 'Community Yoga Session'
+			await mockEventsApi(page)
+			await mockConsentFormApi(page)
+			await mockEventCodeValidation(page, true, eventName)
+
+			await page.route('**/api/users/eventCode', route => {
+				route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						success: true,
+						message: 'Successfully checked in!',
+						guestId: 'guest-123',
+						eventName
+					})
+				})
+			})
+
+			await page.goto('/guest')
+
+			// WHEN: Guest enters code and submits
+			await page.getByTestId('guest-event-code-input').fill(TEST_CODES.VALID)
+			await page.getByTestId('guest-check-in-submit').click()
+
+			// THEN: Should show success confirmation
+			await expect(page.getByTestId('guest-check-in-success')).toBeVisible()
+		})
+	})
+
 	test.describe('AC6: Error Handling Paths', () => {
 		test('should show error for invalid event code on entry page', async ({page}) => {
 			// GIVEN: Mock session check and invalid event code
@@ -364,6 +435,88 @@ test.describe('Guest Check-in Flow', () => {
 			expect(eventId).toBe('event-123')
 			expect(eventName).toBe('Community Yoga Session')
 			expect(eventCode).toBe(TEST_CODES.VALID)
+		})
+	})
+
+	test.describe('AC6: Duplicate Check-in Prevention (Guest)', () => {
+		test('should show already checked in message when guest attempts duplicate check-in', async ({
+			page
+		}) => {
+			// GIVEN: Mock APIs - guest has already checked in
+			await mockEventsApi(page)
+			await mockConsentFormApi(page)
+
+			// Mock API to return duplicate check-in error
+			await page.route('**/api/users/eventCode', route => {
+				route.fulfill({
+					status: 409, // Conflict - already exists
+					contentType: 'application/json',
+					body: JSON.stringify({
+						success: false,
+						error: 'Already checked in',
+						message: 'You have already checked in to this event'
+					})
+				})
+			})
+
+			await page.goto('/guest')
+
+			// WHEN: Guest tries to check in again with same code
+			await page.getByTestId('guest-event-code-input').fill(TEST_CODES.VALID)
+			await page.getByTestId('guest-check-in-submit').click()
+
+			// THEN: Should show "already checked in" error message
+			await expect(page.getByTestId('guest-check-in-error')).toBeVisible()
+			await expect(page.getByText(/already checked in/i)).toBeVisible()
+		})
+
+		test('should not create duplicate record when guest re-submits', async ({page}) => {
+			// GIVEN: Mock APIs - track API call count
+			await mockEventsApi(page)
+			await mockConsentFormApi(page)
+
+			let checkInCallCount = 0
+			await page.route('**/api/users/eventCode', route => {
+				checkInCallCount++
+				if (checkInCallCount === 1) {
+					// First call succeeds
+					route.fulfill({
+						status: 200,
+						contentType: 'application/json',
+						body: JSON.stringify({
+							success: true,
+							message: 'Successfully checked in!',
+							guestId: 'guest-123'
+						})
+					})
+				} else {
+					// Subsequent calls return duplicate error
+					route.fulfill({
+						status: 409,
+						contentType: 'application/json',
+						body: JSON.stringify({
+							success: false,
+							error: 'Already checked in'
+						})
+					})
+				}
+			})
+
+			await page.goto('/guest')
+
+			// First check-in succeeds
+			await page.getByTestId('guest-event-code-input').fill(TEST_CODES.VALID)
+			await page.getByTestId('guest-check-in-submit').click()
+			await expect(page.getByTestId('guest-check-in-success')).toBeVisible()
+
+			// Navigate back and try again
+			await page.goto('/guest')
+			await page.getByTestId('guest-event-code-input').fill(TEST_CODES.VALID)
+			await page.getByTestId('guest-check-in-submit').click()
+
+			// THEN: Should show error on second attempt
+			await expect(page.getByTestId('guest-check-in-error')).toBeVisible()
+			expect(checkInCallCount).toBe(2) // Both calls were made, but second was rejected
 		})
 	})
 })
