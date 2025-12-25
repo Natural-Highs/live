@@ -6,6 +6,7 @@ import {useState} from 'react'
 import {z} from 'zod'
 import {MagicLinkRequest} from '@/components/auth/MagicLinkRequest'
 import {MagicLinkSent} from '@/components/auth/MagicLinkSent'
+import {PasskeySignIn} from '@/components/auth/PasskeySignIn'
 import {Alert, BrandLogo, Input, Label, Spinner} from '@/components/ui'
 import {Button} from '@/components/ui/button'
 import GreenCard from '@/components/ui/GreenCard'
@@ -224,7 +225,24 @@ function AuthenticationComponent() {
 			{/* Magic Link Request View */}
 			{authView === 'magic-link' && (
 				<>
-					<MagicLinkRequest onError={setAuthError} onSuccess={handleMagicLinkSuccess} />
+					<GreenCard className='flex max-w-full! flex-col'>
+						{/* Passkey sign-in option for returning users */}
+						<PasskeySignIn
+							onSuccess={() => {
+								// Invalidate router to re-run beforeLoad hooks with new session
+								router.invalidate()
+							}}
+							onError={setAuthError}
+							onFallbackToMagicLink={() => {
+								// Clear error and stay on magic link view
+								setAuthError('')
+								// Magic link input is already visible, just clear any passkey error
+							}}
+						/>
+
+						{/* Magic link request */}
+						<MagicLinkRequest onError={setAuthError} onSuccess={handleMagicLinkSuccess} />
+					</GreenCard>
 
 					<div className='flex w-[22.5rem] flex-col items-center text-center'>
 						<div className='divider'>OR</div>

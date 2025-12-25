@@ -1,6 +1,7 @@
 import {createFileRoute, useNavigate, useRouter} from '@tanstack/react-router'
 import type React from 'react'
 import {useEffect, useState} from 'react'
+import {PasskeySetup} from '@/components/auth/PasskeySetup'
 import {Alert, Input, Label} from '@/components/ui'
 import {Button} from '@/components/ui/button'
 import {Card, CardContent} from '@/components/ui/card'
@@ -211,6 +212,12 @@ function ProfileComponent() {
 						) : (
 							<p className='text-foreground opacity-70'>No profile information available</p>
 						)}
+					</FormContainer>
+
+					{/* Sign-in Options */}
+					<FormContainer>
+						<h2 className='mb-4 font-semibold text-2xl text-foreground'>Sign-in Options</h2>
+						<PasskeySetup />
 					</FormContainer>
 
 					{/* Event Code Entry */}

@@ -302,6 +302,7 @@ export const getSessionForRoutesFn = createServerFn({method: 'GET'}).handler(
 		isAuthenticated: boolean
 		hasConsent: boolean
 		isAdmin: boolean
+		hasPasskey: boolean
 	}> => {
 		const sessionData = await getSessionData()
 
@@ -310,7 +311,8 @@ export const getSessionForRoutesFn = createServerFn({method: 'GET'}).handler(
 				user: null,
 				isAuthenticated: false,
 				hasConsent: false,
-				isAdmin: false
+				isAdmin: false,
+				hasPasskey: false
 			}
 		}
 
@@ -326,7 +328,8 @@ export const getSessionForRoutesFn = createServerFn({method: 'GET'}).handler(
 			user,
 			isAuthenticated: true,
 			hasConsent: sessionData.claims?.signedConsentForm === true,
-			isAdmin: sessionData.claims?.admin === true
+			isAdmin: sessionData.claims?.admin === true,
+			hasPasskey: sessionData.claims?.passkeyEnabled === true
 		}
 	}
 )
