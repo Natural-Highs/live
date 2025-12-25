@@ -15,7 +15,9 @@ export function getRouter() {
 				isAuthenticated: false,
 				hasConsent: false,
 				isAdmin: false,
-				hasPasskey: false
+				hasPasskey: false,
+				isSessionExpiring: false,
+				sessionExpiresAt: null
 			},
 			queryClient
 		} satisfies RouterContext

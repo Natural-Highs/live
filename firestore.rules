@@ -55,6 +55,14 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Session Revocations Collection
+    // Server-only access - tracks when user sessions should be invalidated
+    match /sessionRevocations/{revocationId} {
+      // No client access - all operations via server functions with admin SDK
+      // This collection is read by session middleware to check for revocation events
+      allow read, write: if false;
+    }
+
     // Events Collection
     match /events/{eventId} {
       // Admins and authenticated users can read active events

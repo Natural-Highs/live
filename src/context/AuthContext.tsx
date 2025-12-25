@@ -4,6 +4,11 @@ import type React from 'react'
 import {createContext, type ReactNode, useContext, useEffect, useRef, useState} from 'react'
 import type {SessionAuthContext} from '@/routes/__root'
 import {auth} from '$lib/firebase/firebase.app'
+import {
+	checkGracePeriodSync,
+	type GracePeriodState,
+	recordValidAuth
+} from '$lib/session/grace-period'
 import type {AuthContextUserData} from './types/authContext'
 
 interface AuthContextType {
@@ -12,6 +17,15 @@ interface AuthContextType {
 	consentForm: boolean
 	admin: boolean
 	data: AuthContextUserData
+	/** Grace period state for auth service outages */
+	gracePeriod: GracePeriodState
+}
+
+const defaultGracePeriodState: GracePeriodState = {
+	isInGracePeriod: false,
+	gracePeriodEndsAt: null,
+	authServiceAvailable: true,
+	minutesRemaining: 0
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -19,7 +33,8 @@ const AuthContext = createContext<AuthContextType>({
 	loading: true,
 	consentForm: false,
 	admin: false,
-	data: {}
+	data: {},
+	gracePeriod: defaultGracePeriodState
 })
 
 export const useAuth = () => useContext(AuthContext)
@@ -41,7 +56,9 @@ export function useRouterAuth(): SessionAuthContext {
 			isAuthenticated: false,
 			hasConsent: false,
 			isAdmin: false,
-			hasPasskey: false
+			hasPasskey: false,
+			isSessionExpiring: false,
+			sessionExpiresAt: null
 		}
 	)
 }
@@ -60,10 +77,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
 		loading: !routerAuth.isAuthenticated && routerAuth.user === null,
 		consentForm: routerAuth.hasConsent,
 		admin: routerAuth.isAdmin,
-		data: {}
+		data: {},
+		gracePeriod: defaultGracePeriodState
 	}))
 	const hasResolved = useRef(false)
 	const [mounted, setMounted] = useState(false)
+	const [authServiceAvailable, setAuthServiceAvailable] = useState(true)
 
 	// Sync with router auth context changes
 	useEffect(() => {
@@ -82,6 +101,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
 		setMounted(true)
 	}, [])
 
+	// Grace period check effect - runs when auth service availability changes
+	useEffect(() => {
+		if (!mounted) return
+
+		const gracePeriodState = checkGracePeriodSync(authServiceAvailable)
+		setAuthState(prev => ({
+			...prev,
+			gracePeriod: gracePeriodState
+		}))
+	}, [mounted, authServiceAvailable])
+
 	// Second effect: handle auth (only runs after mounted)
 	useEffect(() => {
 		if (!mounted) return
@@ -99,29 +129,48 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
 			}
 		}, 3000)
 
-		const unsubscribe = onAuthStateChanged(auth, async user => {
-			hasResolved.current = true
-			clearTimeout(timeoutId)
+		const unsubscribe = onAuthStateChanged(
+			auth,
+			async user => {
+				hasResolved.current = true
+				clearTimeout(timeoutId)
+				setAuthServiceAvailable(true)
 
-			let claims = {
-				signedConsentForm: false,
-				admin: false
+				let claims = {
+					signedConsentForm: false,
+					admin: false
+				}
+
+				if (user) {
+					try {
+						await user.getIdToken(true)
+						const idTokenResult = await getIdTokenResult(user)
+						claims = idTokenResult.claims as typeof claims
+						// Record successful auth for grace period tracking
+						recordValidAuth()
+					} catch {
+						// Token refresh failed - auth service may be unavailable
+						setAuthServiceAvailable(false)
+					}
+				}
+
+				setAuthState(prev => ({
+					...prev,
+					user,
+					loading: false,
+					consentForm: claims?.signedConsentForm,
+					admin: claims?.admin,
+					data: {}
+				}))
+			},
+			_error => {
+				// Auth state change error - service may be unavailable
+				hasResolved.current = true
+				clearTimeout(timeoutId)
+				setAuthServiceAvailable(false)
+				setAuthState(prev => ({...prev, loading: false}))
 			}
-
-			if (user) {
-				await user.getIdToken(true)
-				const idTokenResult = await getIdTokenResult(user)
-				claims = idTokenResult.claims as typeof claims
-			}
-
-			setAuthState({
-				user,
-				loading: false,
-				consentForm: claims?.signedConsentForm,
-				admin: claims?.admin,
-				data: {}
-			})
-		})
+		)
 
 		return () => {
 			clearTimeout(timeoutId)

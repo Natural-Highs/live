@@ -29,6 +29,10 @@ export interface SessionAuthContext {
 	isAdmin: boolean
 	/** Whether user has registered a passkey for authentication */
 	hasPasskey: boolean
+	/** Whether session expires within 7 days */
+	isSessionExpiring: boolean
+	/** Session expiration date (ISO string) or null */
+	sessionExpiresAt: string | null
 }
 
 export interface RouterContext {

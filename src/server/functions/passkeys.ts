@@ -27,6 +27,7 @@ import admin from 'firebase-admin'
 import {adminDb} from '@/lib/firebase/firebase.admin'
 import {clearSession, createPasskeySession, getSessionData, type SessionData} from '@/lib/session'
 import {requireAuth} from '@/server/middleware/auth'
+import {createSessionRevocation} from '@/server/middleware/session'
 import {
 	getRegistrationOptionsSchema,
 	verifyPasskeyAuthenticationSchema,
@@ -532,6 +533,7 @@ export const getPasskeysFn = createServerFn({method: 'GET'}).handler(
  *
  * Allows user to remove a registered passkey.
  * User must have at least one other authentication method.
+ * Triggers session revocation when last passkey is removed (NFR2).
  *
  * @param data - Object containing credentialId to remove
  * @returns Success status
@@ -589,6 +591,11 @@ export const removePasskeyFn = createServerFn({method: 'POST'}).handler(
 		if (remainingPasskeys.empty) {
 			// Update hasPasskey flag
 			await adminDb.collection('users').doc(user.uid).set({hasPasskey: false}, {merge: true})
+
+			// NFR2: Revoke all sessions when last passkey is removed
+			// This ensures security by invalidating any sessions that were granted
+			// based on passkey authentication
+			await createSessionRevocation(user.uid, 'passkey_removed')
 		}
 
 		return {success: true}
