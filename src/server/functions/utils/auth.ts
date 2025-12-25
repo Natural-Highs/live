@@ -2,6 +2,9 @@ import {getSessionData, validateSessionEnvironment} from '@/lib/session'
 import type {SessionUser} from '../auth'
 import {AuthenticationError} from './errors'
 
+// TODO: Remove this file after all consumers migrate to @/server/middleware/auth
+// All functions here are deprecated. See Story 1-2 tech debt.
+
 /**
  * Validate TanStack session and return authenticated user.
  *
