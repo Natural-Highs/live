@@ -270,7 +270,7 @@ export const logMagicLinkAttemptFn = createServerFn({method: 'POST'}).handler(
 		const {success, errorCode, emailDomain} = parseResult.data
 
 		// TODO: Replace console.error with proper monitoring service
-		// For now, log to console which is captured by hosting provider (Render)
+		// For now log to console which is captured by hosting provider (Render)
 		if (!success) {
 			console.error('[MagicLink] Send failed', {
 				errorCode,
