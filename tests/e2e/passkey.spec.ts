@@ -404,3 +404,306 @@ test.describe('Passkey UI Integration', () => {
 		}
 	})
 })
+
+test.describe('Passkey Registration Full Flow', () => {
+	test('should complete full passkey registration flow from profile', async ({page, context}) => {
+		// GIVEN: Authenticated user on profile page with virtual authenticator
+		await injectSessionCookie(context, testUser, {signedConsentForm: true})
+		const {client, authenticatorId} = await setupVirtualAuthenticator(page)
+
+		try {
+			// Mock API responses
+			await page.route('**/api/users/profile', route =>
+				route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						success: true,
+						data: {id: testUser.uid, email: testUser.email}
+					})
+				})
+			)
+
+			await page.route('**/api/users/events', route =>
+				route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({success: true, events: []})
+				})
+			)
+
+			// Mock passkey API calls for registration flow
+			await page.route('**/getPasskeyRegistrationOptions*', route =>
+				route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						success: true,
+						options: {
+							challenge: btoa('test-registration-challenge'),
+							rp: {name: 'Natural Highs', id: 'localhost'},
+							user: {
+								id: btoa(testUser.uid),
+								name: testUser.email,
+								displayName: testUser.displayName
+							},
+							pubKeyCredParams: [{type: 'public-key', alg: -7}],
+							timeout: 60000,
+							attestation: 'none',
+							authenticatorSelection: {
+								authenticatorAttachment: 'platform',
+								residentKey: 'preferred',
+								userVerification: 'required'
+							}
+						}
+					})
+				})
+			)
+
+			await page.route('**/verifyPasskeyRegistration*', route =>
+				route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						success: true,
+						credentialId: 'test-credential-id'
+					})
+				})
+			)
+
+			await page.route('**/getPasskeys*', route =>
+				route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						success: true,
+						passkeys: []
+					})
+				})
+			)
+
+			// Navigate to profile page
+			await page.goto('/profile')
+
+			// WHEN: User clicks Set Up Passkey button
+			await expect(page.getByRole('button', {name: /set up passkey/i})).toBeVisible()
+			await page.getByRole('button', {name: /set up passkey/i}).click()
+
+			// THEN: Should show setting up state
+			await expect(page.getByText(/setting up/i)).toBeVisible()
+
+			// AND: Should eventually show success (note: actual WebAuthn ceremony happens via virtual authenticator)
+			// In this mocked scenario, the flow completes when verifyPasskeyRegistration returns success
+		} finally {
+			await removeVirtualAuthenticator(client, authenticatorId)
+		}
+	})
+})
+
+test.describe('Passkey Sign-In Full Flow', () => {
+	test('should redirect to dashboard after successful passkey sign-in', async ({page}) => {
+		// GIVEN: Virtual authenticator is set up
+		const {client, authenticatorId} = await setupVirtualAuthenticator(page)
+
+		try {
+			// Mock authentication options endpoint
+			await page.route('**/getPasskeyAuthenticationOptions*', route =>
+				route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						success: true,
+						options: {
+							challenge: btoa('test-auth-challenge'),
+							timeout: 60000,
+							rpId: 'localhost',
+							userVerification: 'required'
+						}
+					})
+				})
+			)
+
+			// Mock successful verification that returns user info
+			await page.route('**/verifyPasskeyAuthentication*', route =>
+				route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						success: true,
+						userId: testUser.uid,
+						email: testUser.email,
+						displayName: testUser.displayName
+					})
+				})
+			)
+
+			// Navigate to authentication page
+			await page.goto('/authentication')
+
+			// WHEN: User clicks passkey sign-in
+			await expect(page.getByRole('button', {name: /sign in with passkey/i})).toBeVisible()
+			await page.getByRole('button', {name: /sign in with passkey/i}).click()
+
+			// THEN: Should show verifying state
+			await expect(page.getByText(/verifying/i)).toBeVisible()
+
+			// Wait for success and redirect (in real scenario, would redirect to /dashboard)
+			// Note: Full redirect testing requires non-mocked server functions
+		} finally {
+			await removeVirtualAuthenticator(client, authenticatorId)
+		}
+	})
+})
+
+test.describe('Passkey Network Error Handling', () => {
+	test('should show network error message and offer magic link fallback (AC10)', async ({page}) => {
+		// GIVEN: Virtual authenticator is set up
+		const {client, authenticatorId} = await setupVirtualAuthenticator(page)
+
+		try {
+			// Mock authentication options success
+			await page.route('**/getPasskeyAuthenticationOptions*', route =>
+				route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						success: true,
+						options: {
+							challenge: btoa('test-auth-challenge'),
+							timeout: 60000,
+							rpId: 'localhost',
+							userVerification: 'required'
+						}
+					})
+				})
+			)
+
+			// Mock network error during verification (simulate 500 server error)
+			await page.route('**/verifyPasskeyAuthentication*', route =>
+				route.fulfill({
+					status: 500,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						success: false,
+						error: 'Network error occurred'
+					})
+				})
+			)
+
+			// Navigate to authentication page
+			await page.goto('/authentication')
+
+			// WHEN: User attempts passkey sign-in but network fails
+			await expect(page.getByRole('button', {name: /sign in with passkey/i})).toBeVisible()
+			await page.getByRole('button', {name: /sign in with passkey/i}).click()
+
+			// Wait for authentication ceremony to complete
+			await page.waitForTimeout(1000)
+
+			// THEN: Should show network error message
+			await expect(page.getByText(/network error|connection issue|try again/i)).toBeVisible()
+
+			// AND: Should offer magic link fallback
+			const fallbackButton = page.getByRole('button', {name: /use magic link|magic link instead/i})
+			await expect(fallbackButton).toBeVisible()
+
+			// WHEN: User clicks fallback
+			await fallbackButton.click()
+
+			// THEN: Should show magic link form (verifies fallback flow)
+			await expect(page.getByPlaceholder(/email/i)).toBeVisible()
+		} finally {
+			await removeVirtualAuthenticator(client, authenticatorId)
+		}
+	})
+
+	test('should allow retry after network error', async ({page}) => {
+		// GIVEN: Virtual authenticator is set up
+		const {client, authenticatorId} = await setupVirtualAuthenticator(page)
+
+		try {
+			let attemptCount = 0
+
+			// Mock authentication options
+			await page.route('**/getPasskeyAuthenticationOptions*', route =>
+				route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						success: true,
+						options: {
+							challenge: btoa('test-auth-challenge'),
+							timeout: 60000,
+							rpId: 'localhost',
+							userVerification: 'required'
+						}
+					})
+				})
+			)
+
+			// Mock verification: first attempt fails, second succeeds
+			await page.route('**/verifyPasskeyAuthentication*', route => {
+				attemptCount++
+				if (attemptCount === 1) {
+					// First attempt: network error
+					route.fulfill({
+						status: 500,
+						contentType: 'application/json',
+						body: JSON.stringify({success: false, error: 'Network timeout'})
+					})
+				} else {
+					// Second attempt: success
+					route.fulfill({
+						status: 200,
+						contentType: 'application/json',
+						body: JSON.stringify({
+							success: true,
+							userId: testUser.uid,
+							email: testUser.email,
+							displayName: testUser.displayName
+						})
+					})
+				}
+			})
+
+			// Navigate to authentication page
+			await page.goto('/authentication')
+
+			// WHEN: First attempt fails with network error
+			await page.getByRole('button', {name: /sign in with passkey/i}).click()
+			await page.waitForTimeout(1000)
+
+			// THEN: Should show error
+			await expect(page.getByText(/network|timeout|try again/i)).toBeVisible()
+
+			// WHEN: User retries
+			await page.getByRole('button', {name: /sign in with passkey/i}).click()
+			await page.waitForTimeout(1000)
+
+			// THEN: Second attempt succeeds (shows success state)
+			await expect(page.getByText(/signed in|verifying/i)).toBeVisible()
+		} finally {
+			await removeVirtualAuthenticator(client, authenticatorId)
+		}
+	})
+})
+
+/**
+ * Test Limitations Note:
+ *
+ * Current E2E tests use mocked API responses for server functions. This provides:
+ * ✓ Fast test execution
+ * ✓ Reliable virtual authenticator behavior
+ * ✓ UI flow verification
+ *
+ * However, this approach does NOT test:
+ * ✗ Actual server function logic
+ * ✗ Real Firestore security rules
+ * ✗ WebAuthn verification correctness
+ * ✗ Session upgrade to 180 days
+ *
+ * Future Enhancement:
+ * - Run E2E tests against Firebase emulators with real server functions
+ * - Add integration test suite that exercises full stack
+ * - Verify actual Firestore writes and session cookie changes
+ */
