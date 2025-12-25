@@ -41,6 +41,8 @@ test.describe('User Check-in Flow', () => {
 			await page.goto('/dashboard')
 
 			// Wait for page to be fully interactive (hydrated)
+			// React hydration must complete before fill() works on controlled components.
+			// Without this wait, form inputs may not respond to programmatic value changes.
 			await page.waitForLoadState('networkidle')
 
 			// THEN: Submit button should be disabled initially
@@ -83,6 +85,7 @@ test.describe('User Check-in Flow', () => {
 
 			// Navigate to dashboard
 			await page.goto('/dashboard')
+			// Wait for React hydration before interacting with form inputs
 			await page.waitForLoadState('networkidle')
 
 			// WHEN: User enters valid event code and submits

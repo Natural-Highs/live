@@ -61,7 +61,7 @@ interface H3Session<T = SessionData> {
 }
 
 /**
- * Hardcoded test secret for E2E tests.
+ * Hardcoded test secret for E2E tests. TESTING ONLY - never use in production.
  * - 32+ characters required by iron-webcrypto
  * - Different from production secret (security isolation)
  * - No Doppler dependency in CI
@@ -148,8 +148,9 @@ export async function buildTestSessionCookie(
 		data: sessionData
 	}
 
-	// Encrypt session data using iron-webcrypto
-	const sealed = await Iron.seal(crypto, h3Session, SESSION_SECRET_TEST, IRON_OPTIONS)
+	// Encrypt session data using iron-webcrypto v2 API
+	// Note: v2 removed the crypto parameter - it uses globalThis.crypto internally
+	const sealed = await Iron.seal(h3Session, SESSION_SECRET_TEST, IRON_OPTIONS)
 
 	return sealed
 }
@@ -239,7 +240,8 @@ export async function clearSessionCookie(context: BrowserContext): Promise<void>
  * @returns Decrypted session data (the data property from h3's session structure)
  */
 export async function unsealTestSessionCookie(sealedValue: string): Promise<SessionData> {
-	const unsealed = await Iron.unseal(crypto, sealedValue, SESSION_SECRET_TEST, IRON_OPTIONS)
+	// iron-webcrypto v2 API - no crypto parameter needed
+	const unsealed = await Iron.unseal(sealedValue, SESSION_SECRET_TEST, IRON_OPTIONS)
 	// h3 wraps data in {id, createdAt, data} structure
 	const h3Session = unsealed as H3Session
 	return h3Session.data

@@ -21,7 +21,7 @@ export default defineConfig({
 			'**/tests/fixtures/**', // Test fixtures
 			'**/*.spec.ts', // Playwright convention
 			'.trunk/**', // Trunk plugins (symlinks to cache)
-			'.local/**', // Claude plugin caches
+			'.local/**',
 			'.claude/**'
 		],
 		include: ['**/*.test.{ts,tsx}'],
