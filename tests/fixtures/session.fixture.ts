@@ -21,6 +21,10 @@ import type {BrowserContext} from '@playwright/test'
 import * as Iron from 'iron-webcrypto'
 import {SESSION_SECRET_TEST} from '../../playwright.config'
 import {SESSION_COOKIE_NAME, SESSION_MAX_AGE} from '../../src/lib/session'
+
+// Re-export session constants for test usage
+export {SESSION_COOKIE_NAME, SESSION_MAX_AGE, SESSION_SECRET_TEST}
+
 import {
 	createTestUserDocument,
 	deleteTestUserDocument,

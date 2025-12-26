@@ -55,12 +55,9 @@ test('debug: check modal structure', async ({page, context}) => {
 	// Click create event button
 	await page.getByTestId('create-event-button').click()
 
-	// Wait a moment
-	await page.waitForTimeout(500)
-
-	// Check for modal
+	// Check for modal - wait for it to appear instead of arbitrary timeout
 	const modalLocator = page.getByTestId('create-event-modal')
-	const modalVisible = await modalLocator.isVisible({timeout: 1000}).catch(() => false)
+	const modalVisible = await modalLocator.isVisible({timeout: 2000}).catch(() => false)
 
 	// Check for cancel button
 	const cancelLocator = page.getByTestId('cancel-create-event')
@@ -75,7 +72,10 @@ test('debug: check modal structure', async ({page, context}) => {
 	if (cancelVisible) {
 		await cancelLocator.click({force: true})
 
-		await page.waitForTimeout(500)
+		// Wait for modal to close by checking it's hidden
+		await expect(modalLocator)
+			.toBeHidden({timeout: 2000})
+			.catch(() => {})
 		const _modalStillVisible = await modalLocator.isVisible({timeout: 1000}).catch(() => false)
 	}
 })

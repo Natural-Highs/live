@@ -190,8 +190,9 @@ test.describe('Admin Export Flow', () => {
 
 			await page.goto('/survey-responses')
 
-			// Wait for data to load
-			await page.waitForTimeout(500)
+			// Wait for page to fully load and render export buttons
+			await page.waitForLoadState('networkidle')
+			await expect(page.getByTestId('export-csv-button')).toBeVisible()
 
 			// WHEN: Admin clicks export CSV
 			const downloadPromise = page.waitForEvent('download')
@@ -212,8 +213,9 @@ test.describe('Admin Export Flow', () => {
 
 			await page.goto('/survey-responses')
 
-			// Wait for data to load
-			await page.waitForTimeout(500)
+			// Wait for page to fully load and render export buttons
+			await page.waitForLoadState('networkidle')
+			await expect(page.getByTestId('export-json-button')).toBeVisible()
 
 			// WHEN: Admin clicks export JSON (force click for mobile viewport)
 			const downloadPromise = page.waitForEvent('download')

@@ -1,13 +1,24 @@
 import {useQuery, useQueryClient} from '@tanstack/react-query'
 import {createFileRoute} from '@tanstack/react-router'
-import type React from 'react'
 import {useState} from 'react'
+import {z} from 'zod'
 import {Button} from '@/components/ui/button'
 import Greencard from '@/components/ui/GreenCard'
+import {InputOTP, InputOTPGroup, InputOTPSlot} from '@/components/ui/input-otp'
 import {PageContainer} from '@/components/ui/page-container'
+import {Spinner} from '@/components/ui/spinner'
 import Titlecard from '@/components/ui/TitleCard'
 import {WebsiteLogo} from '@/components/ui/website-logo'
 import {type Event as EventData, eventsQueryOptions} from '@/queries/index.js'
+
+const eventCodeResponseSchema = z.object({
+	success: z.boolean(),
+	message: z.string().optional(),
+	error: z.string().optional()
+})
+
+const EVENTS_QUERY_KEY = ['events'] as const
+const REQUEST_TIMEOUT_MS = 3000
 
 export const Route = createFileRoute('/_authed/dashboard')({
 	loader: async ({context}) => {
@@ -16,7 +27,7 @@ export const Route = createFileRoute('/_authed/dashboard')({
 	component: DashboardComponent
 })
 
-function DashboardComponent() {
+export function DashboardComponent() {
 	const queryClient = useQueryClient()
 	const {data: events = []} = useQuery(eventsQueryOptions())
 	const [eventCode, setEventCode] = useState('')
@@ -24,26 +35,36 @@ function DashboardComponent() {
 	const [error, setError] = useState('')
 	const [success, setSuccess] = useState('')
 
-	const handleEventCodeSubmit = async (e: React.FormEvent) => {
-		e.preventDefault()
+	const handleAutoSubmit = async (code: string) => {
 		setError('')
 		setSuccess('')
 		setSubmittingCode(true)
+
+		const controller = new AbortController()
+		const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
 
 		try {
 			const response = await fetch('/api/users/eventCode', {
 				method: 'POST',
 				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({eventCode})
+				body: JSON.stringify({eventCode: code}),
+				signal: controller.signal
 			})
 
-			const data = (await response.json()) as {
-				success: boolean
-				message?: string
-				error?: string
+			clearTimeout(timeoutId)
+
+			const rawData: unknown = await response.json()
+			const parseResult = eventCodeResponseSchema.safeParse(rawData)
+
+			if (!parseResult.success) {
+				setError('Invalid response from server')
+				setSubmittingCode(false)
+				return
 			}
 
-			if (!(response.ok && data.success)) {
+			const data = parseResult.data
+
+			if (!response.ok || !data.success) {
 				setError(data.error || 'Failed to register for event')
 				setSubmittingCode(false)
 				return
@@ -52,10 +73,15 @@ function DashboardComponent() {
 			setSuccess(data.message || 'Successfully registered for event')
 			setEventCode('')
 			// Invalidate events query to refresh the list
-			await queryClient.invalidateQueries({queryKey: ['events']})
+			await queryClient.invalidateQueries({queryKey: EVENTS_QUERY_KEY})
 			setSubmittingCode(false)
 		} catch (err) {
-			setError(err instanceof Error ? err.message : 'Failed to register for event')
+			clearTimeout(timeoutId)
+			if (err instanceof DOMException && err.name === 'AbortError') {
+				setError('Request timed out. Please try again.')
+			} else {
+				setError(err instanceof Error ? err.message : 'Failed to register for event')
+			}
 			setSubmittingCode(false)
 		}
 	}
@@ -89,7 +115,7 @@ function DashboardComponent() {
 				<h1>Check In</h1>
 			</Titlecard>
 
-			<Greencard className=''>
+			<Greencard>
 				{error && (
 					<div
 						className='mb-3 rounded-lg border border-red-400 bg-red-100 px-4 py-2 text-center text-red-700 text-sm'
@@ -102,30 +128,42 @@ function DashboardComponent() {
 				{success && (
 					<div className='mb-3 text-center text-green-800 italic' data-testid='check-in-success'>
 						<p className='font-semibold'>Success!</p>
-						<p>You've checked in</p>
+						<p>{success}</p>
 					</div>
 				)}
 
-				<form onSubmit={handleEventCodeSubmit}>
-					<input
-						className='mb-4 w-full rounded-lg border-[2.2px] border-btnGreen bg-white px-4 py-3 text-center font-inria text-2xl text-[#2A2A2Ae5] tracking-widest focus:outline-none'
-						data-testid='event-code-input'
-						maxLength={4}
-						onChange={e => setEventCode(e.target.value)}
-						placeholder='Enter 4-digit code'
-						required={true}
-						type='text'
-						value={eventCode}
-					/>
-
-					<Button
-						data-testid='check-in-submit-button'
-						disabled={submittingCode || eventCode.length !== 4}
-						type='submit'
-					>
-						{submittingCode ? 'Registering...' : 'Submit'}
-					</Button>
-				</form>
+				<div className='flex flex-col items-center gap-4'>
+					<form onSubmit={e => e.preventDefault()} aria-label='Event check-in'>
+						<InputOTP
+							maxLength={4}
+							value={eventCode}
+							onChange={val => {
+								setEventCode(val)
+								// Clear error message when user starts typing again
+								if (error) setError('')
+							}}
+							onComplete={handleAutoSubmit}
+							data-testid='event-code-input'
+							inputMode='numeric'
+							autoFocus
+							disabled={submittingCode}
+							aria-label='Enter 4-digit event code'
+						>
+							<InputOTPGroup>
+								<InputOTPSlot index={0} className='text-2xl' />
+								<InputOTPSlot index={1} className='text-2xl' />
+								<InputOTPSlot index={2} className='text-2xl' />
+								<InputOTPSlot index={3} className='text-2xl' />
+							</InputOTPGroup>
+						</InputOTP>
+					</form>
+					{submittingCode && (
+						<div className='flex items-center gap-2' data-testid='check-in-loading'>
+							<Spinner size='md' />
+							<span className='text-gray-600'>Checking in...</span>
+						</div>
+					)}
+				</div>
 			</Greencard>
 
 			{/* Navigation Buttons */}
