@@ -26,6 +26,11 @@ const Navbar: React.FC = () => {
 								<Button variant='ghost'>Admin</Button>
 							</Link>
 						)}
+						{/* Settings accessible to all authenticated users regardless of profileComplete status -
+						    allows users to update profile before completing onboarding or at any time */}
+						<Link to='/settings/profile'>
+							<Button variant='ghost'>Settings</Button>
+						</Link>
 						<Link to='/dashboard'>
 							<Button variant='ghost'>Dashboard</Button>
 						</Link>

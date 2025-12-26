@@ -7,11 +7,13 @@ This directory contains Playwright test fixtures for E2E testing with session-ba
 The fixture architecture follows a layered pattern:
 
 ```text
-session.fixture.ts  <- Foundation: Cookie encryption/injection
+session.fixture.ts   <- Foundation: Cookie encryption/injection
        ↑
-auth.fixture.ts     <- Regular user authentication
+firestore.fixture.ts <- Firestore document seeding
        ↑
-admin.fixture.ts    <- Admin user authentication (extends auth)
+auth.fixture.ts      <- Regular user authentication
+       ↑
+admin.fixture.ts     <- Admin user authentication (extends auth)
 ```
 
 ## Session-Based Authentication
@@ -22,7 +24,8 @@ All authenticated tests use server-side session cookies, matching the production
 
 | File | Purpose |
 |------|---------|
-| `session.fixture.ts` | Core session cookie utilities |
+| `session.fixture.ts` | Core session cookie utilities + Firestore integration |
+| `firestore.fixture.ts` | Firestore document seeding for routes with loaders |
 | `auth.fixture.ts` | Regular user fixtures + magic link helpers |
 | `admin.fixture.ts` | Admin user fixtures with admin claims |
 

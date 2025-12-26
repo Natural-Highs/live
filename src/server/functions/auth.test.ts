@@ -1,7 +1,7 @@
 /**
  * Unit tests for auth server functions
  *
- * Tests for Story -1.2 Task 2, Task 3, Task 4:
+ * Coverage:
  * - createSessionFn creates session with correct data
  * - createSessionFn rejects invalid Firebase ID token
  * - createSessionFn syncs Firebase claims to session

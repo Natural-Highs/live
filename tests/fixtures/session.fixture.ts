@@ -13,10 +13,20 @@
  * - injectSessionCookie(context, user, claims) - Inject authenticated session
  * - injectAdminSessionCookie(context, user) - Inject admin session
  * - clearSessionCookie(context) - Remove session cookie
+ * - injectAuthenticatedUser(context, user, claims, userDocData) - Session + Firestore
+ * - clearAuthenticatedUser(context, uid) - Clear session + delete user doc
  */
 
 import type {BrowserContext} from '@playwright/test'
 import * as Iron from 'iron-webcrypto'
+import {SESSION_SECRET_TEST} from '../../playwright.config'
+import {SESSION_COOKIE_NAME, SESSION_MAX_AGE} from '../../src/lib/session'
+import {
+	createTestUserDocument,
+	deleteTestUserDocument,
+	type MinorDemographicsData,
+	type TestUserDocument
+} from './firestore.fixture'
 
 /**
  * Session data structure matching src/lib/session.ts SessionData type.
@@ -65,25 +75,6 @@ interface H3Session<T = SessionData> {
 	createdAt: number
 	data: T
 }
-
-/**
- * Hardcoded test secret for E2E tests. TESTING ONLY - never use in production.
- * - 32+ characters required by iron-webcrypto
- * - Different from production secret (security isolation)
- * - No Doppler dependency in CI
- */
-export const SESSION_SECRET_TEST =
-	'test-session-secret-32-characters-minimum-length-for-iron-webcrypto'
-
-/**
- * Cookie name matching src/lib/session.ts SESSION_COOKIE_NAME.
- */
-export const SESSION_COOKIE_NAME = 'nh-session'
-
-/**
- * Session max age in seconds (90 days per NFR1).
- */
-export const SESSION_MAX_AGE = 90 * 24 * 60 * 60
 
 /**
  * Iron seal options matching useSession defaults.
@@ -251,4 +242,120 @@ export async function unsealTestSessionCookie(sealedValue: string): Promise<Sess
 	// h3 wraps data in {id, createdAt, data} structure
 	const h3Session = unsealed as H3Session
 	return h3Session.data
+}
+
+/**
+ * Additional user document data for Firestore seeding.
+ * Optional fields that extend the base TestUser.
+ */
+export interface TestUserDocData {
+	dateOfBirth?: string
+	pronouns?: string | null
+	gender?: string | null
+	raceEthnicity?: string[] | null
+	emergencyContactName?: string | null
+	emergencyContactPhone?: string | null
+	emergencyContactEmail?: string | null
+	dietaryRestrictions?: string[] | null
+	medicalConditions?: string | null
+}
+
+/**
+ * Inject session cookie AND create user document in Firestore.
+ *
+ * Use this for routes with Firestore loaders (e.g., /settings/profile).
+ * Creates both the authenticated session and the user document needed
+ * by server functions like getFullProfileFn().
+ *
+ * @param context - Playwright BrowserContext
+ * @param user - User data (uid, email, displayName)
+ * @param claims - Optional claims (admin, signedConsentForm, isMinor)
+ * @param userDocData - Additional user document data (demographics, DOB)
+ *
+ * @example
+ * ```typescript
+ * await injectAuthenticatedUser(context, {
+ *   uid: 'test-user-123',
+ *   email: 'test@example.com',
+ *   displayName: 'Test User'
+ * }, {
+ *   signedConsentForm: true,
+ *   profileComplete: true
+ * }, {
+ *   dateOfBirth: '1995-06-15',
+ *   pronouns: 'she/her'
+ * })
+ * ```
+ */
+export async function injectAuthenticatedUser(
+	context: BrowserContext,
+	user: TestUser,
+	claims: TestClaims = {},
+	userDocData?: TestUserDocData
+): Promise<void> {
+	const isMinor = claims.isMinor ?? false
+
+	const userDoc: TestUserDocument = {
+		uid: user.uid,
+		email: user.email,
+		displayName: user.displayName,
+		dateOfBirth: userDocData?.dateOfBirth ?? '1990-01-15',
+		isMinor,
+		profileComplete: claims.profileComplete ?? true,
+		profileVersion: 1
+	}
+
+	if (!isMinor && userDocData) {
+		if (userDocData.pronouns !== undefined) userDoc.pronouns = userDocData.pronouns
+		if (userDocData.gender !== undefined) userDoc.gender = userDocData.gender
+		if (userDocData.raceEthnicity !== undefined) userDoc.raceEthnicity = userDocData.raceEthnicity
+		if (userDocData.emergencyContactName !== undefined)
+			userDoc.emergencyContactName = userDocData.emergencyContactName
+		if (userDocData.emergencyContactPhone !== undefined)
+			userDoc.emergencyContactPhone = userDocData.emergencyContactPhone
+		if (userDocData.emergencyContactEmail !== undefined)
+			userDoc.emergencyContactEmail = userDocData.emergencyContactEmail
+		if (userDocData.dietaryRestrictions !== undefined)
+			userDoc.dietaryRestrictions = userDocData.dietaryRestrictions
+		if (userDocData.medicalConditions !== undefined)
+			userDoc.medicalConditions = userDocData.medicalConditions
+	}
+
+	let minorDemographics: MinorDemographicsData | undefined
+	if (isMinor && userDocData) {
+		minorDemographics = {
+			pronouns: userDocData.pronouns,
+			gender: userDocData.gender,
+			raceEthnicity: userDocData.raceEthnicity,
+			emergencyContactName: userDocData.emergencyContactName,
+			emergencyContactPhone: userDocData.emergencyContactPhone,
+			emergencyContactEmail: userDocData.emergencyContactEmail,
+			dietaryRestrictions: userDocData.dietaryRestrictions,
+			medicalConditions: userDocData.medicalConditions
+		}
+	}
+
+	await createTestUserDocument(userDoc, minorDemographics)
+
+	await injectSessionCookie(context, user, claims)
+}
+
+/**
+ * Clear session and delete user document from Firestore.
+ *
+ * Call in afterEach to ensure test isolation.
+ *
+ * @param context - Playwright BrowserContext
+ * @param uid - User ID to delete
+ *
+ * @example
+ * ```typescript
+ * test.afterEach(async ({ context }) => {
+ *   await clearAuthenticatedUser(context, TEST_USER.uid)
+ * })
+ * ```
+ */
+export async function clearAuthenticatedUser(context: BrowserContext, uid: string): Promise<void> {
+	await clearSessionCookie(context)
+	await deleteTestUserDocument(uid)
 }

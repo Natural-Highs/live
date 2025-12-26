@@ -1,7 +1,7 @@
 /**
  * Unit tests for auth utilities (validateSession, requireAdmin)
  *
- * Tests for Story -1.2 Task 1:
+ * Coverage:
  * - validateSession() returns user from TanStack session
  * - validateSession() returns null when no session
  * - validateSession() rejects cross-environment session (R-023)

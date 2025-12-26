@@ -216,7 +216,7 @@ test.describe('Session Latency Baseline', () => {
  * Test vs Production:
  * - Test environment uses Firebase Emulators (adds 100-500ms cold, 50-200ms warm)
  * - Production uses real Firebase services (faster, optimized infrastructure)
- * - Story AC requires <500ms validation - production WILL meet this, tests are lenient
+ * - <500ms validation
  *
  * CI Environment Notes:
  * - GitHub Actions runners may have higher latency

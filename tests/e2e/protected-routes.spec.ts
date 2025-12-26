@@ -8,7 +8,7 @@
  *
  * Uses session cookie injection (not localStorage) to match actual auth flow.
  *
- * Story: -1.3-protected-route-architecture
+ * Covers: Protected route architecture with layout-based auth
  */
 
 import {test as base, expect} from '@playwright/test'
