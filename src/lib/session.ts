@@ -20,7 +20,7 @@ import {useSession} from '@tanstack/react-start/server'
  * @property userId - Firebase Auth UID
  * @property email - User's email address
  * @property displayName - User's display name
- * @property claims - Custom Firebase claims (admin, signedConsentForm, passkeyEnabled)
+ * @property claims - Custom Firebase claims (admin, signedConsentForm, passkeyEnabled, profileComplete, isMinor)
  * @property env - Environment binding to prevent cross-environment replay attacks (R-023)
  * @property sessionCreatedAt - ISO timestamp of session creation for revocation checks (R-024)
  */
@@ -33,6 +33,10 @@ export type SessionData = {
 		signedConsentForm?: boolean
 		/** Set to true when user has registered a passkey */
 		passkeyEnabled?: boolean
+		/** Set to true when user has completed profile (display name + DOB) */
+		profileComplete?: boolean
+		/** Set to true when user is under 18 (determines demographics storage location) */
+		isMinor?: boolean
 	}
 	/** Environment binding prevents cross-environment session replay (R-023) */
 	env?: 'development' | 'staging' | 'production'

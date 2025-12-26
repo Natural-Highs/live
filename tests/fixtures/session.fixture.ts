@@ -28,6 +28,9 @@ export type SessionData = {
 	claims: {
 		admin?: boolean
 		signedConsentForm?: boolean
+		passkeyEnabled?: boolean
+		profileComplete?: boolean
+		isMinor?: boolean
 	}
 	env: 'development' | 'staging' | 'production'
 	sessionCreatedAt?: string
@@ -48,6 +51,9 @@ export interface TestUser {
 export interface TestClaims {
 	admin?: boolean
 	signedConsentForm?: boolean
+	passkeyEnabled?: boolean
+	profileComplete?: boolean
+	isMinor?: boolean
 }
 
 /**

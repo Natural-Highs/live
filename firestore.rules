@@ -46,6 +46,19 @@ service cloud.firestore {
         // No client-side updates - credential updates must go through server functions
         allow update: if false;
       }
+
+      // Private subcollection - user can only access their own private data
+      // Demographics for minors are stored here to prevent exposure to other authenticated users
+      match /private/{docId} {
+        // Users can read their own private documents
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+        
+        // Users can create/update their own private documents
+        allow create, update: if isAuthenticated() && request.auth.uid == userId;
+        
+        // Users can delete their own private documents
+        allow delete: if isAuthenticated() && request.auth.uid == userId;
+      }
     }
 
     // Passkey Challenges Collection (root level, temporary storage)
