@@ -38,7 +38,7 @@ export interface PasskeyCredential {
 /**
  * Challenge stored temporarily during WebAuthn ceremonies.
  *
- * Collection: users/{uid}/passkeyChallenges/{challengeId}
+ * Collection: passkeyChallenges/{challengeId}
  * TTL: 5 minutes (enforced by Firestore TTL policy or cleanup)
  */
 export interface PasskeyChallenge {
@@ -133,4 +133,21 @@ export interface PasskeyVerificationResult {
 	credentialId?: string
 	isNewUser?: boolean
 	error?: string
+}
+
+/**
+ * Credential index for O(1) passkey lookup during authentication.
+ *
+ * Collection: passkeyCredentials/{credentialId}
+ *
+ * This root-level collection enables constant-time credential lookup
+ * instead of scanning all user passkey subcollections.
+ *
+ * @see verifyPasskeyAuthenticationFn for usage
+ */
+export interface PasskeyCredentialIndex {
+	/** User ID that owns this credential */
+	userId: string
+	/** ISO timestamp of credential creation */
+	createdAt: string
 }

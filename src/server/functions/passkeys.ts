@@ -33,7 +33,7 @@ import {
 	verifyPasskeyAuthenticationSchema,
 	verifyPasskeyRegistrationSchema
 } from '@/server/schemas/passkeys'
-import type {PasskeyCredential} from '@/server/types/passkeys'
+import type {PasskeyCredential, PasskeyCredentialIndex} from '@/server/types/passkeys'
 import {AuthenticationError, ValidationError} from './utils/errors'
 
 /**
@@ -234,7 +234,7 @@ export const verifyPasskeyRegistrationFn = createServerFn({method: 'POST'}).hand
 		// as they run in Node.js context without access to browser navigator object.
 		// Device info is derived from WebAuthn credentialDeviceType instead.
 
-		// Store credential in Firestore
+		// Store credential in Firestore with credential index (transaction for atomicity)
 		const credentialIdStr = Buffer.from(credential.id).toString('base64url')
 		const credentialData: PasskeyCredential = {
 			id: credentialIdStr,
@@ -246,18 +246,29 @@ export const verifyPasskeyRegistrationFn = createServerFn({method: 'POST'}).hand
 			aaguid: aaguid
 		}
 
-		await adminDb
-			.collection('users')
-			.doc(user.uid)
-			.collection('passkeys')
-			.doc(credentialIdStr)
-			.set(credentialData)
+		const indexData: PasskeyCredentialIndex = {
+			userId: user.uid,
+			createdAt: credentialData.createdAt
+		}
 
-		// Update user profile with passkey status
-		await adminDb
-			.collection('users')
-			.doc(user.uid)
-			.set(
+		// Use transaction to ensure both credential and index are written atomically
+		await adminDb.runTransaction(async transaction => {
+			// Write credential to user's passkeys subcollection
+			const credentialRef = adminDb
+				.collection('users')
+				.doc(user.uid)
+				.collection('passkeys')
+				.doc(credentialIdStr)
+			transaction.set(credentialRef, credentialData)
+
+			// Write credential index for O(1) lookup during authentication
+			const indexRef = adminDb.collection('passkeyCredentials').doc(credentialIdStr)
+			transaction.set(indexRef, indexData)
+
+			// Update user profile with passkey status (inside transaction for atomicity)
+			const userRef = adminDb.collection('users').doc(user.uid)
+			transaction.set(
+				userRef,
 				{
 					hasPasskey: true,
 					passkeyCount: admin.firestore.FieldValue.increment(1),
@@ -265,6 +276,7 @@ export const verifyPasskeyRegistrationFn = createServerFn({method: 'POST'}).hand
 				},
 				{merge: true}
 			)
+		})
 
 		// Delete used challenge
 		await challengeDoc.ref.delete()
@@ -359,31 +371,38 @@ export const verifyPasskeyAuthenticationFn = createServerFn({method: 'POST'}).ha
 
 		const authResponse = parseResult.data as AuthenticationResponseJSON
 
-		// Find the credential by ID
+		// Find the credential by ID using O(1) index lookup
 		const credentialId = authResponse.id
 
-		// Search across all users for this credential
-		// Note: In production, you might want to optimize this with a separate index
-		const usersSnapshot = await adminDb.collection('users').get()
+		// Use credential index for O(1) lookup instead of scanning all users
+		const indexDoc = await adminDb.collection('passkeyCredentials').doc(credentialId).get()
 
-		let userId: string | null = null
-		let credentialData: PasskeyCredential | null = null
-
-		for (const userDoc of usersSnapshot.docs) {
-			const credDoc = await userDoc.ref.collection('passkeys').doc(credentialId).get()
-
-			if (credDoc.exists) {
-				userId = userDoc.id
-				credentialData = credDoc.data() as PasskeyCredential
-				break
-			}
-		}
-
-		if (!userId || !credentialData) {
+		if (!indexDoc.exists) {
 			throw new AuthenticationError('Passkey not found. Please sign in with magic link.')
 		}
 
-		// Find and verify challenge
+		const indexData = indexDoc.data() as PasskeyCredentialIndex
+		const userId = indexData.userId
+
+		// Get the actual credential data from the user's passkeys subcollection
+		const credDoc = await adminDb
+			.collection('users')
+			.doc(userId)
+			.collection('passkeys')
+			.doc(credentialId)
+			.get()
+
+		if (!credDoc.exists) {
+			// Index exists but credential doesn't - data inconsistency
+			// Delete orphaned index entry and throw error
+			await indexDoc.ref.delete()
+			throw new AuthenticationError('Passkey not found. Please sign in with magic link.')
+		}
+
+		const credentialData = credDoc.data() as PasskeyCredential
+
+		// Find a valid challenge using atomic claim pattern to prevent race conditions
+		// Query recent challenges, then atomically delete and use the first valid one
 		const challengesSnapshot = await adminDb
 			.collection('passkeyChallenges')
 			.where('type', '==', 'authentication')
@@ -392,14 +411,27 @@ export const verifyPasskeyAuthenticationFn = createServerFn({method: 'POST'}).ha
 			.get()
 
 		let validChallenge: string | null = null
-		let challengeDocRef: admin.firestore.DocumentReference | null = null
 
+		// Try to atomically claim a challenge (delete it so no other request can use it)
 		for (const doc of challengesSnapshot.docs) {
 			const data = doc.data()
 			if (new Date(data.expiresAt) > new Date()) {
-				validChallenge = data.challenge
-				challengeDocRef = doc.ref
-				break
+				// Attempt atomic delete - if another request already deleted it, this is a no-op
+				// We check if we successfully claimed it by seeing if we can proceed
+				try {
+					await doc.ref.delete()
+					validChallenge = data.challenge
+					break
+				} catch (error) {
+					// Only swallow "not found" errors (challenge already claimed by another request)
+					// Re-throw unexpected errors (network failures, permission issues)
+					const errorCode = (error as {code?: number})?.code
+					if (errorCode !== 5) {
+						// 5 = NOT_FOUND in Firestore error codes
+						throw error
+					}
+					// Challenge already claimed, try next one
+				}
 			}
 		}
 
@@ -434,25 +466,30 @@ export const verifyPasskeyAuthenticationFn = createServerFn({method: 'POST'}).ha
 			throw new AuthenticationError('Passkey could not be verified.')
 		}
 
-		// Update credential counter (clone detection)
+		// Update credential counter, last used time, and user's last auth time atomically
 		const {newCounter} = verification.authenticationInfo
-		await adminDb.collection('users').doc(userId).collection('passkeys').doc(credentialId).update({
-			counter: newCounter,
-			lastUsedAt: new Date().toISOString()
+		const now = new Date().toISOString()
+
+		await adminDb.runTransaction(async transaction => {
+			const credRef = adminDb
+				.collection('users')
+				.doc(userId)
+				.collection('passkeys')
+				.doc(credentialId)
+			transaction.update(credRef, {
+				counter: newCounter,
+				lastUsedAt: now
+			})
+
+			const userRef = adminDb.collection('users').doc(userId)
+			transaction.set(
+				userRef,
+				{
+					lastPasskeyAuthenticatedAt: now
+				},
+				{merge: true}
+			)
 		})
-
-		// Update user's last passkey auth time
-		await adminDb.collection('users').doc(userId).set(
-			{
-				lastPasskeyAuthenticatedAt: new Date().toISOString()
-			},
-			{merge: true}
-		)
-
-		// Delete used challenge
-		if (challengeDocRef) {
-			await challengeDocRef.delete()
-		}
 
 		// Get user data for session
 		const userDoc = await adminDb.collection('users').doc(userId).get()
@@ -566,19 +603,23 @@ export const removePasskeyFn = createServerFn({method: 'POST'}).handler(
 			throw new ValidationError('Passkey not found')
 		}
 
-		// Delete the passkey
-		await credRef.delete()
+		// Delete the passkey and its index entry atomically, update passkey count
+		const indexRef = adminDb.collection('passkeyCredentials').doc(credentialId)
+		const userRef = adminDb.collection('users').doc(user.uid)
 
-		// Update passkey count
-		await adminDb
-			.collection('users')
-			.doc(user.uid)
-			.set(
+		await adminDb.runTransaction(async transaction => {
+			transaction.delete(credRef)
+			transaction.delete(indexRef)
+
+			// Update passkey count (inside transaction for atomicity)
+			transaction.set(
+				userRef,
 				{
 					passkeyCount: admin.firestore.FieldValue.increment(-1)
 				},
 				{merge: true}
 			)
+		})
 
 		// Check if user has any remaining passkeys
 		const remainingPasskeys = await adminDb

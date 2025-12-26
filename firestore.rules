@@ -83,6 +83,18 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Passkey Credential Index Collection
+    // Enables O(1) credential lookup during authentication
+    // Contains only userId reference, not credential secrets
+    match /passkeyCredentials/{credentialId} {
+      // Anyone can read (needed for authentication before user is known)
+      // This is safe because it only exposes userId, not credential secrets
+      allow read: if true;
+
+      // Only server (admin SDK) can create/update/delete
+      allow create, update, delete: if false;
+    }
+
     // Session Revocations Collection
     // Server-only access - tracks when user sessions should be invalidated
     match /sessionRevocations/{revocationId} {

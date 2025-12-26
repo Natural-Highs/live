@@ -252,17 +252,8 @@ export async function clearFirestoreEmulator(): Promise<void> {
 		)
 
 		if (!response.ok && response.status !== 404) {
-			console.warn(
-				`[firestore.fixture] clearFirestoreEmulator unexpected status: ${response.status} ${response.statusText}`
-			)
 		}
-	} catch (error) {
-		// Log connection failures to help debug emulator issues
-		console.warn(
-			`[firestore.fixture] clearFirestoreEmulator failed to connect to emulator at ${host}:`,
-			error instanceof Error ? error.message : error
-		)
-	}
+	} catch (_error) {}
 }
 
 /**
@@ -294,4 +285,55 @@ export async function cleanupTestApp(): Promise<void> {
 		testApp = null
 		testDb = null
 	}
+}
+
+/**
+ * Create a minimal user document for E2E testing.
+ *
+ * Simplified wrapper around createTestUserDocument for common use cases.
+ * Used when E2E tests need to verify Firestore state with minimal setup.
+ *
+ * @param uid - User ID (should match session fixture UID)
+ * @param data - Optional partial user data to override defaults
+ *
+ * @example
+ * ```typescript
+ * // Create minimal user matching session
+ * await createTestUser('test-user-123')
+ *
+ * // Create user with custom display name
+ * await createTestUser('test-user-123', { displayName: 'Custom Name' })
+ * ```
+ */
+export async function createTestUser(
+	uid: string,
+	data: Partial<Omit<TestUserDocument, 'uid'>> = {}
+): Promise<void> {
+	await createTestUserDocument({
+		uid,
+		email: data.email ?? `test-${uid}@example.com`,
+		displayName: data.displayName ?? 'Test User',
+		profileComplete: data.profileComplete ?? false,
+		profileVersion: data.profileVersion ?? 1,
+		...data
+	})
+}
+
+/**
+ * Delete test user document after E2E test.
+ *
+ * Simplified alias for deleteTestUserDocument.
+ * Ensures test isolation by cleaning up user data.
+ *
+ * @param uid - User ID to delete
+ *
+ * @example
+ * ```typescript
+ * test.afterEach(async () => {
+ *   await deleteTestUser('test-user-123')
+ * })
+ * ```
+ */
+export async function deleteTestUser(uid: string): Promise<void> {
+	await deleteTestUserDocument(uid)
 }
