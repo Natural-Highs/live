@@ -3,8 +3,16 @@ name: CI
 on:
   push:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.vscode/**'
   pull_request:
     branches: [main]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.vscode/**'
   workflow_dispatch:
 
 permissions:
@@ -255,15 +263,80 @@ jobs:
         env:
           CI: true
 
+      - name: Upload Playwright report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report-shard-${{ matrix.shard }}
+          path: .build/playwright-report/
+          retention-days: 30
+
       - name: Upload test results on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: e2e-results-shard-${{ matrix.shard }}
-          path: |
-            .build/test-results/
-            .build/playwright-report/
+          path: .build/test-results/
           retention-days: 30
+
+  # ============================================
+  # Stage 3b: Deploy E2E Test Report
+  # ============================================
+  deploy-test-report:
+    name: Deploy Test Report
+    runs-on: ubuntu-latest
+    needs: [test-e2e]
+    # Only deploy on main branch OR when tests fail (to debug failures)
+    if: |
+      always() && 
+      needs.test-e2e.result != 'cancelled' &&
+      (github.ref == 'refs/heads/main' || needs.test-e2e.result == 'failure')
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - name: Download all Playwright reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: playwright-report-shard-*
+          path: all-reports
+          merge-multiple: true
+
+      - name: Merge reports
+        run: |
+          # Install playwright to use merge-reports
+          npm install -g playwright
+          # Merge all shard reports into one
+          npx playwright merge-reports --reporter=html all-reports -o merged-report || {
+            echo "Merge failed, using raw reports"
+            mkdir -p merged-report
+            cp -r all-reports/* merged-report/ 2>/dev/null || true
+          }
+
+      - name: Deploy to Netlify
+        id: netlify
+        uses: nwtgck/actions-netlify@v3
+        with:
+          publish-dir: merged-report
+          production-deploy: ${{ github.ref == 'refs/heads/main' }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          deploy-message: "E2E Report - ${{ github.event.pull_request.title || github.sha }}"
+          alias: ${{ github.event.pull_request.number && format('pr-{0}', github.event.pull_request.number) || '' }}
+          enable-pull-request-comment: true
+          enable-commit-comment: false
+          overwrites-pull-request-comment: true
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: 033f172d-782e-430f-a338-b9dec48fff80
+        timeout-minutes: 5
+
+      - name: Add report link to summary
+        run: |
+          echo "## E2E Test Report" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "View the full test report with traces and screenshots:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "[${{ steps.netlify.outputs.deploy-url }}](${{ steps.netlify.outputs.deploy-url }})" >> $GITHUB_STEP_SUMMARY
 
   # ============================================
   # Stage 4: Burn-In (Flaky Detection) - PRs Only
