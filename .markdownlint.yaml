@@ -1,0 +1,22 @@
+# Markdownlint configuration
+# https://github.com/DavidAnson/markdownlint
+
+# Disabled stylistic rules - content renders correctly
+
+# MD013 - Line length (documentation often has long lines)
+MD013: false
+
+# MD022 - Headings should be surrounded by blank lines
+MD022: false
+
+# MD024 - Multiple headings with same content (common in structured docs)
+MD024: false
+
+# MD031 - Fenced code blocks should be surrounded by blank lines
+MD031: false
+
+# MD032 - Lists should be surrounded by blank lines
+MD032: false
+
+# MD060 - Table column style (tables render correctly)
+MD060: false

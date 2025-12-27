@@ -1,0 +1,12 @@
+{
+  "name": "Natural Highs Green",
+  "colors": {
+    "primaryFill": "#e2fde6",
+    "accent": "#347937",
+    "decision": "#fff3e0",
+    "decisionAccent": "#f57c00",
+    "text": "#1e1e1e",
+    "admin": "#f3e5f5",
+    "adminAccent": "#7b1fa2"
+  }
+}
