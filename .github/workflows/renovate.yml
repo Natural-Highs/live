@@ -1,0 +1,30 @@
+name: Renovate
+
+on:
+  schedule:
+    - cron: 0 3 * * 0 # Weekly Sunday 3am UTC
+  workflow_dispatch: # Manual trigger without inputs
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write  # Required for Renovate dependency dashboard
+
+jobs:
+  renovate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Self-hosted Renovate
+        uses: renovatebot/github-action@v42
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          configurationFile: renovate.json
