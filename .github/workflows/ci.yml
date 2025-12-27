@@ -98,7 +98,7 @@ jobs:
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./.build/test-results/junit.xml
@@ -106,6 +106,7 @@ jobs:
           slug: Natural-Highs/live
           verbose: true
           codecov_yml_path: ./.github/codecov.yml
+          report_type: test_results
 
       - name: Coverage Threshold Check
         run: |
@@ -227,6 +228,12 @@ jobs:
           key: playwright-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: |
             playwright-${{ runner.os }}-
+
+      - name: Cache Firebase emulators
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -372,6 +379,12 @@ jobs:
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+
+      - name: Cache Firebase emulators
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}
 
       - name: Install dependencies
         run: bun install --frozen-lockfile
