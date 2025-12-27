@@ -197,7 +197,7 @@ export const verifyPasskeyRegistrationFn = createServerFn({method: 'POST'}).hand
 			throw new ValidationError('No registration challenge found. Please try again.')
 		}
 
-		const challengeDoc = challengesSnapshot.docs[0]
+		const challengeDoc = challengesSnapshot.docs[0]!
 		const challengeData = challengeDoc.data()
 
 		// Check expiration

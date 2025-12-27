@@ -67,7 +67,7 @@ const testUser = {
 	displayName: 'Passkey Test User'
 }
 
-test.describe('Passkey Registration', () => {
+test.describe('Passkey Registration @smoke', () => {
 	test.describe('Profile Page - Passkey Setup', () => {
 		test('should show passkey setup section on profile page', async ({page, context}) => {
 			// GIVEN: Authenticated user on profile page

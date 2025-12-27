@@ -16,14 +16,14 @@ import {auth} from '$lib/firebase/firebase.app'
 import {useAuth} from '../context/AuthContext'
 
 const loginSchema = z.object({
-	email: z.string().email('Invalid email address'),
+	email: z.email('Invalid email address'),
 	password: z.string().min(6, 'Password must be at least 6 characters')
 })
 
 const signupSchema = z
 	.object({
 		username: z.string().min(2, 'Username must be at least 2 characters'),
-		email: z.string().email('Invalid email address'),
+		email: z.email('Invalid email address'),
 		password: z.string().min(6, 'Password must be at least 6 characters'),
 		confirmPassword: z.string()
 	})
@@ -500,6 +500,9 @@ function AuthenticationComponent() {
 
 						<signupForm.Subscribe selector={state => [state.values]}>
 							{([values]) => {
+								if (!values) {
+									return null
+								}
 								const result = signupSchema.safeParse(values)
 								if (!result.success && values.confirmPassword) {
 									const passwordMismatchError = result.error.issues.find(

@@ -14,15 +14,15 @@ export const eventCodeSchema = z
 export const userIdSchema = z.string().min(1)
 
 // Email validation
-export const emailSchema = z.string().email()
+export const emailSchema = z.email()
 
 // ISO timestamp validation
-export const isoTimestampSchema = z.string().datetime()
+export const isoTimestampSchema = z.iso.datetime()
 
 // Pagination schema
 export const paginationSchema = z.object({
-	limit: z.number().int().positive().max(100).optional().default(20),
-	offset: z.number().int().nonnegative().optional().default(0)
+	limit: z.int().positive().max(100).optional().default(20),
+	offset: z.int().nonnegative().optional().default(0)
 })
 
 // Sort direction

@@ -34,7 +34,7 @@ export const getEventByCode = createServerFn({method: 'GET'}).handler(
 			throw new NotFoundError('Event not found with this code')
 		}
 
-		const doc = snapshot.docs[0]
+		const doc = snapshot.docs[0]!
 		const eventData = doc.data()
 
 		return {

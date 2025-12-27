@@ -89,7 +89,7 @@ export const getSurveyQuestions = createServerFn({method: 'GET'}).handler(
 			throw new NotFoundError(`No active ${surveyType} survey template found`)
 		}
 
-		const doc = snapshot.docs[0]
+		const doc = snapshot.docs[0]!
 		const templateData = doc.data()
 
 		return {

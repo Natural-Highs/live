@@ -13,7 +13,7 @@ import {setEmailForSignIn} from '$lib/auth/magic-link'
 import {auth} from '$lib/firebase/firebase.app'
 
 const emailSchema = z.object({
-	email: z.string().email('Invalid email address')
+	email: z.email('Invalid email address')
 })
 
 type EmailFormValues = z.infer<typeof emailSchema>

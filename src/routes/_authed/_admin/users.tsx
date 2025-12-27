@@ -36,7 +36,9 @@ function UsersPage() {
 	}, [])
 
 	const handleToggleAdmin = async () => {
-		if (!selectedUser) return
+		if (!selectedUser) {
+			return
+		}
 
 		setError('')
 

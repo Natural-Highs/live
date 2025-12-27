@@ -29,7 +29,7 @@ const testUser = {
 	displayName: 'Session Test User'
 }
 
-test.describe('Session Persistence', () => {
+test.describe('Session Persistence @smoke', () => {
 	test('session survives page navigation', async ({page, context}) => {
 		// Inject session cookie
 		await injectSessionCookie(context, testUser, {signedConsentForm: true})

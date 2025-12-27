@@ -12,10 +12,10 @@ export const getEventByCodeSchema = z.object({
 export const createEventSchema = z.object({
 	name: z.string().min(1).max(255),
 	description: z.string().optional(),
-	startDate: z.string().datetime(),
-	endDate: z.string().datetime(),
+	startDate: z.iso.datetime(),
+	endDate: z.iso.datetime(),
 	isPublic: z.boolean().optional().default(false),
-	maxParticipants: z.number().int().positive().optional()
+	maxParticipants: z.int().positive().optional()
 })
 
 export const activateEventSchema = z.object({

@@ -46,9 +46,15 @@ export default defineConfig({
 	// CI: Use multiple reporters for GitHub Actions integration
 	// Local: HTML reporter for interactive viewing
 	reporter: isCI
-		? [['html', {open: 'never', outputFolder: '.build/playwright-report'}], ['github'], ['list']]
+		? [
+				['html', {open: 'never', outputFolder: '.build/playwright-report'}],
+				['github'],
+				['list'],
+				['junit', {outputFile: '.build/e2e-results/junit.xml'}]
+			]
 		: [['html', {outputFolder: '.build/playwright-report'}]],
-	retries: isCI ? 2 : 0,
+	// Disable retries - Trunk quarantining handles flaky tests
+	retries: 0,
 	// Only run E2E tests (*.spec.ts files in tests/e2e directory)
 	// Separates from Vitest unit tests to avoid expect symbol conflict
 	testDir: './tests/e2e',

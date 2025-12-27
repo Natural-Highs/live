@@ -46,7 +46,9 @@ export interface GracePeriodState {
  * Updates localStorage to track when auth was last confirmed valid.
  */
 export function recordValidAuth(): void {
-	if (typeof window === 'undefined') return
+	if (typeof window === 'undefined') {
+		return
+	}
 
 	try {
 		localStorage.setItem(LAST_VALID_AUTH_KEY, new Date().toISOString())
@@ -60,7 +62,9 @@ export function recordValidAuth(): void {
  * Returns null if no valid auth has been recorded.
  */
 export function getLastValidAuthTime(): Date | null {
-	if (typeof window === 'undefined') return null
+	if (typeof window === 'undefined') {
+		return null
+	}
 
 	try {
 		const stored = localStorage.getItem(LAST_VALID_AUTH_KEY)
@@ -75,7 +79,9 @@ export function getLastValidAuthTime(): Date | null {
  * Called on logout to reset grace period tracking.
  */
 export function clearLastValidAuthTime(): void {
-	if (typeof window === 'undefined') return
+	if (typeof window === 'undefined') {
+		return
+	}
 
 	try {
 		localStorage.removeItem(LAST_VALID_AUTH_KEY)
@@ -145,7 +151,9 @@ export function calculateGracePeriodState(
  * @returns Promise resolving to true if auth service is available
  */
 export async function checkAuthServiceAvailability(): Promise<boolean> {
-	if (typeof window === 'undefined') return true // SSR: assume available
+	if (typeof window === 'undefined') {
+		return true // SSR: assume available
+	}
 
 	try {
 		// Check if Firebase Auth SDK is loaded and responsive

@@ -27,7 +27,9 @@ function createMockAdapter(): QRScannerAdapter {
 			isRunning = false
 		},
 		getCapabilities(): ScannerCapabilities | null {
-			if (!isRunning) return null
+			if (!isRunning) {
+				return null
+			}
 			return {
 				torchFeature: () => ({
 					isSupported: () => false,
@@ -41,7 +43,9 @@ function createMockAdapter(): QRScannerAdapter {
 // Mock extractEventCode
 vi.mock('@/lib/events/qr-code', () => ({
 	extractEventCode: vi.fn((text: string) => {
-		if (/^\d{4}$/.test(text)) return text
+		if (/^\d{4}$/.test(text)) {
+			return text
+		}
 		return null
 	})
 }))

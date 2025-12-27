@@ -9,8 +9,62 @@
 | `bun run test` | Unit tests (watch mode) |
 | `bun run test:ci` | Unit tests (single run) |
 | `bun run test:e2e` | E2E tests (UI mode) |
+| `bun run test:e2e:smoke` | Smoke E2E tests only |
 | `bun run test:e2e:ci` | E2E tests (headless) |
 | `bun run validate` | lint + test:ci + test:e2e:ci |
+
+## Test Tiers (CI Strategy)
+
+E2E tests are split into two tiers to balance fast PR feedback with comprehensive main branch validation.
+
+### Smoke Tier (@smoke)
+
+| Aspect | Details |
+|--------|---------|
+| **Runs on** | Every PR |
+| **Target** | < 2 minutes |
+| **Coverage** | Critical user paths only |
+| **Command** | `playwright test --grep @smoke` |
+
+**Smoke Test Files (6 files):**
+
+| File | Critical Path |
+|------|---------------|
+| magic-link.spec.ts | Auth entry point |
+| passkey.spec.ts | Auth alternative |
+| session-persistence.spec.ts | Session integrity |
+| consent-form.spec.ts | Legal gate |
+| check-in.spec.ts | Core user journey |
+| protected-routes.spec.ts | Security boundary |
+
+**Selection Criteria**: A test should be tagged `@smoke` if:
+1. It tests a user-blocking flow (auth, legal consent, core journey)
+2. Failure would indicate a critical regression
+3. It provides confidence for merge without running full suite
+
+### Full Tier
+
+| Aspect | Details |
+|--------|---------|
+| **Runs on** | Main branch merges |
+| **Target** | < 10 minutes (4 shards) |
+| **Coverage** | All E2E scenarios |
+| **Command** | `playwright test` |
+
+**Sharding Strategy**:
+- 4 parallel GitHub runners (shards 1-4)
+- 2 workers per runner (matches 2 vCPU limit)
+- Total parallelism: 8 concurrent tests
+
+### Adding Smoke Tags
+
+To tag a test suite as smoke:
+
+```typescript
+test.describe('Feature Name @smoke', () => {
+  // Tests in this describe block run in smoke tier
+})
+```
 
 ## Best Practices
 

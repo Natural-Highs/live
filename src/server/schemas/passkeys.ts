@@ -57,5 +57,5 @@ export const getRegistrationOptionsSchema = z.object({
  */
 export const getAuthenticationOptionsSchema = z.object({
 	/** Optional email to filter allowed credentials */
-	email: z.string().email().optional()
+	email: z.email().optional()
 })

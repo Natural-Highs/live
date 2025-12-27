@@ -16,8 +16,12 @@ let initError: Error | null = null
 export const shouldUseEmulators = process.env.USE_EMULATORS === 'true'
 
 function initializeAdmin(): void {
-	if (initialized) return
-	if (initError) throw initError
+	if (initialized) {
+		return
+	}
+	if (initError) {
+		throw initError
+	}
 
 	// When using emulators, we can initialize without credentials
 	if (shouldUseEmulators) {
@@ -109,7 +113,9 @@ export const adminAuth = {
 
 // Test function for verifying Firestore and Auth functionality when using emulators
 export async function testAdminFunctions() {
-	if (!shouldUseEmulators) return
+	if (!shouldUseEmulators) {
+		return
+	}
 
 	try {
 		initializeAdmin()

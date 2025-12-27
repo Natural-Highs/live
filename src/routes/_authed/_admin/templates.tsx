@@ -118,7 +118,9 @@ function TemplatesComponent() {
 
 	const handleEdit = async (e: React.FormEvent) => {
 		e.preventDefault()
-		if (!selectedTemplate) return
+		if (!selectedTemplate) {
+			return
+		}
 		setError('')
 
 		try {
@@ -172,7 +174,9 @@ function TemplatesComponent() {
 	}
 
 	const handleDelete = async () => {
-		if (!selectedTemplate) return
+		if (!selectedTemplate) {
+			return
+		}
 		setError('')
 
 		try {

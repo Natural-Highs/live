@@ -44,7 +44,7 @@ async function setupAuthenticatedUser(
 	})
 }
 
-test.describe('Consent Form Flow', () => {
+test.describe('Consent Form Flow @smoke', () => {
 	test.describe('Consent Form Access', () => {
 		test('should redirect unauthenticated users to authentication page', async ({page}) => {
 			// GIVEN: User is not authenticated

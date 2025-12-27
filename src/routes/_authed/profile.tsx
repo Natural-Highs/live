@@ -129,7 +129,9 @@ function ProfileComponent() {
 	}
 
 	const formatDate = (dateString?: string | Date | {toDate?: () => Date}): string => {
-		if (!dateString) return 'Date TBD'
+		if (!dateString) {
+			return 'Date TBD'
+		}
 		try {
 			let date: Date
 			if (typeof dateString === 'string') {

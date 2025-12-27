@@ -227,7 +227,9 @@ function ProfileSettingsComponent() {
 	}
 
 	const handleOverwrite = async () => {
-		if (!pendingSubmission) return
+		if (!pendingSubmission) {
+			return
+		}
 
 		setConflictDialogLoading(true)
 

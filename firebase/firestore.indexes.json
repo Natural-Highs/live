@@ -103,6 +103,20 @@
 			]
 		},
 		{
+			"collectionGroup": "events",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "eventCode",
+					"order": "ASCENDING"
+				},
+				{
+					"fieldPath": "isActive",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
 			"collectionGroup": "formTemplates",
 			"queryScope": "COLLECTION",
 			"fields": [

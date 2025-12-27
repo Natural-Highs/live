@@ -31,10 +31,6 @@ vi.mock('../../lib/firebase/firebase', () => ({
 	}
 }))
 
-vi.mock('../../lib/events/event-validation', () => ({
-	validateEventRegistration: vi.fn()
-}))
-
 describe('users server functions', () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
@@ -94,33 +90,6 @@ describe('users server functions', () => {
 			// 1. Firestore users/{uid} document
 			// 2. Firebase Auth custom claims
 			expect(true).toBe(true)
-		})
-	})
-
-	describe('registerForEvent behavior', () => {
-		it('should require authentication', () => {
-			expect(authMiddleware.requireAuth).toBeDefined()
-		})
-
-		it('should validate event code format', () => {
-			// Event codes must be 4-digit numbers
-			const validCode = '1234'
-			expect(validCode).toMatch(/^\d{4}$/)
-		})
-
-		it('should prevent duplicate registrations', () => {
-			// If user is already in participants array, registration should fail
-			const participants = ['user-123', 'user-456']
-			const userId = 'user-123'
-			expect(participants.includes(userId)).toBe(true)
-		})
-
-		it('should add user to event participants', () => {
-			// Registration adds user uid to participants array
-			const participants = ['user-456']
-			const newParticipant = 'user-123'
-			const updated = [...participants, newParticipant]
-			expect(updated).toContain('user-123')
 		})
 	})
 

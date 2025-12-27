@@ -32,7 +32,7 @@ function buildMagicLinkUrl(_email: string, valid = true): string {
 	return `${baseUrl}?mode=${mode}&oobCode=${oobCode}&apiKey=${apiKey}&continueUrl=${continueUrl}`
 }
 
-test.describe('Magic Link Authentication', () => {
+test.describe('Magic Link Authentication @smoke', () => {
 	test.describe('Scenario 1: Request magic link from sign-in page', () => {
 		test('should display magic link form as primary sign-in option', async ({page}) => {
 			// GIVEN: User navigates to authentication page

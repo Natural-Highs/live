@@ -96,8 +96,12 @@ export const createProfileSchema = z
 	.refine(
 		data => {
 			const dob = new Date(data.dateOfBirth)
-			if (Number.isNaN(dob.getTime())) return false
-			if (dob >= new Date()) return false
+			if (Number.isNaN(dob.getTime())) {
+				return false
+			}
+			if (dob >= new Date()) {
+				return false
+			}
 
 			// Validate age is not unrealistic (max 120 years)
 			const today = new Date()
@@ -127,7 +131,7 @@ export const demographicsSchema = z
 			.regex(PHONE_REGEX, {message: 'Invalid phone format'})
 			.optional()
 			.nullable(),
-		emergencyContactEmail: z.string().email({message: 'Invalid email'}).optional().nullable(),
+		emergencyContactEmail: z.email({message: 'Invalid email'}).optional().nullable(),
 
 		// Health
 		dietaryRestrictions: z.array(z.string()).optional().nullable(),
@@ -170,8 +174,12 @@ export const updateProfileSchema = z
 		data => {
 			if (data.dateOfBirth) {
 				const dob = new Date(data.dateOfBirth)
-				if (Number.isNaN(dob.getTime())) return false
-				if (dob >= new Date()) return false
+				if (Number.isNaN(dob.getTime())) {
+					return false
+				}
+				if (dob >= new Date()) {
+					return false
+				}
 
 				// Validate age is not unrealistic (max 120 years)
 				const today = new Date()

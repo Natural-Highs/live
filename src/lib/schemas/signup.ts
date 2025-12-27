@@ -15,7 +15,7 @@ export const signupAccountSchema = z
 				/^[a-zA-Z0-9_-]+$/,
 				'Username can only contain letters, numbers, hyphens, and underscores'
 			),
-		email: z.string().email('Invalid email address'),
+		email: z.email('Invalid email address'),
 		password: z
 			.string()
 			.min(8, 'Password must be at least 8 characters')

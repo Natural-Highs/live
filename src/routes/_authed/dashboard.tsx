@@ -27,7 +27,8 @@ const eventCodeResponseSchema = z.object({
 	eventName: z.string().optional(),
 	eventDate: z.string().nullable().optional(),
 	eventLocation: z.string().optional(),
-	scheduledTime: z.string().optional()
+	scheduledTime: z.string().optional(),
+	checkedInAt: z.string().optional() // FR9: Original check-in time for duplicates
 })
 
 const EVENTS_QUERY_KEY = ['events'] as const
@@ -60,9 +61,36 @@ const ERROR_MESSAGES = {
 } as const
 
 // Map HTTP status codes and error patterns to user-friendly messages
-function getErrorMessage(status: number, errorText?: string, scheduledTime?: string): string {
-	if (status === 404) return ERROR_MESSAGES.NOT_FOUND
-	if (status === 409) return ERROR_MESSAGES.DUPLICATE
+function getErrorMessage(
+	status: number,
+	errorText?: string,
+	scheduledTime?: string,
+	checkedInAt?: string
+): string {
+	if (status === 404) {
+		return ERROR_MESSAGES.NOT_FOUND
+	}
+
+	// FR9: Show original check-in time for duplicate attempts
+	if (status === 409) {
+		if (checkedInAt) {
+			try {
+				const date = new Date(checkedInAt)
+				if (!Number.isNaN(date.getTime())) {
+					const formatted = date.toLocaleString('en-US', {
+						hour: 'numeric',
+						minute: '2-digit',
+						hour12: true
+					})
+					return `${ERROR_MESSAGES.DUPLICATE}. Checked in at ${formatted}`
+				}
+			} catch {
+				// Fall through to default duplicate message
+			}
+		}
+		return ERROR_MESSAGES.DUPLICATE
+	}
+
 	if (status === 403) {
 		// Time window error - include scheduled time if available
 		if (scheduledTime) {
@@ -144,7 +172,9 @@ export function DashboardComponent() {
 
 	useEffect(() => {
 		// Skip if adapter already loaded
-		if (qrAdapter) return
+		if (qrAdapter) {
+			return
+		}
 
 		if (typeof window !== 'undefined' && window.__qrScannerMockConfig) {
 			// E2E test mode: load mock adapter
@@ -200,7 +230,12 @@ export function DashboardComponent() {
 			const data = parseResult.data
 
 			if (!response.ok || !data.success) {
-				const errorMessage = getErrorMessage(response.status, data.error, data.scheduledTime)
+				const errorMessage = getErrorMessage(
+					response.status,
+					data.error,
+					data.scheduledTime,
+					data.checkedInAt
+				)
 				triggerShakeAndClear(errorMessage)
 				return
 			}
@@ -270,7 +305,9 @@ export function DashboardComponent() {
 	}
 
 	const formatDate = (dateString?: string): string => {
-		if (!dateString) return 'TODO: Date TBD'
+		if (!dateString) {
+			return 'TODO: Date TBD'
+		}
 		try {
 			const date = new Date(dateString)
 			return date.toLocaleDateString('en-US', {
@@ -327,7 +364,9 @@ export function DashboardComponent() {
 							onChange={val => {
 								setEventCode(val)
 								// Clear error message when user starts typing again
-								if (error) setError('')
+								if (error) {
+									setError('')
+								}
 							}}
 							onComplete={handleAutoSubmit}
 							data-testid='event-code-input'

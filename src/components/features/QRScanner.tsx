@@ -22,8 +22,12 @@ type FacingMode = 'environment' | 'user'
  */
 function detectPlatform(): 'ios' | 'android' | 'desktop' {
 	const ua = navigator.userAgent.toLowerCase()
-	if (/iphone|ipad|ipod/.test(ua)) return 'ios'
-	if (/android/.test(ua)) return 'android'
+	if (/iphone|ipad|ipod/.test(ua)) {
+		return 'ios'
+	}
+	if (/android/.test(ua)) {
+		return 'android'
+	}
 	return 'desktop'
 }
 
@@ -93,7 +97,9 @@ export function QRScanner({onDetected, onClose, onError, adapter}: QRScannerProp
 	// biome-ignore lint/correctness/useExhaustiveDependencies: Re-run when focusable elements change
 	useEffect(() => {
 		const container = containerRef.current
-		if (!container) return
+		if (!container) {
+			return
+		}
 
 		const focusableElements = container.querySelectorAll<HTMLElement>(
 			'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
@@ -102,7 +108,9 @@ export function QRScanner({onDetected, onClose, onError, adapter}: QRScannerProp
 		const lastElement = focusableElements[focusableElements.length - 1]
 
 		const handleTabKeydown = (e: KeyboardEvent) => {
-			if (e.key !== 'Tab') return
+			if (e.key !== 'Tab') {
+				return
+			}
 
 			if (e.shiftKey) {
 				// Shift + Tab: wrap from first to last
@@ -110,12 +118,10 @@ export function QRScanner({onDetected, onClose, onError, adapter}: QRScannerProp
 					e.preventDefault()
 					lastElement?.focus()
 				}
-			} else {
+			} else if (document.activeElement === lastElement) {
 				// Tab: wrap from last to first
-				if (document.activeElement === lastElement) {
-					e.preventDefault()
-					firstElement?.focus()
-				}
+				e.preventDefault()
+				firstElement?.focus()
 			}
 		}
 
@@ -181,7 +187,9 @@ export function QRScanner({onDetected, onClose, onError, adapter}: QRScannerProp
 					},
 					(decodedText: string) => {
 						// Prevent multiple detections
-						if (hasDetectedRef.current) return
+						if (hasDetectedRef.current) {
+							return
+						}
 						hasDetectedRef.current = true
 
 						const code = extractEventCode(decodedText)
@@ -269,7 +277,9 @@ export function QRScanner({onDetected, onClose, onError, adapter}: QRScannerProp
 	}, [facingMode, startScanner])
 
 	const toggleTorch = useCallback(async () => {
-		if (!capabilitiesRef.current) return
+		if (!capabilitiesRef.current) {
+			return
+		}
 
 		try {
 			const torchFeature = capabilitiesRef.current.torchFeature()
@@ -283,7 +293,9 @@ export function QRScanner({onDetected, onClose, onError, adapter}: QRScannerProp
 
 	// Start scanner on mount
 	useEffect(() => {
-		if (hasStartedRef.current) return
+		if (hasStartedRef.current) {
+			return
+		}
 		hasStartedRef.current = true
 		startScanner(facingMode)
 

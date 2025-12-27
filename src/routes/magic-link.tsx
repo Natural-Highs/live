@@ -132,7 +132,9 @@ function MagicLinkComponent() {
 	)
 
 	useEffect(() => {
-		if (authLoading) return
+		if (authLoading) {
+			return
+		}
 
 		// Check if this is a valid magic link
 		if (!auth) {

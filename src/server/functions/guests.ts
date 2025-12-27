@@ -25,7 +25,7 @@ export const validateGuestCode = createServerFn({method: 'GET'}).handler(
 			throw new NotFoundError('Invalid or inactive event code')
 		}
 
-		const eventDoc = eventsSnapshot.docs[0]
+		const eventDoc = eventsSnapshot.docs[0]!
 		const eventData = eventDoc.data()
 
 		return {
@@ -61,7 +61,7 @@ export const registerGuest = createServerFn({method: 'POST'}).handler(
 			throw new NotFoundError('Invalid or inactive event code')
 		}
 
-		const eventDoc = eventsSnapshot.docs[0]
+		const eventDoc = eventsSnapshot.docs[0]!
 		const eventData = eventDoc.data()
 
 		// Create anonymous Firebase Auth user

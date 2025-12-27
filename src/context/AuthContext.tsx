@@ -108,7 +108,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
 
 	// Grace period check effect - runs when auth service availability changes
 	useEffect(() => {
-		if (!mounted) return
+		if (!mounted) {
+			return
+		}
 
 		const gracePeriodState = checkGracePeriodSync(authServiceAvailable)
 		setAuthState(prev => ({
@@ -119,7 +121,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
 
 	// Second effect: handle auth (only runs after mounted)
 	useEffect(() => {
-		if (!mounted) return
+		if (!mounted) {
+			return
+		}
 
 		// SSR-safe: Skip auth subscription if auth is not initialized
 		if (!auth) {

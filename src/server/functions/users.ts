@@ -1,10 +1,9 @@
 import {createServerFn} from '@tanstack/react-start'
 import {requireAuth} from '@/server/middleware/auth'
-import {validateEventRegistration} from '../../lib/events/event-validation'
 import {auth, db} from '../../lib/firebase/firebase'
 import {buildCustomClaims} from '../../lib/utils/custom-claims'
-import {getProfileSchema, registerForEventSchema, updateConsentStatusSchema} from '../schemas/users'
-import {ConflictError, NotFoundError, TimeWindowError, ValidationError} from './utils/errors'
+import {getProfileSchema, updateConsentStatusSchema} from '../schemas/users'
+import {NotFoundError, ValidationError} from './utils/errors'
 
 /**
  * Get user profile
@@ -81,75 +80,6 @@ export const updateConsentStatus = createServerFn({method: 'POST'}).handler(
 		await auth.setCustomUserClaims(user.uid, newClaims)
 
 		return {success: true, consentSigned}
-	}
-)
-
-/**
- * Register user for event using event code
- * Validates event exists, is active, and user not already registered
- */
-export const registerForEvent = createServerFn({method: 'POST'}).handler(
-	async ({data}: {data: unknown}) => {
-		const user = await requireAuth()
-
-		const validated = registerForEventSchema.parse(data)
-		const {eventCode} = validated
-
-		// Find event by code
-		const eventsSnapshot = await db
-			.collection('events')
-			.where('eventCode', '==', eventCode)
-			.limit(1)
-			.get()
-
-		if (eventsSnapshot.empty) {
-			throw new NotFoundError('Event not found with this code')
-		}
-
-		const eventDoc = eventsSnapshot.docs[0]
-		const eventData = eventDoc.data()
-
-		// Check if already registered
-		const participants = eventData.participants || []
-		const isAlreadyRegistered = participants.includes(user.uid)
-
-		// Validate registration (includes time window check - FR56)
-		const validation = validateEventRegistration(eventData, isAlreadyRegistered)
-
-		if (!validation.isValid) {
-			// Check if this is a time window error
-			if (validation.error?.includes('not currently accepting check-ins')) {
-				throw new TimeWindowError(validation.error, validation.scheduledTime)
-			}
-			throw new ConflictError(validation.error ?? 'Invalid registration')
-		}
-
-		// Add user to participants
-		await db
-			.collection('events')
-			.doc(eventDoc.id)
-			.update({
-				participants: [...participants, user.uid],
-				currentParticipants: participants.length + 1,
-				updatedAt: new Date()
-			})
-
-		// Create user event registration record
-		await db.collection('userEvents').add({
-			userId: user.uid,
-			eventId: eventDoc.id,
-			registeredAt: new Date(),
-			createdAt: new Date()
-		})
-
-		return {
-			eventId: eventDoc.id,
-			eventName: eventData.name,
-			eventDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate ?? null,
-			eventLocation: eventData.location || 'Location TBD',
-			success: true,
-			message: `Checked in to ${eventData.name}`
-		}
 	}
 )
 

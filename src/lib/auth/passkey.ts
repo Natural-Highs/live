@@ -54,7 +54,9 @@ export function supportsWebAuthn(): boolean {
  * @returns Promise resolving to true if a platform authenticator is available
  */
 export async function hasAvailableAuthenticator(): Promise<boolean> {
-	if (!supportsWebAuthn()) return false
+	if (!supportsWebAuthn()) {
+		return false
+	}
 
 	try {
 		return await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
@@ -70,7 +72,9 @@ export async function hasAvailableAuthenticator(): Promise<boolean> {
  * @returns Promise resolving to true if conditional mediation is supported
  */
 export async function supportsConditionalMediation(): Promise<boolean> {
-	if (!supportsWebAuthn()) return false
+	if (!supportsWebAuthn()) {
+		return false
+	}
 
 	try {
 		if (typeof window.PublicKeyCredential.isConditionalMediationAvailable === 'function') {
@@ -145,10 +149,16 @@ export function getPasskeyErrorMessage(error: unknown): {message: string; code: 
 			return {message: 'Connection issue. Please try again.', code: 'NetworkError'}
 		}
 
-		const message = PASSKEY_ERROR_MESSAGES[code] || PASSKEY_ERROR_MESSAGES.UnknownError
+		const message =
+			PASSKEY_ERROR_MESSAGES[code] ??
+			PASSKEY_ERROR_MESSAGES.UnknownError ??
+			'An unexpected error occurred'
 		return {message, code}
 	}
-	return {message: PASSKEY_ERROR_MESSAGES.UnknownError, code: 'UnknownError'}
+	return {
+		message: PASSKEY_ERROR_MESSAGES.UnknownError ?? 'An unexpected error occurred',
+		code: 'UnknownError'
+	}
 }
 
 /**
@@ -197,7 +207,7 @@ export function bufferToBase64url(buffer: ArrayBuffer): string {
 	const bytes = new Uint8Array(buffer)
 	let binary = ''
 	for (let i = 0; i < bytes.byteLength; i++) {
-		binary += String.fromCharCode(bytes[i])
+		binary += String.fromCharCode(bytes[i]!)
 	}
 	return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '')
 }

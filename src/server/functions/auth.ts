@@ -23,7 +23,7 @@ export interface SessionUser {
  */
 const createSessionSchema = z.object({
 	uid: z.string().min(1, {error: 'UID is required'}),
-	email: z.string().email({error: 'Invalid email format'}).nullable(),
+	email: z.email({error: 'Invalid email format'}).nullable(),
 	displayName: z.string().nullable(),
 	idToken: z.string().min(1, {error: 'ID token is required'})
 })

@@ -251,6 +251,9 @@ export function VirtualDataTable<TData>({
 						) : (
 							virtualRows.map(virtualRow => {
 								const row = rows[virtualRow.index]
+								if (!row) {
+									return null
+								}
 								return (
 									<tr
 										key={row.id}

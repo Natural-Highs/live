@@ -141,6 +141,9 @@ export function SignUpForm({onSubmit, onNavigateToSignIn, loading = false}: Sign
 
 			<form.Subscribe selector={state => [state.values]}>
 				{([values]) => {
+					if (!values) {
+						return null
+					}
 					const result = signupAccountSchema.safeParse(values)
 					if (!result.success && values.confirmPassword) {
 						const passwordMismatchError = result.error.issues.find(
