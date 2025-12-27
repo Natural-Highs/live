@@ -22,14 +22,15 @@ export default defineConfig({
 			'**/*.spec.ts', // Playwright convention
 			'.trunk/**', // Trunk plugins (symlinks to cache)
 			'.local/**',
-			'.claude/**'
+			'.claude/**',
+			'.build/**' // Build artifacts
 		],
 		include: ['**/*.test.{ts,tsx}'],
 		setupFiles: ['./vitest-env-setup.ts', './src/test-setup.ts'],
 		coverage: {
 			provider: 'v8',
 			reporter: ['text', 'json-summary', 'html', 'lcov'],
-			reportsDirectory: './tests/coverage',
+			reportsDirectory: '.build/coverage',
 			exclude: [
 				'**/node_modules/**',
 				'**/dist/**',

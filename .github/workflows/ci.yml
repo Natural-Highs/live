@@ -128,11 +128,11 @@ jobs:
 
       - name: Coverage Threshold Check
         run: |
-          if [ -f coverage/coverage-summary.json ]; then
-            LINES=$(cat coverage/coverage-summary.json | jq -r '.total.lines.pct')
-            BRANCHES=$(cat coverage/coverage-summary.json | jq -r '.total.branches.pct')
-            FUNCTIONS=$(cat coverage/coverage-summary.json | jq -r '.total.functions.pct')
-            STATEMENTS=$(cat coverage/coverage-summary.json | jq -r '.total.statements.pct')
+          if [ -f .build/coverage/coverage-summary.json ]; then
+            LINES=$(cat .build/coverage/coverage-summary.json | jq -r '.total.lines.pct')
+            BRANCHES=$(cat .build/coverage/coverage-summary.json | jq -r '.total.branches.pct')
+            FUNCTIONS=$(cat .build/coverage/coverage-summary.json | jq -r '.total.functions.pct')
+            STATEMENTS=$(cat .build/coverage/coverage-summary.json | jq -r '.total.statements.pct')
 
             echo "Line coverage: ${LINES}%"
             echo "Branch coverage: ${BRANCHES}%"
@@ -176,8 +176,8 @@ jobs:
         if: always()
         run: |
           echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
-          if [ -f coverage/coverage-summary.json ]; then
-            cat coverage/coverage-summary.json | jq -r '.total | "- Lines: \(.lines.pct)% (threshold: 70%)\n- Branches: \(.branches.pct)% (threshold: 70%)\n- Functions: \(.functions.pct)% (threshold: 70%)\n- Statements: \(.statements.pct)% (threshold: 70%)"' >> $GITHUB_STEP_SUMMARY
+          if [ -f .build/coverage/coverage-summary.json ]; then
+            cat .build/coverage/coverage-summary.json | jq -r '.total | "- Lines: \(.lines.pct)% (threshold: 70%)\n- Branches: \(.branches.pct)% (threshold: 70%)\n- Functions: \(.functions.pct)% (threshold: 70%)\n- Statements: \(.statements.pct)% (threshold: 70%)"' >> $GITHUB_STEP_SUMMARY
           else
             echo "Coverage report not found" >> $GITHUB_STEP_SUMMARY
           fi
@@ -186,7 +186,7 @@ jobs:
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
+          files: ./.build/coverage/lcov.info
           flags: unittests
           fail_ci_if_error: false
           verbose: true
@@ -196,7 +196,7 @@ jobs:
         if: always()
         with:
           name: coverage-report
-          path: coverage/
+          path: .build/coverage/
           retention-days: 7
 
   # ============================================
@@ -281,8 +281,8 @@ jobs:
         with:
           name: e2e-results-shard-${{ matrix.shard }}
           path: |
-            test-results/
-            playwright-report/
+            .build/test-results/
+            .build/playwright-report/
           retention-days: 30
 
   # ============================================
@@ -386,8 +386,8 @@ jobs:
         with:
           name: burn-in-failures
           path: |
-            test-results/
-            playwright-report/
+            .build/test-results/
+            .build/playwright-report/
           retention-days: 30
 
   # ============================================

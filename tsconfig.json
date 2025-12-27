@@ -20,6 +20,7 @@
 		"forceConsistentCasingInFileNames": true,
 		"sourceMap": true,
 		"baseUrl": ".",
+		"tsBuildInfoFile": ".build/tsconfig.tsbuildinfo",
 		"types": ["vitest/globals", "@testing-library/jest-dom", "bun-types"],
 		"paths": {
 			"$lib/*": ["./src/lib/*", "./app/lib/*"],

@@ -1,21 +1,21 @@
 node_modules
 .DS_Store
-dist
+
+# Build artifacts
+.build/
+.output/
+
 dist-ssr
 *.local
-/tests/coverage
+
 .nyc_output
-/tests/test-results/
-/playwright-report/
 /blob-report/
 /playwright/.cache/
-*.tsbuildinfo
 .local/
 .secrets
 .env
 # TanStack Start
 .vinxi
-.output
 src/routeTree.gen.ts
 serviceAccount.json
 
@@ -35,4 +35,3 @@ firestore-debug.log
 
 # Husky internals
 .husky/_
-dev-dist/

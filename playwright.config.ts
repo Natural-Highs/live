@@ -45,14 +45,16 @@ export default defineConfig({
 	],
 	// CI: Use multiple reporters for GitHub Actions integration
 	// Local: HTML reporter for interactive viewing
-	reporter: isCI ? [['html', {open: 'never'}], ['github'], ['list']] : 'html',
+	reporter: isCI
+		? [['html', {open: 'never', outputFolder: '.build/playwright-report'}], ['github'], ['list']]
+		: [['html', {outputFolder: '.build/playwright-report'}]],
 	retries: isCI ? 2 : 0,
 	// Only run E2E tests (*.spec.ts files in tests/e2e directory)
 	// Separates from Vitest unit tests to avoid expect symbol conflict
 	testDir: './tests/e2e',
 	testMatch: '**/*.spec.ts',
 	// Output directories for CI artifact collection
-	outputDir: 'tests/test-results',
+	outputDir: '.build/test-results',
 	use: {
 		baseURL: 'http://localhost:3000',
 		trace: 'on-first-retry',
