@@ -135,7 +135,9 @@ export function generateEventCode(): string {
 export const TEST_CODES = {
 	VALID: '1234',
 	INVALID: '0000',
-	EXPIRED: '9999'
+	EXPIRED: '9999',
+	/** Invalid QR code format - not a valid 4-digit event code */
+	INVALID_QR: 'INVALID-NOT-A-CODE'
 } as const
 
 /**

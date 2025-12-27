@@ -1,6 +1,7 @@
 /// <reference types="vite/client" />
 
 import type DetachedWindowApi from 'happy-dom/lib/window/DetachedWindowAPI.js'
+import type {MockConfig} from '@/lib/events/qr-scanner-mock-adapter'
 
 // biome-ignore lint/correctness/noUnusedVariables: Vite uses this for type augmentation
 interface ImportMetaEnv {
@@ -16,5 +17,9 @@ interface ImportMetaEnv {
 declare global {
 	interface Window {
 		happyDOM?: DetachedWindowApi
+		/** Mock configuration for QR scanner E2E tests */
+		__qrScannerMockConfig?: MockConfig
+		/** Callback to trigger a scan mid-test */
+		__qrScannerTriggerScan?: (code: string) => void
 	}
 }
