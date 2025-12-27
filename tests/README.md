@@ -463,4 +463,4 @@ Coverage reports are generated in `tests/coverage/`.
 
 ---
 
-_Last Updated: 2025-12-26_
+Last Updated: 2025-12-26
