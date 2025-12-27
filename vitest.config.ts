@@ -31,7 +31,7 @@ export default defineConfig({
 			'.build/**' // Build artifacts
 		],
 		include: ['**/*.test.{ts,tsx}'],
-		setupFiles: ['./vitest-env-setup.ts', './src/test-setup.ts'],
+		setupFiles: ['./src/test-setup.ts'],
 		coverage: {
 			provider: 'v8',
 			reporter: ['text', 'json-summary', 'html', 'lcov'],
@@ -44,7 +44,6 @@ export default defineConfig({
 				'**/*.test.{ts,tsx}',
 				'**/*.config.{ts,js}',
 				'**/test-setup.ts',
-				'**/vitest-env-setup.ts',
 				'.trunk/**'
 			],
 			thresholds: {

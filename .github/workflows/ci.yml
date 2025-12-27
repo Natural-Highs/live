@@ -100,6 +100,7 @@ jobs:
           flags: unittests
           slug: Natural-Highs/live
           verbose: true
+          codecov_yml_path: ./.github/codecov.yml
 
       - name: Coverage Threshold Check
         run: |
@@ -168,6 +169,7 @@ jobs:
           name: unit-tests-${{ github.run_id }}
           fail_ci_if_error: false
           verbose: true
+          codecov_yml_path: ./.github/codecov.yml
 
       - name: Upload coverage artifact
         uses: actions/upload-artifact@v4
