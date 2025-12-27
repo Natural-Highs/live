@@ -6,10 +6,12 @@
 import {
 	AuthenticationError,
 	AuthorizationError,
+	CONFLICT_ERROR_CODE,
 	ConflictError,
 	formatErrorResponse,
 	InternalServerError,
 	NotFoundError,
+	TimeWindowError,
 	ValidationError
 } from './errors'
 
@@ -61,6 +63,31 @@ describe('Error Classes', () => {
 			const error = new ConflictError('Already registered')
 			expect(error.message).toBe('Already registered')
 			expect(error.name).toBe('ConflictError')
+			expect(error.code).toBe(CONFLICT_ERROR_CODE)
+		})
+
+		it('should create error with checkedInAt timestamp', () => {
+			const timestamp = '2025-01-15T10:30:00Z'
+			const error = new ConflictError('Already checked in', timestamp)
+			expect(error.message).toBe('Already checked in')
+			expect(error.checkedInAt).toBe(timestamp)
+			expect(error.code).toBe(CONFLICT_ERROR_CODE)
+		})
+	})
+
+	describe('TimeWindowError', () => {
+		it('should create error with message', () => {
+			const error = new TimeWindowError('Event not started')
+			expect(error.message).toBe('Event not started')
+			expect(error.name).toBe('TimeWindowError')
+			expect(error.scheduledTime).toBeUndefined()
+		})
+
+		it('should create error with scheduledTime', () => {
+			const scheduledTime = '2025-01-20T14:00:00Z'
+			const error = new TimeWindowError('Event starts later', scheduledTime)
+			expect(error.message).toBe('Event starts later')
+			expect(error.scheduledTime).toBe(scheduledTime)
 		})
 	})
 
@@ -130,7 +157,46 @@ describe('formatErrorResponse', () => {
 		expect(result).toEqual({
 			error: 'Conflict',
 			message: 'Already exists',
-			statusCode: 409
+			statusCode: 409,
+			checkedInAt: undefined
+		})
+	})
+
+	it('should format ConflictError with checkedInAt correctly', () => {
+		const timestamp = '2025-01-15T10:30:00Z'
+		const error = new ConflictError('Already checked in', timestamp)
+		const result = formatErrorResponse(error)
+
+		expect(result).toEqual({
+			error: 'Conflict',
+			message: 'Already checked in',
+			statusCode: 409,
+			checkedInAt: timestamp
+		})
+	})
+
+	it('should format TimeWindowError correctly', () => {
+		const error = new TimeWindowError('Event not started')
+		const result = formatErrorResponse(error)
+
+		expect(result).toEqual({
+			error: 'Forbidden',
+			message: 'Event not started',
+			statusCode: 403,
+			scheduledTime: undefined
+		})
+	})
+
+	it('should format TimeWindowError with scheduledTime correctly', () => {
+		const scheduledTime = '2025-01-20T14:00:00Z'
+		const error = new TimeWindowError('Event starts later', scheduledTime)
+		const result = formatErrorResponse(error)
+
+		expect(result).toEqual({
+			error: 'Forbidden',
+			message: 'Event starts later',
+			statusCode: 403,
+			scheduledTime
 		})
 	})
 
