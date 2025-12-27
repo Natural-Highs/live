@@ -37,6 +37,21 @@ flowchart TB
         USERS["users"]
         EVENTS["events"]
     end
+
+    style ROOT fill:#22c55e,stroke:#16a34a,color:#fff
+    style HOME fill:#3b82f6,stroke:#2563eb,color:#fff
+    style AUTH_PAGE fill:#3b82f6,stroke:#2563eb,color:#fff
+    style GUEST fill:#3b82f6,stroke:#2563eb,color:#fff
+    style MAGIC fill:#3b82f6,stroke:#2563eb,color:#fff
+    style SIGNUP fill:#3b82f6,stroke:#2563eb,color:#fff
+    style PROFILE_SETUP fill:#a855f7,stroke:#9333ea,color:#fff
+    style CONSENT fill:#a855f7,stroke:#9333ea,color:#fff
+    style DASHBOARD fill:#a855f7,stroke:#9333ea,color:#fff
+    style PROFILE fill:#a855f7,stroke:#9333ea,color:#fff
+    style SETTINGS fill:#a855f7,stroke:#9333ea,color:#fff
+    style ADMIN_DASH fill:#f97316,stroke:#ea580c,color:#fff
+    style USERS fill:#f97316,stroke:#ea580c,color:#fff
+    style EVENTS fill:#f97316,stroke:#ea580c,color:#fff
 ```
 
 ## File Naming Conventions
@@ -183,6 +198,15 @@ flowchart TD
     PROFILE -->|Yes| CONSENT{Has consent?}
     CONSENT -->|No| FORM[Redirect /consent]
     CONSENT -->|Yes| RENDER[Render route]
+
+    style REQ fill:#22c55e,stroke:#16a34a,color:#fff
+    style ROOT fill:#3b82f6,stroke:#2563eb,color:#fff
+    style CTX fill:#3b82f6,stroke:#2563eb,color:#fff
+    style LAYOUT fill:#a855f7,stroke:#9333ea,color:#fff
+    style LOGIN fill:#f97316,stroke:#ea580c,color:#fff
+    style SETUP fill:#f97316,stroke:#ea580c,color:#fff
+    style FORM fill:#f97316,stroke:#ea580c,color:#fff
+    style RENDER fill:#22c55e,stroke:#16a34a,color:#fff
 ```
 
 ## Root Route Context

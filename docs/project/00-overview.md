@@ -41,6 +41,19 @@ flowchart TB
     SESSION --> FIRESTORE
     NETLIFY --> SSR
     DOPPLER -.-> SERVER
+
+    style UI fill:#3b82f6,stroke:#2563eb,color:#fff
+    style ROUTER fill:#3b82f6,stroke:#2563eb,color:#fff
+    style QUERY fill:#3b82f6,stroke:#2563eb,color:#fff
+    style FORM fill:#3b82f6,stroke:#2563eb,color:#fff
+    style SSR fill:#a855f7,stroke:#9333ea,color:#fff
+    style SF fill:#a855f7,stroke:#9333ea,color:#fff
+    style MW fill:#a855f7,stroke:#9333ea,color:#fff
+    style SESSION fill:#a855f7,stroke:#9333ea,color:#fff
+    style FB_AUTH fill:#f97316,stroke:#ea580c,color:#fff
+    style FIRESTORE fill:#f97316,stroke:#ea580c,color:#fff
+    style DOPPLER fill:#f97316,stroke:#ea580c,color:#fff
+    style NETLIFY fill:#22c55e,stroke:#16a34a,color:#fff
 ```
 
 Client layer (React/TanStack), Server layer (SSR/Functions), External services (Firebase), Infrastructure (Netlify)
@@ -53,6 +66,12 @@ flowchart BT
     LIB --> SERVER["src/server/, context/"]
     SERVER --> COMP["src/components/"]
     COMP --> ROUTES["src/routes/"]
+
+    style TYPES fill:#22c55e,stroke:#16a34a,color:#fff
+    style LIB fill:#3b82f6,stroke:#2563eb,color:#fff
+    style SERVER fill:#a855f7,stroke:#9333ea,color:#fff
+    style COMP fill:#3b82f6,stroke:#2563eb,color:#fff
+    style ROUTES fill:#f97316,stroke:#ea580c,color:#fff
 ```
 
 Import direction: types → lib/hooks → server/context → components → routes
@@ -85,6 +104,22 @@ flowchart TD
     SESSION --> REDIRECT{Has profile?}
     REDIRECT -->|No| PROFILE["profile-setup"]
     REDIRECT -->|Yes| DASHBOARD["dashboard"]
+
+    style START fill:#22c55e,stroke:#16a34a,color:#fff
+    style ML fill:#3b82f6,stroke:#2563eb,color:#fff
+    style PK fill:#3b82f6,stroke:#2563eb,color:#fff
+    style PW fill:#3b82f6,stroke:#2563eb,color:#fff
+    style ML_SEND fill:#3b82f6,stroke:#2563eb,color:#fff
+    style ML_CLICK fill:#3b82f6,stroke:#2563eb,color:#fff
+    style ML_VERIFY fill:#a855f7,stroke:#9333ea,color:#fff
+    style PK_CHALLENGE fill:#3b82f6,stroke:#2563eb,color:#fff
+    style PK_SIGN fill:#3b82f6,stroke:#2563eb,color:#fff
+    style PK_VERIFY fill:#a855f7,stroke:#9333ea,color:#fff
+    style PW_FB fill:#3b82f6,stroke:#2563eb,color:#fff
+    style PW_TOKEN fill:#a855f7,stroke:#9333ea,color:#fff
+    style SESSION fill:#a855f7,stroke:#9333ea,color:#fff
+    style PROFILE fill:#f97316,stroke:#ea580c,color:#fff
+    style DASHBOARD fill:#f97316,stroke:#ea580c,color:#fff
 ```
 
 Magic link and passkey authentication sequences with session lifecycle
@@ -184,6 +219,17 @@ flowchart LR
         NETLIFY --> STG[Staging]
         NETLIFY --> PRD[Production]
     end
+
+    style LINT fill:#3b82f6,stroke:#2563eb,color:#fff
+    style UNIT fill:#3b82f6,stroke:#2563eb,color:#fff
+    style E2E fill:#3b82f6,stroke:#2563eb,color:#fff
+    style BUILD fill:#a855f7,stroke:#9333ea,color:#fff
+    style COV fill:#a855f7,stroke:#9333ea,color:#fff
+    style NETLIFY fill:#f97316,stroke:#ea580c,color:#fff
+    style DOPPLER fill:#a855f7,stroke:#9333ea,color:#fff
+    style DEV fill:#22c55e,stroke:#16a34a,color:#fff
+    style STG fill:#22c55e,stroke:#16a34a,color:#fff
+    style PRD fill:#22c55e,stroke:#16a34a,color:#fff
 ```
 
 GitHub Actions workflow: Trunk Check → Tests → Build → Deploy

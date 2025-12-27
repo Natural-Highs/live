@@ -43,6 +43,19 @@ flowchart TB
     SESSION --> FIRESTORE
     NETLIFY --> SSR
     DOPPLER -.-> SERVER
+
+    style UI fill:#3b82f6,stroke:#2563eb,color:#fff
+    style ROUTER fill:#3b82f6,stroke:#2563eb,color:#fff
+    style QUERY fill:#3b82f6,stroke:#2563eb,color:#fff
+    style FORM fill:#3b82f6,stroke:#2563eb,color:#fff
+    style SSR fill:#a855f7,stroke:#9333ea,color:#fff
+    style SF fill:#a855f7,stroke:#9333ea,color:#fff
+    style MW fill:#a855f7,stroke:#9333ea,color:#fff
+    style SESSION fill:#a855f7,stroke:#9333ea,color:#fff
+    style FB_AUTH fill:#f97316,stroke:#ea580c,color:#fff
+    style FIRESTORE fill:#f97316,stroke:#ea580c,color:#fff
+    style DOPPLER fill:#f97316,stroke:#ea580c,color:#fff
+    style NETLIFY fill:#22c55e,stroke:#16a34a,color:#fff
 ```
 
 ## Tech Stack
@@ -219,6 +232,16 @@ flowchart LR
 
     P_DOP --> P_APP
     P_APP --> P_FB
+
+    style D_APP fill:#3b82f6,stroke:#2563eb,color:#fff
+    style D_EMU fill:#a855f7,stroke:#9333ea,color:#fff
+    style D_DOP fill:#a855f7,stroke:#9333ea,color:#fff
+    style S_APP fill:#3b82f6,stroke:#2563eb,color:#fff
+    style S_FB fill:#f97316,stroke:#ea580c,color:#fff
+    style S_DOP fill:#a855f7,stroke:#9333ea,color:#fff
+    style P_APP fill:#22c55e,stroke:#16a34a,color:#fff
+    style P_FB fill:#f97316,stroke:#ea580c,color:#fff
+    style P_DOP fill:#a855f7,stroke:#9333ea,color:#fff
 ```
 
 ## Data Flow Layers

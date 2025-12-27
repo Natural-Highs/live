@@ -30,6 +30,22 @@ flowchart TD
     SESSION --> REDIRECT{Has profile?}
     REDIRECT -->|No| PROFILE["profile-setup"]
     REDIRECT -->|Yes| DASHBOARD["dashboard"]
+
+    style START fill:#22c55e,stroke:#16a34a,color:#fff
+    style ML fill:#3b82f6,stroke:#2563eb,color:#fff
+    style PK fill:#3b82f6,stroke:#2563eb,color:#fff
+    style PW fill:#3b82f6,stroke:#2563eb,color:#fff
+    style ML_SEND fill:#3b82f6,stroke:#2563eb,color:#fff
+    style ML_CLICK fill:#3b82f6,stroke:#2563eb,color:#fff
+    style ML_VERIFY fill:#a855f7,stroke:#9333ea,color:#fff
+    style PK_CHALLENGE fill:#3b82f6,stroke:#2563eb,color:#fff
+    style PK_SIGN fill:#3b82f6,stroke:#2563eb,color:#fff
+    style PK_VERIFY fill:#a855f7,stroke:#9333ea,color:#fff
+    style PW_FB fill:#3b82f6,stroke:#2563eb,color:#fff
+    style PW_TOKEN fill:#a855f7,stroke:#9333ea,color:#fff
+    style SESSION fill:#a855f7,stroke:#9333ea,color:#fff
+    style PROFILE fill:#f97316,stroke:#ea580c,color:#fff
+    style DASHBOARD fill:#f97316,stroke:#ea580c,color:#fff
 ```
 
 ## Session Management
@@ -229,6 +245,11 @@ flowchart TD
     CHECK_REFRESH -->|Yes| REFRESH[Refresh session]
     CHECK_REFRESH -->|No| CONTINUE
     REFRESH --> CONTINUE[Return user context]
+
+    style REQ fill:#22c55e,stroke:#16a34a,color:#fff
+    style REJECT fill:#f97316,stroke:#ea580c,color:#fff
+    style REFRESH fill:#a855f7,stroke:#9333ea,color:#fff
+    style CONTINUE fill:#22c55e,stroke:#16a34a,color:#fff
 ```
 
 ### Using Guards in Server Functions

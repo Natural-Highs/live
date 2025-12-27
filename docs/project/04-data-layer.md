@@ -27,6 +27,13 @@ flowchart TB
     SF --> ADMIN
     ADMIN --> FB_AUTH
     ADMIN --> FS
+
+    style SDK fill:#3b82f6,stroke:#2563eb,color:#fff
+    style AUTH_UI fill:#3b82f6,stroke:#2563eb,color:#fff
+    style ADMIN fill:#a855f7,stroke:#9333ea,color:#fff
+    style SF fill:#a855f7,stroke:#9333ea,color:#fff
+    style FB_AUTH fill:#f97316,stroke:#ea580c,color:#fff
+    style FS fill:#f97316,stroke:#ea580c,color:#fff
 ```
 
 ## Firebase Clients

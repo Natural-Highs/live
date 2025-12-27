@@ -26,6 +26,12 @@ flowchart LR
     MW --> SF
     SF -->|Response| CALL
     CALL --> COMP
+
+    style COMP fill:#3b82f6,stroke:#2563eb,color:#fff
+    style CALL fill:#3b82f6,stroke:#2563eb,color:#fff
+    style SF fill:#a855f7,stroke:#9333ea,color:#fff
+    style MW fill:#a855f7,stroke:#9333ea,color:#fff
+    style DB fill:#f97316,stroke:#ea580c,color:#fff
 ```
 
 ## Creating Server Functions
