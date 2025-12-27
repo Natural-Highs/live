@@ -14,6 +14,11 @@ export default defineConfig({
 	test: {
 		globals: true,
 		environment: 'happy-dom',
+		// JUnit reporter for Codecov Test Analytics
+		reporters: process.env.CI ? ['default', 'junit'] : ['default'],
+		outputFile: {
+			junit: '.build/test-results/junit.xml'
+		},
 		exclude: [
 			'**/node_modules/**',
 			'**/dist/**',
