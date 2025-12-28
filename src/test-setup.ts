@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom'
-import {beforeEach, vi} from 'vitest'
+import {afterAll, afterEach, beforeAll, beforeEach, vi} from 'vitest'
+import {server} from './mocks/server'
 
 // Mock Firebase Admin module globally before any imports
 vi.mock('$lib/firebase/firebase.admin', () => ({
@@ -130,6 +131,12 @@ Object.defineProperty(window, 'matchMedia', {
 		dispatchEvent: vi.fn()
 	}))
 })
+
+// MSW server setup for API mocking - prevents ECONNREFUSED in CI
+// Handlers defined in src/mocks/handlers.ts
+beforeAll(() => server.listen({onUnhandledRequest: 'bypass'}))
+afterEach(() => server.resetHandlers())
+afterAll(() => server.close())
 
 // Reset mocks before each test
 beforeEach(() => {
