@@ -57,7 +57,7 @@ export function createMockQuestion(
 	overrides: Partial<MockSurveyQuestion> = {}
 ): MockSurveyQuestion {
 	return {
-		id: `question-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		id: `question-${crypto.randomUUID().slice(0, 8)}`,
 		text: 'How are you feeling today?',
 		type: 'scale',
 		required: true,
@@ -74,7 +74,7 @@ export function createMockSurvey(overrides: Partial<MockSurvey> = {}): MockSurve
 	const now = new Date().toISOString()
 
 	return {
-		id: `survey-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		id: `survey-${crypto.randomUUID().slice(0, 8)}`,
 		name: 'Test Survey',
 		description: 'A test survey for unit testing',
 		type: 'pre',
@@ -98,7 +98,7 @@ export function createMockSurveyResponse(
 	const now = new Date().toISOString()
 
 	return {
-		id: `response-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		id: `response-${crypto.randomUUID().slice(0, 8)}`,
 		surveyId: 'survey-1',
 		userId: 'user-1',
 		eventId: 'event-1',

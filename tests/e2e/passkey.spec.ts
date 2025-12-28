@@ -71,7 +71,7 @@ test.describe('Passkey Registration @smoke', () => {
 	test.describe('Profile Page - Passkey Setup', () => {
 		test('should show passkey setup section on profile page', async ({page, context}) => {
 			// GIVEN: Authenticated user on profile page
-			await injectSessionCookie(context, testUser, {signedConsentForm: true})
+			await injectSessionCookie(context, testUser, {signedConsentForm: true, profileComplete: true})
 
 			// Set up virtual authenticator
 			const {client, authenticatorId} = await setupVirtualAuthenticator(page)
@@ -120,7 +120,7 @@ test.describe('Passkey Registration @smoke', () => {
 
 		test('should show loading state when checking passkey support', async ({page, context}) => {
 			// GIVEN: Authenticated user
-			await injectSessionCookie(context, testUser, {signedConsentForm: true})
+			await injectSessionCookie(context, testUser, {signedConsentForm: true, profileComplete: true})
 
 			// Mock profile API
 			await page.route('**/api/users/profile', route =>
@@ -408,7 +408,7 @@ test.describe('Passkey UI Integration', () => {
 test.describe('Passkey Registration Full Flow', () => {
 	test('should complete full passkey registration flow from profile', async ({page, context}) => {
 		// GIVEN: Authenticated user on profile page with virtual authenticator
-		await injectSessionCookie(context, testUser, {signedConsentForm: true})
+		await injectSessionCookie(context, testUser, {signedConsentForm: true, profileComplete: true})
 		const {client, authenticatorId} = await setupVirtualAuthenticator(page)
 
 		try {

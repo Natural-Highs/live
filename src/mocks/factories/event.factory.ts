@@ -44,7 +44,7 @@ export function createMockEvent(overrides: Partial<MockEvent> = {}): MockEvent {
 	const tomorrow = new Date(Date.now() + 86400000).toISOString()
 
 	return {
-		id: `event-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		id: `event-${crypto.randomUUID().slice(0, 8)}`,
 		name: 'Test Event',
 		eventCode: '1234',
 		eventTypeId: 'event-type-1',

@@ -75,7 +75,7 @@ export function createAdminStatsResponse(stats: Partial<MockAdminStats> = {}) {
  */
 export function createMockEventType(overrides: Partial<MockEventType> = {}): MockEventType {
 	return {
-		id: `event-type-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		id: `event-type-${crypto.randomUUID().slice(0, 8)}`,
 		name: 'Workshop',
 		description: 'Interactive workshop session',
 		color: '#22c55e',
@@ -110,7 +110,7 @@ export function createMockFormTemplate(
 	const now = new Date().toISOString()
 
 	return {
-		id: `template-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		id: `template-${crypto.randomUUID().slice(0, 8)}`,
 		name: 'Default Consent Form',
 		type: 'consent',
 		fields: 5,

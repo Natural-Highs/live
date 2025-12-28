@@ -31,8 +31,8 @@ const testUser = {
 
 test.describe('Session Persistence @smoke', () => {
 	test('session survives page navigation', async ({page, context}) => {
-		// Inject session cookie
-		await injectSessionCookie(context, testUser, {signedConsentForm: true})
+		// Inject session cookie with profileComplete to access dashboard
+		await injectSessionCookie(context, testUser, {signedConsentForm: true, profileComplete: true})
 
 		// Navigate to dashboard
 		await page.goto('/dashboard')
@@ -52,7 +52,7 @@ test.describe('Session Persistence @smoke', () => {
 
 	test('session cookie has correct attributes', async ({context}) => {
 		// Inject session cookie
-		await injectSessionCookie(context, testUser, {signedConsentForm: true})
+		await injectSessionCookie(context, testUser, {signedConsentForm: true, profileComplete: true})
 
 		// Get cookies from context
 		const cookies = await context.cookies()
@@ -106,7 +106,7 @@ test.describe('Session Persistence @smoke', () => {
 
 	test('session persists across multiple page loads', async ({page, context}) => {
 		// Inject session cookie
-		await injectSessionCookie(context, testUser, {signedConsentForm: true})
+		await injectSessionCookie(context, testUser, {signedConsentForm: true, profileComplete: true})
 
 		// Load dashboard multiple times
 		for (let i = 0; i < 3; i++) {
@@ -119,7 +119,7 @@ test.describe('Session Persistence @smoke', () => {
 test.describe('Session Expiration Warning', () => {
 	test('no expiration warning for fresh session', async ({page, context}) => {
 		// Inject fresh session
-		await injectSessionCookie(context, testUser, {signedConsentForm: true})
+		await injectSessionCookie(context, testUser, {signedConsentForm: true, profileComplete: true})
 
 		// Navigate to dashboard
 		await page.goto('/dashboard')

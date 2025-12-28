@@ -49,7 +49,7 @@ export function createMockUser(overrides: Partial<MockUser> = {}): MockUser {
 	const now = new Date().toISOString()
 
 	return {
-		uid: `user-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+		uid: `user-${crypto.randomUUID().slice(0, 8)}`,
 		email: 'test@example.com',
 		displayName: 'Test User',
 		photoURL: null,
