@@ -266,9 +266,14 @@ test.describe('Magic Link Authentication @smoke', () => {
 		})
 	})
 
-	test.describe('Scenario 4: Invalid or expired magic link', () => {
-		test('should show error for expired magic link', async ({page}) => {
+	test.describe('Scenario 4: Error handling for expired/invalid links', () => {
+		test('should show error for expired magic link', async ({page, context}) => {
 			// GIVEN: User has an expired magic link
+			// Set email in localStorage so it attempts auto sign-in
+			await context.addInitScript(() => {
+				window.localStorage.setItem('emailForSignIn', 'maya@example.com')
+			})
+
 			// Mock Firebase to return expired code error
 			await page.route('**/identitytoolkit.googleapis.com/**', route => {
 				route.fulfill({
@@ -292,8 +297,13 @@ test.describe('Magic Link Authentication @smoke', () => {
 			await expect(page.getByText('expired', {exact: false})).toBeVisible()
 		})
 
-		test('should show error for invalid magic link', async ({page}) => {
+		test('should show error for invalid magic link', async ({page, context}) => {
 			// GIVEN: User has an invalid magic link
+			// Set email in localStorage so it attempts auto sign-in
+			await context.addInitScript(() => {
+				window.localStorage.setItem('emailForSignIn', 'maya@example.com')
+			})
+
 			await page.route('**/identitytoolkit.googleapis.com/**', route => {
 				route.fulfill({
 					status: 400,
@@ -314,8 +324,13 @@ test.describe('Magic Link Authentication @smoke', () => {
 			await expect(page.getByTestId('magic-link-error')).toBeVisible()
 		})
 
-		test('should show button to request new link on error', async ({page}) => {
+		test('should show button to request new link on error', async ({page, context}) => {
 			// GIVEN: User has an invalid magic link
+			// Set email in localStorage so it attempts auto sign-in
+			await context.addInitScript(() => {
+				window.localStorage.setItem('emailForSignIn', 'maya@example.com')
+			})
+
 			await page.route('**/identitytoolkit.googleapis.com/**', route => {
 				route.fulfill({
 					status: 400,
@@ -333,8 +348,13 @@ test.describe('Magic Link Authentication @smoke', () => {
 			await expect(page.getByTestId('request-new-link-button')).toBeVisible()
 		})
 
-		test('should navigate to auth page when requesting new link', async ({page}) => {
+		test('should navigate to auth page when requesting new link', async ({page, context}) => {
 			// GIVEN: User is on error page with option to request new link
+			// Set email in localStorage so it attempts auto sign-in
+			await context.addInitScript(() => {
+				window.localStorage.setItem('emailForSignIn', 'maya@example.com')
+			})
+
 			await page.route('**/identitytoolkit.googleapis.com/**', route => {
 				route.fulfill({
 					status: 400,
