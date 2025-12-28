@@ -9,9 +9,19 @@
 
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 
-// Mock @tanstack/react-start to capture handler functions
+// Mock @tanstack/react-start to capture handler functions and simulate inputValidator chain
+// Note: profile-settings validators expect full wrapper {data: ..., expectedVersion: ...}
 vi.mock('@tanstack/react-start', () => ({
 	createServerFn: () => ({
+		inputValidator: (validator: (d: unknown) => unknown) => ({
+			handler: (fn: (args: {data: unknown}) => unknown) => {
+				// Return a function that runs validator on full input (not unwrapped)
+				return async (input: unknown) => {
+					const validated = validator(input)
+					return fn({data: validated})
+				}
+			}
+		}),
 		handler: (fn: (...args: unknown[]) => unknown) => fn
 	})
 }))
@@ -68,7 +78,8 @@ vi.mock('@/lib/firebase/firebase.admin', () => ({
 		runTransaction: vi.fn(async (callback: (t: typeof mockTransaction) => Promise<void>) => {
 			await callback(mockTransaction)
 		})
-	}
+	},
+	serverTimestamp: vi.fn(() => ({_serverTimestamp: true}))
 }))
 
 // Mock middleware module

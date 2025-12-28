@@ -10,8 +10,7 @@
  */
 
 import {createServerFn} from '@tanstack/react-start'
-import admin from 'firebase-admin'
-import {adminAuth, adminDb} from '@/lib/firebase/firebase.admin'
+import {adminAuth, adminDb, serverTimestamp} from '@/lib/firebase/firebase.admin'
 import {calculateIsMinor, isValidDateOfBirth} from '@/lib/profile/minor-detection'
 import {getSessionData, updateSession} from '@/lib/session'
 import {requireAuth} from '@/server/middleware/auth'
@@ -35,7 +34,7 @@ function getDb() {
  *
  * Security:
  * - Requires authenticated session
- * - Validates input with Zod
+ * - Validates input with Zod via inputValidator
  * - Calculates isMinor server-side (prevents manipulation)
  * - Updates Firebase custom claims
  * - Updates session with new claims
@@ -49,20 +48,18 @@ function getDb() {
  * @param data - CreateProfileData with displayName and dateOfBirth
  * @returns Success status, isMinor flag, and displayName
  */
-export const createProfileFn = createServerFn({method: 'POST'}).handler(
-	async ({
-		data
-	}: {
-		data: unknown
-	}): Promise<{success: true; isMinor: boolean; displayName: string}> => {
+export const createProfileFn = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => {
+		const result = createProfileSchema.safeParse(d)
+		if (!result.success) {
+			throw new ValidationError(result.error.issues[0]?.message ?? 'Invalid input')
+		}
+		return result.data
+	})
+	.handler(async ({data}): Promise<{success: true; isMinor: boolean; displayName: string}> => {
 		const user = await requireAuth()
 
-		const parseResult = createProfileSchema.safeParse(data)
-		if (!parseResult.success) {
-			throw new ValidationError(parseResult.error.issues[0]?.message ?? 'Invalid input')
-		}
-
-		const {displayName, dateOfBirth} = parseResult.data
+		const {displayName, dateOfBirth} = data
 
 		if (!isValidDateOfBirth(dateOfBirth)) {
 			throw new ValidationError('Please enter a valid date of birth')
@@ -81,8 +78,8 @@ export const createProfileFn = createServerFn({method: 'POST'}).handler(
 				dateOfBirth,
 				isMinor,
 				profileComplete: true,
-				createdAt: admin.firestore.FieldValue.serverTimestamp(),
-				updatedAt: admin.firestore.FieldValue.serverTimestamp()
+				createdAt: serverTimestamp(),
+				updatedAt: serverTimestamp()
 			},
 			{merge: true}
 		)
@@ -120,8 +117,7 @@ export const createProfileFn = createServerFn({method: 'POST'}).handler(
 		}
 
 		return {success: true, isMinor, displayName}
-	}
-)
+	})
 
 /**
  * Get user's profile data.
@@ -166,7 +162,7 @@ export const getProfileFn = createServerFn({method: 'GET'}).handler(
  *
  * Security:
  * - Requires authenticated session
- * - Validates input with Zod
+ * - Validates input with Zod via inputValidator
  * - Stores in appropriate location based on isMinor flag:
  *   - Minors: users/{uid}/private/demographics
  *   - Adults: users/{uid} (direct fields)
@@ -174,16 +170,16 @@ export const getProfileFn = createServerFn({method: 'GET'}).handler(
  * @param data - DemographicsData with optional demographic fields
  * @returns Success status
  */
-export const updateDemographicsFn = createServerFn({method: 'POST'}).handler(
-	async ({data}: {data: unknown}): Promise<{success: true}> => {
-		const user = await requireAuth()
-
-		const parseResult = demographicsSchema.safeParse(data)
-		if (!parseResult.success) {
-			throw new ValidationError(parseResult.error.issues[0]?.message ?? 'Invalid input')
+export const updateDemographicsFn = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => {
+		const result = demographicsSchema.safeParse(d)
+		if (!result.success) {
+			throw new ValidationError(result.error.issues[0]?.message ?? 'Invalid input')
 		}
-
-		const validated = parseResult.data
+		return result.data
+	})
+	.handler(async ({data}): Promise<{success: true}> => {
+		const user = await requireAuth()
 
 		const db = getDb()
 
@@ -197,10 +193,10 @@ export const updateDemographicsFn = createServerFn({method: 'POST'}).handler(
 		const isMinor = userData.isMinor ?? false
 
 		const demographicsData: Record<string, unknown> = {
-			updatedAt: admin.firestore.FieldValue.serverTimestamp()
+			updatedAt: serverTimestamp()
 		}
 
-		for (const [key, value] of Object.entries(validated)) {
+		for (const [key, value] of Object.entries(data)) {
 			if (value !== undefined && value !== null && value !== '') {
 				demographicsData[key] = value
 			}
@@ -219,8 +215,7 @@ export const updateDemographicsFn = createServerFn({method: 'POST'}).handler(
 		}
 
 		return {success: true}
-	}
-)
+	})
 
 /**
  * Get user's demographics (for profile settings or check-in pre-fill).

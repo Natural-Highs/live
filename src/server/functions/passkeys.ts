@@ -23,8 +23,7 @@ import type {
 	RegistrationResponseJSON
 } from '@simplewebauthn/types'
 import {createServerFn} from '@tanstack/react-start'
-import admin from 'firebase-admin'
-import {adminDb} from '@/lib/firebase/firebase.admin'
+import {adminDb, increment} from '@/lib/firebase/firebase.admin'
 import {clearSession, createPasskeySession, getSessionData, type SessionData} from '@/lib/session'
 import {requireAuth} from '@/server/middleware/auth'
 import {createSessionRevocation} from '@/server/middleware/session'
@@ -81,80 +80,72 @@ export const PASSKEY_SESSION_MAX_AGE = 180 * 24 * 60 * 60
  *
  * @returns Registration options for navigator.credentials.create()
  */
-export const getPasskeyRegistrationOptionsFn = createServerFn({method: 'POST'}).handler(
-	async ({
-		data
-	}: {
-		data: unknown
-	}): Promise<{
-		success: boolean
-		options?: ReturnType<typeof generateRegistrationOptions> extends Promise<infer T> ? T : never
-		error?: string
-	}> => {
-		// Require authenticated user
-		const user = await requireAuth()
+export const getPasskeyRegistrationOptionsFn = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => getRegistrationOptionsSchema.parse(d ?? {}))
+	.handler(
+		async (): Promise<{
+			success: boolean
+			options?: ReturnType<typeof generateRegistrationOptions> extends Promise<infer T> ? T : never
+			error?: string
+		}> => {
+			// Require authenticated user
+			const user = await requireAuth()
 
-		// Validate optional input
-		const parseResult = getRegistrationOptionsSchema.safeParse(data ?? {})
-		if (!parseResult.success) {
-			throw new ValidationError(parseResult.error.issues[0]?.message ?? 'Invalid input')
-		}
+			const rp = getRelyingParty()
 
-		const rp = getRelyingParty()
+			// Get existing credentials to exclude (prevents duplicate registration)
+			const existingCredentialIds: string[] = []
 
-		// Get existing credentials to exclude (prevents duplicate registration)
-		const existingCredentialIds: string[] = []
+			try {
+				const credentialsSnapshot = await adminDb
+					.collection('users')
+					.doc(user.uid)
+					.collection('passkeys')
+					.get()
 
-		try {
-			const credentialsSnapshot = await adminDb
-				.collection('users')
-				.doc(user.uid)
-				.collection('passkeys')
-				.get()
-
-			for (const doc of credentialsSnapshot.docs) {
-				const cred = doc.data() as PasskeyCredential
-				// Store credential IDs as base64url strings for excludeCredentials
-				existingCredentialIds.push(cred.id)
+				for (const doc of credentialsSnapshot.docs) {
+					const cred = doc.data() as PasskeyCredential
+					// Store credential IDs as base64url strings for excludeCredentials
+					existingCredentialIds.push(cred.id)
+				}
+			} catch {
+				// No existing credentials or error fetching - continue without exclusions
 			}
-		} catch {
-			// No existing credentials or error fetching - continue without exclusions
+
+			// Generate registration options
+			const options = await generateRegistrationOptions({
+				rpName: rp.name,
+				rpID: rp.id,
+				userName: user.email || user.uid,
+				userDisplayName: user.displayName || user.email || 'User',
+				attestationType: 'none',
+				authenticatorSelection: {
+					authenticatorAttachment: 'platform',
+					residentKey: 'preferred',
+					userVerification: 'required'
+				},
+				excludeCredentials: existingCredentialIds.map(id => ({
+					id,
+					transports: ['internal', 'hybrid']
+				})),
+				timeout: 60000
+			})
+
+			// Store challenge for verification (5 minute TTL)
+			const challengeId = `reg_${user.uid}_${Date.now()}`
+			const expiresAt = new Date(Date.now() + CHALLENGE_EXPIRY_MS).toISOString()
+
+			await adminDb.collection('passkeyChallenges').doc(challengeId).set({
+				challenge: options.challenge,
+				type: 'registration',
+				userId: user.uid,
+				createdAt: new Date().toISOString(),
+				expiresAt
+			})
+
+			return {success: true, options}
 		}
-
-		// Generate registration options
-		const options = await generateRegistrationOptions({
-			rpName: rp.name,
-			rpID: rp.id,
-			userName: user.email || user.uid,
-			userDisplayName: user.displayName || user.email || 'User',
-			attestationType: 'none',
-			authenticatorSelection: {
-				authenticatorAttachment: 'platform',
-				residentKey: 'preferred',
-				userVerification: 'required'
-			},
-			excludeCredentials: existingCredentialIds.map(id => ({
-				id,
-				transports: ['internal', 'hybrid']
-			})),
-			timeout: 60000
-		})
-
-		// Store challenge for verification (5 minute TTL)
-		const challengeId = `reg_${user.uid}_${Date.now()}`
-		const expiresAt = new Date(Date.now() + CHALLENGE_EXPIRY_MS).toISOString()
-
-		await adminDb.collection('passkeyChallenges').doc(challengeId).set({
-			challenge: options.challenge,
-			type: 'registration',
-			userId: user.uid,
-			createdAt: new Date().toISOString(),
-			expiresAt
-		})
-
-		return {success: true, options}
-	}
-)
+	)
 
 /**
  * Verify passkey registration response.
@@ -165,24 +156,13 @@ export const getPasskeyRegistrationOptionsFn = createServerFn({method: 'POST'}).
  * @param data - Registration response from navigator.credentials.create()
  * @returns Success status and credential ID
  */
-export const verifyPasskeyRegistrationFn = createServerFn({method: 'POST'}).handler(
-	async ({
-		data
-	}: {
-		data: unknown
-	}): Promise<{success: boolean; credentialId?: string; error?: string}> => {
+export const verifyPasskeyRegistrationFn = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => verifyPasskeyRegistrationSchema.parse(d))
+	.handler(async ({data}): Promise<{success: boolean; credentialId?: string; error?: string}> => {
 		// Require authenticated user
 		const user = await requireAuth()
 
-		// Validate input
-		const parseResult = verifyPasskeyRegistrationSchema.safeParse(data)
-		if (!parseResult.success) {
-			throw new ValidationError(
-				parseResult.error.issues[0]?.message ?? 'Invalid registration response'
-			)
-		}
-
-		const registrationResponse = parseResult.data as RegistrationResponseJSON
+		const registrationResponse = data as RegistrationResponseJSON
 
 		// Find and verify challenge
 		const challengesSnapshot = await adminDb
@@ -271,7 +251,7 @@ export const verifyPasskeyRegistrationFn = createServerFn({method: 'POST'}).hand
 				userRef,
 				{
 					hasPasskey: true,
-					passkeyCount: admin.firestore.FieldValue.increment(1),
+					passkeyCount: increment(1),
 					lastPasskeyRegisteredAt: new Date().toISOString()
 				},
 				{merge: true}
@@ -298,8 +278,7 @@ export const verifyPasskeyRegistrationFn = createServerFn({method: 'POST'}).hand
 		})
 
 		return {success: true, credentialId: credentialIdStr}
-	}
-)
+	})
 
 /**
  * Generate authentication options for passkey sign-in.
@@ -349,180 +328,172 @@ export const getPasskeyAuthenticationOptionsFn = createServerFn({method: 'POST'}
  * @param data - Authentication response from navigator.credentials.get()
  * @returns Success status and user info
  */
-export const verifyPasskeyAuthenticationFn = createServerFn({method: 'POST'}).handler(
-	async ({
-		data
-	}: {
-		data: unknown
-	}): Promise<{
-		success: boolean
-		userId?: string
-		email?: string
-		displayName?: string
-		error?: string
-	}> => {
-		// Validate input
-		const parseResult = verifyPasskeyAuthenticationSchema.safeParse(data)
-		if (!parseResult.success) {
-			throw new ValidationError(
-				parseResult.error.issues[0]?.message ?? 'Invalid authentication response'
-			)
-		}
+export const verifyPasskeyAuthenticationFn = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => verifyPasskeyAuthenticationSchema.parse(d))
+	.handler(
+		async ({
+			data
+		}): Promise<{
+			success: boolean
+			userId?: string
+			email?: string
+			displayName?: string
+			error?: string
+		}> => {
+			const authResponse = data as AuthenticationResponseJSON
 
-		const authResponse = parseResult.data as AuthenticationResponseJSON
+			// Find the credential by ID using O(1) index lookup
+			const credentialId = authResponse.id
 
-		// Find the credential by ID using O(1) index lookup
-		const credentialId = authResponse.id
+			// Use credential index for O(1) lookup instead of scanning all users
+			const indexDoc = await adminDb.collection('passkeyCredentials').doc(credentialId).get()
 
-		// Use credential index for O(1) lookup instead of scanning all users
-		const indexDoc = await adminDb.collection('passkeyCredentials').doc(credentialId).get()
-
-		if (!indexDoc.exists) {
-			throw new AuthenticationError('Passkey not found. Please sign in with magic link.')
-		}
-
-		const indexData = indexDoc.data() as PasskeyCredentialIndex
-		const userId = indexData.userId
-
-		// Get the actual credential data from the user's passkeys subcollection
-		const credDoc = await adminDb
-			.collection('users')
-			.doc(userId)
-			.collection('passkeys')
-			.doc(credentialId)
-			.get()
-
-		if (!credDoc.exists) {
-			// Index exists but credential doesn't - data inconsistency
-			// Delete orphaned index entry and throw error
-			await indexDoc.ref.delete()
-			throw new AuthenticationError('Passkey not found. Please sign in with magic link.')
-		}
-
-		const credentialData = credDoc.data() as PasskeyCredential
-
-		// Find a valid challenge using atomic claim pattern to prevent race conditions
-		// Query recent challenges, then atomically delete and use the first valid one
-		const challengesSnapshot = await adminDb
-			.collection('passkeyChallenges')
-			.where('type', '==', 'authentication')
-			.orderBy('createdAt', 'desc')
-			.limit(10)
-			.get()
-
-		let validChallenge: string | null = null
-
-		// Try to atomically claim a challenge (delete it so no other request can use it)
-		for (const doc of challengesSnapshot.docs) {
-			const data = doc.data()
-			if (new Date(data.expiresAt) > new Date()) {
-				// Attempt atomic delete - if another request already deleted it, this is a no-op
-				// We check if we successfully claimed it by seeing if we can proceed
-				try {
-					await doc.ref.delete()
-					validChallenge = data.challenge
-					break
-				} catch (error) {
-					// Only swallow "not found" errors (challenge already claimed by another request)
-					// Re-throw unexpected errors (network failures, permission issues)
-					const errorCode = (error as {code?: number})?.code
-					if (errorCode !== 5) {
-						// 5 = NOT_FOUND in Firestore error codes
-						throw error
-					}
-					// Challenge already claimed, try next one
-				}
+			if (!indexDoc.exists) {
+				throw new AuthenticationError('Passkey not found. Please sign in with magic link.')
 			}
-		}
 
-		if (!validChallenge) {
-			throw new ValidationError('Authentication challenge expired. Please try again.')
-		}
+			const indexData = indexDoc.data() as PasskeyCredentialIndex
+			const userId = indexData.userId
 
-		const rp = getRelyingParty()
-		const expectedOrigin = getExpectedOrigin()
-
-		// Verify authentication response
-		let verification: Awaited<ReturnType<typeof verifyAuthenticationResponse>>
-		try {
-			verification = await verifyAuthenticationResponse({
-				response: authResponse,
-				expectedChallenge: validChallenge,
-				expectedOrigin,
-				expectedRPID: rp.id,
-				credential: {
-					id: credentialData.id,
-					publicKey: new Uint8Array(Buffer.from(credentialData.publicKey, 'base64url')),
-					counter: credentialData.counter,
-					transports: credentialData.transports
-				},
-				requireUserVerification: true
-			})
-		} catch {
-			throw new AuthenticationError('Passkey verification failed. Please try again.')
-		}
-
-		if (!verification.verified) {
-			throw new AuthenticationError('Passkey could not be verified.')
-		}
-
-		// Update credential counter, last used time, and user's last auth time atomically
-		const {newCounter} = verification.authenticationInfo
-		const now = new Date().toISOString()
-
-		await adminDb.runTransaction(async transaction => {
-			const credRef = adminDb
+			// Get the actual credential data from the user's passkeys subcollection
+			const credDoc = await adminDb
 				.collection('users')
 				.doc(userId)
 				.collection('passkeys')
 				.doc(credentialId)
-			transaction.update(credRef, {
-				counter: newCounter,
-				lastUsedAt: now
+				.get()
+
+			if (!credDoc.exists) {
+				// Index exists but credential doesn't - data inconsistency
+				// Delete orphaned index entry and throw error
+				await indexDoc.ref.delete()
+				throw new AuthenticationError('Passkey not found. Please sign in with magic link.')
+			}
+
+			const credentialData = credDoc.data() as PasskeyCredential
+
+			// Find a valid challenge using atomic claim pattern to prevent race conditions
+			// Query recent challenges, then atomically delete and use the first valid one
+			const challengesSnapshot = await adminDb
+				.collection('passkeyChallenges')
+				.where('type', '==', 'authentication')
+				.orderBy('createdAt', 'desc')
+				.limit(10)
+				.get()
+
+			let validChallenge: string | null = null
+
+			// Try to atomically claim a challenge (delete it so no other request can use it)
+			for (const doc of challengesSnapshot.docs) {
+				const docData = doc.data()
+				if (new Date(docData.expiresAt) > new Date()) {
+					// Attempt atomic delete - if another request already deleted it, this is a no-op
+					// We check if we successfully claimed it by seeing if we can proceed
+					try {
+						await doc.ref.delete()
+						validChallenge = docData.challenge
+						break
+					} catch (error) {
+						// Only swallow "not found" errors (challenge already claimed by another request)
+						// Re-throw unexpected errors (network failures, permission issues)
+						const errorCode = (error as {code?: number})?.code
+						if (errorCode !== 5) {
+							// 5 = NOT_FOUND in Firestore error codes
+							throw error
+						}
+						// Challenge already claimed, try next one
+					}
+				}
+			}
+
+			if (!validChallenge) {
+				throw new ValidationError('Authentication challenge expired. Please try again.')
+			}
+
+			const rp = getRelyingParty()
+			const expectedOrigin = getExpectedOrigin()
+
+			// Verify authentication response
+			let verification: Awaited<ReturnType<typeof verifyAuthenticationResponse>>
+			try {
+				verification = await verifyAuthenticationResponse({
+					response: authResponse,
+					expectedChallenge: validChallenge,
+					expectedOrigin,
+					expectedRPID: rp.id,
+					credential: {
+						id: credentialData.id,
+						publicKey: new Uint8Array(Buffer.from(credentialData.publicKey, 'base64url')),
+						counter: credentialData.counter,
+						transports: credentialData.transports
+					},
+					requireUserVerification: true
+				})
+			} catch {
+				throw new AuthenticationError('Passkey verification failed. Please try again.')
+			}
+
+			if (!verification.verified) {
+				throw new AuthenticationError('Passkey could not be verified.')
+			}
+
+			// Update credential counter, last used time, and user's last auth time atomically
+			const {newCounter} = verification.authenticationInfo
+			const now = new Date().toISOString()
+
+			await adminDb.runTransaction(async transaction => {
+				const credRef = adminDb
+					.collection('users')
+					.doc(userId)
+					.collection('passkeys')
+					.doc(credentialId)
+				transaction.update(credRef, {
+					counter: newCounter,
+					lastUsedAt: now
+				})
+
+				const userRef = adminDb.collection('users').doc(userId)
+				transaction.set(
+					userRef,
+					{
+						lastPasskeyAuthenticatedAt: now
+					},
+					{merge: true}
+				)
 			})
 
-			const userRef = adminDb.collection('users').doc(userId)
-			transaction.set(
-				userRef,
-				{
-					lastPasskeyAuthenticatedAt: now
+			// Get user data for session
+			const userDoc = await adminDb.collection('users').doc(userId).get()
+			const userData = userDoc.data() || {}
+
+			// Determine current environment for session binding (R-023)
+			const env = process.env.NODE_ENV as SessionData['env']
+
+			// Clear any existing session first (session fixation prevention)
+			await clearSession()
+
+			// Create new session with passkey flag and 180-day duration
+			await createPasskeySession({
+				userId,
+				email: userData.email ?? undefined,
+				displayName: userData.displayName ?? undefined,
+				claims: {
+					admin: userData.admin === true,
+					signedConsentForm: userData.signedConsentForm === true,
+					passkeyEnabled: true
 				},
-				{merge: true}
-			)
-		})
+				env,
+				sessionCreatedAt: new Date().toISOString()
+			})
 
-		// Get user data for session
-		const userDoc = await adminDb.collection('users').doc(userId).get()
-		const userData = userDoc.data() || {}
-
-		// Determine current environment for session binding (R-023)
-		const env = process.env.NODE_ENV as SessionData['env']
-
-		// Clear any existing session first (session fixation prevention)
-		await clearSession()
-
-		// Create new session with passkey flag and 180-day duration
-		await createPasskeySession({
-			userId,
-			email: userData.email ?? undefined,
-			displayName: userData.displayName ?? undefined,
-			claims: {
-				admin: userData.admin === true,
-				signedConsentForm: userData.signedConsentForm === true,
-				passkeyEnabled: true
-			},
-			env,
-			sessionCreatedAt: new Date().toISOString()
-		})
-
-		return {
-			success: true,
-			userId,
-			email: userData.email ?? undefined,
-			displayName: userData.displayName ?? undefined
+			return {
+				success: true,
+				userId,
+				email: userData.email ?? undefined,
+				displayName: userData.displayName ?? undefined
+			}
 		}
-	}
-)
+	)
 
 /**
  * Get user's registered passkeys.
@@ -575,21 +546,15 @@ export const getPasskeysFn = createServerFn({method: 'GET'}).handler(
  * @param data - Object containing credentialId to remove
  * @returns Success status
  */
-export const removePasskeyFn = createServerFn({method: 'POST'}).handler(
-	async ({data}: {data: unknown}): Promise<{success: boolean; error?: string}> => {
+export const removePasskeyFn = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => {
+		const {z} = require('zod')
+		return z.object({credentialId: z.string().min(1)}).parse(d)
+	})
+	.handler(async ({data}): Promise<{success: boolean; error?: string}> => {
 		const user = await requireAuth()
 
-		// Validate input
-		const schema = (await import('zod')).z.object({
-			credentialId: (await import('zod')).z.string().min(1)
-		})
-
-		const parseResult = schema.safeParse(data)
-		if (!parseResult.success) {
-			throw new ValidationError('Invalid credential ID')
-		}
-
-		const {credentialId} = parseResult.data
+		const {credentialId} = data
 
 		// Check if passkey exists
 		const credRef = adminDb
@@ -615,7 +580,7 @@ export const removePasskeyFn = createServerFn({method: 'POST'}).handler(
 			transaction.set(
 				userRef,
 				{
-					passkeyCount: admin.firestore.FieldValue.increment(-1)
+					passkeyCount: increment(-1)
 				},
 				{merge: true}
 			)
@@ -640,5 +605,4 @@ export const removePasskeyFn = createServerFn({method: 'POST'}).handler(
 		}
 
 		return {success: true}
-	}
-)
+	})

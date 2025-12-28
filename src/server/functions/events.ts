@@ -14,10 +14,10 @@ import {NotFoundError, ValidationError} from './utils/errors'
  * Get event by 4-digit event code
  * Public endpoint - no auth required
  */
-export const getEventByCode = createServerFn({method: 'GET'}).handler(
-	async ({data}: {data: unknown}) => {
-		const validated = getEventByCodeSchema.parse(data)
-		const {code} = validated
+export const getEventByCode = createServerFn({method: 'GET'})
+	.inputValidator((d: unknown) => getEventByCodeSchema.parse(d))
+	.handler(async ({data}) => {
+		const {code} = data
 
 		if (!isValidEventCodeFormat(code)) {
 			throw new ValidationError('Invalid event code format')
@@ -45,8 +45,7 @@ export const getEventByCode = createServerFn({method: 'GET'}).handler(
 			createdAt: eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
 			updatedAt: eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
 		} as EventDocument
-	}
-)
+	})
 
 /**
  * Get all events for authenticated user
@@ -82,12 +81,12 @@ export const getEvents = createServerFn({method: 'GET'}).handler(async () => {
  * Activate event and generate 4-digit event code
  * Admin only
  */
-export const activateEvent = createServerFn({method: 'POST'}).handler(
-	async ({data}: {data: unknown}) => {
+export const activateEvent = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => activateEventSchema.parse(d))
+	.handler(async ({data}) => {
 		await requireAdmin()
 
-		const validated = activateEventSchema.parse(data)
-		const {eventId} = validated
+		const {eventId} = data
 
 		// Generate unique 4-digit event code
 		const eventCode = await generateUniqueEventCode()
@@ -99,19 +98,18 @@ export const activateEvent = createServerFn({method: 'POST'}).handler(
 		})
 
 		return {eventCode}
-	}
-)
+	})
 
 /**
  * Override survey timing for an event
  * Admin only
  */
-export const overrideSurveyTiming = createServerFn({method: 'POST'}).handler(
-	async ({data}: {data: unknown}) => {
+export const overrideSurveyTiming = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => overrideSurveyTimingSchema.parse(d))
+	.handler(async ({data}) => {
 		await requireAdmin()
 
-		const validated = overrideSurveyTimingSchema.parse(data)
-		const {eventId, surveyType, enabled} = validated
+		const {eventId, surveyType, enabled} = data
 
 		const updateField = surveyType === 'pre' ? 'preSurveyEnabled' : 'postSurveyEnabled'
 
@@ -124,8 +122,7 @@ export const overrideSurveyTiming = createServerFn({method: 'POST'}).handler(
 			})
 
 		return {success: true}
-	}
-)
+	})
 
 /**
  * Generate unique 4-digit event code
