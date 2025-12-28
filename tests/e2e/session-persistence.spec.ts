@@ -37,8 +37,11 @@ test.describe('Session Persistence @smoke', () => {
 		// Navigate to dashboard
 		await page.goto('/dashboard')
 
-		// Wait for page to load and verify authenticated state
-		await expect(page.getByRole('button', {name: 'Logout'})).toBeVisible({timeout: 10000})
+		// Wait for page to load and verify authenticated state via dashboard content
+		// Note: Navbar "Logout" button depends on Firebase Auth client SDK state,
+		// but session cookie injection only sets server-side session.
+		// Verify auth via dashboard content instead.
+		await expect(page.getByTestId('event-code-input')).toBeVisible({timeout: 10000})
 
 		// Navigate to home
 		await page.goto('/')
@@ -46,8 +49,8 @@ test.describe('Session Persistence @smoke', () => {
 		// Session should still be valid - navigate back to dashboard
 		await page.goto('/dashboard')
 
-		// Should still see logout button (authenticated)
-		await expect(page.getByRole('button', {name: 'Logout'})).toBeVisible({timeout: 10000})
+		// Should still see dashboard content (authenticated)
+		await expect(page.getByTestId('event-code-input')).toBeVisible({timeout: 10000})
 	})
 
 	test('session cookie has correct attributes', async ({context}) => {
@@ -111,7 +114,8 @@ test.describe('Session Persistence @smoke', () => {
 		// Load dashboard multiple times
 		for (let i = 0; i < 3; i++) {
 			await page.goto('/dashboard')
-			await expect(page.getByRole('button', {name: 'Logout'})).toBeVisible({timeout: 10000})
+			// Verify dashboard content loads (session still valid)
+			await expect(page.getByTestId('event-code-input')).toBeVisible({timeout: 10000})
 		}
 	})
 })
@@ -124,8 +128,8 @@ test.describe('Session Expiration Warning', () => {
 		// Navigate to dashboard
 		await page.goto('/dashboard')
 
-		// Wait for authenticated state
-		await expect(page.getByRole('button', {name: 'Logout'})).toBeVisible({timeout: 10000})
+		// Wait for authenticated state via dashboard content
+		await expect(page.getByTestId('event-code-input')).toBeVisible({timeout: 10000})
 
 		// Expiration warning should NOT be visible for fresh session
 		await expect(page.getByTestId('session-expiration-warning')).not.toBeVisible()
