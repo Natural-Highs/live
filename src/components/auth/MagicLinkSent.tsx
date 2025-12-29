@@ -1,10 +1,7 @@
 import {sendSignInLinkToEmail} from 'firebase/auth'
 import {useState} from 'react'
-import {Alert, AlertDescription} from '@/components/ui/alert'
-import {Button} from '@/components/ui/button'
 import GreenCard from '@/components/ui/GreenCard'
-import {Separator} from '@/components/ui/separator'
-import {Spinner} from '@/components/ui/spinner'
+import GreyButton from '@/components/ui/GreyButton'
 import {auth} from '$lib/firebase/firebase.app'
 
 export interface MagicLinkSentProps {
@@ -44,7 +41,9 @@ export function MagicLinkSent({email, onBack}: MagicLinkSentProps) {
 			await sendSignInLinkToEmail(auth, email, actionCodeSettings)
 			setResendStatus('success')
 			setResendCount(prev => prev + 1)
-		} catch (_error) {
+		} catch (error) {
+			// Log error for debugging (without exposing to UI for security)
+			console.error('Magic link resend failed:', error instanceof Error ? error.message : 'Unknown error')
 			setResendStatus('error')
 		} finally {
 			setIsResending(false)
@@ -63,52 +62,51 @@ export function MagicLinkSent({email, onBack}: MagicLinkSentProps) {
 
 			<h2 className='mb-2 font-semibold text-xl'>Check Your Email</h2>
 
-			<p className='mb-4 text-muted-foreground'>
+			<p className='mb-4 text-gray-700'>
 				We sent a sign-in link to:
 				<br />
 				<strong className='text-primary'>{email}</strong>
 			</p>
 
-			<p className='mb-6 text-muted-foreground text-sm'>
+			<p className='mb-6 text-gray-600 text-sm'>
 				Click the link in your email to sign in. The link will expire in 1 hour.
 			</p>
 
-			<Separator className='my-4' />
+			<div className='divider' />
 
-			<p className='mb-2 text-muted-foreground text-sm'>Didn't receive it?</p>
+			<p className='mb-2 text-gray-500 text-sm'>Didn't receive it?</p>
 
 			{resendStatus === 'success' && (
-				<Alert variant='success' className='mb-4'>
-					<AlertDescription>Link resent successfully</AlertDescription>
-				</Alert>
+				<output className='alert alert-success mb-4'>
+					<span>Link resent successfully</span>
+				</output>
 			)}
 
 			{resendStatus === 'error' && (
-				<Alert variant='error' className='mb-4'>
-					<AlertDescription>Failed to resend. Please try again.</AlertDescription>
-				</Alert>
+				<div className='alert alert-error mb-4' role='alert'>
+					<span>Failed to resend. Please try again.</span>
+				</div>
 			)}
 
 			<div className='flex w-full flex-col gap-2'>
-				<Button
+				<GreyButton
 					data-testid='resend-magic-link-button'
 					disabled={isResending || resendCount >= 3}
 					onClick={handleResend}
 					type='button'
-					variant='secondary'
 				>
 					{isResending ? (
-						<Spinner size='sm' />
+						<span className='loading loading-spinner loading-sm' />
 					) : resendCount >= 3 ? (
 						'Maximum resends reached'
 					) : (
 						`Resend Link${resendCount > 0 ? ` (${3 - resendCount} left)` : ''}`
 					)}
-				</Button>
+				</GreyButton>
 
-				<Button onClick={onBack} type='button' variant='secondary'>
+				<GreyButton onClick={onBack} type='button'>
 					Use a different email
-				</Button>
+				</GreyButton>
 			</div>
 		</GreenCard>
 	)
