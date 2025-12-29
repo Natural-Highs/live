@@ -500,7 +500,7 @@ test.describe('User Check-in Flow', () => {
 
 			// Note: AC7 specifies input should be cleared after error, but current
 			// implementation keeps the value. This is a UX decision that may need
-			// separate story to address if clearing is required.
+			// separate ticket to address if clearing is required.
 		})
 
 		test('should display correct error message for invalid code', async ({

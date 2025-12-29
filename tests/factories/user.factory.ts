@@ -96,7 +96,7 @@ export function createAuthenticatedUser(
 }
 
 /**
- * Create a Maya persona user (returning user from story context)
+ * Create a Maya persona user (returning user test persona)
  * Maya is a returning user who needs fast event check-in
  */
 export function createMayaUser(overrides: Partial<TestUser> = {}): TestUser {

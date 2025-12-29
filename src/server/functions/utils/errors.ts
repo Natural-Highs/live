@@ -30,7 +30,18 @@ export class NotFoundError extends Error {
 	}
 }
 
+/**
+ * Error code constant for ConflictError.
+ * Exported for client-side error type checking without relying on message string matching.
+ */
+export const CONFLICT_ERROR_CODE = 'CONFLICT_VERSION_MISMATCH'
+
 export class ConflictError extends Error {
+	/**
+	 * Error code for reliable type checking across serialization boundaries.
+	 */
+	readonly code = CONFLICT_ERROR_CODE
+
 	constructor(message: string) {
 		super(message)
 		this.name = 'ConflictError'
