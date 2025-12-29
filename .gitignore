@@ -3,14 +3,16 @@ node_modules
 dist
 dist-ssr
 *.local
-coverage
+/tests/coverage
 .nyc_output
-/test-results/
+/tests/test-results/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
 *.tsbuildinfo
-
+.local/
+.secrets
+.env
 # TanStack Start
 .vinxi
 .output
@@ -27,10 +29,10 @@ vite.config.d.ts
 .trunk/plugins/
 .trunk/tools/
 
-# User-only content (not for git history)
-.local/
-.secrets
-
 # Firebase emulator logs
 firebase-debug.log
 firestore-debug.log
+
+# Husky internals
+.husky/_
+dev-dist/

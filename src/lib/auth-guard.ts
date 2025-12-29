@@ -1,17 +1,10 @@
 import {redirect} from '@tanstack/react-router'
-import type {User} from 'firebase/auth'
-
-interface AuthContext {
-	auth: {
-		user: User | null
-		loading: boolean
-		consentForm: boolean
-		admin: boolean
-	}
-}
+import type {SessionAuthContext} from '@/routes/__root'
 
 interface BeforeLoadContext {
-	context: AuthContext
+	context: {
+		auth: SessionAuthContext
+	}
 	location: {pathname: string}
 }
 
@@ -24,7 +17,7 @@ export interface AuthGuardOptions {
 
 /**
  * Auth guard utility for TanStack Router beforeLoad
- * Replicates the logic from ProtectedRoute component
+ * Uses server-side session data from route context.
  *
  * Protection rules:
  * - If not authenticated and requireAuth=true → redirect to /authentication
@@ -32,6 +25,9 @@ export interface AuthGuardOptions {
  * - If authenticated with consent form and on /consent → redirect to /dashboard
  * - If authenticated and redirectIfAuthenticated=true → redirect to /dashboard
  * - If requireAdmin and not admin → redirect to /dashboard
+ *
+ * @deprecated This function will be removed once all routes migrate to _authed/ layout.
+ * Use the _authed.tsx layout route for auth protection instead.
  */
 export async function authGuard(
 	{context, location}: BeforeLoadContext,
@@ -43,40 +39,35 @@ export async function authGuard(
 		requireAdmin = false,
 		redirectIfAuthenticated = false
 	} = options
-	const {user, loading, consentForm, admin} = context.auth
-
-	// Don't redirect while loading
-	if (loading) {
-		return
-	}
+	const {isAuthenticated, hasConsent, isAdmin} = context.auth
 
 	// Handle unauthenticated users
-	if (!user) {
+	if (!isAuthenticated) {
 		if (requireAuth) {
 			throw redirect({
 				to: '/authentication',
-				search: {redirect: location.pathname}
+				search: {redirectTo: location.pathname}
 			})
 		}
 		return
 	}
 
 	// Handle authenticated users
-	if (user) {
+	if (isAuthenticated) {
 		// Redirect already authenticated users away from auth page
 		if (redirectIfAuthenticated) {
 			throw redirect({to: '/dashboard'})
 		}
 
 		// Users with consent form
-		if (consentForm) {
+		if (hasConsent) {
 			// Redirect away from consent page if already signed
 			if (location.pathname === '/consent') {
 				throw redirect({to: '/dashboard'})
 			}
 
 			// Check admin requirement
-			if (requireAdmin && !admin) {
+			if (requireAdmin && !isAdmin) {
 				throw redirect({to: '/dashboard'})
 			}
 

@@ -2,26 +2,51 @@
 
 import {QueryClient, QueryClientProvider} from '@tanstack/react-query'
 import {ReactQueryDevtools} from '@tanstack/react-query-devtools'
-import {createRootRouteWithContext, Outlet} from '@tanstack/react-router'
+import {
+	createRootRouteWithContext,
+	HeadContent,
+	Link,
+	Outlet,
+	Scripts
+} from '@tanstack/react-router'
 import {TanStackRouterDevtools} from '@tanstack/react-router-devtools'
-import type {User} from 'firebase/auth'
+import type {ReactNode} from 'react'
+import {getSessionForRoutesFn, type SessionUser} from '@/server/functions/auth'
 import Layout from '../components/Layout'
 import {AuthProvider} from '../context/AuthContext'
 import appCss from '../global.css?url'
 
 const queryClient = new QueryClient()
 
+/**
+ * Session auth context provided by beforeLoad.
+ * Available to all routes via route context.
+ */
+export interface SessionAuthContext {
+	user: SessionUser | null
+	isAuthenticated: boolean
+	hasConsent: boolean
+	isAdmin: boolean
+}
+
 export interface RouterContext {
-	auth: {
-		user: User | null
-		loading: boolean
-		consentForm: boolean
-		admin: boolean
-	}
+	/**
+	 * Server-side session auth context.
+	 * Fetched in beforeLoad, available to all child routes.
+	 */
+	auth: SessionAuthContext
 	queryClient: QueryClient
 }
 
 export const Route = createRootRouteWithContext<RouterContext>()({
+	/**
+	 * Fetch session data on every navigation.
+	 * This provides auth state to all routes via context.
+	 */
+	beforeLoad: async () => {
+		const auth = await getSessionForRoutesFn()
+		return {auth}
+	},
 	head: () => ({
 		meta: [
 			{charSet: 'utf-8'},
@@ -45,19 +70,51 @@ export const Route = createRootRouteWithContext<RouterContext>()({
 			{rel: 'apple-touch-icon', href: '/icon-192x192.png'}
 		]
 	}),
-	component: RootComponent
+	component: RootComponent,
+	notFoundComponent: NotFoundComponent
 })
+
+function NotFoundComponent() {
+	return (
+		<div className='flex min-h-screen flex-col items-center justify-center bg-bgGreen px-4'>
+			<h1 className='mb-4 font-bold text-4xl text-gray-800'>Page Not Found</h1>
+			<p className='mb-6 text-gray-600'>The page you are looking for does not exist.</p>
+			<Link
+				to='/'
+				className='rounded-lg bg-green-600 px-6 py-3 font-medium text-white transition-colors hover:bg-green-700'
+			>
+				Go Home
+			</Link>
+		</div>
+	)
+}
+
+function RootDocument({children}: {children: ReactNode}) {
+	return (
+		<html lang='en'>
+			<head>
+				<HeadContent />
+			</head>
+			<body>
+				{children}
+				<Scripts />
+			</body>
+		</html>
+	)
+}
 
 function RootComponent() {
 	return (
-		<QueryClientProvider client={queryClient}>
-			<AuthProvider>
-				<Layout>
-					<Outlet />
-				</Layout>
-			</AuthProvider>
-			<ReactQueryDevtools />
-			<TanStackRouterDevtools position='bottom-right' />
-		</QueryClientProvider>
+		<RootDocument>
+			<QueryClientProvider client={queryClient}>
+				<AuthProvider>
+					<Layout>
+						<Outlet />
+					</Layout>
+				</AuthProvider>
+				<ReactQueryDevtools />
+				<TanStackRouterDevtools position='bottom-right' />
+			</QueryClientProvider>
+		</RootDocument>
 	)
 }
