@@ -2,9 +2,9 @@ import {useRouterState} from '@tanstack/react-router'
 import {getIdTokenResult, onAuthStateChanged, type User} from 'firebase/auth'
 import type React from 'react'
 import {createContext, type ReactNode, useContext, useEffect, useRef, useState} from 'react'
+import type {SessionAuthContext} from '@/routes/__root'
 import {auth} from '$lib/firebase/firebase.app'
 import type {AuthContextUserData} from './types/authContext'
-import type {SessionAuthContext} from '@/routes/__root'
 
 interface AuthContextType {
 	user: User | null
@@ -31,14 +31,17 @@ export const useAuth = () => useContext(AuthContext)
  */
 export function useRouterAuth(): SessionAuthContext {
 	const routerState = useRouterState()
-	const context = routerState.matches?.[0]?.context as {auth?: SessionAuthContext} | undefined
+	const context = routerState.matches?.[0]?.context as unknown as
+		| {auth?: SessionAuthContext}
+		| undefined
 
 	return (
 		context?.auth ?? {
 			user: null,
 			isAuthenticated: false,
 			hasConsent: false,
-			isAdmin: false
+			isAdmin: false,
+			hasPasskey: false
 		}
 	)
 }
@@ -54,7 +57,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
 	const [authState, setAuthState] = useState<AuthContextType>(() => ({
 		user: null,
 		// Start as not loading if we have router auth data (SSR case)
-		loading: !routerAuth.isAuthenticated && routerAuth.user === null ? true : false,
+		loading: !routerAuth.isAuthenticated && routerAuth.user === null,
 		consentForm: routerAuth.hasConsent,
 		admin: routerAuth.isAdmin,
 		data: {}

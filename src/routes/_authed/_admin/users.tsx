@@ -2,12 +2,12 @@ import {useQuery, useQueryClient} from '@tanstack/react-query'
 import {createFileRoute} from '@tanstack/react-router'
 import type {ColumnDef} from '@tanstack/react-table'
 import {useCallback, useMemo, useState} from 'react'
+import {DataTable} from '@/components/admin/DataTable'
 import {Badge} from '@/components/ui/badge'
 import {Button} from '@/components/ui/button'
 import {Card, CardContent} from '@/components/ui/card'
 import {Spinner} from '@/components/ui/spinner'
 import {type User, usersQueryOptions} from '@/queries/index.js'
-import {DataTable} from '@/components/admin/DataTable'
 
 export const Route = createFileRoute('/_authed/_admin/users')({
 	loader: async ({context}) => {

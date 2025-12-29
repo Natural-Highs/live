@@ -2,8 +2,13 @@ import {useForm} from '@tanstack/react-form'
 import {sendSignInLinkToEmail} from 'firebase/auth'
 import {useState} from 'react'
 import {z} from 'zod'
+import {Alert, AlertDescription} from '@/components/ui/alert'
+import {Button} from '@/components/ui/button'
 import GreenCard from '@/components/ui/GreenCard'
-import GrnButton from '@/components/ui/GrnButton'
+import {Input} from '@/components/ui/input'
+import {Label} from '@/components/ui/label'
+import {Spinner} from '@/components/ui/spinner'
+import {logMagicLinkAttemptFn} from '@/server/functions/auth'
 import {setEmailForSignIn} from '$lib/auth/magic-link'
 import {auth} from '$lib/firebase/firebase.app'
 
@@ -12,6 +17,14 @@ const emailSchema = z.object({
 })
 
 type EmailFormValues = z.infer<typeof emailSchema>
+
+/**
+ * Type wrapper for logMagicLinkAttemptFn.
+ * Workaround for TanStack Start v1.142.5 type inference limitation.
+ */
+type LogMagicLinkAttemptFnType = (opts: {
+	data: {success: boolean; errorCode?: string; emailDomain?: string}
+}) => Promise<{success: true}>
 
 export interface MagicLinkRequestProps {
 	/** Callback when magic link is successfully sent */
@@ -57,6 +70,9 @@ export function MagicLinkRequest({onSuccess, onError}: MagicLinkRequestProps) {
 			const actionCodeSettings = {
 				url: `${appUrl}/magic-link`,
 				handleCodeInApp: true
+				// NOTE: Link expiry (NFR89: 15 minutes) is configured in Firebase Console:
+				// Authentication > Templates > Email link (sign-in) > Customize template settings
+				// Default is 60 minutes - must be manually set to 15 minutes per NFR89
 			}
 
 			// Store email in localStorage for same-device completion
@@ -65,14 +81,31 @@ export function MagicLinkRequest({onSuccess, onError}: MagicLinkRequestProps) {
 			// Use Firebase client SDK - this automatically sends the email
 			await sendSignInLinkToEmail(auth, values.email, actionCodeSettings)
 
+			// Log success for server-side monitoring (non-blocking, no PII)
+			const emailDomain = values.email.split('@')[1]
+			void (logMagicLinkAttemptFn as unknown as LogMagicLinkAttemptFnType)({
+				data: {success: true, emailDomain}
+			}).catch(() => {
+				// Silently fail - logging is best-effort and should never block user flow
+			})
+
 			onSuccess(values.email)
 		} catch (error) {
+			// Log failure for server-side monitoring (non-blocking, no PII)
+			const emailDomain = values.email.split('@')[1]
+			const errorCode =
+				error && typeof error === 'object' && 'code' in error
+					? String((error as {code: unknown}).code)
+					: 'unknown'
+			void (logMagicLinkAttemptFn as unknown as LogMagicLinkAttemptFnType)({
+				data: {success: false, errorCode, emailDomain}
+			}).catch(() => {
+				// Silently fail - logging is best-effort
+			})
+
 			// Always call onSuccess to show "check email" screen
 			// This prevents timing attacks that could reveal account existence
-			// Note: Errors should be logged server-side for security monitoring (without PII)
-			// Client-side: intentionally suppress error details to prevent user enumeration
-			const errorCode = error && typeof error === 'object' && 'code' in error ? String(error.code) : 'Unknown'
-			console.error('Magic link request failed (hidden from user):', errorCode)
+			// Server-side logging (above) tracks actual failures for admin monitoring
 			onSuccess(values.email)
 		} finally {
 			setIsLoading(false)
@@ -82,14 +115,14 @@ export function MagicLinkRequest({onSuccess, onError}: MagicLinkRequestProps) {
 	return (
 		<GreenCard className='flex max-w-full! flex-col' data-testid='magic-link-form'>
 			<h2 className='mb-4 font-semibold text-lg'>Sign in with Magic Link</h2>
-			<p className='mb-4 text-gray-600 text-sm'>
+			<p className='mb-4 text-muted-foreground text-sm'>
 				Enter your email and we'll send you a sign-in link. No password needed.
 			</p>
 
 			{error && (
-				<div className='alert alert-error mb-4' role='alert'>
-					<span>{error}</span>
-				</div>
+				<Alert variant='error' className='mb-4'>
+					<AlertDescription>{error}</AlertDescription>
+				</Alert>
 			)}
 
 			<form
@@ -107,16 +140,14 @@ export function MagicLinkRequest({onSuccess, onError}: MagicLinkRequestProps) {
 					}}
 				>
 					{field => (
-						<div className='form-control flex flex-col'>
-							<label className='label' htmlFor={field.name}>
-								<span className='label-text'>Email</span>
-							</label>
-							<input
+						<div className='flex flex-col space-y-2'>
+							<Label htmlFor={field.name}>Email</Label>
+							<Input
 								aria-describedby={
 									field.state.meta.errors.length > 0 ? `${field.name}-error` : undefined
 								}
 								autoComplete='email'
-								className='input input-bordered w-full'
+								className='w-full'
 								data-testid='magic-link-email-input'
 								disabled={isLoading}
 								id={field.name}
@@ -128,23 +159,21 @@ export function MagicLinkRequest({onSuccess, onError}: MagicLinkRequestProps) {
 								value={field.state.value}
 							/>
 							{field.state.meta.errors.length > 0 && (
-								<div
-									className='label'
+								<p
+									className='text-destructive text-sm'
 									data-testid='magic-link-email-error'
 									id={`${field.name}-error`}
 								>
-									<span className='label-text-alt text-error'>
-										{String(field.state.meta.errors[0])}
-									</span>
-								</div>
+									{String(field.state.meta.errors[0])}
+								</p>
 							)}
 						</div>
 					)}
 				</form.Field>
 
-				<GrnButton data-testid='send-magic-link-button' disabled={isLoading} type='submit'>
-					{isLoading ? <span className='loading loading-spinner loading-sm' /> : 'Send Magic Link'}
-				</GrnButton>
+				<Button data-testid='send-magic-link-button' disabled={isLoading} type='submit'>
+					{isLoading ? <Spinner size='sm' /> : 'Send Magic Link'}
+				</Button>
 			</form>
 		</GreenCard>
 	)

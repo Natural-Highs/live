@@ -10,10 +10,10 @@
  * @module server/middleware/auth
  */
 
-import {clearSession, getSessionData, validateSessionEnvironment} from '@/lib/session'
 import {adminAuth} from '@/lib/firebase/firebase.admin'
-import {AuthenticationError} from '../functions/utils/errors'
+import {clearSession, getSessionData, validateSessionEnvironment} from '@/lib/session'
 import type {SessionUser} from '../functions/auth'
+import {AuthenticationError} from '../functions/utils/errors'
 
 /**
  * Require authenticated session.
@@ -194,7 +194,10 @@ export async function requireConsent(): Promise<SessionUser> {
  * @returns true if session is valid (not revoked)
  * @throws AuthenticationError if session was revoked
  */
-export async function checkTokenRevocation(uid: string, sessionCreatedAt?: string): Promise<boolean> {
+export async function checkTokenRevocation(
+	uid: string,
+	sessionCreatedAt?: string
+): Promise<boolean> {
 	// If no session creation time, we can't validate revocation
 	// This handles legacy sessions without the timestamp - allow them for backwards compatibility
 	if (!sessionCreatedAt) {
@@ -231,11 +234,6 @@ export async function checkTokenRevocation(uid: string, sessionCreatedAt?: strin
 		if (error instanceof AuthenticationError) {
 			throw error
 		}
-
-		// Firebase error (user deleted, network error, etc.) - fail closed
-		// User deletion is handled by verifyFirebaseUserExists, so this is for network errors
-		// Log original error for debugging before throwing user-friendly message
-		console.error('Token revocation check failed:', error)
 		throw new AuthenticationError('Unable to verify session validity')
 	}
 }

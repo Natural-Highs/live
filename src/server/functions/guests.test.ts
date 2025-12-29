@@ -3,11 +3,11 @@
  * Tests guest code validation, registration, and account upgrade
  */
 
-import * as authUtils from './utils/auth'
+import * as authMiddleware from '@/server/middleware/auth'
 
 // Mock dependencies
-vi.mock('./utils/auth', () => ({
-	validateSession: vi.fn()
+vi.mock('@/server/middleware/auth', () => ({
+	requireAuth: vi.fn()
 }))
 
 vi.mock('../../lib/firebase/firebase', () => ({
@@ -133,7 +133,7 @@ describe('guests server functions', () => {
 
 	describe('upgradeGuest behavior', () => {
 		it('should require authentication', () => {
-			expect(authUtils.validateSession).toBeDefined()
+			expect(authMiddleware.requireAuth).toBeDefined()
 		})
 
 		it('should validate email is provided', () => {

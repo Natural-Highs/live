@@ -328,3 +328,112 @@ The session data structure must match `SessionData` in `src/lib/session.ts`:
   env: 'development' | 'staging' | 'production'
 }
 ```
+
+## Firestore User Document Fixtures
+
+For tests that need to verify Firestore state or require user documents to exist:
+
+### Creating User Documents
+
+```typescript
+import {test} from '@playwright/test'
+import {createTestUser, deleteTestUser} from '../fixtures/firestore.fixture'
+import {injectSessionCookie} from '../fixtures/session.fixture'
+
+test('profile page shows user data', async ({context, page}) => {
+  const uid = 'test-user-123'
+
+  // Create user document in Firestore emulator BEFORE navigation
+  await createTestUser(uid, {
+    displayName: 'Test User',
+    email: 'test@example.com',
+    profileComplete: true
+  })
+
+  // Inject session cookie with matching UID
+  await injectSessionCookie(context, {
+    uid,
+    email: 'test@example.com',
+    displayName: 'Test User'
+  }, {signedConsentForm: true})
+
+  await page.goto('/profile')
+
+  // Page can now load user data from Firestore
+  await expect(page.getByText('Test User')).toBeVisible()
+})
+
+test.afterEach(async () => {
+  // Clean up user document
+  await deleteTestUser('test-user-123')
+})
+```
+
+### Firestore Fixture API
+
+| Function | Description |
+|----------|-------------|
+| `createTestUser(uid, data?)` | Create minimal user document |
+| `deleteTestUser(uid)` | Delete user and subcollections |
+| `createTestUserDocument(user, minorDemographics?)` | Full control over user document fields |
+| `deleteTestUserDocument(uid)` | Delete user and subcollections |
+| `clearFirestoreEmulator()` | Clear all test data |
+| `isFirestoreEmulatorAvailable()` | Check emulator connectivity |
+
+### When to Use User Documents
+
+| Scenario | Session Cookie | User Document |
+|----------|---------------|---------------|
+| Route protection test | Required | Optional |
+| Profile page test | Required | Required |
+| Admin actions on users | Required | Required |
+| Dashboard with user data | Required | Required |
+| Simple auth redirect | Required | Not needed |
+
+### User Document Fields
+
+```typescript
+interface TestUserDocument {
+  uid: string
+  email: string
+  displayName: string
+  dateOfBirth?: string       // defaults to '1990-01-15'
+  isMinor?: boolean          // defaults to false
+  profileComplete?: boolean  // defaults to true
+  profileVersion?: number    // defaults to 1
+  // Demographics (for adults)
+  pronouns?: string
+  gender?: string
+  raceEthnicity?: string[]
+  emergencyContactName?: string
+  emergencyContactPhone?: string
+  emergencyContactEmail?: string
+  dietaryRestrictions?: string[]
+  medicalConditions?: string
+}
+```
+
+### Minor User Testing
+
+For testing minor user flows (demographics stored in private subcollection):
+
+```typescript
+import {createTestUserDocument, deleteTestUserDocument} from '../fixtures/firestore.fixture'
+
+await createTestUserDocument(
+  {
+    uid: 'minor-user-123',
+    email: 'minor@example.com',
+    displayName: 'Minor User',
+    dateOfBirth: '2010-06-15',
+    isMinor: true,
+    profileComplete: true
+  },
+  {
+    // Minor demographics go in private subcollection
+    pronouns: 'they/them',
+    gender: 'non-binary',
+    emergencyContactName: 'Parent User'
+  }
+)
+```

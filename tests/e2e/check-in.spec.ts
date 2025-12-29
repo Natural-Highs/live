@@ -21,7 +21,7 @@ import {expect, test} from '../fixtures/auth.fixture'
 
 test.describe('User Check-in Flow', () => {
 	test.describe('AC1: Check-in Happy Path', () => {
-		test('should display check-in form on dashboard', async ({page, authenticatedUser}) => {
+		test('should display check-in form on dashboard', async ({page, authenticatedUser: _}) => {
 			// GIVEN: User is authenticated with consent (via session cookie fixture)
 			// authenticatedUser fixture injects session cookie with signedConsentForm: true
 
@@ -35,7 +35,7 @@ test.describe('User Check-in Flow', () => {
 
 		test('should have submit button disabled until 4-digit code entered', async ({
 			page,
-			authenticatedUser
+			authenticatedUser: _
 		}) => {
 			// GIVEN: User is on dashboard
 			await page.goto('/dashboard')
@@ -65,7 +65,7 @@ test.describe('User Check-in Flow', () => {
 
 		test('should show success confirmation with welcome message after valid check-in', async ({
 			page,
-			authenticatedUser
+			authenticatedUser: _
 		}) => {
 			// Mock successful check-in
 			await page.route('**/api/users/eventCode', route => {
@@ -97,7 +97,7 @@ test.describe('User Check-in Flow', () => {
 			await expect(page.getByTestId('check-in-success')).toBeVisible()
 		})
 
-		test('should clear input after successful check-in', async ({page, authenticatedUser}) => {
+		test('should clear input after successful check-in', async ({page, authenticatedUser: _}) => {
 			// Mock successful check-in
 			let checkInCount = 0
 			await page.route('**/api/users/eventCode', route => {
@@ -173,7 +173,7 @@ test.describe('User Check-in Flow', () => {
 
 		test('should not require re-entering profile data for returning user', async ({
 			page,
-			authenticatedUser
+			authenticatedUser: _
 		}) => {
 			// GIVEN: User is already authenticated with complete profile
 			await page.route('**/api/users/eventCode', route => {
@@ -207,7 +207,7 @@ test.describe('User Check-in Flow', () => {
 	})
 
 	test.describe('AC8: Performance Assertions', () => {
-		test('should complete check-in within 3 seconds', async ({page, authenticatedUser}) => {
+		test('should complete check-in within 3 seconds', async ({page, authenticatedUser: _}) => {
 			// Mock check-in with realistic response time
 			await page.route('**/api/users/eventCode', async route => {
 				if (route.request().method() === 'POST') {
@@ -247,7 +247,10 @@ test.describe('User Check-in Flow', () => {
 	})
 
 	test.describe('Error Handling (AC6)', () => {
-		test('should show error message for invalid event code', async ({page, authenticatedUser}) => {
+		test('should show error message for invalid event code', async ({
+			page,
+			authenticatedUser: _
+		}) => {
 			// Mock failed check-in
 			await page.route('**/api/users/eventCode', route => {
 				if (route.request().method() === 'POST') {
@@ -277,7 +280,7 @@ test.describe('User Check-in Flow', () => {
 			await expect(page.getByTestId('check-in-error')).toContainText('Invalid event code')
 		})
 
-		test('should show error message for expired event', async ({page, authenticatedUser}) => {
+		test('should show error message for expired event', async ({page, authenticatedUser: _}) => {
 			// Mock expired event response
 			await page.route('**/api/users/eventCode', route => {
 				if (route.request().method() === 'POST') {
@@ -307,7 +310,7 @@ test.describe('User Check-in Flow', () => {
 			await expect(page.getByTestId('check-in-error')).toContainText('expired')
 		})
 
-		test('should handle network failure gracefully', async ({page, authenticatedUser}) => {
+		test('should handle network failure gracefully', async ({page, authenticatedUser: _}) => {
 			// Mock network failure
 			await page.route('**/api/users/eventCode', route => {
 				if (route.request().method() === 'POST') {
@@ -329,7 +332,7 @@ test.describe('User Check-in Flow', () => {
 			await expect(page.getByTestId('check-in-error')).toBeVisible()
 		})
 
-		test('should allow retry after error', async ({page, authenticatedUser}) => {
+		test('should allow retry after error', async ({page, authenticatedUser: _}) => {
 			let attemptCount = 0
 			await page.route('**/api/users/eventCode', route => {
 				if (route.request().method() === 'POST') {
@@ -375,7 +378,7 @@ test.describe('User Check-in Flow', () => {
 	test.describe('AC6: Duplicate Check-in Prevention (Authenticated)', () => {
 		test('should show already checked in message when user attempts duplicate check-in', async ({
 			page,
-			authenticatedUser
+			authenticatedUser: _
 		}) => {
 			// GIVEN: User is authenticated and has already checked into this event
 			await page.route('**/api/users/eventCode', route => {
@@ -409,7 +412,7 @@ test.describe('User Check-in Flow', () => {
 
 		test('should not create duplicate record when authenticated user re-submits', async ({
 			page,
-			authenticatedUser
+			authenticatedUser: _
 		}) => {
 			// GIVEN: Track API call count to verify no duplicate records
 			let checkInCallCount = 0
@@ -466,7 +469,7 @@ test.describe('User Check-in Flow', () => {
 	test.describe('AC7: Invalid/Expired Code Handling', () => {
 		test('should show error message after invalid code submission', async ({
 			page,
-			authenticatedUser
+			authenticatedUser: _
 		}) => {
 			// GIVEN: User is authenticated
 			await page.route('**/api/users/eventCode', route => {
@@ -502,7 +505,7 @@ test.describe('User Check-in Flow', () => {
 
 		test('should display correct error message for invalid code', async ({
 			page,
-			authenticatedUser
+			authenticatedUser: _
 		}) => {
 			// GIVEN: User is authenticated
 			await page.route('**/api/users/eventCode', route => {
@@ -535,7 +538,7 @@ test.describe('User Check-in Flow', () => {
 
 		test('should display correct error message for expired code', async ({
 			page,
-			authenticatedUser
+			authenticatedUser: _
 		}) => {
 			// GIVEN: User is authenticated
 			await page.route('**/api/users/eventCode', route => {
@@ -568,7 +571,7 @@ test.describe('User Check-in Flow', () => {
 
 		test('should allow immediate retry after error with cleared input', async ({
 			page,
-			authenticatedUser
+			authenticatedUser: _
 		}) => {
 			// GIVEN: Mock to fail first, succeed second
 			let attemptCount = 0

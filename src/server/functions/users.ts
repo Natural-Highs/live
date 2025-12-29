@@ -1,9 +1,9 @@
 import {createServerFn} from '@tanstack/react-start'
+import {requireAuth} from '@/server/middleware/auth'
 import {validateEventRegistration} from '../../lib/events/event-validation'
 import {auth, db} from '../../lib/firebase/firebase'
 import {buildCustomClaims} from '../../lib/utils/custom-claims'
 import {getProfileSchema, registerForEventSchema, updateConsentStatusSchema} from '../schemas/users'
-import {validateSession} from './utils/auth'
 import {ConflictError, NotFoundError, ValidationError} from './utils/errors'
 
 /**
@@ -12,7 +12,7 @@ import {ConflictError, NotFoundError, ValidationError} from './utils/errors'
  */
 export const getProfile = createServerFn({method: 'GET'}).handler(
 	async ({data}: {data: unknown}) => {
-		const currentUser = await validateSession()
+		const currentUser = await requireAuth()
 
 		const validated = getProfileSchema.parse(data)
 		const userId = validated.userId || currentUser.uid
@@ -51,7 +51,7 @@ export const getProfile = createServerFn({method: 'GET'}).handler(
  */
 export const updateConsentStatus = createServerFn({method: 'POST'}).handler(
 	async ({data}: {data: unknown}) => {
-		const user = await validateSession()
+		const user = await requireAuth()
 
 		const validated = updateConsentStatusSchema.parse(data)
 		const {consentSigned} = validated
@@ -90,7 +90,7 @@ export const updateConsentStatus = createServerFn({method: 'POST'}).handler(
  */
 export const registerForEvent = createServerFn({method: 'POST'}).handler(
 	async ({data}: {data: unknown}) => {
-		const user = await validateSession()
+		const user = await requireAuth()
 
 		const validated = registerForEventSchema.parse(data)
 		const {eventCode} = validated
@@ -150,7 +150,7 @@ export const registerForEvent = createServerFn({method: 'POST'}).handler(
  * Get user's registered events
  */
 export const getUserEvents = createServerFn({method: 'GET'}).handler(async () => {
-	const user = await validateSession()
+	const user = await requireAuth()
 
 	// Get events where user is a participant
 	const eventsSnapshot = await db
