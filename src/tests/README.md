@@ -5,7 +5,7 @@ This directory contains the test suite for the Natural Highs application.
 ## Directory Structure
 
 ```text
-src/tests/
+tests/
 ├── e2e/                    # Playwright E2E tests
 │   ├── *.spec.ts           # Test specifications
 ├── factories/              # Test data factories
@@ -37,7 +37,7 @@ bun run test:e2e
 bun run test:e2e:headed
 
 # Run specific test file
-bunx playwright test src/tests/e2e/check-in.spec.ts
+bunx playwright test tests/e2e/check-in.spec.ts
 
 # Run unit tests
 bun run test
@@ -50,7 +50,7 @@ bun run test:coverage
 
 ## Fixture Composition Pattern
 
-Use `mergeTests()` to compose fixtures. Import from `src/tests/fixtures` for full access:
+Use `mergeTests()` to compose fixtures. Import from `tests/fixtures` for full access:
 
 ```typescript
 import {test, expect} from '../fixtures'
@@ -407,7 +407,7 @@ test.describe('Feature Name', () => {
 
 ```bash
 # By file
-bunx playwright test src/tests/e2e/check-in.spec.ts
+bunx playwright test tests/e2e/check-in.spec.ts
 
 # By test name pattern
 bunx playwright test --grep "check-in"
@@ -432,7 +432,7 @@ For unit tests (Vitest):
 bun run test:coverage
 ```
 
-Coverage reports are generated in `.build/coverage/`.
+Coverage reports are generated in `tests/coverage/`.
 
 ---
 
@@ -463,8 +463,4 @@ Coverage reports are generated in `.build/coverage/`.
 
 ---
 
-<<<<<<< HEAD
 Last Updated: 2025-12-26
-=======
-_Last Updated: 2025-12-26_
->>>>>>> e4ef5165 (feat(tests): standardize test architecture with fixture composition)

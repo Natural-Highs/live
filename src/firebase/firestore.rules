@@ -63,10 +63,6 @@ service cloud.firestore {
         // Users can delete their own private documents
         allow delete: if isAuthenticated() && request.auth.uid == userId;
       }
-<<<<<<< HEAD:firebase/firestore.rules
-<<<<<<< HEAD:firebase/firestore.rules
-=======
->>>>>>> 032e02b6 (feat(settings): add profile settings page with history tracking):firestore.rules
 
       // Demographic History subcollection - user can read their own history
       // History records are created server-side only
@@ -78,11 +74,6 @@ service cloud.firestore {
         // Client cannot directly create/update/delete history
         allow create, update, delete: if false;
       }
-<<<<<<< HEAD:firebase/firestore.rules
-=======
->>>>>>> 946bc3b8 (feat(profile): add minimal profile creation flow):firestore.rules
-=======
->>>>>>> 032e02b6 (feat(settings): add profile settings page with history tracking):firestore.rules
     }
 
     // Passkey Challenges Collection (root level, temporary storage)
@@ -92,7 +83,6 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-<<<<<<< HEAD:firebase/firestore.rules
     // Passkey Credential Index Collection
     // Enables O(1) credential lookup during authentication
     // Contains only userId reference, not credential secrets
@@ -105,8 +95,6 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
-=======
->>>>>>> ec69776d (feat(auth): add extended session management with revocation and grace period):firestore.rules
     // Session Revocations Collection
     // Server-only access - tracks when user sessions should be invalidated
     match /sessionRevocations/{revocationId} {
