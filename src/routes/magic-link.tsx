@@ -1,15 +1,35 @@
 import {createFileRoute, useNavigate} from '@tanstack/react-router'
 import {isSignInWithEmailLink, signInWithEmailLink} from 'firebase/auth'
 import {useCallback, useEffect, useState} from 'react'
-import {BrandLogo} from '@/components/ui'
+import {Alert, BrandLogo, Input, Label, Spinner} from '@/components/ui'
+import {Button} from '@/components/ui/button'
 import GreenCard from '@/components/ui/GreenCard'
-import GreyButton from '@/components/ui/GreyButton'
-import GrnButton from '@/components/ui/GrnButton'
 import {PageContainer} from '@/components/ui/page-container'
 import TitleCard from '@/components/ui/TitleCard'
+import {createSessionFn, type SessionUser} from '@/server/functions/auth'
 import {clearEmailForSignIn, getEmailForSignIn} from '$lib/auth/magic-link'
 import {auth} from '$lib/firebase/firebase.app'
 import {useAuth} from '../context/AuthContext'
+
+/**
+ * Explicit type for createSessionFn input data.
+ * Required due to TanStack Start v1.142.5 type inference limitation.
+ */
+type CreateSessionData = {
+	uid: string
+	email: string | null
+	displayName: string | null
+	idToken: string
+}
+
+/**
+ * Type-safe wrapper for createSessionFn call signature.
+ * Workaround for TanStack Start's handler type inference gap.
+ */
+type CreateSessionFnType = (opts: {data: CreateSessionData}) => Promise<{
+	success: true
+	user: SessionUser
+}>
 
 type MagicLinkState = 'loading' | 'cross-device-prompt' | 'signing-in' | 'success' | 'error'
 
@@ -48,62 +68,73 @@ function MagicLinkComponent() {
 	const [error, setError] = useState('')
 	const [userName, setUserName] = useState('')
 
-	const handleSignIn = useCallback(async (emailToUse: string) => {
-		if (!auth) {
-			setState('error')
-			setError('Authentication service is not available.')
-			return
-		}
-
-		setState('signing-in')
-		setError('')
-
-		try {
-			const currentUrl = window.location.href
-			const result = await signInWithEmailLink(auth, emailToUse, currentUrl)
-
-			// Clear stored email after successful sign-in
-			clearEmailForSignIn()
-
-			// Get ID token for session creation
-			const idToken = await result.user.getIdToken()
-
-			// Create server session
-			const sessionResponse = await fetch('/api/auth/sessionLogin', {
-				method: 'POST',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({idToken})
-			})
-
-			if (!sessionResponse.ok) {
-				const data = await sessionResponse.json()
-				throw new Error(data.error || 'Failed to create session')
+	const handleSignIn = useCallback(
+		async (emailToUse: string) => {
+			if (!auth) {
+				setState('error')
+				setError('Authentication service is not available.')
+				return
 			}
 
-			// Extract user name for welcome message
-			const displayName = result.user.displayName || result.user.email?.split('@')[0] || 'User'
-			setUserName(displayName)
-			setState('success')
+			setState('signing-in')
+			setError('')
 
-			// Redirect to dashboard using router navigation
-			// Delay increased to 3000ms for screen reader accessibility
-			setTimeout(() => {
-				navigate({to: '/dashboard'})
-			}, 3000)
-		} catch (err) {
-			setState('error')
-			if (err && typeof err === 'object' && 'code' in err) {
-				setError(getErrorMessage(err as MagicLinkError))
-			} else if (err instanceof Error) {
-				setError(err.message)
-			} else {
-				setError('An unexpected error occurred. Please try again.')
+			try {
+				const currentUrl = window.location.href
+				const result = await signInWithEmailLink(auth, emailToUse, currentUrl)
+
+				// Clear stored email after successful sign-in
+				clearEmailForSignIn()
+
+				// Get ID token for session creation
+				const idToken = await result.user.getIdToken()
+
+				// Create TanStack server session via createSessionFn
+				// Type assertion workaround for TanStack Start v1.142.5 handler type inference
+				const sessionResult = await (createSessionFn as unknown as CreateSessionFnType)({
+					data: {
+						uid: result.user.uid,
+						email: result.user.email ?? null,
+						displayName: result.user.displayName ?? null,
+						idToken
+					}
+				})
+
+				if (!sessionResult.success) {
+					throw new Error('Failed to create session')
+				}
+
+				// Extract user name for welcome message
+				const displayName = result.user.displayName || result.user.email?.split('@')[0] || 'User'
+				setUserName(displayName)
+				setState('success')
+
+				// Note: AuthContext syncs automatically via onAuthStateChanged
+				// which fires after signInWithEmailLink succeeds (M1)
+
+				// Redirect to dashboard using router navigation
+				// Delay increased to 3000ms for screen reader accessibility
+				setTimeout(() => {
+					navigate({to: '/dashboard'})
+				}, 3000)
+			} catch (err) {
+				setState('error')
+				if (err && typeof err === 'object' && 'code' in err) {
+					setError(getErrorMessage(err as MagicLinkError))
+				} else if (err instanceof Error) {
+					setError(err.message)
+				} else {
+					setError('An unexpected error occurred. Please try again.')
+				}
 			}
-		}
-	}, [])
+		},
+		[navigate]
+	)
 
 	useEffect(() => {
-		if (authLoading) return
+		if (authLoading) {
+			return
+		}
 
 		// Check if this is a valid magic link
 		if (!auth) {
@@ -161,7 +192,7 @@ function MagicLinkComponent() {
 					<h1>Signing In</h1>
 				</TitleCard>
 				<GreenCard className='flex max-w-full! flex-col items-center'>
-					<span className='loading loading-spinner loading-lg' />
+					<Spinner size='lg' />
 					<p className='mt-4 text-gray-600'>Verifying your sign-in link...</p>
 				</GreenCard>
 			</PageContainer>
@@ -193,7 +224,7 @@ function MagicLinkComponent() {
 					</div>
 					<h2 className='mb-2 font-semibold text-xl'>Welcome back, {userName}</h2>
 					<p className='text-gray-600'>Redirecting to your dashboard...</p>
-					<span className='loading loading-spinner loading-sm mt-4' />
+					<Spinner size='sm' className='mt-4' />
 				</GreenCard>
 			</PageContainer>
 		)
@@ -222,16 +253,16 @@ function MagicLinkComponent() {
 					<div aria-label='Error' className='mb-4 text-6xl' role='img'>
 						⚠️
 					</div>
-					<div className='alert alert-error mb-4' role='alert'>
+					<Alert variant='error' className='mb-4'>
 						<span>{error}</span>
-					</div>
-					<GrnButton
+					</Alert>
+					<Button
 						data-testid='request-new-link-button'
 						onClick={handleRequestNewLink}
 						type='button'
 					>
 						Request a New Link
-					</GrnButton>
+					</Button>
 				</GreenCard>
 			</PageContainer>
 		)
@@ -260,13 +291,10 @@ function MagicLinkComponent() {
 					</p>
 
 					<form className='space-y-4' onSubmit={handleCrossDeviceSubmit}>
-						<div className='form-control flex flex-col'>
-							<label className='label' htmlFor='email'>
-								<span className='label-text'>Email</span>
-							</label>
-							<input
+						<div className='flex flex-col gap-1'>
+							<Label htmlFor='email'>Email</Label>
+							<Input
 								autoComplete='email'
-								className='input input-bordered w-full'
 								data-testid='cross-device-email-input'
 								id='email'
 								name='email'
@@ -278,20 +306,20 @@ function MagicLinkComponent() {
 							/>
 						</div>
 
-						<GrnButton
+						<Button
 							data-testid='cross-device-continue-button'
 							disabled={!email.trim()}
 							type='submit'
 						>
 							Continue
-						</GrnButton>
+						</Button>
 					</form>
 
 					<div className='divider'>OR</div>
 
-					<GreyButton onClick={handleRequestNewLink} type='button'>
+					<Button onClick={handleRequestNewLink} type='button' variant='secondary'>
 						Request a New Link
-					</GreyButton>
+					</Button>
 				</GreenCard>
 			</PageContainer>
 		)
@@ -313,7 +341,7 @@ function MagicLinkComponent() {
 				<h1>Signing In</h1>
 			</TitleCard>
 			<GreenCard className='flex max-w-full! flex-col items-center'>
-				<span className='loading loading-spinner loading-lg' />
+				<Spinner size='lg' />
 				<p className='mt-4 text-gray-600'>Signing you in...</p>
 			</GreenCard>
 		</PageContainer>
