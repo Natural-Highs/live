@@ -4,7 +4,7 @@ import {validateEventRegistration} from '../../lib/events/event-validation'
 import {auth, db} from '../../lib/firebase/firebase'
 import {buildCustomClaims} from '../../lib/utils/custom-claims'
 import {getProfileSchema, registerForEventSchema, updateConsentStatusSchema} from '../schemas/users'
-import {ConflictError, NotFoundError, ValidationError} from './utils/errors'
+import {ConflictError, NotFoundError, TimeWindowError, ValidationError} from './utils/errors'
 
 /**
  * Get user profile
@@ -113,10 +113,14 @@ export const registerForEvent = createServerFn({method: 'POST'}).handler(
 		const participants = eventData.participants || []
 		const isAlreadyRegistered = participants.includes(user.uid)
 
-		// Validate registration
+		// Validate registration (includes time window check - FR56)
 		const validation = validateEventRegistration(eventData, isAlreadyRegistered)
 
 		if (!validation.isValid) {
+			// Check if this is a time window error
+			if (validation.error?.includes('not currently accepting check-ins')) {
+				throw new TimeWindowError(validation.error, validation.scheduledTime)
+			}
 			throw new ConflictError(validation.error ?? 'Invalid registration')
 		}
 
@@ -141,7 +145,10 @@ export const registerForEvent = createServerFn({method: 'POST'}).handler(
 		return {
 			eventId: eventDoc.id,
 			eventName: eventData.name,
-			success: true
+			eventDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate ?? null,
+			eventLocation: eventData.location || 'Location TBD',
+			success: true,
+			message: `Checked in to ${eventData.name}`
 		}
 	}
 )
