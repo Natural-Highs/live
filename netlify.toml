@@ -1,0 +1,31 @@
+[build]
+  command = "bun run build"
+  publish = "dist/client"
+
+[dev]
+  # dev:bare runs vite without Doppler secrets injection
+  # netlify dev wraps this to provide Netlify platform emulation
+  command = "bun run dev:bare"
+  port = 3000
+
+# Security headers
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    X-XSS-Protection = "1; mode=block"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    # HSTS: 1 year with includeSubDomains
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+    # CSP: Firebase SDK requires 'unsafe-inline' for dynamic script injection.
+    # This is a known limitation documented at https://firebase.google.com/docs/web/setup
+    # Mitigated by: strict frame-ancestors, form-action, and base-uri directives
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://*.firebaseapp.com https://*.googleapis.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.cloudfunctions.net; frame-ancestors 'none'; form-action 'self'; base-uri 'self'"
+
+# Cache static assets
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

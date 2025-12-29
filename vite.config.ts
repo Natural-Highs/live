@@ -1,7 +1,7 @@
+import netlify from '@netlify/vite-plugin-tanstack-start'
 import tailwindcss from '@tailwindcss/vite'
 import {tanstackStart} from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
-import {nitro} from 'nitro/vite'
 import {defineConfig} from 'vite'
 import {VitePWA} from 'vite-plugin-pwa'
 import tsConfigPaths from 'vite-tsconfig-paths'
@@ -13,7 +13,7 @@ export default defineConfig({
 	plugins: [
 		tsConfigPaths(),
 		tanstackStart(),
-		nitro({preset: 'bun'}),
+		netlify(),
 		// react's vite plugin must come after start's vite plugin
 		viteReact(),
 		tailwindcss(),

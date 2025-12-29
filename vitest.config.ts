@@ -14,6 +14,11 @@ export default defineConfig({
 	test: {
 		globals: true,
 		environment: 'happy-dom',
+		// JUnit reporter for Codecov Test Analytics
+		reporters: process.env.CI ? ['default', 'junit'] : ['default'],
+		outputFile: {
+			junit: '.build/test-results/junit.xml'
+		},
 		exclude: [
 			'**/node_modules/**',
 			'**/dist/**',
@@ -22,14 +27,15 @@ export default defineConfig({
 			'**/*.spec.ts', // Playwright convention
 			'.trunk/**', // Trunk plugins (symlinks to cache)
 			'.local/**',
-			'.claude/**'
+			'.claude/**',
+			'.build/**' // Build artifacts
 		],
 		include: ['**/*.test.{ts,tsx}'],
-		setupFiles: ['./vitest-env-setup.ts', './src/test-setup.ts'],
+		setupFiles: ['./src/test-setup.ts'],
 		coverage: {
 			provider: 'v8',
 			reporter: ['text', 'json-summary', 'html', 'lcov'],
-			reportsDirectory: './tests/coverage',
+			reportsDirectory: '.build/coverage',
 			exclude: [
 				'**/node_modules/**',
 				'**/dist/**',
@@ -38,7 +44,6 @@ export default defineConfig({
 				'**/*.test.{ts,tsx}',
 				'**/*.config.{ts,js}',
 				'**/test-setup.ts',
-				'**/vitest-env-setup.ts',
 				'.trunk/**'
 			],
 			thresholds: {
