@@ -1,23 +1,47 @@
 import {createFileRoute, useNavigate} from '@tanstack/react-router'
-import type React from 'react'
-import {useCallback, useEffect, useState} from 'react'
-import {Alert, BrandLogo, Checkbox, Label, PageContainer, Spinner} from '@/components/ui'
+import {useCallback, useState} from 'react'
+import {SuccessConfirmation} from '@/components/features/SuccessConfirmation'
+import {GuestConsentSignature} from '@/components/forms/GuestConsentSignature'
+import {type GuestInfoData, GuestInfoForm} from '@/components/forms/GuestInfoForm'
+import {
+	BrandLogo,
+	InputOTP,
+	InputOTPGroup,
+	InputOTPSlot,
+	Label,
+	PageContainer,
+	Spinner
+} from '@/components/ui'
 import {Button} from '@/components/ui/button'
 import {FormContainer} from '@/components/ui/form-container'
-import GreenCard from '@/components/ui/GreenCard'
-import GuestTitleCard from '@/components/ui/GuestTitleCard'
-import {auth} from '$lib/firebase/firebase.app'
+import {registerGuest, validateGuestCode} from '@/server/functions/guests'
 
-interface ConsentFormTemplate {
-	id: string
-	name: string
-	questions?: readonly {
-		id?: string
-		text?: string
-		type?: string
-		required?: boolean
-	}[]
+type Step = 'code' | 'info' | 'consent' | 'success'
+
+interface EventData {
+	eventId: string
+	eventName: string
+	eventDescription?: string
+	startDate?: string
+	endDate?: string
 }
+
+interface RegistrationData {
+	guestId: string
+	eventId: string
+	eventName: string
+	firstName: string
+}
+
+// Step indicator labels
+const STEP_LABELS: Record<Step, string> = {
+	code: 'Code Entry',
+	info: 'Info',
+	consent: 'Consent',
+	success: 'Success'
+}
+
+const STEP_ORDER: Step[] = ['code', 'info', 'consent', 'success']
 
 export const Route = createFileRoute('/guest')({
 	component: GuestComponent
@@ -25,325 +49,313 @@ export const Route = createFileRoute('/guest')({
 
 function GuestComponent() {
 	const navigate = useNavigate()
-	const [template, setTemplate] = useState<ConsentFormTemplate | null>(null)
-	const [_events, setEvents] = useState<Event[]>([])
+
+	// Step state
+	const [step, setStep] = useState<Step>('code')
+
+	// Code step state
 	const [eventCode, setEventCode] = useState('')
-	const [eventLoading, setEventLoading] = useState(true)
-	const [consentLoading, setConsentLoading] = useState(true)
-	const [submittingCode, setSubmittingCode] = useState(false)
-	const [submitting, setSubmitting] = useState(false)
-	const [eventError, setEventError] = useState('')
-	const [consentError, setConsentError] = useState('')
-	const [success, setSuccess] = useState('')
-	const [agreed, setAgreed] = useState(false)
+	const [codeLoading, setCodeLoading] = useState(false)
+	const [codeError, setCodeError] = useState<string | null>(null)
 
-	const fetchEvents = useCallback(async () => {
-		try {
-			const response = await fetch('/api/events')
-			const data = (await response.json()) as {
-				success: boolean
-				events?: Event[]
-				error?: string
-			}
+	// Event data from validation
+	const [eventData, setEventData] = useState<EventData | null>(null)
 
-			if (!(response.ok && data.success)) {
-				setEventError(data.error || 'Failed to load events')
-				return
-			}
+	// Guest info data
+	const [guestInfo, setGuestInfo] = useState<GuestInfoData | null>(null)
 
-			if (data.events) {
-				setEvents(data.events)
-			}
-		} catch (err) {
-			setEventError(err instanceof Error ? err.message : 'Failed to load events')
-		} finally {
-			setEventLoading(false)
-		}
-	}, [])
+	// Registration result
+	const [registrationData, setRegistrationData] = useState<RegistrationData | null>(null)
 
-	useEffect(() => {
-		fetchEvents()
-	}, [fetchEvents])
-
-	useEffect(() => {
-		const fetchTemplate = async () => {
-			try {
-				const response = await fetch('/api/forms/consent')
-				const data = (await response.json()) as {
-					success: boolean
-					template?: ConsentFormTemplate
-					error?: string
-				}
-
-				if (!(response.ok && data.success)) {
-					setConsentError(data.error || 'Failed to load consent form')
-					return
-				}
-
-				if (data.template) {
-					setTemplate(data.template)
-				}
-			} catch (err) {
-				setConsentError(err instanceof Error ? err.message : 'Failed to load consent form')
-			} finally {
-				setConsentLoading(false)
-			}
-		}
-
-		fetchTemplate()
-	}, [])
-
-	// eventCode
-	const handleEventCodeSubmit = async (e: React.FormEvent) => {
-		e.preventDefault()
-		setEventError('')
-		setSuccess('')
-		setSubmittingCode(true)
-
-		try {
-			const response = await fetch('/api/users/eventCode', {
-				method: 'POST',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({eventCode})
-			})
-
-			const data = (await response.json()) as {
-				success: boolean
-				message?: string
-				error?: string
-			}
-
-			if (!(response.ok && data.success)) {
-				setEventError(data.error || 'Failed to register for event')
-				setSubmittingCode(false)
-				return
-			}
-
-			setSuccess(data.message || 'Successfully registered for event')
-			setEventCode('')
-			// Refresh events list
-			await fetchEvents()
-			setSubmittingCode(false)
-		} catch (err) {
-			setEventError(err instanceof Error ? err.message : 'Failed to register for event')
-			setSubmittingCode(false)
-		}
-	}
-	// Event Code fin
-
-	// Consent Form
-	const handleSubmit = async (e: React.FormEvent) => {
-		e.preventDefault()
-		setConsentError('')
-		setSubmitting(true)
-
-		if (!agreed) {
-			setConsentError('You must agree to the consent form to continue')
-			setSubmitting(false)
+	// Handle event code submission
+	const handleCodeSubmit = useCallback(async () => {
+		if (eventCode.length !== 4) {
 			return
 		}
 
+		setCodeLoading(true)
+		setCodeError(null)
+
 		try {
-			const response = await fetch('/api/forms/consent', {
-				method: 'POST',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({})
-			})
+			const result = await validateGuestCode({data: {eventCode}})
 
-			const data = (await response.json()) as {
-				success: boolean
-				error?: string
-			}
-
-			if (!(response.ok && data.success)) {
-				setConsentError(data.error || 'Failed to submit consent form')
-				setSubmitting(false)
+			if (!result.valid) {
+				setCodeError('Invalid or inactive event code')
+				setEventCode('') // Clear input for retry
 				return
 			}
 
-			// Refresh auth token to get updated custom claims (signedConsentForm)
-			const currentUser = auth?.currentUser
-			if (currentUser) {
-				// Force token refresh to get updated claims from backend
-				await currentUser.getIdToken(true)
-				// Navigate to dashboard - layout route will allow access now that consentForm is true
-				navigate({to: '/dashboard', replace: true})
-			}
+			setEventData({
+				eventId: result.eventId,
+				eventName: result.eventName,
+				eventDescription: result.eventDescription,
+				startDate: result.startDate,
+				endDate: result.endDate
+			})
+			setStep('info')
 		} catch (err) {
-			setConsentError(err instanceof Error ? err.message : 'Failed to submit consent form')
-			setSubmitting(false)
+			setCodeError(err instanceof Error ? err.message : 'Failed to validate event code')
+			setEventCode('') // Clear input for retry
+		} finally {
+			setCodeLoading(false)
+		}
+	}, [eventCode])
+
+	// Auto-submit when 4 digits entered
+	const handleAutoSubmit = useCallback(
+		(code: string) => {
+			if (code.length === 4) {
+				// Use setTimeout to allow state to update before submitting
+				setTimeout(() => handleCodeSubmit(), 0)
+			}
+		},
+		[handleCodeSubmit]
+	)
+
+	// Handle guest info submission
+	const handleInfoSubmit = useCallback(async (data: GuestInfoData) => {
+		setGuestInfo(data)
+		setStep('consent')
+	}, [])
+
+	// Handle consent signature submission
+	const handleConsentSubmit = useCallback(
+		async (signature: string) => {
+			if (!eventData || !guestInfo) {
+				throw new Error('Missing event or guest data')
+			}
+
+			const result = await registerGuest({
+				data: {
+					eventCode,
+					firstName: guestInfo.firstName,
+					lastName: guestInfo.lastName,
+					email: guestInfo.email,
+					phone: guestInfo.phone,
+					consentSignature: signature
+				}
+			})
+
+			if (!result.success) {
+				throw new Error('Failed to register for event')
+			}
+
+			setRegistrationData({
+				guestId: result.guestId,
+				eventId: result.eventId,
+				eventName: result.eventName,
+				firstName: result.firstName
+			})
+			setStep('success')
+		},
+		[eventCode, eventData, guestInfo]
+	)
+
+	// Handle back navigation
+	const handleBack = useCallback(() => {
+		if (step === 'info') {
+			setStep('code')
+			setEventData(null)
+		} else if (step === 'consent') {
+			setStep('info')
+		}
+	}, [step])
+
+	// Handle success dismissal
+	const handleSuccessDismiss = useCallback(() => {
+		// Reset to initial state for next guest
+		setStep('code')
+		setEventCode('')
+		setEventData(null)
+		setGuestInfo(null)
+		setRegistrationData(null)
+	}, [])
+
+	// Render step indicator
+	const renderStepIndicator = () => {
+		const currentStepIndex = STEP_ORDER.indexOf(step)
+
+		return (
+			<nav
+				className='mb-6 flex items-center justify-center gap-2'
+				data-testid='step-indicator'
+				aria-label={`Guest check-in progress: Step ${currentStepIndex + 1} of ${STEP_ORDER.length}, ${STEP_LABELS[step]}`}
+			>
+				{STEP_ORDER.map((stepKey, index) => {
+					const isActive = index === currentStepIndex
+					const isCompleted = index < currentStepIndex
+					const stepStatus = isCompleted ? 'completed' : isActive ? 'current' : 'upcoming'
+
+					return (
+						<div key={stepKey} className='flex items-center gap-2'>
+							<div
+								className={`flex items-center gap-1 rounded-full px-3 py-1 text-xs transition-colors ${
+									isActive
+										? 'bg-primary text-primary-foreground'
+										: isCompleted
+											? 'bg-muted text-muted-foreground'
+											: 'bg-background text-muted-foreground'
+								}`}
+								aria-current={isActive ? 'step' : undefined}
+							>
+								<span className='sr-only'>
+									Step {index + 1}: {STEP_LABELS[stepKey]} - {stepStatus}
+								</span>
+								{isCompleted && <span aria-hidden='true'>✓</span>}
+								<span aria-hidden='true'>{STEP_LABELS[stepKey]}</span>
+							</div>
+							{index < STEP_ORDER.length - 1 && (
+								<span className='text-muted-foreground' aria-hidden='true'>
+									→
+								</span>
+							)}
+						</div>
+					)
+				})}
+			</nav>
+		)
+	}
+
+	// Render step content
+	const renderStep = () => {
+		switch (step) {
+			case 'code':
+				return (
+					<FormContainer className='w-full max-w-sm'>
+						<div className='flex flex-col gap-4'>
+							<div className='text-center'>
+								<h1 className='font-semibold text-2xl text-foreground'>Guest Check-In</h1>
+								<p className='mt-2 text-muted-foreground text-sm'>
+									Enter the 4-digit event code to get started
+								</p>
+							</div>
+
+							<div className='flex flex-col items-center gap-4'>
+								<Label htmlFor='event-code' className='sr-only'>
+									Event Code
+								</Label>
+								<InputOTP
+									id='event-code'
+									maxLength={4}
+									value={eventCode}
+									onChange={setEventCode}
+									onComplete={handleAutoSubmit}
+									disabled={codeLoading}
+									data-testid='guest-event-code-input'
+								>
+									<InputOTPGroup>
+										<InputOTPSlot index={0} />
+										<InputOTPSlot index={1} />
+										<InputOTPSlot index={2} />
+										<InputOTPSlot index={3} />
+									</InputOTPGroup>
+								</InputOTP>
+
+								{codeError && (
+									<p
+										className='text-center text-destructive text-sm'
+										data-testid='guest-check-in-error'
+									>
+										{codeError}
+									</p>
+								)}
+
+								<Button
+									type='button'
+									className='min-h-[44px] w-full'
+									disabled={eventCode.length !== 4 || codeLoading}
+									onClick={handleCodeSubmit}
+									data-testid='guest-check-in-submit'
+								>
+									{codeLoading ? (
+										<>
+											<Spinner size='sm' className='mr-2' />
+											Validating...
+										</>
+									) : (
+										'Continue'
+									)}
+								</Button>
+
+								<Button
+									type='button'
+									variant='secondary'
+									className='min-h-[44px] w-full'
+									onClick={() => navigate({to: '/authentication'})}
+								>
+									Back to Login
+								</Button>
+							</div>
+						</div>
+					</FormContainer>
+				)
+
+			case 'info':
+				return (
+					<FormContainer className='w-full max-w-sm'>
+						<GuestInfoForm
+							eventName={eventData?.eventName || ''}
+							eventDate={eventData?.startDate || ''}
+							onSubmit={handleInfoSubmit}
+							onBack={handleBack}
+						/>
+					</FormContainer>
+				)
+
+			case 'consent':
+				return (
+					<FormContainer className='w-full max-w-sm'>
+						<div className='flex flex-col gap-4'>
+							<div className='text-center'>
+								<h2 className='font-semibold text-xl text-foreground'>Consent Agreement</h2>
+								<p className='mt-1 text-muted-foreground text-sm'>Please review and sign below</p>
+							</div>
+							<GuestConsentSignature
+								firstName={guestInfo?.firstName || ''}
+								lastName={guestInfo?.lastName || ''}
+								onSubmit={handleConsentSubmit}
+								onBack={handleBack}
+							/>
+							{/* Data retention notice per AC4 */}
+							<p className='text-center text-muted-foreground text-xs'>
+								Your name and consent signature are retained for 7 years per legal requirements
+							</p>
+						</div>
+					</FormContainer>
+				)
+
+			case 'success':
+				return (
+					<SuccessConfirmation
+						eventName={registrationData?.eventName || eventData?.eventName || ''}
+						eventDate={eventData?.startDate || ''}
+						eventLocation=''
+						userName={registrationData?.firstName || guestInfo?.firstName || ''}
+						onDismiss={handleSuccessDismiss}
+						isReturningUser={false}
+					/>
+				)
+
+			default:
+				return null
 		}
 	}
-	// Consent Form fin
 
 	return (
-		<PageContainer className='gap-4'>
-			<BrandLogo
-				direction='vertical'
-				gapClassName='gap-0'
-				showTitle={true}
-				size='lg'
-				titleClassName='font-kapakana text-[75px] leading-none tracking-normal [word-spacing:0.40em]'
-				titlePosition='above'
-				titleSpacing={-55}
-			/>
-
-			<div className='flex flex-col items-start gap-4'>
-				<div>
-					{/* Check In UI */}
-					<GuestTitleCard>
-						<h1>Check In</h1>
-					</GuestTitleCard>
-
-					<div className='flex flex-col items-center'>
-						<GreenCard showDivider={false}>
-							{eventLoading ? (
-								<Spinner data-testid='guest-loading' size='lg' />
-							) : (
-								<>
-									{eventError && (
-										<div
-											className='mb-3 rounded-lg border border-red-400 bg-red-100 px-4 py-2 text-center text-red-700 text-sm'
-											data-testid='guest-check-in-error'
-										>
-											{eventError}
-										</div>
-									)}
-
-									{success && (
-										<div
-											className='mb-3 text-center text-green-800 italic'
-											data-testid='guest-check-in-success'
-										>
-											<p className='font-semibold'>Success!</p>
-											<p>You've checked in!</p>
-											<Button>Edit your response</Button>
-										</div>
-									)}
-
-									<form onSubmit={handleEventCodeSubmit}>
-										<input
-											className='mb-4 w-full rounded-lg border-[2.2px] border-btnGreen bg-white px-4 py-3 text-center font-inria text-2xl text-[#2A2A2Ae5] tracking-widest focus:outline-none'
-											data-testid='guest-event-code-input'
-											maxLength={4}
-											onChange={e => setEventCode(e.target.value)}
-											placeholder='Enter 4-digit code'
-											required={true}
-											type='text'
-											value={eventCode}
-										/>
-
-										<Button
-											data-testid='guest-check-in-submit'
-											disabled={submittingCode || eventCode.length !== 4}
-											type='submit'
-										>
-											{submittingCode ? 'Registering...' : 'Submit'}
-										</Button>
-									</form>
-								</>
-							)}
-						</GreenCard>
-					</div>
-
-					{/* Demographics UI */}
-					<GuestTitleCard className='mb-[-1.05rem] pb-[0.6rem]'>
-						<h1>Demographics</h1>
-					</GuestTitleCard>
-					<div className='flex items-center'>
-						<GreenCard showDivider={false}>
-							<p>Text</p>
-						</GreenCard>
-					</div>
-
-					{/* Consent Form UI */}
-					<GuestTitleCard>
-						<h1>Consent Form</h1>
-					</GuestTitleCard>
-					<div className='flex items-center'>
-						<GreenCard showDivider={false}>
-							{consentLoading ? (
-								<Spinner size='lg' />
-							) : (
-								<FormContainer>
-									{consentError && (
-										<Alert variant='error'>
-											<span>{consentError}</span>
-										</Alert>
-									)}
-
-									{template && (
-										<form className='space-y-6' onSubmit={handleSubmit}>
-											<div>
-												<h2 className='mb-4 font-semibold text-2xl text-foreground'>
-													{template.name}
-												</h2>
-												{template.questions && template.questions.length > 0 ? (
-													<div className='space-y-4'>
-														{template.questions.map((question, index) => (
-															<div className='space-y-2' key={question.id || index}>
-																<p className='font-medium text-foreground'>{question.text}</p>
-															</div>
-														))}
-													</div>
-												) : (
-													<div className='prose text-foreground'>
-														<p>TODO: Add consent form text here</p>
-														<p>
-															By checking the box below, you consent to participate in this research
-															study.
-														</p>
-													</div>
-												)}
-											</div>
-
-											<div className='flex items-center gap-3'>
-												<Checkbox
-													checked={agreed}
-													id='consent-agree'
-													onCheckedChange={checked => setAgreed(checked === true)}
-													required={true}
-												/>
-												<Label className='cursor-pointer' htmlFor='consent-agree'>
-													I have read and understand the consent form and agree to participate
-												</Label>
-											</div>
-
-											<Button
-												data-testid='button-primary'
-												disabled={submitting || !agreed}
-												type='submit'
-											>
-												{submitting ? 'Submitting...' : 'I Consent'}
-											</Button>
-										</form>
-									)}
-
-									{!(template || consentLoading) && (
-										<Alert variant='warning'>
-											<span>
-												Consent form template not available. Please contact an administrator.
-											</span>
-										</Alert>
-									)}
-								</FormContainer>
-							)}
-						</GreenCard>
-					</div>
-
-					{/* Nav Buttons */}
-					<div className='child flex w-full flex-col items-center justify-center gap-[.7rem]'>
-						<Button>Finish</Button>
-						<Button
-							onClick={() => navigate({to: '/authentication'})}
-							type='button'
-							variant='secondary'
-						>
-							Back to Login
-						</Button>
-					</div>
-				</div>
-			</div>
+		<PageContainer className='flex min-h-screen flex-col items-center justify-center gap-8 p-4'>
+			{step !== 'success' && (
+				<BrandLogo
+					direction='vertical'
+					gapClassName='gap-0'
+					showTitle={true}
+					size='lg'
+					titleClassName='font-kapakana text-[75px] leading-none tracking-normal [word-spacing:0.40em]'
+					titlePosition='above'
+					titleSpacing={-55}
+				/>
+			)}
+			{renderStepIndicator()}
+			{renderStep()}
 		</PageContainer>
 	)
 }

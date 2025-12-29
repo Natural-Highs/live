@@ -59,15 +59,28 @@ describe('SuccessConfirmation', () => {
 		})
 
 		it('should display personalized welcome message with user name', () => {
-			render(<SuccessConfirmation {...defaultProps} />)
+			render(<SuccessConfirmation {...defaultProps} isReturningUser={true} />)
 
 			expect(screen.getByText(/Welcome back, John/)).toBeInTheDocument()
 		})
 
-		it('should fallback to "Friend" when userName is empty', () => {
-			render(<SuccessConfirmation {...defaultProps} userName='' />)
+		it('should show "Welcome" without "back" for new users', () => {
+			render(<SuccessConfirmation {...defaultProps} isReturningUser={false} />)
+
+			expect(screen.getByText(/Welcome, John!/)).toBeInTheDocument()
+			expect(screen.queryByText(/Welcome back/)).not.toBeInTheDocument()
+		})
+
+		it('should fallback to "Friend" when userName is empty for returning users', () => {
+			render(<SuccessConfirmation {...defaultProps} userName='' isReturningUser={true} />)
 
 			expect(screen.getByText(/Welcome back, Friend/)).toBeInTheDocument()
+		})
+
+		it('should fallback to "Friend" when userName is empty for new users', () => {
+			render(<SuccessConfirmation {...defaultProps} userName='' isReturningUser={false} />)
+
+			expect(screen.getByText(/Welcome, Friend!/)).toBeInTheDocument()
 		})
 	})
 

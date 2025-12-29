@@ -74,8 +74,8 @@ test.describe('Admin Export Flow', () => {
 			// GIVEN: Admin is authenticated
 			await mockSurveyResponsesApi(page, [])
 			await mockEventsApi(page, [
-				createEvent({id: 'e1', name: 'Yoga Session'}),
-				createEvent({id: 'e2', name: 'Meditation Class'})
+				createEvent({id: 'e1', name: 'Peer-mentor Session'}),
+				createEvent({id: 'e2', name: 'Workshop'})
 			])
 
 			// WHEN: Admin navigates to survey responses page
@@ -92,8 +92,8 @@ test.describe('Admin Export Flow', () => {
 			// GIVEN: Admin is on survey responses page with events
 			await mockSurveyResponsesApi(page, [])
 			await mockEventsApi(page, [
-				createEvent({id: 'e1', name: 'Yoga Session'}),
-				createEvent({id: 'e2', name: 'Meditation Class'})
+				createEvent({id: 'e1', name: 'Peer-mentor Session'}),
+				createEvent({id: 'e2', name: 'Workshop'})
 			])
 
 			await page.goto('/survey-responses')
@@ -127,7 +127,7 @@ test.describe('Admin Export Flow', () => {
 		}) => {
 			// GIVEN: Admin has filters set
 			await mockSurveyResponsesApi(page, [])
-			await mockEventsApi(page, [createEvent({id: 'e1', name: 'Yoga Session'})])
+			await mockEventsApi(page, [createEvent({id: 'e1', name: 'Peer-mentor Session'})])
 
 			await page.goto('/survey-responses')
 

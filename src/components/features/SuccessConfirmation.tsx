@@ -1,4 +1,5 @@
 import {useCallback, useEffect, useRef, useState} from 'react'
+import {formatDisplayDate} from '@/lib/utils/validation'
 
 const AUTO_DISMISS_MS = 3000
 const FADE_OUT_MS = 200
@@ -9,6 +10,7 @@ interface SuccessConfirmationProps {
 	eventLocation: string
 	userName: string
 	onDismiss: () => void
+	isReturningUser?: boolean
 }
 
 /**
@@ -21,7 +23,8 @@ export function SuccessConfirmation({
 	eventDate,
 	eventLocation,
 	userName,
-	onDismiss
+	onDismiss,
+	isReturningUser
 }: SuccessConfirmationProps) {
 	const hasDismissed = useRef(false)
 	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -75,24 +78,6 @@ export function SuccessConfirmation({
 		return () => document.removeEventListener('keydown', handleKeyDown)
 	}, [handleDismiss])
 
-	// Format date for display
-	const formatDate = (dateString: string): string => {
-		try {
-			const date = new Date(dateString)
-			if (Number.isNaN(date.getTime())) {
-				return dateString
-			}
-			return date.toLocaleDateString('en-US', {
-				weekday: 'long',
-				year: 'numeric',
-				month: 'long',
-				day: 'numeric'
-			})
-		} catch {
-			return dateString
-		}
-	}
-
 	const displayName = userName || 'Friend'
 
 	return (
@@ -138,12 +123,14 @@ export function SuccessConfirmation({
 				</div>
 
 				{/* Welcome Message */}
-				<h2 className='mb-4 font-bold text-2xl text-gray-800'>Welcome back, {displayName}!</h2>
+				<h2 className='mb-4 font-bold text-2xl text-gray-800'>
+					{isReturningUser ? `Welcome back, ${displayName}!` : `Welcome, ${displayName}!`}
+				</h2>
 
 				{/* Event Details */}
 				<div className='space-y-2 text-gray-600'>
 					<p className='font-semibold text-gray-800 text-lg'>{eventName}</p>
-					<p data-testid='event-date'>{formatDate(eventDate)}</p>
+					<p data-testid='event-date'>{formatDisplayDate(eventDate)}</p>
 					{eventLocation && (
 						<p className='text-gray-500 text-sm' data-testid='event-location'>
 							{eventLocation}

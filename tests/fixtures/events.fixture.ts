@@ -2,15 +2,21 @@
  * Events Fixtures for E2E Testing
  *
  * Provides event-related fixtures and helpers for testing event check-in flows.
- * Includes mock event data and API response builders.
+ * Includes both mock data helpers and Firestore emulator fixtures.
  *
  * Key patterns:
  * - Pure functions for mock data creation
+ * - Firestore emulator fixtures for TanStack Start server functions
  * - Composable with auth fixtures via mergeTests
- * - Mock API endpoints for event operations
+ * - Mock API endpoints for event operations (legacy)
+ *
+ * IMPORTANT: For TanStack Start server functions (validateGuestCode, registerGuest),
+ * use Firestore emulator fixtures instead of API mocking.
  */
 
 import {test as base} from '@playwright/test'
+import {type App, deleteApp, getApps, initializeApp} from 'firebase-admin/app'
+import {type Firestore, getFirestore} from 'firebase-admin/firestore'
 
 // Types for event fixtures
 export interface MockEvent {
@@ -250,3 +256,248 @@ export const test = base.extend<EventFixtures>({
 })
 
 export {expect} from '@playwright/test'
+
+// ============================================================================
+// Firestore Emulator Fixtures for TanStack Start Server Functions
+// ============================================================================
+
+/**
+ * Project ID for the Firebase emulator.
+ * Must be demo-* format for emulator to work without credentials.
+ */
+const EMULATOR_PROJECT_ID = 'demo-natural-highs'
+
+/**
+ * Firestore emulator host.
+ * Matches firebase.json emulators.firestore.port configuration.
+ */
+const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8080'
+
+/**
+ * Lazy-initialized Firebase app for events tests.
+ */
+let eventsTestApp: App | null = null
+let eventsTestDb: Firestore | null = null
+
+/**
+ * Get or create the Firebase Admin app for E2E events tests.
+ */
+function getEventsTestApp(): App {
+	if (eventsTestApp) {
+		return eventsTestApp
+	}
+
+	process.env.FIRESTORE_EMULATOR_HOST = FIRESTORE_EMULATOR_HOST
+
+	const existingApps = getApps()
+	const existingTestApp = existingApps.find(app => app.name === 'e2e-events-test-app')
+
+	if (existingTestApp) {
+		eventsTestApp = existingTestApp
+		return eventsTestApp
+	}
+
+	eventsTestApp = initializeApp(
+		{
+			projectId: EMULATOR_PROJECT_ID
+		},
+		'e2e-events-test-app'
+	)
+
+	return eventsTestApp
+}
+
+/**
+ * Get Firestore instance for E2E events tests.
+ */
+function getEventsTestDb(): Firestore {
+	if (eventsTestDb) {
+		return eventsTestDb
+	}
+
+	const app = getEventsTestApp()
+	eventsTestDb = getFirestore(app)
+
+	return eventsTestDb
+}
+
+/**
+ * Firestore event document structure.
+ * Matches the fields expected by validateGuestCode and registerGuest.
+ */
+export interface FirestoreEventDocument {
+	id?: string
+	name: string
+	eventCode: string
+	description?: string
+	isActive: boolean
+	startDate?: Date
+	endDate?: Date
+	participants?: string[]
+	currentParticipants?: number
+	createdAt?: Date
+	updatedAt?: Date
+}
+
+/**
+ * Firestore guest document structure.
+ * Created by registerGuest.
+ */
+export interface FirestoreGuestDocument {
+	id?: string
+	isGuest: boolean
+	firstName: string
+	lastName: string
+	email?: string | null
+	phone?: string | null
+	eventId: string
+	consentSignedAt?: Date
+	consentSignature: string
+	createdAt?: Date
+	updatedAt?: Date
+}
+
+/**
+ * Create an event document in the Firestore emulator.
+ * Use this instead of API mocking for TanStack Start server function tests.
+ *
+ * @param event - Event document data
+ * @returns The created event ID
+ *
+ * @example
+ * ```typescript
+ * const eventId = await createFirestoreEvent({
+ *   name: 'Community Peer-mentor Session',
+ *   eventCode: '1234',
+ *   isActive: true,
+ *   startDate: new Date('2025-01-15T10:00:00Z')
+ * })
+ * ```
+ */
+export async function createFirestoreEvent(event: FirestoreEventDocument): Promise<string> {
+	const db = getEventsTestDb()
+	const now = new Date()
+	const eventId = event.id ?? `test-event-${Date.now()}`
+	const eventRef = db.collection('events').doc(eventId)
+
+	const eventDoc: Record<string, unknown> = {
+		name: event.name,
+		eventCode: event.eventCode,
+		description: event.description ?? '',
+		isActive: event.isActive,
+		startDate: event.startDate ?? now,
+		endDate: event.endDate ?? new Date(now.getTime() + 2 * 60 * 60 * 1000), // 2 hours later
+		participants: event.participants ?? [],
+		currentParticipants: event.currentParticipants ?? 0,
+		createdAt: event.createdAt ?? now,
+		updatedAt: event.updatedAt ?? now
+	}
+
+	await eventRef.set(eventDoc)
+	return eventId
+}
+
+/**
+ * Delete an event document from the Firestore emulator.
+ *
+ * @param eventId - Event ID to delete
+ */
+export async function deleteFirestoreEvent(eventId: string): Promise<void> {
+	const db = getEventsTestDb()
+	await db.collection('events').doc(eventId).delete()
+}
+
+/**
+ * Delete a guest document from the Firestore emulator.
+ *
+ * @param guestId - Guest ID to delete
+ */
+export async function deleteFirestoreGuest(guestId: string): Promise<void> {
+	const db = getEventsTestDb()
+	await db.collection('guests').doc(guestId).delete()
+}
+
+/**
+ * Get all guests for an event.
+ *
+ * @param eventId - Event ID to search guests for
+ * @returns Array of guest documents
+ */
+export async function getGuestsForEvent(eventId: string): Promise<FirestoreGuestDocument[]> {
+	const db = getEventsTestDb()
+	const snapshot = await db.collection('guests').where('eventId', '==', eventId).get()
+
+	return snapshot.docs.map(doc => ({
+		id: doc.id,
+		...doc.data()
+	})) as FirestoreGuestDocument[]
+}
+
+/**
+ * Delete all guests for an event.
+ *
+ * @param eventId - Event ID to delete guests for
+ */
+export async function deleteGuestsForEvent(eventId: string): Promise<void> {
+	const db = getEventsTestDb()
+	const snapshot = await db.collection('guests').where('eventId', '==', eventId).get()
+
+	const batch = db.batch()
+	for (const doc of snapshot.docs) {
+		batch.delete(doc.ref)
+	}
+	await batch.commit()
+}
+
+/**
+ * Create a standard test event with a valid code (1234).
+ * Convenience function for the most common test case.
+ *
+ * @param overrides - Optional overrides for the event
+ * @returns The created event ID
+ */
+export async function createValidFirestoreEvent(
+	overrides: Partial<FirestoreEventDocument> = {}
+): Promise<string> {
+	return createFirestoreEvent({
+		name: 'Community Peer-mentor Session',
+		eventCode: '1234',
+		description: 'A relaxing Peer-mentor session for the community',
+		isActive: true,
+		startDate: new Date('2025-01-15T10:00:00Z'),
+		endDate: new Date('2025-01-15T12:00:00Z'),
+		...overrides
+	})
+}
+
+/**
+ * Cleanup function to delete the events test app.
+ */
+export async function cleanupEventsTestApp(): Promise<void> {
+	if (eventsTestApp) {
+		await deleteApp(eventsTestApp)
+		eventsTestApp = null
+		eventsTestDb = null
+	}
+}
+
+/**
+ * Check if the Firestore emulator is available.
+ */
+export async function isEventsEmulatorAvailable(): Promise<boolean> {
+	const host = FIRESTORE_EMULATOR_HOST
+
+	try {
+		const response = await fetch(`http://${host}/`, {
+			method: 'GET',
+			signal: AbortSignal.timeout(2000)
+		})
+		return response.ok || response.status === 404
+	} catch {
+		return false
+	}
+}
+
+// ============================================================================
+// End Firestore Emulator Fixtures
+// ============================================================================

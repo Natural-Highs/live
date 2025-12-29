@@ -170,7 +170,7 @@ test.describe('User Check-in Flow', () => {
 						contentType: 'application/json',
 						body: JSON.stringify({
 							success: true,
-							eventName: 'Morning Meditation Circle',
+							eventName: 'Workshop',
 							eventDate: '2025-02-20T08:00:00Z',
 							eventLocation: 'Wellness Center'
 						})
@@ -188,7 +188,7 @@ test.describe('User Check-in Flow', () => {
 
 			// THEN: Should display event name
 			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible()
-			await expect(page.getByText('Morning Meditation Circle')).toBeVisible()
+			await expect(page.getByText('Workshop')).toBeVisible()
 		})
 
 		test('should display event date in confirmation overlay', async ({

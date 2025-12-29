@@ -169,7 +169,7 @@ test.describe('Admin Event Management', () => {
 						contentType: 'application/json',
 						body: JSON.stringify({
 							success: true,
-							event: createEvent({name: 'Community Yoga'})
+							event: createEvent({name: 'Community Peer-mentor'})
 						})
 					})
 				} else {
@@ -192,7 +192,7 @@ test.describe('Admin Event Management', () => {
 			const eventTypeSelect = page.getByTestId('event-type-select')
 			await expect(eventTypeSelect.locator('option[value="et-1"]')).toBeAttached({timeout: 10000})
 
-			await page.getByTestId('event-name-input').fill('Community Yoga')
+			await page.getByTestId('event-name-input').fill('Community Peer-mentor')
 
 			// Select event type - now works correctly after fixing the stale closure bug
 			await eventTypeSelect.selectOption({value: 'et-1'})
@@ -237,8 +237,8 @@ test.describe('Admin Event Management', () => {
 		test('should display events in the list', async ({page, adminUser: _adminUser}) => {
 			// GIVEN: There are existing events
 			const events = [
-				createEvent({id: 'e1', name: 'Yoga Session', code: '1234', isActive: true}),
-				createEvent({id: 'e2', name: 'Meditation Class', code: '', isActive: false})
+				createEvent({id: 'e1', name: 'Peer-mentor Session', code: '1234', isActive: true}),
+				createEvent({id: 'e2', name: 'Workshop', code: '', isActive: false})
 			]
 			await mockEventsApi(page, events)
 			await mockEventTypesApi(page, [createEventType({id: 'et-1', name: 'Workshop'})])
@@ -249,8 +249,8 @@ test.describe('Admin Event Management', () => {
 
 			// THEN: Events should be displayed in the list
 			await expect(page.getByTestId('events-list')).toBeVisible()
-			await expect(page.getByText('Yoga Session')).toBeVisible()
-			await expect(page.getByText('Meditation Class')).toBeVisible()
+			await expect(page.getByText('Peer-mentor Session')).toBeVisible()
+			await expect(page.getByText('Workshop')).toBeVisible()
 		})
 
 		test('should show empty state when no events exist', async ({page, adminUser: _adminUser}) => {

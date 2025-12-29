@@ -2,7 +2,14 @@
  * Unit tests for validation utility functions
  * Following Test Pyramid Balance directive: Unit tests for utility functions
  */
-import {hasRequiredFields, isValidObject, passwordsMatch} from './validation'
+import {z} from 'zod'
+import {
+	formatDisplayDate,
+	hasRequiredFields,
+	isValidObject,
+	passwordsMatch,
+	validateWithMessage
+} from './validation'
 
 describe('Validation Utilities', () => {
 	describe('isValidObject', () => {
@@ -125,6 +132,83 @@ describe('Validation Utilities', () => {
 				name: 'test'
 			}
 			expect(hasRequiredFields(fields, ['active', 'name'])).toBe(true)
+		})
+	})
+
+	describe('validateWithMessage', () => {
+		it('should return undefined for valid values', () => {
+			const schema = z.string().min(1)
+			expect(validateWithMessage(schema, 'hello')).toBeUndefined()
+		})
+
+		it('should return error message for invalid values', () => {
+			const schema = z.string().min(1, 'Field is required')
+			expect(validateWithMessage(schema, '')).toBe('Field is required')
+		})
+
+		it('should return first error message when multiple validation errors', () => {
+			const schema = z.object({
+				name: z.string().min(1, 'Name required'),
+				email: z.string().email('Invalid email')
+			})
+			// Empty name and invalid email - should return first error (name)
+			expect(validateWithMessage(schema, {name: '', email: 'bad'})).toBe('Name required')
+		})
+
+		it('should work with email validation', () => {
+			const schema = z.string().email('Invalid email address')
+			expect(validateWithMessage(schema, 'not-an-email')).toBe('Invalid email address')
+			expect(validateWithMessage(schema, 'valid@email.com')).toBeUndefined()
+		})
+
+		it('should work with number validation', () => {
+			const schema = z.number().min(0, 'Must be positive')
+			expect(validateWithMessage(schema, -1)).toBe('Must be positive')
+			expect(validateWithMessage(schema, 5)).toBeUndefined()
+		})
+
+		it('should work with object schemas', () => {
+			const schema = z.object({
+				name: z.string().min(1, 'Name required'),
+				age: z.number().min(0, 'Age must be positive')
+			})
+			expect(validateWithMessage(schema, {name: '', age: 25})).toBe('Name required')
+			expect(validateWithMessage(schema, {name: 'John', age: 25})).toBeUndefined()
+		})
+	})
+
+	describe('formatDisplayDate', () => {
+		it('should format valid ISO date string', () => {
+			const result = formatDisplayDate('2025-01-15T10:00:00.000Z')
+			expect(result).toMatch(/January 15, 2025/)
+		})
+
+		it('should format date with weekday', () => {
+			const result = formatDisplayDate('2025-01-15T10:00:00.000Z')
+			expect(result).toMatch(/Wednesday/)
+		})
+
+		it('should return original string for invalid date', () => {
+			const invalidDate = 'not-a-date'
+			const result = formatDisplayDate(invalidDate)
+			expect(result).toBe(invalidDate)
+		})
+
+		it('should return original string for empty string', () => {
+			const result = formatDisplayDate('')
+			expect(result).toBe('')
+		})
+
+		it('should handle date-only string', () => {
+			const result = formatDisplayDate('2025-12-25')
+			expect(result).toMatch(/December/)
+			expect(result).toMatch(/2025/)
+		})
+
+		it('should handle Date object converted to string', () => {
+			const date = new Date('2025-06-15T14:30:00Z')
+			const result = formatDisplayDate(date.toISOString())
+			expect(result).toMatch(/June 15, 2025/)
 		})
 	})
 })

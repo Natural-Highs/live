@@ -8,6 +8,8 @@ import {Card, CardContent} from '@/components/ui/card'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
+import {getProfileFn} from '@/server/functions/profile'
+import {getUserEvents} from '@/server/functions/users'
 
 interface UserProfile {
 	id: string
@@ -23,44 +25,38 @@ interface UserProfile {
 
 interface UserEvent {
 	id: string
-	eventId: string
-	eventCode: string
-	registeredAt: string | Date
-	event?: {
-		id: string
-		name: string
-		eventDate?: string
-		code?: string
-		isActive?: boolean
-		[key: string]: string | boolean | undefined
-	}
+	name?: string
+	startDate?: string
+	endDate?: string
+	code?: string
+	isActive?: boolean
+	createdAt?: string
+	updatedAt?: string
+	[key: string]: string | boolean | undefined
 }
 
 export const Route = createFileRoute('/_authed/profile')({
 	loader: async () => {
-		// Fetch profile data
-		const profileResponse = await fetch('/api/users/profile')
-		const profileData = (await profileResponse.json()) as {
-			success: boolean
-			data?: UserProfile
-			error?: string
-		}
-
-		// Fetch user events
-		const eventsResponse = await fetch('/api/users/events')
-		const eventsData = (await eventsResponse.json()) as {
-			success: boolean
-			events?: UserEvent[]
-			error?: string
-		}
-
-		if (!(profileResponse.ok && profileData.success)) {
-			throw new Error(profileData.error || 'Failed to load profile')
-		}
-
-		return {
-			profile: profileData.data || null,
-			userEvents: (eventsResponse.ok && eventsData.success && eventsData.events) || []
+		try {
+			const [profileData, eventsData] = await Promise.all([getProfileFn(), getUserEvents()])
+			const profile = profileData
+				? {
+						id: profileData.uid,
+						email: profileData.email ?? undefined,
+						displayName: profileData.displayName ?? undefined,
+						dateOfBirth: profileData.dateOfBirth ?? undefined
+					}
+				: null
+			return {
+				profile: profile as UserProfile | null,
+				userEvents: eventsData as UserEvent[]
+			}
+		} catch (error) {
+			console.error('Profile loader error:', error)
+			return {
+				profile: null,
+				userEvents: []
+			}
 		}
 	},
 	component: ProfileComponent
@@ -277,30 +273,17 @@ function ProfileComponent() {
 								{userEvents.map(userEvent => (
 									<Card data-testid='card-container' key={userEvent.id}>
 										<CardContent className='pt-6'>
-											{userEvent.event ? (
-												<>
-													<h3 className='font-semibold text-lg text-foreground'>
-														{userEvent.event.name}
-													</h3>
-													<p className='text-sm opacity-70'>
-														Date: {formatDate(userEvent.event.eventDate)}
-													</p>
-													{userEvent.event.code && (
-														<p className='text-sm opacity-70'>Code: {userEvent.event.code}</p>
-													)}
-													<p className='text-sm opacity-70'>
-														Registered: {formatDate(userEvent.registeredAt)}
-													</p>
-												</>
-											) : (
-												<>
-													<h3 className='font-semibold text-lg text-foreground'>
-														Event {userEvent.eventCode}
-													</h3>
-													<p className='text-sm opacity-70'>
-														Registered: {formatDate(userEvent.registeredAt)}
-													</p>
-												</>
+											<h3 className='font-semibold text-lg text-foreground'>
+												{userEvent.name || `Event ${userEvent.code || userEvent.id}`}
+											</h3>
+											<p className='text-sm opacity-70'>Date: {formatDate(userEvent.startDate)}</p>
+											{userEvent.code && (
+												<p className='text-sm opacity-70'>Code: {userEvent.code}</p>
+											)}
+											{userEvent.createdAt && (
+												<p className='text-sm opacity-70'>
+													Added: {formatDate(userEvent.createdAt)}
+												</p>
 											)}
 											<div className='mt-4 flex justify-end'>
 												<Button
