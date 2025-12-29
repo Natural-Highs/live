@@ -1,6 +1,7 @@
 import {createFileRoute, useNavigate} from '@tanstack/react-router'
 import {useState} from 'react'
 import {ConsentForm} from '@/components/forms/ConsentForm'
+import {Alert} from '@/components/ui'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
@@ -84,9 +85,7 @@ function ConsentComponent() {
 				navigate({to: '/authentication', replace: true})
 			}
 		} catch (err) {
-			setError(
-				err instanceof Error ? err.message : 'Failed to submit consent form'
-			)
+			setError(err instanceof Error ? err.message : 'Failed to submit consent form')
 			setSubmitting(false)
 		}
 	}
@@ -98,19 +97,15 @@ function ConsentComponent() {
 					<div className='mb-4 flex justify-center'>
 						<Logo size='md' />
 					</div>
-					<h1 className='mb-2 font-bold text-4xl text-base-content'>
-						Consent Form
-					</h1>
-					<p className='text-sm opacity-70'>
-						Please review and consent to participate
-					</p>
+					<h1 className='mb-2 font-bold text-4xl text-foreground'>Consent Form</h1>
+					<p className='text-sm opacity-70'>Please review and consent to participate</p>
 				</div>
 
 				<FormContainer>
 					{error && (
-						<div className='alert alert-error'>
+						<Alert variant='error' className='mb-4'>
 							<span>{error}</span>
-						</div>
+						</Alert>
 					)}
 
 					{template && (
@@ -123,12 +118,9 @@ function ConsentComponent() {
 					)}
 
 					{!template && (
-						<div className='alert alert-warning'>
-							<span>
-								Consent form template not available. Please contact an
-								administrator.
-							</span>
-						</div>
+						<Alert variant='warning'>
+							<span>Consent form template not available. Please contact an administrator.</span>
+						</Alert>
 					)}
 				</FormContainer>
 			</div>

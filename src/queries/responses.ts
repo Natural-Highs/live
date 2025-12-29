@@ -66,8 +66,7 @@ export const responsesQueryOptions = (filters?: ResponseFilters) =>
 			const processedResponses = data.responses.map(response => ({
 				...response,
 				createdAt:
-					typeof response.createdAt === 'object' &&
-					'toDate' in response.createdAt
+					typeof response.createdAt === 'object' && 'toDate' in response.createdAt
 						? response.createdAt.toDate()
 						: new Date(response.createdAt)
 			}))

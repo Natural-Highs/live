@@ -3,12 +3,15 @@ import 'survey-core/survey-core.css'
 import {Model} from 'survey-core'
 import {Survey} from 'survey-react-ui'
 
+// biome-ignore lint/suspicious/noExplicitAny: SurveyJS elements have dynamic structure from external library
+export type SurveyJSElement = Record<string, any>
+
 export interface SurveyJSJson {
 	title?: string
 	description?: string
 	pages: Array<{
 		name?: string
-		elements: any[]
+		elements: SurveyJSElement[]
 	}>
 	completedHtml?: string
 	showProgressBar?: boolean | string
@@ -25,7 +28,7 @@ interface SurveyRendererProps {
  * SurveyJS form renderer component
  *
  * Renders a SurveyJS form from JSON configuration and handles form submission.
- * Applies custom CSS styling to match DaisyUI theme. Supports progress bar display
+ * Applies custom CSS styling to match Natural Highs brand theme. Supports progress bar display
  * and error handling.
  *
  * @param props - Component props
@@ -51,7 +54,7 @@ export function SurveyRenderer({
 	onError,
 	showProgressBar = true
 }: SurveyRendererProps) {
-	// Apply custom CSS to match DaisyUI theme
+	// Apply custom CSS to match Natural Highs brand theme
 	useEffect(() => {
 		const style = document.createElement('style')
 		style.textContent = `
@@ -112,9 +115,7 @@ export function SurveyRenderer({
 			try {
 				await onSubmit(sender.data)
 			} catch (error) {
-				onError?.(
-					error instanceof Error ? error : new Error('Submission failed')
-				)
+				onError?.(error instanceof Error ? error : new Error('Submission failed'))
 			}
 		},
 		[onSubmit, onError]

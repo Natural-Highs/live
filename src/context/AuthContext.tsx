@@ -1,13 +1,6 @@
 import {getIdTokenResult, onAuthStateChanged, type User} from 'firebase/auth'
 import type React from 'react'
-import {
-	createContext,
-	type ReactNode,
-	useContext,
-	useEffect,
-	useRef,
-	useState
-} from 'react'
+import {createContext, type ReactNode, useContext, useEffect, useRef, useState} from 'react'
 import {auth} from '$lib/firebase/firebase.app'
 import type {AuthContextUserData} from './types/authContext'
 
@@ -89,7 +82,5 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
 		}
 	}, [])
 
-	return (
-		<AuthContext.Provider value={authState}>{children}</AuthContext.Provider>
-	)
+	return <AuthContext.Provider value={authState}>{children}</AuthContext.Provider>
 }

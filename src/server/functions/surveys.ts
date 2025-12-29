@@ -63,8 +63,8 @@ export const submitResponse = createServerFn({method: 'POST'}).handler(
 			...responseData,
 			submittedAt: responseData.submittedAt.toISOString(),
 			createdAt: responseData.createdAt.toISOString(),
-			// Cast responses to satisfy TanStack Start type requirements
-			responses: responseData.responses as Record<string, {}>
+			// biome-ignore lint/suspicious/noExplicitAny: TanStack Start serialization requires flexible object types
+			responses: responseData.responses as Record<string, any>
 		}
 	}
 )
@@ -95,12 +95,8 @@ export const getSurveyQuestions = createServerFn({method: 'GET'}).handler(
 		return {
 			id: doc.id,
 			...templateData,
-			createdAt:
-				templateData.createdAt?.toDate?.()?.toISOString() ??
-				templateData.createdAt,
-			updatedAt:
-				templateData.updatedAt?.toDate?.()?.toISOString() ??
-				templateData.updatedAt
+			createdAt: templateData.createdAt?.toDate?.()?.toISOString() ?? templateData.createdAt,
+			updatedAt: templateData.updatedAt?.toDate?.()?.toISOString() ?? templateData.updatedAt
 		}
 	}
 )
@@ -123,10 +119,12 @@ export const getAccessibleSurveys = createServerFn({method: 'GET'}).handler(
 			throw new NotFoundError('Event not found')
 		}
 
-		const eventData = eventDoc.data()!
+		const eventData = eventDoc.data()
+		if (!eventData) {
+			throw new NotFoundError('Event data not found')
+		}
 		const now = new Date()
-		const startDate =
-			eventData.startDate?.toDate?.() ?? new Date(eventData.startDate)
+		const startDate = eventData.startDate?.toDate?.() ?? new Date(eventData.startDate)
 		const endDate = eventData.endDate?.toDate?.() ?? new Date(eventData.endDate)
 
 		// Check if user is registered
@@ -148,22 +146,16 @@ export const getAccessibleSurveys = createServerFn({method: 'GET'}).handler(
 			.where('eventId', '==', eventId)
 			.get()
 
-		const hasPreResponse = responsesSnapshot.docs.some(
-			doc => doc.data().surveyType === 'pre'
-		)
-		const hasPostResponse = responsesSnapshot.docs.some(
-			doc => doc.data().surveyType === 'post'
-		)
+		const hasPreResponse = responsesSnapshot.docs.some(doc => doc.data().surveyType === 'pre')
+		const hasPostResponse = responsesSnapshot.docs.some(doc => doc.data().surveyType === 'post')
 
 		// Pre-survey: accessible before event starts (unless already submitted)
 		const preSurveyEnabled = eventData.preSurveyEnabled ?? true
-		const preSurveyAccessible =
-			preSurveyEnabled && now < startDate && !hasPreResponse
+		const preSurveyAccessible = preSurveyEnabled && now < startDate && !hasPreResponse
 
 		// Post-survey: accessible after event ends (unless already submitted)
 		const postSurveyEnabled = eventData.postSurveyEnabled ?? true
-		const postSurveyAccessible =
-			postSurveyEnabled && now > endDate && !hasPostResponse
+		const postSurveyAccessible = postSurveyEnabled && now > endDate && !hasPostResponse
 
 		return {
 			preSurveyAccessible,

@@ -1,35 +1,38 @@
 import {Link} from '@tanstack/react-router'
 import type React from 'react'
+import {Button} from '@/components/ui/button'
 import {useAuth} from '../context/AuthContext'
 
 const Navbar: React.FC = () => {
 	const {user, admin} = useAuth()
 
 	return (
-		<nav className='navbar bg-base-200'>
+		<nav className='flex items-center justify-between bg-muted px-4 py-2'>
 			<div className='flex-1'>
-				<Link className='btn btn-ghost text-xl' to='/'>
-					Natural Highs
+				<Link to='/'>
+					<Button variant='ghost' className='text-xl'>
+						Natural Highs
+					</Button>
 				</Link>
 			</div>
-			<div className='flex-none'>
+			<div className='flex items-center gap-2'>
 				{user ? (
 					<>
 						{admin && (
-							<Link className='btn btn-ghost' to='/admin-dashboard'>
-								Admin
+							<Link to='/admin-dashboard'>
+								<Button variant='ghost'>Admin</Button>
 							</Link>
 						)}
-						<Link className='btn btn-ghost' to='/dashboard'>
-							Dashboard
+						<Link to='/dashboard'>
+							<Button variant='ghost'>Dashboard</Button>
 						</Link>
-						<button className='btn btn-ghost' type='button'>
+						<Button variant='ghost' type='button'>
 							Logout
-						</button>
+						</Button>
 					</>
 				) : (
-					<Link className='btn btn-ghost' to='/authentication'>
-						Login
+					<Link to='/authentication'>
+						<Button variant='ghost'>Login</Button>
 					</Link>
 				)}
 			</div>

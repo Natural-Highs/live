@@ -20,7 +20,7 @@ const Logo = ({
 
 	return (
 		<div
-			className={`flex items-center justify-center rounded-lg bg-base-200 ${
+			className={`flex items-center justify-center rounded-lg bg-muted ${
 				sizeClasses[size]
 			} ${className || ''}`}
 			ref={ref}

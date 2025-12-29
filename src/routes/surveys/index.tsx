@@ -1,4 +1,6 @@
 import {createFileRoute, Link} from '@tanstack/react-router'
+import {Alert, Badge} from '@/components/ui'
+import {Card, CardContent} from '@/components/ui/card'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
@@ -46,8 +48,7 @@ function SurveysListComponent() {
 	const formatDate = (dateString?: string | Date): string => {
 		if (!dateString) return 'Date TBD'
 		try {
-			const date =
-				typeof dateString === 'string' ? new Date(dateString) : dateString
+			const date = typeof dateString === 'string' ? new Date(dateString) : dateString
 			return date.toLocaleDateString('en-US', {
 				year: 'numeric',
 				month: 'long',
@@ -60,13 +61,10 @@ function SurveysListComponent() {
 		}
 	}
 
-	const getTimeUntilAccessible = (
-		accessibleAt?: string | Date
-	): string | null => {
+	const getTimeUntilAccessible = (accessibleAt?: string | Date): string | null => {
 		if (!accessibleAt) return null
 		try {
-			const date =
-				typeof accessibleAt === 'string' ? new Date(accessibleAt) : accessibleAt
+			const date = typeof accessibleAt === 'string' ? new Date(accessibleAt) : accessibleAt
 			const now = new Date()
 			const diff = date.getTime() - now.getTime()
 
@@ -93,20 +91,16 @@ function SurveysListComponent() {
 					<div className='mb-4 flex justify-center'>
 						<Logo size='md' />
 					</div>
-					<h1 className='mb-2 font-bold text-4xl text-base-content'>
-						Available Surveys
-					</h1>
-					<p className='text-sm opacity-70'>
-						Complete surveys for your registered events
-					</p>
+					<h1 className='mb-2 font-bold text-4xl text-foreground'>Available Surveys</h1>
+					<p className='text-sm opacity-70'>Complete surveys for your registered events</p>
 				</div>
 
 				{surveys.length === 0 ? (
 					<FormContainer>
 						<div className='py-8 text-center'>
-							<p className='text-base-content opacity-70'>
-								No surveys available at this time. Surveys become available 1
-								hour after event activation.
+							<p className='text-foreground opacity-70'>
+								No surveys available at this time. Surveys become available 1 hour after event
+								activation.
 							</p>
 						</div>
 					</FormContainer>
@@ -115,17 +109,10 @@ function SurveysListComponent() {
 						{surveys.map((survey: EventSurvey) => {
 							const timeUntil = getTimeUntilAccessible(survey.accessibleAt)
 							return (
-								<div
-									className='card bg-base-200 shadow-xl'
-									key={`${survey.eventId}-${survey.surveyId}`}
-								>
-									<div className='card-body'>
-										<h3 className='card-title text-base-content'>
-											{survey.surveyName}
-										</h3>
-										<p className='text-sm opacity-70'>
-											Event: {survey.eventName}
-										</p>
+								<Card className='shadow-xl' key={`${survey.eventId}-${survey.surveyId}`}>
+									<CardContent className='pt-6'>
+										<h3 className='card-title text-foreground'>{survey.surveyName}</h3>
+										<p className='text-sm opacity-70'>Event: {survey.eventName}</p>
 										{survey.eventDate && (
 											<p className='text-sm opacity-70'>
 												Event Date: {formatDate(survey.eventDate)}
@@ -134,7 +121,7 @@ function SurveysListComponent() {
 
 										{survey.completed ? (
 											<div className='mt-4'>
-												<div className='badge badge-success'>Completed</div>
+												<Badge variant='success'>Completed</Badge>
 											</div>
 										) : survey.isAccessible ? (
 											<div className='card-actions mt-4 justify-end'>
@@ -148,21 +135,20 @@ function SurveysListComponent() {
 											</div>
 										) : (
 											<div className='mt-4'>
-												<div className='alert alert-info'>
+												<Alert variant='info'>
 													<span>
-														Survey will be available{' '}
-														{timeUntil ? `in ${timeUntil}` : 'soon'}
+														Survey will be available {timeUntil ? `in ${timeUntil}` : 'soon'}
 													</span>
 													{survey.accessibleAt && (
 														<p className='mt-1 text-xs'>
 															Available at: {formatDate(survey.accessibleAt)}
 														</p>
 													)}
-												</div>
+												</Alert>
 											</div>
 										)}
-									</div>
-								</div>
+									</CardContent>
+								</Card>
 							)
 						})}
 					</div>

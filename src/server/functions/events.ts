@@ -40,14 +40,10 @@ export const getEventByCode = createServerFn({method: 'GET'}).handler(
 		return {
 			id: doc.id,
 			...eventData,
-			startDate:
-				eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
-			endDate:
-				eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
-			createdAt:
-				eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
-			updatedAt:
-				eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
+			startDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
+			endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
+			createdAt: eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
+			updatedAt: eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
 		} as EventDocument
 	}
 )
@@ -74,14 +70,10 @@ export const getEvents = createServerFn({method: 'GET'}).handler(async () => {
 		return {
 			id: doc.id,
 			...eventData,
-			startDate:
-				eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
-			endDate:
-				eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
-			createdAt:
-				eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
-			updatedAt:
-				eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
+			startDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
+			endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
+			createdAt: eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
+			updatedAt: eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
 		} as EventDocument
 	})
 })
@@ -121,8 +113,7 @@ export const overrideSurveyTiming = createServerFn({method: 'POST'}).handler(
 		const validated = overrideSurveyTimingSchema.parse(data)
 		const {eventId, surveyType, enabled} = validated
 
-		const updateField =
-			surveyType === 'pre' ? 'preSurveyEnabled' : 'postSurveyEnabled'
+		const updateField = surveyType === 'pre' ? 'preSurveyEnabled' : 'postSurveyEnabled'
 
 		await db
 			.collection('events')
@@ -147,11 +138,7 @@ async function generateUniqueEventCode(): Promise<string> {
 		const code = Math.floor(1000 + Math.random() * 9000).toString()
 
 		// Check if code already exists
-		const snapshot = await db
-			.collection('events')
-			.where('eventCode', '==', code)
-			.limit(1)
-			.get()
+		const snapshot = await db.collection('events').where('eventCode', '==', code).limit(1).get()
 
 		if (snapshot.empty) {
 			return code
