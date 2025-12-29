@@ -10,7 +10,7 @@
  *   firebase emulators:start --only firestore
  *
  * Run with:
- *   FIRESTORE_EMULATOR_HOST="127.0.0.1:8080" bun run test src/tests/firestore/firestore.rules.test.ts
+ *   FIRESTORE_EMULATOR_HOST="127.0.0.1:8080" bun run test tests/firestore/firestore.rules.test.ts
  *
  * These tests are skipped in CI unless emulator is available.
  * For local development, start the emulator before running tests.
@@ -45,9 +45,7 @@ let testEnv: RulesTestEnvironment
 // Skip entire test suite if emulator is not configured
 describe.skipIf(skipTests)('Firestore Security Rules - NFR9 Minor Privacy Protection', () => {
 	beforeAll(async () => {
-		if (skipTests || !EMULATOR_HOST) {
-			return
-		}
+		if (skipTests || !EMULATOR_HOST) return
 
 		const parts = EMULATOR_HOST.split(':')
 		const host = parts[0]

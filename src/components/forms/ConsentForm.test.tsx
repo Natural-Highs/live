@@ -86,10 +86,11 @@ describe('ConsentForm', () => {
 		})
 	})
 
-	it('should have required attribute on checkbox', () => {
+	it('should have aria-required attribute on checkbox', () => {
 		render(<ConsentForm onSubmit={mockOnSubmit} />)
 
-		expect(screen.getByRole('checkbox')).toHaveAttribute('required')
+		// shadcn Checkbox uses aria-required instead of HTML required attribute
+		expect(screen.getByRole('checkbox')).toHaveAttribute('aria-required', 'true')
 	})
 
 	it('should have submit button type', () => {

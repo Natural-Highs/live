@@ -67,7 +67,9 @@ describe('QRScannerAdapter interface contract', () => {
 					onSuccessCallback = null
 				},
 				getCapabilities(): ScannerCapabilities | null {
-					if (!isRunning) return null
+					if (!isRunning) {
+						return null
+					}
 					return {
 						torchFeature: () => ({
 							isSupported: () => false,

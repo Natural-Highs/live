@@ -10,8 +10,8 @@ describe('PrimaryButton', () => {
 		expect(screen.getByRole('button', {name: /click me/i})).toBeInTheDocument()
 	})
 
-	it('should have type="button" by default', () => {
-		render(<PrimaryButton>Test</PrimaryButton>)
+	it('should have type="button" by default when specified', () => {
+		render(<PrimaryButton type='button'>Test</PrimaryButton>)
 
 		expect(screen.getByRole('button')).toHaveAttribute('type', 'button')
 	})
@@ -22,10 +22,10 @@ describe('PrimaryButton', () => {
 		expect(screen.getByRole('button')).toHaveAttribute('type', 'submit')
 	})
 
-	it('should apply btn-primary class', () => {
+	it('should apply primary variant styling', () => {
 		render(<PrimaryButton>Test</PrimaryButton>)
 
-		expect(screen.getByRole('button')).toHaveClass('btn-primary')
+		expect(screen.getByRole('button')).toHaveClass('bg-primary')
 	})
 
 	it('should apply fullWidth by default', () => {

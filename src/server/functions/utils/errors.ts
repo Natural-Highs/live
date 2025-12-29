@@ -42,9 +42,16 @@ export class ConflictError extends Error {
 	 */
 	readonly code = CONFLICT_ERROR_CODE
 
-	constructor(message: string) {
+	/**
+	 * Original check-in timestamp for duplicate check-in errors (FR9).
+	 * ISO 8601 format string when available.
+	 */
+	readonly checkedInAt?: string
+
+	constructor(message: string, checkedInAt?: string) {
 		super(message)
 		this.name = 'ConflictError'
+		this.checkedInAt = checkedInAt
 	}
 }
 
@@ -77,6 +84,7 @@ export function formatErrorResponse(error: unknown): {
 	message: string
 	statusCode: number
 	scheduledTime?: string
+	checkedInAt?: string
 } {
 	if (error instanceof AuthenticationError) {
 		return {error: 'Unauthorized', message: error.message, statusCode: 401}
@@ -95,7 +103,12 @@ export function formatErrorResponse(error: unknown): {
 	}
 
 	if (error instanceof ConflictError) {
-		return {error: 'Conflict', message: error.message, statusCode: 409}
+		return {
+			error: 'Conflict',
+			message: error.message,
+			statusCode: 409,
+			checkedInAt: error.checkedInAt
+		}
 	}
 
 	if (error instanceof TimeWindowError) {

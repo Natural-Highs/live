@@ -67,7 +67,7 @@ const test = base.extend<{
 	}
 })
 
-test.describe('Unauthenticated User Redirects', () => {
+test.describe('Unauthenticated User Redirects @smoke', () => {
 	test('redirects from /dashboard to /authentication', async ({page, setupUnauthenticated}) => {
 		await setupUnauthenticated()
 

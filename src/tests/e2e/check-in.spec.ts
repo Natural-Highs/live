@@ -23,7 +23,7 @@
 import {TEST_CODES} from '../factories/events.factory'
 import {expect, test} from '../fixtures/auth.fixture'
 
-test.describe('User Check-in Flow', () => {
+test.describe('User Check-in Flow @smoke', () => {
 	test.describe('AC1: Check-in Happy Path', () => {
 		test('should display OTP-style check-in input on dashboard', async ({
 			page,
@@ -739,6 +739,115 @@ test.describe('User Check-in Flow', () => {
 			// THEN: Should show error on second attempt
 			await expect(page.getByTestId('check-in-error')).toBeVisible()
 			expect(checkInCallCount).toBe(2) // Both calls were made, but second was rejected
+		})
+
+		// FR9: Show original check-in time on duplicate attempt
+		test('should display original check-in time when user attempts duplicate check-in', async ({
+			page,
+			authenticatedUser: _
+		}) => {
+			// GIVEN: User has already checked in at 2:30 PM
+			const checkedInAt = '2025-01-15T14:30:00Z'
+			await page.route('**/api/users/eventCode', route => {
+				if (route.request().method() === 'POST') {
+					route.fulfill({
+						status: 409,
+						contentType: 'application/json',
+						body: JSON.stringify({
+							success: false,
+							error: 'Already registered for this event',
+							checkedInAt
+						})
+					})
+				} else {
+					route.continue()
+				}
+			})
+
+			await page.goto('/dashboard')
+			await page.waitForLoadState('networkidle')
+
+			// WHEN: User tries to check in again
+			const input = page.getByTestId('event-code-input')
+			await input.fill(TEST_CODES.VALID)
+
+			// THEN: Should show duplicate message with original check-in time
+			await expect(page.getByTestId('check-in-error')).toBeVisible()
+			await expect(page.getByTestId('check-in-error')).toContainText(/already checked in/i)
+			await expect(page.getByTestId('check-in-error')).toContainText(/Checked in at/i)
+		})
+
+		// AC3: Dismiss duplicate message returns to clean state
+		test('should clear input and return to ready state after duplicate error', async ({
+			page,
+			authenticatedUser: _
+		}) => {
+			// GIVEN: User attempts duplicate check-in
+			await page.route('**/api/users/eventCode', route => {
+				if (route.request().method() === 'POST') {
+					route.fulfill({
+						status: 409,
+						contentType: 'application/json',
+						body: JSON.stringify({
+							success: false,
+							error: 'Already registered for this event'
+						})
+					})
+				} else {
+					route.continue()
+				}
+			})
+
+			await page.goto('/dashboard')
+			await page.waitForLoadState('networkidle')
+
+			// WHEN: User submits code
+			const input = page.getByTestId('event-code-input')
+			await input.fill(TEST_CODES.VALID)
+
+			// THEN: Error shows
+			await expect(page.getByTestId('check-in-error')).toBeVisible()
+
+			// AND: Input is cleared after shake animation (500ms)
+			await expect(input).toHaveValue('', {timeout: 1500})
+
+			// AND: Input is ready for new entry
+			await expect(input).toBeEnabled()
+		})
+	})
+
+	// FR75: Inactive event codes should return "Code not found"
+	test.describe('AC7: Inactive Event Code Handling (FR75)', () => {
+		test('should show code not found for inactive event code', async ({
+			page,
+			authenticatedUser: _
+		}) => {
+			// GIVEN: Code matches an inactive event (server filters by isActive)
+			await page.route('**/api/users/eventCode', route => {
+				if (route.request().method() === 'POST') {
+					route.fulfill({
+						status: 404,
+						contentType: 'application/json',
+						body: JSON.stringify({
+							success: false,
+							error: 'Event not found with this code'
+						})
+					})
+				} else {
+					route.continue()
+				}
+			})
+
+			await page.goto('/dashboard')
+			await page.waitForLoadState('networkidle')
+
+			// WHEN: User enters code for inactive event
+			const input = page.getByTestId('event-code-input')
+			await input.fill(TEST_CODES.VALID)
+
+			// THEN: Should show "Code not found" error
+			await expect(page.getByTestId('check-in-error')).toBeVisible()
+			await expect(page.getByTestId('check-in-error')).toContainText(/code not found/i)
 		})
 	})
 

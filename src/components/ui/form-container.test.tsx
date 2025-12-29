@@ -24,7 +24,7 @@ describe('FormContainer', () => {
 		expect(container).toHaveClass('relative')
 		expect(container).toHaveClass('space-y-4')
 		expect(container).toHaveClass('rounded-lg')
-		expect(container).toHaveClass('bg-base-200')
+		expect(container).toHaveClass('bg-muted')
 		expect(container).toHaveClass('p-6')
 	})
 
