@@ -186,6 +186,7 @@ export const test = base.extend<AuthFixtures>({
 			window.localStorage.setItem('emailForSignIn', email)
 		}, mockUser.email)
 
+<<<<<<< HEAD
 		// Mock Firebase Auth
 		await page.route('**/identitytoolkit.googleapis.com/**', route => {
 			route.fulfill({
@@ -203,6 +204,16 @@ export const test = base.extend<AuthFixtures>({
 				body: JSON.stringify({success: true})
 			})
 		})
+=======
+		// Inject session cookie with default claims
+		// signedConsentForm: true - user has signed consent
+		// profileComplete: true - user has completed profile (can access dashboard)
+		//
+		// Note: The dashboard route requires profileComplete: true in session claims.
+		// Without this, the route redirects to profile creation flow.
+		// See: src/routes/_authed/dashboard.tsx loader or beforeLoad guards
+		await injectSessionCookie(context, testUser, {signedConsentForm: true, profileComplete: true})
+>>>>>>> e4ef5165 (feat(tests): standardize test architecture with fixture composition)
 
 		await use(mockUser)
 

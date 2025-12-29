@@ -597,11 +597,11 @@ test.describe('Passkey Network Error Handling', () => {
 			await expect(page.getByRole('button', {name: /sign in with passkey/i})).toBeVisible()
 			await page.getByRole('button', {name: /sign in with passkey/i}).click()
 
-			// Wait for authentication ceremony to complete
-			await page.waitForTimeout(1000)
-
+			// Wait for authentication ceremony to complete by waiting for error message
 			// THEN: Should show network error message
-			await expect(page.getByText(/network error|connection issue|try again/i)).toBeVisible()
+			await expect(page.getByText(/network error|connection issue|try again/i)).toBeVisible({
+				timeout: 5000
+			})
 
 			// AND: Should offer magic link fallback
 			const fallbackButton = page.getByRole('button', {name: /use magic link|magic link instead/i})
@@ -671,17 +671,15 @@ test.describe('Passkey Network Error Handling', () => {
 
 			// WHEN: First attempt fails with network error
 			await page.getByRole('button', {name: /sign in with passkey/i}).click()
-			await page.waitForTimeout(1000)
 
-			// THEN: Should show error
-			await expect(page.getByText(/network|timeout|try again/i)).toBeVisible()
+			// THEN: Should show error - wait for it instead of arbitrary timeout
+			await expect(page.getByText(/network|timeout|try again/i)).toBeVisible({timeout: 5000})
 
 			// WHEN: User retries
 			await page.getByRole('button', {name: /sign in with passkey/i}).click()
-			await page.waitForTimeout(1000)
 
 			// THEN: Second attempt succeeds (shows success state)
-			await expect(page.getByText(/signed in|verifying/i)).toBeVisible()
+			await expect(page.getByText(/signed in|verifying/i)).toBeVisible({timeout: 5000})
 		} finally {
 			await removeVirtualAuthenticator(client, authenticatorId)
 		}
