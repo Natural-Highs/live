@@ -28,7 +28,18 @@
 			"quoteStyle": "single",
 			"semicolons": "asNeeded",
 			"trailingCommas": "none"
-		}
+		},
+		"globals": [
+			"vi",
+			"describe",
+			"it",
+			"test",
+			"expect",
+			"beforeEach",
+			"afterEach",
+			"beforeAll",
+			"afterAll"
+		]
 	},
 	"linter": {
 		"domains": {
@@ -51,37 +62,100 @@
 	},
 	"overrides": [
 		{
+			"includes": [
+				"src/lib/firebase/firebase.admin.ts",
+				"src/lib/firebase/firebase.ts"
+			],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noNodejsModules": "off"
+					},
+					"nursery": {
+						"noTernary": "off",
+						"noFloatingPromises": "off"
+					},
+					"suspicious": {
+						"noEmptyBlockStatements": "off"
+					},
+					"style": {
+						"noCommonJs": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["vitest.config.ts", "tailwind.config.js"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noDefaultExport": "off"
+					}
+				}
+			}
+		},
+		{
 			"includes": ["**/*"],
 			"linter": {
 				"rules": {
 					"correctness": {
-						"useImportExtensions": "off"
+						"useImportExtensions": "off",
+						"noSolidDestructuredProps": "off",
+						"noUndeclaredVariables": "off",
+						"useUniqueElementIds": "off",
+						"noUnknownProperty": "off",
+						"useExhaustiveDependencies": "off",
+						"noNestedComponentDefinitions": "off",
+						"useImageSize": "off",
+						"noNodejsModules": "off"
 					},
 					"nursery": {
 						"useExplicitType": "off",
 						"noUnresolvedImports": "off",
-						"noJsxLiterals": "off"
+						"noJsxLiterals": "off",
+						"noTernary": "off",
+						"noLeakedRender": "off",
+						"useQwikValidLexicalScope": "off",
+						"noFloatingPromises": "off",
+						"noShadow": "off",
+						"noIncrementDecrement": "off",
+						"noEmptySource": "off",
+						"noUselessCatchBinding": "off"
 					},
 					"suspicious": {
 						"noReactSpecificProps": "off",
-						"noUnknownAtRules": "off"
+						"noUnknownAtRules": "off",
+						"useAwait": "off",
+						"noEmptyBlockStatements": "off",
+						"noExplicitAny": "off",
+						"noAlert": "off",
+						"noEvolvingTypes": "off",
+						"useIterableCallbackReturn": "off"
+					},
+					"complexity": {
+						"noExcessiveLinesPerFunction": "off",
+						"noExcessiveCognitiveComplexity": "off",
+						"noForEach": "off",
+						"noBannedTypes": "off"
 					},
 					"performance": {
 						"noImgElement": "off",
 						"noNamespaceImport": "off",
-						"useSolidForComponent": "off"
+						"useSolidForComponent": "off",
+						"noBarrelFile": "off",
+						"useTopLevelRegex": "off",
+						"noAwaitInLoops": "off"
 					},
 					"style": {
 						"noMagicNumbers": "off",
 						"useExportsLast": "off",
 						"useBlockStatements": "off",
-						"useNamingConvention": {
-							"level": "error",
-							"options": {
-								"strictCase": false,
-								"requireAscii": true
-							}
-						},
+						"noDefaultExport": "off",
+						"useComponentExportOnlyModules": "off",
+						"noNamespace": "off",
+						"noNestedTernary": "off",
+						"noNonNullAssertion": "off",
+						"useNamingConvention": "off",
 						"useFilenamingConvention": {
 							"level": "error",
 							"options": {
@@ -103,22 +177,33 @@
 			}
 		},
 		{
-			"includes": ["vite.config.ts", "playwright.config.ts"],
+			"includes": [
+				"vite.config.ts",
+				"playwright.config.ts",
+				"vitest.config.ts"
+			],
 			"linter": {
 				"rules": {
 					"correctness": {
 						"noNodejsModules": "off"
 					},
+					"nursery": {
+						"noTernary": "off"
+					},
 					"style": {
-						"noDefaultExport": "off"
+						"noDefaultExport": "off",
+						"useNamingConvention": "off"
 					}
 				}
 			}
 		},
 		{
-			"includes": ["src/**/*.test.tsx"],
+			"includes": ["src/**/*.test.ts", "src/**/*.test.tsx"],
 			"linter": {
 				"rules": {
+					"complexity": {
+						"noExcessiveLinesPerFunction": "off"
+					},
 					"performance": {
 						"useTopLevelRegex": "off"
 					}

@@ -1,0 +1,239 @@
+{
+	"indexes": [
+		{
+			"collectionGroup": "users",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "email",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "users",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "phone",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "users",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "isGuest",
+					"order": "ASCENDING"
+				},
+				{
+					"fieldPath": "email",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "users",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "isGuest",
+					"order": "ASCENDING"
+				},
+				{
+					"fieldPath": "phone",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "events",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "code",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "events",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "isActive",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "events",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "eventTypeId",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "events",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "eventDate",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "events",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "code",
+					"order": "ASCENDING"
+				},
+				{
+					"fieldPath": "isActive",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "formTemplates",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "type",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "surveys",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "isActive",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "questions",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "surveyId",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "surveyResponses",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "userId",
+					"order": "ASCENDING"
+				},
+				{
+					"fieldPath": "surveyId",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "surveyResponses",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "userId",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "surveyResponses",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "surveyId",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "responses",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "surveyResponseId",
+					"order": "ASCENDING"
+				},
+				{
+					"fieldPath": "questionId",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "responses",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "surveyResponseId",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "responses",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "questionId",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "userEvents",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "userId",
+					"order": "ASCENDING"
+				},
+				{
+					"fieldPath": "eventId",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "userEvents",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "userId",
+					"order": "ASCENDING"
+				}
+			]
+		},
+		{
+			"collectionGroup": "userEvents",
+			"queryScope": "COLLECTION",
+			"fields": [
+				{
+					"fieldPath": "eventId",
+					"order": "ASCENDING"
+				}
+			]
+		}
+	],
+	"fieldOverrides": []
+}
