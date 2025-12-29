@@ -1,43 +1,15 @@
 import {createFileRoute, useNavigate} from '@tanstack/react-router'
 import {isSignInWithEmailLink, signInWithEmailLink} from 'firebase/auth'
 import {useCallback, useEffect, useState} from 'react'
-import {Alert, BrandLogo, Input, Label, Spinner} from '@/components/ui'
-import {Button} from '@/components/ui/button'
+import {BrandLogo} from '@/components/ui'
 import GreenCard from '@/components/ui/GreenCard'
+import GreyButton from '@/components/ui/GreyButton'
+import GrnButton from '@/components/ui/GrnButton'
 import {PageContainer} from '@/components/ui/page-container'
 import TitleCard from '@/components/ui/TitleCard'
 import {clearEmailForSignIn, getEmailForSignIn} from '$lib/auth/magic-link'
 import {auth} from '$lib/firebase/firebase.app'
-import {createSessionFn} from '@/server/functions/auth'
 import {useAuth} from '../context/AuthContext'
-
-/**
- * Type definition for createSessionFn data parameter.
- * Extracted to improve type safety at call sites.
- * Note: TanStack Start's createServerFn type inference doesn't properly
- * infer the data parameter type, requiring explicit typing here.
- */
-type CreateSessionData = {
-	uid: string
-	email: string | null
-	displayName: string | null
-	idToken: string
-}
-
-/**
- * Type-safe wrapper for createSessionFn.
- * Works around TanStack Start's type inference limitations.
- */
-type CreateSessionFnType = (opts: {data: CreateSessionData}) => Promise<{
-	success: true
-	user: {
-		uid: string
-		email: string | null
-		displayName: string | null
-		photoURL: null
-		claims: {admin?: boolean; signedConsentForm?: boolean}
-	}
-}>
 
 type MagicLinkState = 'loading' | 'cross-device-prompt' | 'signing-in' | 'success' | 'error'
 
@@ -76,72 +48,59 @@ function MagicLinkComponent() {
 	const [error, setError] = useState('')
 	const [userName, setUserName] = useState('')
 
-	const handleSignIn = useCallback(
-		async (emailToUse: string) => {
-			if (!auth) {
-				setState('error')
-				setError('Authentication service is not available.')
-				return
+	const handleSignIn = useCallback(async (emailToUse: string) => {
+		if (!auth) {
+			setState('error')
+			setError('Authentication service is not available.')
+			return
+		}
+
+		setState('signing-in')
+		setError('')
+
+		try {
+			const currentUrl = window.location.href
+			const result = await signInWithEmailLink(auth, emailToUse, currentUrl)
+
+			// Clear stored email after successful sign-in
+			clearEmailForSignIn()
+
+			// Get ID token for session creation
+			const idToken = await result.user.getIdToken()
+
+			// Create server session
+			const sessionResponse = await fetch('/api/auth/sessionLogin', {
+				method: 'POST',
+				headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify({idToken})
+			})
+
+			if (!sessionResponse.ok) {
+				const data = await sessionResponse.json()
+				throw new Error(data.error || 'Failed to create session')
 			}
 
-			setState('signing-in')
-			setError('')
+			// Extract user name for welcome message
+			const displayName = result.user.displayName || result.user.email?.split('@')[0] || 'User'
+			setUserName(displayName)
+			setState('success')
 
-			try {
-				const currentUrl = window.location.href
-				const result = await signInWithEmailLink(auth, emailToUse, currentUrl)
-
-				// Clear stored email after successful sign-in
-				clearEmailForSignIn()
-
-				// Get ID token for session creation
-				const idToken = await result.user.getIdToken()
-
-				// Create TanStack server session via createSessionFn
-				// This replaces the legacy /api/auth/sessionLogin endpoint
-				// Type assertion needed because TanStack Start handler type doesn't infer data type from handler signature
-				//
-				// SAFETY: TanStack Start's createServerFn doesn't expose typed call signature.
-				// See type definitions above for explicit contract.
-				const sessionResult = await (createSessionFn as unknown as CreateSessionFnType)({
-					data: {
-						uid: result.user.uid,
-						email: result.user.email ?? null,
-						displayName: result.user.displayName ?? null,
-						idToken
-					}
-				})
-
-				if (!sessionResult.success) {
-					throw new Error('Failed to create session')
-				}
-
-				// Extract user name for welcome message
-				const displayName = result.user.displayName || result.user.email?.split('@')[0] || 'User'
-				setUserName(displayName)
-				setState('success')
-
-				// Note: AuthContext syncs automatically via onAuthStateChanged
-				// which fires after signInWithEmailLink succeeds (M1)
-
-				// Redirect to dashboard using router navigation
-				// Delay increased to 3000ms for screen reader accessibility
-				setTimeout(() => {
-					navigate({to: '/dashboard'})
-				}, 3000)
-			} catch (err) {
-				setState('error')
-				if (err && typeof err === 'object' && 'code' in err) {
-					setError(getErrorMessage(err as MagicLinkError))
-				} else if (err instanceof Error) {
-					setError(err.message)
-				} else {
-					setError('An unexpected error occurred. Please try again.')
-				}
+			// Redirect to dashboard using router navigation
+			// Delay increased to 3000ms for screen reader accessibility
+			setTimeout(() => {
+				navigate({to: '/dashboard'})
+			}, 3000)
+		} catch (err) {
+			setState('error')
+			if (err && typeof err === 'object' && 'code' in err) {
+				setError(getErrorMessage(err as MagicLinkError))
+			} else if (err instanceof Error) {
+				setError(err.message)
+			} else {
+				setError('An unexpected error occurred. Please try again.')
 			}
-		},
-		[navigate]
-	)
+		}
+	}, [])
 
 	useEffect(() => {
 		if (authLoading) return
@@ -202,7 +161,7 @@ function MagicLinkComponent() {
 					<h1>Signing In</h1>
 				</TitleCard>
 				<GreenCard className='flex max-w-full! flex-col items-center'>
-					<Spinner size='lg' />
+					<span className='loading loading-spinner loading-lg' />
 					<p className='mt-4 text-gray-600'>Verifying your sign-in link...</p>
 				</GreenCard>
 			</PageContainer>
@@ -234,7 +193,7 @@ function MagicLinkComponent() {
 					</div>
 					<h2 className='mb-2 font-semibold text-xl'>Welcome back, {userName}</h2>
 					<p className='text-gray-600'>Redirecting to your dashboard...</p>
-					<Spinner size='sm' className='mt-4' />
+					<span className='loading loading-spinner loading-sm mt-4' />
 				</GreenCard>
 			</PageContainer>
 		)
@@ -263,16 +222,16 @@ function MagicLinkComponent() {
 					<div aria-label='Error' className='mb-4 text-6xl' role='img'>
 						⚠️
 					</div>
-					<Alert variant='error' className='mb-4'>
+					<div className='alert alert-error mb-4' role='alert'>
 						<span>{error}</span>
-					</Alert>
-					<Button
+					</div>
+					<GrnButton
 						data-testid='request-new-link-button'
 						onClick={handleRequestNewLink}
 						type='button'
 					>
 						Request a New Link
-					</Button>
+					</GrnButton>
 				</GreenCard>
 			</PageContainer>
 		)
@@ -301,10 +260,13 @@ function MagicLinkComponent() {
 					</p>
 
 					<form className='space-y-4' onSubmit={handleCrossDeviceSubmit}>
-						<div className='flex flex-col gap-1'>
-							<Label htmlFor='email'>Email</Label>
-							<Input
+						<div className='form-control flex flex-col'>
+							<label className='label' htmlFor='email'>
+								<span className='label-text'>Email</span>
+							</label>
+							<input
 								autoComplete='email'
+								className='input input-bordered w-full'
 								data-testid='cross-device-email-input'
 								id='email'
 								name='email'
@@ -316,20 +278,20 @@ function MagicLinkComponent() {
 							/>
 						</div>
 
-						<Button
+						<GrnButton
 							data-testid='cross-device-continue-button'
 							disabled={!email.trim()}
 							type='submit'
 						>
 							Continue
-						</Button>
+						</GrnButton>
 					</form>
 
 					<div className='divider'>OR</div>
 
-					<Button onClick={handleRequestNewLink} type='button' variant='secondary'>
+					<GreyButton onClick={handleRequestNewLink} type='button'>
 						Request a New Link
-					</Button>
+					</GreyButton>
 				</GreenCard>
 			</PageContainer>
 		)
@@ -351,7 +313,7 @@ function MagicLinkComponent() {
 				<h1>Signing In</h1>
 			</TitleCard>
 			<GreenCard className='flex max-w-full! flex-col items-center'>
-				<Spinner size='lg' />
+				<span className='loading loading-spinner loading-lg' />
 				<p className='mt-4 text-gray-600'>Signing you in...</p>
 			</GreenCard>
 		</PageContainer>

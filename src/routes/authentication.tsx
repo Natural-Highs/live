@@ -1,14 +1,15 @@
 import {useForm} from '@tanstack/react-form'
-import {createFileRoute, redirect, useNavigate, useRouter} from '@tanstack/react-router'
+import {createFileRoute, useNavigate} from '@tanstack/react-router'
 import {createUserWithEmailAndPassword, signInWithEmailAndPassword} from 'firebase/auth'
 import type React from 'react'
 import {useState} from 'react'
 import {z} from 'zod'
 import {MagicLinkRequest} from '@/components/auth/MagicLinkRequest'
 import {MagicLinkSent} from '@/components/auth/MagicLinkSent'
-import {Alert, BrandLogo, Input, Label, Spinner} from '@/components/ui'
-import {Button} from '@/components/ui/button'
+import {BrandLogo} from '@/components/ui'
 import GreenCard from '@/components/ui/GreenCard'
+import GreyButton from '@/components/ui/GreyButton'
+import GrnButton from '@/components/ui/GrnButton'
 import {PageContainer} from '@/components/ui/page-container'
 import TitleCard from '@/components/ui/TitleCard'
 import {auth} from '$lib/firebase/firebase.app'
@@ -37,12 +38,6 @@ type SignupFormValues = z.infer<typeof signupSchema>
 type AuthView = 'magic-link' | 'magic-link-sent' | 'password' | 'signup'
 
 export const Route = createFileRoute('/authentication')({
-	beforeLoad: async ({context}) => {
-		// Redirect authenticated users to dashboard
-		if (context.auth.isAuthenticated) {
-			throw redirect({to: '/dashboard'})
-		}
-	},
 	component: AuthenticationComponent
 })
 
@@ -52,7 +47,6 @@ function AuthenticationComponent() {
 	const [magicLinkEmail, setMagicLinkEmail] = useState('')
 	const [authError, setAuthError] = useState('')
 	const navigate = useNavigate()
-	const router = useRouter()
 
 	const loginForm = useForm({
 		defaultValues: {
@@ -79,7 +73,7 @@ function AuthenticationComponent() {
 	if (loading) {
 		return (
 			<div className='flex min-h-screen items-center justify-center bg-linear-to-b from-green-100 to-green-50'>
-				<Spinner size='lg' />
+				<span className='loading loading-spinner loading-lg' />
 			</div>
 		)
 	}
@@ -102,8 +96,7 @@ function AuthenticationComponent() {
 			})
 
 			if (sessionResponse.ok) {
-				// Invalidate router to re-run beforeLoad hooks with new session
-				await router.invalidate()
+				window.location.reload()
 			} else {
 				const data = await sessionResponse.json()
 				setAuthError(data.error || 'Failed to create session')
@@ -163,7 +156,7 @@ function AuthenticationComponent() {
 			})
 
 			if (sessionResponse.ok) {
-				navigate({to: '/signup/about-you'})
+				window.location.href = '/signup/about-you'
 			} else {
 				const data = await sessionResponse.json()
 				setAuthError(data.error || 'Failed to create session')
@@ -228,21 +221,20 @@ function AuthenticationComponent() {
 
 					<div className='flex w-[22.5rem] flex-col items-center text-center'>
 						<div className='divider'>OR</div>
-						<Button
+						<GreyButton
 							onClick={() => {
 								setAuthView('password')
 								setAuthError('')
 							}}
 							type='button'
-							variant='secondary'
 						>
 							Sign in with Password
-						</Button>
+						</GreyButton>
 
 						<div className='divider'>OR</div>
-						<Button onClick={() => navigate({to: '/guest'})} type='button' variant='secondary'>
+						<GreyButton onClick={() => navigate({to: '/guest'})} type='button'>
 							Continue as Guest
-						</Button>
+						</GreyButton>
 					</div>
 				</>
 			)}
@@ -257,9 +249,9 @@ function AuthenticationComponent() {
 				<>
 					<GreenCard className='flex max-w-full! flex-col' data-testid='password-login-form'>
 						{authError && (
-							<Alert variant='error' className='mb-4'>
+							<div className='alert alert-error'>
 								<span>{authError}</span>
-							</Alert>
+							</div>
 						)}
 
 						<form
@@ -277,9 +269,12 @@ function AuthenticationComponent() {
 								}}
 							>
 								{field => (
-									<div className='flex flex-col gap-1'>
-										<Label htmlFor={field.name}>Email</Label>
-										<Input
+									<div className='form-control flex flex-col'>
+										<label className='label' htmlFor={field.name}>
+											<span className='label-text'>Email</span>
+										</label>
+										<input
+											className='input input-bordered w-full'
 											id={field.name}
 											name={field.name}
 											onBlur={field.handleBlur}
@@ -289,9 +284,11 @@ function AuthenticationComponent() {
 											value={field.state.value}
 										/>
 										{field.state.meta.errors.length > 0 && (
-											<span className='text-destructive text-sm'>
-												{String(field.state.meta.errors[0])}
-											</span>
+											<div className='label'>
+												<span className='label-text-alt text-error'>
+													{String(field.state.meta.errors[0])}
+												</span>
+											</div>
 										)}
 									</div>
 								)}
@@ -304,9 +301,12 @@ function AuthenticationComponent() {
 								}}
 							>
 								{field => (
-									<div className='flex flex-col gap-1'>
-										<Label htmlFor={field.name}>Password</Label>
-										<Input
+									<div className='form-control flex flex-col'>
+										<label className='label' htmlFor={field.name}>
+											<span className='label-text'>Password</span>
+										</label>
+										<input
+											className='input input-bordered w-full'
 											id={field.name}
 											name={field.name}
 											onBlur={field.handleBlur}
@@ -315,49 +315,49 @@ function AuthenticationComponent() {
 											value={field.state.value}
 										/>
 										{field.state.meta.errors.length > 0 && (
-											<span className='text-destructive text-sm'>
-												{String(field.state.meta.errors[0])}
-											</span>
+											<div className='label'>
+												<span className='label-text-alt text-error'>
+													{String(field.state.meta.errors[0])}
+												</span>
+											</div>
 										)}
 									</div>
 								)}
 							</loginForm.Field>
 
-							<Button type='submit'>Sign In</Button>
+							<GrnButton type='submit'>Sign In</GrnButton>
 						</form>
 					</GreenCard>
 
 					<div className='flex w-[22.5rem] flex-col items-center text-center'>
 						<div className='divider'>OR</div>
-						<Button
+						<GreyButton
 							onClick={() => {
 								setAuthView('magic-link')
 								setAuthError('')
 								loginForm.reset()
 							}}
 							type='button'
-							variant='secondary'
 						>
 							Sign in with Magic Link
-						</Button>
+						</GreyButton>
 
 						<div className='divider'>OR</div>
-						<Button
+						<GreyButton
 							onClick={() => {
 								setAuthView('signup')
 								setAuthError('')
 								loginForm.reset()
 							}}
 							type='button'
-							variant='secondary'
 						>
 							Sign Up
-						</Button>
+						</GreyButton>
 
 						<div className='divider'>OR</div>
-						<Button onClick={() => navigate({to: '/guest'})} type='button' variant='secondary'>
+						<GreyButton onClick={() => navigate({to: '/guest'})} type='button'>
 							Continue as Guest
-						</Button>
+						</GreyButton>
 					</div>
 				</>
 			)}
@@ -367,9 +367,9 @@ function AuthenticationComponent() {
 				<>
 					<GreenCard className='flex max-w-full! flex-col'>
 						{authError && (
-							<Alert variant='error' className='mb-4'>
+							<div className='alert alert-error'>
 								<span>{authError}</span>
-							</Alert>
+							</div>
 						)}
 
 						<signupForm.Field
@@ -379,9 +379,12 @@ function AuthenticationComponent() {
 							}}
 						>
 							{field => (
-								<div className='flex flex-col gap-1'>
-									<Label htmlFor={field.name}>Username</Label>
-									<Input
+								<div className='form-control flex flex-col'>
+									<label className='label' htmlFor={field.name}>
+										<span className='label-text'>Username</span>
+									</label>
+									<input
+										className='input input-bordered w-full'
 										id={field.name}
 										name={field.name}
 										onBlur={field.handleBlur}
@@ -391,9 +394,11 @@ function AuthenticationComponent() {
 										value={field.state.value}
 									/>
 									{field.state.meta.errors.length > 0 && (
-										<span className='text-destructive text-sm'>
-											{String(field.state.meta.errors[0])}
-										</span>
+										<div className='label'>
+											<span className='label-text-alt text-error'>
+												{String(field.state.meta.errors[0])}
+											</span>
+										</div>
 									)}
 								</div>
 							)}
@@ -406,9 +411,12 @@ function AuthenticationComponent() {
 							}}
 						>
 							{field => (
-								<div className='flex flex-col gap-1'>
-									<Label htmlFor={field.name}>Email</Label>
-									<Input
+								<div className='form-control flex flex-col gap-1'>
+									<label className='label' htmlFor={field.name}>
+										<span className='label-text'>Email</span>
+									</label>
+									<input
+										className='input input-bordered w-full'
 										id={field.name}
 										name={field.name}
 										onBlur={field.handleBlur}
@@ -418,9 +426,11 @@ function AuthenticationComponent() {
 										value={field.state.value}
 									/>
 									{field.state.meta.errors.length > 0 && (
-										<span className='text-destructive text-sm'>
-											{String(field.state.meta.errors[0])}
-										</span>
+										<div className='label'>
+											<span className='label-text-alt text-error'>
+												{String(field.state.meta.errors[0])}
+											</span>
+										</div>
 									)}
 								</div>
 							)}
@@ -433,9 +443,12 @@ function AuthenticationComponent() {
 							}}
 						>
 							{field => (
-								<div className='flex flex-col gap-1'>
-									<Label htmlFor={field.name}>Password</Label>
-									<Input
+								<div className='form-control flex flex-col'>
+									<label className='label' htmlFor={field.name}>
+										<span className='label-text'>Password</span>
+									</label>
+									<input
+										className='input input-bordered w-full'
 										id={field.name}
 										name={field.name}
 										onBlur={field.handleBlur}
@@ -444,9 +457,11 @@ function AuthenticationComponent() {
 										value={field.state.value}
 									/>
 									{field.state.meta.errors.length > 0 && (
-										<span className='text-destructive text-sm'>
-											{String(field.state.meta.errors[0])}
-										</span>
+										<div className='label'>
+											<span className='label-text-alt text-error'>
+												{String(field.state.meta.errors[0])}
+											</span>
+										</div>
 									)}
 								</div>
 							)}
@@ -459,9 +474,12 @@ function AuthenticationComponent() {
 							}}
 						>
 							{field => (
-								<div className='flex flex-col gap-1'>
-									<Label htmlFor={field.name}>Confirm Password</Label>
-									<Input
+								<div className='form-control flex flex-col'>
+									<label className='label' htmlFor={field.name}>
+										<span className='label-text'>Confirm Password</span>
+									</label>
+									<input
+										className='input input-bordered w-full'
 										id={field.name}
 										name={field.name}
 										onBlur={field.handleBlur}
@@ -470,9 +488,11 @@ function AuthenticationComponent() {
 										value={field.state.value}
 									/>
 									{field.state.meta.errors.length > 0 && (
-										<span className='text-destructive text-sm'>
-											{String(field.state.meta.errors[0])}
-										</span>
+										<div className='label'>
+											<span className='label-text-alt text-error'>
+												{String(field.state.meta.errors[0])}
+											</span>
+										</div>
 									)}
 								</div>
 							)}
@@ -486,38 +506,33 @@ function AuthenticationComponent() {
 										issue => issue.path[0] === 'confirmPassword'
 									)
 									if (passwordMismatchError) {
-										return (
-											<span className='text-destructive text-sm'>
-												{passwordMismatchError.message}
-											</span>
-										)
+										return <div className='text-error text-sm'>{passwordMismatchError.message}</div>
 									}
 								}
 								return null
 							}}
 						</signupForm.Subscribe>
 
-						<Button type='submit'>Create Account</Button>
+						<GrnButton type='submit'>Create Account</GrnButton>
 					</GreenCard>
 
 					<div className='flex w-[22.5rem] flex-col items-center text-center'>
 						<div className='divider'>OR</div>
-						<Button
+						<GreyButton
 							onClick={() => {
 								setAuthView('magic-link')
 								setAuthError('')
 								signupForm.reset()
 							}}
 							type='button'
-							variant='secondary'
 						>
 							Sign In
-						</Button>
+						</GreyButton>
 
 						<div className='divider'>OR</div>
-						<Button onClick={() => navigate({to: '/guest'})} type='button' variant='secondary'>
+						<GreyButton onClick={() => navigate({to: '/guest'})} type='button'>
 							Continue as Guest
-						</Button>
+						</GreyButton>
 					</div>
 				</>
 			)}
