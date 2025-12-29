@@ -16,8 +16,17 @@ let initError: Error | null = null
 export const shouldUseEmulators = process.env.USE_EMULATORS === 'true'
 
 function initializeAdmin(): void {
-	if (initialized) return
-	if (initError) throw initError
+	// Check if Firebase Admin is already initialized (handles HMR/multiple imports)
+	if (admin.apps.length > 0) {
+		initialized = true
+		return
+	}
+	if (initialized) {
+		return
+	}
+	if (initError) {
+		throw initError
+	}
 
 	// When using emulators, we can initialize without credentials
 	if (shouldUseEmulators) {
@@ -101,15 +110,43 @@ export const adminAuth = {
 		initializeAdmin()
 		return admin.auth().getUserByEmail(email)
 	},
+	getUser(uid: string) {
+		initializeAdmin()
+		return admin.auth().getUser(uid)
+	},
 	createUser(properties: admin.auth.CreateRequest) {
 		initializeAdmin()
 		return admin.auth().createUser(properties)
+	},
+	setCustomUserClaims(uid: string, customUserClaims: Record<string, unknown> | null) {
+		initializeAdmin()
+		return admin.auth().setCustomUserClaims(uid, customUserClaims)
 	}
 } as admin.auth.Auth
 
+/**
+ * Get Firestore FieldValue.serverTimestamp() with lazy initialization.
+ * Use this instead of admin.firestore.FieldValue.serverTimestamp() directly.
+ */
+export function serverTimestamp(): admin.firestore.FieldValue {
+	initializeAdmin()
+	return admin.firestore.FieldValue.serverTimestamp()
+}
+
+/**
+ * Get Firestore FieldValue.increment() with lazy initialization.
+ * Use this instead of admin.firestore.FieldValue.increment() directly.
+ */
+export function increment(n: number): admin.firestore.FieldValue {
+	initializeAdmin()
+	return admin.firestore.FieldValue.increment(n)
+}
+
 // Test function for verifying Firestore and Auth functionality when using emulators
 export async function testAdminFunctions() {
-	if (!shouldUseEmulators) return
+	if (!shouldUseEmulators) {
+		return
+	}
 
 	try {
 		initializeAdmin()

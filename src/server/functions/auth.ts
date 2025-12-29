@@ -32,7 +32,7 @@ const createSessionSchema = z.object({
  * Create a TanStack session after Firebase authentication succeeds.
  *
  * Security flow:
- * 1. Validate input with Zod schema
+ * 1. Validate input with Zod schema via inputValidator
  * 2. Verify ID token with Firebase Admin SDK (prevents spoofing)
  * 3. Extract custom claims from verified token
  * 4. Clear any existing session first (session fixation prevention - R-022)
@@ -44,15 +44,16 @@ const createSessionSchema = z.object({
  * @throws ValidationError for invalid input
  * @throws AuthenticationError for invalid/expired token
  */
-export const createSessionFn = createServerFn({method: 'POST'}).handler(
-	async ({data}: {data: unknown}): Promise<{success: true; user: SessionUser}> => {
-		// Validate input (Zod v4 pattern)
-		const parseResult = createSessionSchema.safeParse(data)
-		if (!parseResult.success) {
-			throw new ValidationError(parseResult.error.issues[0]?.message ?? 'Invalid input')
+export const createSessionFn = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => {
+		const result = createSessionSchema.safeParse(d)
+		if (!result.success) {
+			throw new ValidationError(result.error.issues[0]?.message ?? 'Invalid input')
 		}
-
-		const {uid, email, displayName, idToken} = parseResult.data
+		return result.data
+	})
+	.handler(async ({data}): Promise<{success: true; user: SessionUser}> => {
+		const {uid, email, displayName, idToken} = data
 
 		// Verify ID token with Firebase Admin SDK (R-010: atomic - verify BEFORE session update)
 		// Firebase Admin automatically validates:
@@ -115,8 +116,7 @@ export const createSessionFn = createServerFn({method: 'POST'}).handler(
 		}
 
 		return {success: true, user}
-	}
-)
+	})
 
 /**
  * Log out the current user by clearing the session.
@@ -198,15 +198,16 @@ const forceLogoutSchema = z.object({
  * @throws AuthenticationError if not admin
  * @throws ValidationError for invalid input
  */
-export const forceLogoutUserFn = createServerFn({method: 'POST'}).handler(
-	async ({data}: {data: unknown}): Promise<{success: true; revokedAt: string}> => {
-		// Validate input
-		const parseResult = forceLogoutSchema.safeParse(data)
-		if (!parseResult.success) {
-			throw new ValidationError(parseResult.error.issues[0]?.message ?? 'Invalid input')
+export const forceLogoutUserFn = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => {
+		const result = forceLogoutSchema.safeParse(d)
+		if (!result.success) {
+			throw new ValidationError(result.error.issues[0]?.message ?? 'Invalid input')
 		}
-
-		const {uid} = parseResult.data
+		return result.data
+	})
+	.handler(async ({data}): Promise<{success: true; revokedAt: string}> => {
+		const {uid} = data
 
 		// Require admin privileges - uses middleware with Firebase claim verification (R-004)
 		await requireAdmin()
@@ -229,8 +230,7 @@ export const forceLogoutUserFn = createServerFn({method: 'POST'}).handler(
 			}
 			throw new AuthenticationError('Failed to revoke user tokens')
 		}
-	}
-)
+	})
 
 /**
  * Input schema for logMagicLinkAttemptFn
@@ -259,15 +259,10 @@ const logMagicLinkAttemptSchema = z.object({
  * @param data - Attempt outcome and email domain
  * @returns Success status
  */
-export const logMagicLinkAttemptFn = createServerFn({method: 'POST'}).handler(
-	async ({data}: {data: unknown}): Promise<{success: true}> => {
-		const parseResult = logMagicLinkAttemptSchema.safeParse(data)
-		if (!parseResult.success) {
-			// Silently fail validation - logging is best-effort
-			return {success: true}
-		}
-
-		const {success, errorCode, emailDomain} = parseResult.data
+export const logMagicLinkAttemptFn = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => logMagicLinkAttemptSchema.parse(d))
+	.handler(async ({data}): Promise<{success: true}> => {
+		const {success, errorCode, emailDomain} = data
 
 		// TODO: Replace with proper monitoring service (e.g., Sentry, DataDog)
 		// Magic link attempt logging intentionally removed - was console.log only
@@ -277,8 +272,7 @@ export const logMagicLinkAttemptFn = createServerFn({method: 'POST'}).handler(
 		void emailDomain
 
 		return {success: true}
-	}
-)
+	})
 
 /**
  * Get session data for route context.

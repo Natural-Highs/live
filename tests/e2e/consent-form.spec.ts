@@ -2,49 +2,48 @@
  * Consent Form E2E Tests
  *
  * Test Strategy:
- * - Use auth fixtures to simulate authenticated user state
- * - Mock Firebase Auth and session endpoints
+ * - Use auth fixtures to simulate authenticated user state via session cookies
+ * - Mock API endpoints for consent submission
  * - Test form validation and submission
  */
 
-import {expect, test} from '@playwright/test'
+import {test as base, expect} from '@playwright/test'
+import {clearSessionCookie, injectSessionCookie, type TestUser} from '../fixtures/session.fixture'
 
-/**
- * Helper to set up authenticated user state
- */
-async function setupAuthenticatedUser(
-	page: import('@playwright/test').Page,
-	context: import('@playwright/test').BrowserContext,
-	options: {hasConsent?: boolean; isAdmin?: boolean} = {}
-) {
-	const {hasConsent = false, isAdmin = false} = options
-
-	// Mock the auth state check endpoint
-	await page.route('**/api/auth/session', route => {
-		route.fulfill({
-			status: 200,
-			contentType: 'application/json',
-			body: JSON.stringify({
-				user: {
-					uid: 'test-user-123',
-					email: 'test@example.com',
-					displayName: 'Test User'
-				},
-				claims: {
-					signedConsentForm: hasConsent,
-					admin: isAdmin
-				}
-			})
-		})
-	})
-
-	// Set localStorage to indicate authenticated state
-	await context.addInitScript(() => {
-		window.localStorage.setItem('authState', 'authenticated')
-	})
+// Test user data
+const testUser: TestUser = {
+	uid: 'consent-test-user-123',
+	email: 'consent-test@example.com',
+	displayName: 'Consent Test User'
 }
 
-test.describe('Consent Form Flow', () => {
+// Extend test with auth helpers
+const test = base.extend<{
+	authenticatedWithoutConsent: TestUser
+	authenticatedWithConsent: TestUser
+}>({
+	authenticatedWithoutConsent: async ({context}, use) => {
+		// Inject session cookie WITHOUT consent signed
+		// profileComplete: true so dashboard is accessible
+		await injectSessionCookie(context, testUser, {
+			signedConsentForm: false,
+			profileComplete: true
+		})
+		await use(testUser)
+		await clearSessionCookie(context)
+	},
+	authenticatedWithConsent: async ({context}, use) => {
+		// Inject session cookie WITH consent signed
+		await injectSessionCookie(context, testUser, {
+			signedConsentForm: true,
+			profileComplete: true
+		})
+		await use(testUser)
+		await clearSessionCookie(context)
+	}
+})
+
+test.describe('Consent Form Flow @smoke', () => {
 	test.describe('Consent Form Access', () => {
 		test('should redirect unauthenticated users to authentication page', async ({page}) => {
 			// GIVEN: User is not authenticated
@@ -57,10 +56,9 @@ test.describe('Consent Form Flow', () => {
 
 		test('should show consent form for authenticated users without consent', async ({
 			page,
-			context
+			authenticatedWithoutConsent: _
 		}) => {
 			// GIVEN: User is authenticated but has not signed consent
-			await setupAuthenticatedUser(page, context, {hasConsent: false})
 
 			// WHEN: User navigates to consent page
 			await page.goto('/consent')
@@ -70,9 +68,11 @@ test.describe('Consent Form Flow', () => {
 			await expect(page.getByRole('button', {name: /i consent/i})).toBeVisible()
 		})
 
-		test('should redirect to dashboard if user already has consent', async ({page, context}) => {
+		test('should redirect to dashboard if user already has consent', async ({
+			page,
+			authenticatedWithConsent: _
+		}) => {
 			// GIVEN: User is authenticated and has already signed consent
-			await setupAuthenticatedUser(page, context, {hasConsent: true})
 
 			// WHEN: User navigates to consent page
 			await page.goto('/consent')
@@ -85,10 +85,9 @@ test.describe('Consent Form Flow', () => {
 	test.describe('Consent Form Submission', () => {
 		test('should have submit button disabled until checkbox is checked', async ({
 			page,
-			context
+			authenticatedWithoutConsent: _
 		}) => {
 			// GIVEN: User is on consent form
-			await setupAuthenticatedUser(page, context, {hasConsent: false})
 			await page.goto('/consent')
 
 			// THEN: Submit button should be disabled
@@ -102,9 +101,11 @@ test.describe('Consent Form Flow', () => {
 			await expect(submitButton).toBeEnabled()
 		})
 
-		test('should submit consent and redirect to dashboard', async ({page, context}) => {
+		test('should submit consent and redirect to dashboard', async ({
+			page,
+			authenticatedWithoutConsent: _
+		}) => {
 			// GIVEN: User is on consent form
-			await setupAuthenticatedUser(page, context, {hasConsent: false})
 
 			// Mock the consent submission endpoint
 			await page.route('**/api/consent', route => {
@@ -125,9 +126,11 @@ test.describe('Consent Form Flow', () => {
 			await expect(page).toHaveURL(/dashboard/, {timeout: 5000})
 		})
 
-		test('should show error message if consent submission fails', async ({page, context}) => {
+		test('should show error message if consent submission fails', async ({
+			page,
+			authenticatedWithoutConsent: _
+		}) => {
 			// GIVEN: User is on consent form
-			await setupAuthenticatedUser(page, context, {hasConsent: false})
 
 			// Mock the consent submission to fail
 			await page.route('**/api/consent', route => {
@@ -150,18 +153,22 @@ test.describe('Consent Form Flow', () => {
 	})
 
 	test.describe('Consent Form Content', () => {
-		test('should display consent text explaining the study', async ({page, context}) => {
+		test('should display consent text explaining the study', async ({
+			page,
+			authenticatedWithoutConsent: _
+		}) => {
 			// GIVEN: User is on consent form
-			await setupAuthenticatedUser(page, context, {hasConsent: false})
 			await page.goto('/consent')
 
 			// THEN: Should display consent information
 			await expect(page.getByText(/consent|participate|research/i)).toBeVisible()
 		})
 
-		test('should have accessible checkbox with proper label', async ({page, context}) => {
+		test('should have accessible checkbox with proper label', async ({
+			page,
+			authenticatedWithoutConsent: _
+		}) => {
 			// GIVEN: User is on consent form
-			await setupAuthenticatedUser(page, context, {hasConsent: false})
 			await page.goto('/consent')
 
 			// THEN: Checkbox should have accessible label
@@ -177,10 +184,9 @@ test.describe('Consent Form Flow', () => {
 	test.describe('Protected Route Access', () => {
 		test('should redirect to consent from dashboard if consent not signed', async ({
 			page,
-			context
+			authenticatedWithoutConsent: _
 		}) => {
 			// GIVEN: User is authenticated but has not signed consent
-			await setupAuthenticatedUser(page, context, {hasConsent: false})
 
 			// WHEN: User tries to access dashboard
 			await page.goto('/dashboard')
@@ -189,9 +195,11 @@ test.describe('Consent Form Flow', () => {
 			await expect(page).toHaveURL(/consent/)
 		})
 
-		test('should allow dashboard access after consent is signed', async ({page, context}) => {
+		test('should allow dashboard access after consent is signed', async ({
+			page,
+			authenticatedWithConsent: _
+		}) => {
 			// GIVEN: User is authenticated and has signed consent
-			await setupAuthenticatedUser(page, context, {hasConsent: true})
 
 			// WHEN: User navigates to dashboard
 			await page.goto('/dashboard')
