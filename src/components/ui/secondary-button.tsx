@@ -1,31 +1,28 @@
-import type * as React from 'react'
+import type {VariantProps} from 'class-variance-authority'
+import * as React from 'react'
+import {cn} from '@/lib/utils'
+import {Button, type buttonVariants} from './button'
 
 export interface SecondaryButtonProps
-	extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-	children: React.ReactNode
-	className?: string
+	extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+		Omit<VariantProps<typeof buttonVariants>, 'variant'> {
 	fullWidth?: boolean
+	asChild?: boolean
 }
 
-const SecondaryButton = ({
-	children,
-	className,
-	fullWidth = true,
-	ref,
-	...props
-}: SecondaryButtonProps & {
-	ref?: React.RefObject<HTMLButtonElement | null>
-}) => (
-	<button
-		className={`btn btn-secondary rounded-[20px] font-normal text-[20px] leading-[30px] ${
-			fullWidth ? 'w-full max-w-[338px]' : ''
-		} h-12 ${className || ''}`}
-		ref={ref}
-		type='button'
-		{...props}
-	>
-		{children}
-	</button>
+const SecondaryButton = React.forwardRef<HTMLButtonElement, SecondaryButtonProps>(
+	({children, className, fullWidth = true, size, ...props}, ref) => (
+		<Button
+			ref={ref}
+			variant='secondary'
+			size={fullWidth ? 'full' : size}
+			className={cn(className)}
+			data-testid='button-secondary'
+			{...props}
+		>
+			{children}
+		</Button>
+	)
 )
 SecondaryButton.displayName = 'SecondaryButton'
 

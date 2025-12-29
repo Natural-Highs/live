@@ -11,10 +11,7 @@
  * @param signedConsentForm - Whether the guest has already signed the consent form
  * @returns True if consent form is required, false otherwise
  */
-export function requiresConsentForm(
-	isNewGuest: boolean,
-	signedConsentForm?: boolean
-): boolean {
+export function requiresConsentForm(isNewGuest: boolean, signedConsentForm?: boolean): boolean {
 	if (isNewGuest) {
 		return true
 	}
@@ -49,10 +46,7 @@ export function getGuestIdentifier(
  * @param eventId - Event ID to check
  * @returns True if event should be added, false if already present
  */
-export function shouldAddEventToGuest(
-	guestEvents: string[] | undefined,
-	eventId: string
-): boolean {
+export function shouldAddEventToGuest(guestEvents: string[] | undefined, eventId: string): boolean {
 	if (!guestEvents || guestEvents.length === 0) {
 		return true
 	}

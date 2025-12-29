@@ -20,9 +20,7 @@ const PageHeader = ({
 		{children}
 		<h1 className='mb-2 font-bold text-4xl text-[#1e1e1e]'>{title}</h1>
 		{subtitle && <div className='mb-4 text-gray-600 text-xs'>{subtitle}</div>}
-		{showIndicators && (
-			<div className='mb-4 text-gray-600 text-xs'>Page indicators</div>
-		)}
+		{showIndicators && <div className='mb-4 text-gray-600 text-xs'>Page indicators</div>}
 	</div>
 )
 PageHeader.displayName = 'PageHeader'

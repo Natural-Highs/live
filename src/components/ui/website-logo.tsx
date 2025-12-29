@@ -3,8 +3,7 @@ import type * as React from 'react'
 const DEFAULT_LOGO_SRC = '/logo.png'
 // ============================================
 
-export interface WebsiteLogoProps
-	extends React.HTMLAttributes<HTMLImageElement> {
+export interface WebsiteLogoProps extends React.HTMLAttributes<HTMLImageElement> {
 	/**
 	 * Size variant for the logo
 	 * @default 'md'

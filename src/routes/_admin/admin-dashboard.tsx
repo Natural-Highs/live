@@ -12,16 +12,11 @@ import {
 } from 'chart.js'
 import {useEffect, useState} from 'react'
 import {Line} from 'react-chartjs-2'
+import {Button} from '@/components/ui/button'
+import {Card, CardContent, CardTitle} from '@/components/ui/card'
+import {Spinner} from '@/components/ui/spinner'
 
-ChartJS.register(
-	CategoryScale,
-	LinearScale,
-	PointElement,
-	LineElement,
-	Title,
-	Tooltip,
-	Legend
-)
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend)
 
 export const Route = createFileRoute('/_admin/admin-dashboard')({
 	component: AdminDashboard
@@ -62,9 +57,7 @@ function AdminDashboard() {
 					setError(data.error || 'Failed to load statistics')
 				}
 			} catch (err) {
-				setError(
-					err instanceof Error ? err.message : 'Failed to load statistics'
-				)
+				setError(err instanceof Error ? err.message : 'Failed to load statistics')
 			} finally {
 				setLoading(false)
 			}
@@ -78,12 +71,7 @@ function AdminDashboard() {
 		datasets: [
 			{
 				label: 'System Statistics',
-				data: [
-					stats.totalUsers,
-					stats.totalEvents,
-					stats.totalResponses,
-					stats.activeEvents
-				],
+				data: [stats.totalUsers, stats.totalEvents, stats.totalResponses, stats.activeEvents],
 				borderColor: 'rgb(75, 192, 192)',
 				backgroundColor: 'rgba(75, 192, 192, 0.2)',
 				tension: 0.1
@@ -107,7 +95,7 @@ function AdminDashboard() {
 	if (loading) {
 		return (
 			<div className='container mx-auto p-4'>
-				<span className='loading loading-spinner loading-lg' />
+				<Spinner size='lg' />
 			</div>
 		)
 	}
@@ -117,57 +105,57 @@ function AdminDashboard() {
 			<h1 className='mb-4 font-bold text-2xl'>Admin Dashboard</h1>
 
 			{error && (
-				<div className='alert alert-error mb-4'>
+				<div className='mb-4 rounded-lg bg-destructive/15 p-4 text-destructive'>
 					<span>{error}</span>
 				</div>
 			)}
 
 			{/* Statistics Cards */}
 			<div className='mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4'>
-				<div className='card bg-base-200 shadow-xl'>
-					<div className='card-body'>
-						<h2 className='card-title'>Total Users</h2>
+				<Card data-testid='card-container'>
+					<CardContent className='pt-6'>
+						<CardTitle className='text-base'>Total Users</CardTitle>
 						<p className='font-bold text-3xl'>{stats.totalUsers}</p>
-					</div>
-				</div>
-				<div className='card bg-base-200 shadow-xl'>
-					<div className='card-body'>
-						<h2 className='card-title'>Total Events</h2>
+					</CardContent>
+				</Card>
+				<Card data-testid='card-container'>
+					<CardContent className='pt-6'>
+						<CardTitle className='text-base'>Total Events</CardTitle>
 						<p className='font-bold text-3xl'>{stats.totalEvents}</p>
-					</div>
-				</div>
-				<div className='card bg-base-200 shadow-xl'>
-					<div className='card-body'>
-						<h2 className='card-title'>Survey Responses</h2>
+					</CardContent>
+				</Card>
+				<Card data-testid='card-container'>
+					<CardContent className='pt-6'>
+						<CardTitle className='text-base'>Survey Responses</CardTitle>
 						<p className='font-bold text-3xl'>{stats.totalResponses}</p>
-					</div>
-				</div>
-				<div className='card bg-base-200 shadow-xl'>
-					<div className='card-body'>
-						<h2 className='card-title'>Active Events</h2>
+					</CardContent>
+				</Card>
+				<Card data-testid='card-container'>
+					<CardContent className='pt-6'>
+						<CardTitle className='text-base'>Active Events</CardTitle>
 						<p className='font-bold text-3xl'>{stats.activeEvents}</p>
-					</div>
-				</div>
+					</CardContent>
+				</Card>
 			</div>
 
 			{/* Chart */}
-			<div className='card bg-base-200 shadow-xl'>
-				<div className='card-body'>
+			<Card data-testid='card-container'>
+				<CardContent className='pt-6'>
 					<Line data={chartData} options={chartOptions} />
-				</div>
-			</div>
+				</CardContent>
+			</Card>
 
 			{/* Quick Links */}
 			<div className='mt-6 grid grid-cols-1 gap-4 md:grid-cols-3'>
-				<a className='btn btn-primary' href='/admin/events'>
-					Manage Events
-				</a>
-				<a className='btn btn-primary' href='/admin/surveys'>
-					View Survey Responses
-				</a>
-				<a className='btn btn-primary' href='/admin/users'>
-					Manage Users
-				</a>
+				<Button asChild data-testid='button-primary'>
+					<a href='/admin/events'>Manage Events</a>
+				</Button>
+				<Button asChild data-testid='button-primary'>
+					<a href='/admin/surveys'>View Survey Responses</a>
+				</Button>
+				<Button asChild data-testid='button-primary'>
+					<a href='/admin/users'>Manage Users</a>
+				</Button>
 			</div>
 		</div>
 	)

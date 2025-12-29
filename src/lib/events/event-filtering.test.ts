@@ -3,7 +3,7 @@
  * Following Test Pyramid Balance directive: Unit tests for business logic functions
  */
 
-import type {EventDocument} from '../../server/types/events'
+import type {EventDocument} from '@/types/events'
 import {shouldIncludeEvent, shouldShowAllEvents} from './event-filtering'
 
 describe('Event Filtering', () => {

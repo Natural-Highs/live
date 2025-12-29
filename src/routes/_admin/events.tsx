@@ -2,14 +2,22 @@ import {useQuery, useQueryClient} from '@tanstack/react-query'
 import {createFileRoute} from '@tanstack/react-router'
 import type {ColumnDef} from '@tanstack/react-table'
 import type React from 'react'
-import {useMemo, useState} from 'react'
+import {useCallback, useMemo, useState} from 'react'
+import {Badge} from '@/components/ui/badge'
+import {Button} from '@/components/ui/button'
+import {Card, CardContent, CardTitle} from '@/components/ui/card'
+import {Checkbox} from '@/components/ui/checkbox'
+import {Input} from '@/components/ui/input'
+import {Label} from '@/components/ui/label'
+import {Spinner} from '@/components/ui/spinner'
+import {Tabs, TabsList, TabsTrigger} from '@/components/ui/tabs'
 import {
 	type Event as EventData,
 	type EventType,
 	eventsQueryOptions,
 	eventTypesQueryOptions,
 	formTemplatesQueryOptions
-} from '@/lib/queries/index.js'
+} from '@/queries/index.js'
 import {DataTable} from '../../components/admin/DataTable'
 
 export const Route = createFileRoute('/_admin/events')({
@@ -25,31 +33,21 @@ export const Route = createFileRoute('/_admin/events')({
 
 function EventsPage() {
 	const queryClient = useQueryClient()
-	const {data: events = [], isLoading: eventsLoading} = useQuery(
-		eventsQueryOptions()
-	)
-	const {data: eventTypes = [], isLoading: eventTypesLoading} = useQuery(
-		eventTypesQueryOptions()
-	)
-	const {data: templates = [], isLoading: templatesLoading} = useQuery(
-		formTemplatesQueryOptions()
-	)
+	const {data: events = [], isLoading: eventsLoading} = useQuery(eventsQueryOptions())
+	const {data: eventTypes = [], isLoading: eventTypesLoading} = useQuery(eventTypesQueryOptions())
+	const {data: templates = [], isLoading: templatesLoading} = useQuery(formTemplatesQueryOptions())
 
 	const loading = eventsLoading || eventTypesLoading || templatesLoading
 
 	const [activeTab, setActiveTab] = useState<'events' | 'eventTypes'>('events')
 	const [error, setError] = useState('')
 	const [showCreateEventModal, setShowCreateEventModal] = useState(false)
-	const [showCreateEventTypeModal, setShowCreateEventTypeModal] =
-		useState(false)
+	const [showCreateEventTypeModal, setShowCreateEventTypeModal] = useState(false)
 	const [showEditEventTypeModal, setShowEditEventTypeModal] = useState(false)
-	const [showDeleteEventTypeModal, setShowDeleteEventTypeModal] =
-		useState(false)
+	const [showDeleteEventTypeModal, setShowDeleteEventTypeModal] = useState(false)
 	const [showActivateModal, setShowActivateModal] = useState(false)
 	const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null)
-	const [selectedEventType, setSelectedEventType] = useState<EventType | null>(
-		null
-	)
+	const [selectedEventType, setSelectedEventType] = useState<EventType | null>(null)
 	const [eventFormData, setEventFormData] = useState({
 		name: '',
 		eventTypeId: '',
@@ -78,13 +76,10 @@ function EventsPage() {
 					name: eventFormData.name,
 					eventTypeId: eventFormData.eventTypeId,
 					eventDate: eventFormData.eventDate,
-					consentFormTemplateId:
-						eventFormData.consentFormTemplateId || undefined,
-					demographicsFormTemplateId:
-						eventFormData.demographicsFormTemplateId || undefined,
+					consentFormTemplateId: eventFormData.consentFormTemplateId || undefined,
+					demographicsFormTemplateId: eventFormData.demographicsFormTemplateId || undefined,
 					surveyTemplateId: eventFormData.surveyTemplateId || null,
-					collectAdditionalDemographics:
-						eventFormData.collectAdditionalDemographics
+					collectAdditionalDemographics: eventFormData.collectAdditionalDemographics
 				})
 			})
 
@@ -124,12 +119,9 @@ function EventsPage() {
 				headers: {'Content-Type': 'application/json'},
 				body: JSON.stringify({
 					name: eventTypeFormData.name,
-					defaultConsentFormTemplateId:
-						eventTypeFormData.defaultConsentFormTemplateId,
-					defaultDemographicsFormTemplateId:
-						eventTypeFormData.defaultDemographicsFormTemplateId,
-					defaultSurveyTemplateId:
-						eventTypeFormData.defaultSurveyTemplateId || null
+					defaultConsentFormTemplateId: eventTypeFormData.defaultConsentFormTemplateId,
+					defaultDemographicsFormTemplateId: eventTypeFormData.defaultDemographicsFormTemplateId,
+					defaultSurveyTemplateId: eventTypeFormData.defaultSurveyTemplateId || null
 				})
 			})
 
@@ -152,9 +144,7 @@ function EventsPage() {
 			})
 			await queryClient.invalidateQueries({queryKey: ['eventTypes']})
 		} catch (err) {
-			setError(
-				err instanceof Error ? err.message : 'Failed to create event type'
-			)
+			setError(err instanceof Error ? err.message : 'Failed to create event type')
 		}
 	}
 
@@ -170,12 +160,9 @@ function EventsPage() {
 				headers: {'Content-Type': 'application/json'},
 				body: JSON.stringify({
 					name: eventTypeFormData.name,
-					defaultConsentFormTemplateId:
-						eventTypeFormData.defaultConsentFormTemplateId,
-					defaultDemographicsFormTemplateId:
-						eventTypeFormData.defaultDemographicsFormTemplateId,
-					defaultSurveyTemplateId:
-						eventTypeFormData.defaultSurveyTemplateId || null
+					defaultConsentFormTemplateId: eventTypeFormData.defaultConsentFormTemplateId,
+					defaultDemographicsFormTemplateId: eventTypeFormData.defaultDemographicsFormTemplateId,
+					defaultSurveyTemplateId: eventTypeFormData.defaultSurveyTemplateId || null
 				})
 			})
 
@@ -193,9 +180,7 @@ function EventsPage() {
 			setSelectedEventType(null)
 			await queryClient.invalidateQueries({queryKey: ['eventTypes']})
 		} catch (err) {
-			setError(
-				err instanceof Error ? err.message : 'Failed to update event type'
-			)
+			setError(err instanceof Error ? err.message : 'Failed to update event type')
 		}
 	}
 
@@ -223,9 +208,7 @@ function EventsPage() {
 			setSelectedEventType(null)
 			await queryClient.invalidateQueries({queryKey: ['eventTypes']})
 		} catch (err) {
-			setError(
-				err instanceof Error ? err.message : 'Failed to delete event type'
-			)
+			setError(err instanceof Error ? err.message : 'Failed to delete event type')
 		}
 	}
 
@@ -258,40 +241,39 @@ function EventsPage() {
 		}
 	}
 
-	const handleOverrideSurvey = async (eventId: string) => {
-		setError('')
+	const handleOverrideSurvey = useCallback(
+		async (eventId: string) => {
+			setError('')
 
-		try {
-			const response = await fetch(`/api/events/${eventId}/override`, {
-				method: 'POST'
-			})
+			try {
+				const response = await fetch(`/api/events/${eventId}/override`, {
+					method: 'POST'
+				})
 
-			const data = (await response.json()) as {
-				success: boolean
-				error?: string
+				const data = (await response.json()) as {
+					success: boolean
+					error?: string
+				}
+
+				if (!(response.ok && data.success)) {
+					setError(data.error || 'Failed to override survey timing')
+					return
+				}
+
+				await queryClient.invalidateQueries({queryKey: ['events']})
+			} catch (err) {
+				setError(err instanceof Error ? err.message : 'Failed to override survey timing')
 			}
-
-			if (!(response.ok && data.success)) {
-				setError(data.error || 'Failed to override survey timing')
-				return
-			}
-
-			await queryClient.invalidateQueries({queryKey: ['events']})
-		} catch (err) {
-			setError(
-				err instanceof Error ? err.message : 'Failed to override survey timing'
-			)
-		}
-	}
+		},
+		[queryClient]
+	)
 
 	const openEditEventTypeModal = (eventType: EventType) => {
 		setSelectedEventType(eventType)
 		setEventTypeFormData({
 			name: eventType.name,
-			defaultConsentFormTemplateId:
-				eventType.defaultConsentFormTemplateId || '',
-			defaultDemographicsFormTemplateId:
-				eventType.defaultDemographicsFormTemplateId || '',
+			defaultConsentFormTemplateId: eventType.defaultConsentFormTemplateId || '',
+			defaultDemographicsFormTemplateId: eventType.defaultDemographicsFormTemplateId || '',
 			defaultSurveyTemplateId: eventType.defaultSurveyTemplateId || ''
 		})
 		setShowEditEventTypeModal(true)
@@ -302,10 +284,10 @@ function EventsPage() {
 		setShowDeleteEventTypeModal(true)
 	}
 
-	const openActivateModal = (event: EventData) => {
+	const openActivateModal = useCallback((event: EventData) => {
 		setSelectedEvent(event)
 		setShowActivateModal(true)
-	}
+	}, [])
 
 	const loadEventTypeDefaults = (eventTypeId: string) => {
 		const eventType = eventTypes.find(et => et.id === eventTypeId)
@@ -313,22 +295,21 @@ function EventsPage() {
 			setEventFormData({
 				...eventFormData,
 				consentFormTemplateId: eventType.defaultConsentFormTemplateId || '',
-				demographicsFormTemplateId:
-					eventType.defaultDemographicsFormTemplateId || '',
+				demographicsFormTemplateId: eventType.defaultDemographicsFormTemplateId || '',
 				surveyTemplateId: eventType.defaultSurveyTemplateId || ''
 			})
 		}
 	}
 
-	const copyToClipboard = (text: string) => {
+	const copyToClipboard = useCallback((text: string) => {
 		navigator.clipboard.writeText(text)
-	}
+	}, [])
 
-	const formatDate = (date: Date | string | null | undefined): string => {
+	const formatDate = useCallback((date: Date | string | null | undefined): string => {
 		if (!date) return 'N/A'
 		const d = typeof date === 'string' ? new Date(date) : date
 		return d.toLocaleDateString()
-	}
+	}, [])
 
 	const formatDateTime = (date: Date | string | null | undefined): string => {
 		if (!date) return 'N/A'
@@ -352,9 +333,7 @@ function EventsPage() {
 				header: 'Type',
 				cell: ({row}) => {
 					const eventData = row.original as EventData
-					const eventType = eventTypes.find(
-						et => et.id === eventData.eventTypeId
-					)
+					const eventType = eventTypes.find(et => et.id === eventData.eventTypeId)
 					return eventType?.name || 'Unknown'
 				}
 			},
@@ -368,9 +347,9 @@ function EventsPage() {
 				header: 'Status',
 				cell: ({row}) =>
 					row.original.isActive ? (
-						<span className='badge badge-success'>Active</span>
+						<Badge variant='success'>Active</Badge>
 					) : (
-						<span className='badge badge-error'>Inactive</span>
+						<Badge variant='destructive'>Inactive</Badge>
 					)
 			},
 			{
@@ -379,9 +358,9 @@ function EventsPage() {
 				cell: ({row}) => {
 					const eventData = row.original as EventData
 					return eventData.collectAdditionalDemographics ? (
-						<span className='badge badge-info'>Enabled</span>
+						<Badge variant='info'>Enabled</Badge>
 					) : (
-						<span className='badge badge-ghost'>Disabled</span>
+						<Badge variant='ghost'>Disabled</Badge>
 					)
 				}
 			},
@@ -392,14 +371,16 @@ function EventsPage() {
 					row.original.code ? (
 						<div className='flex items-center gap-2'>
 							<span className='font-bold font-mono'>{row.original.code}</span>
-							<button
-								className='btn btn-xs'
+							<Button
+								size='sm'
+								variant='outline'
+								data-testid='button-copy-code'
 								onClick={() => copyToClipboard(row.original.code || '')}
 								title='Copy to clipboard'
 								type='button'
 							>
 								Copy
-							</button>
+							</Button>
 						</div>
 					) : (
 						<span className='text-sm opacity-60'>Not activated</span>
@@ -413,105 +394,109 @@ function EventsPage() {
 					return (
 						<div className='flex gap-2'>
 							{!eventData.isActive && (
-								<button
-									className='btn btn-sm btn-primary'
+								<Button
+									size='sm'
+									variant='default'
+									data-testid='button-activate-event'
 									onClick={() => openActivateModal(eventData)}
 									type='button'
 								>
 									Activate
-								</button>
+								</Button>
 							)}
 							{eventData.isActive && !eventData.surveyAccessibleOverride && (
-								<button
-									className='btn btn-sm btn-warning'
+								<Button
+									size='sm'
+									variant='secondary'
+									data-testid='button-override-survey'
 									onClick={() => handleOverrideSurvey(eventData.id)}
 									type='button'
 								>
 									Make Surveys Accessible
-								</button>
+								</Button>
 							)}
 							{eventData.surveyAccessibleOverride && (
-								<span className='badge badge-warning'>Override Active</span>
+								<Badge variant='warning'>Override Active</Badge>
 							)}
 						</div>
 					)
 				}
 			}
 		],
-		[eventTypes]
+		[eventTypes, copyToClipboard, formatDate, handleOverrideSurvey, openActivateModal]
 	)
 
 	if (loading) {
 		return (
 			<div className='container mx-auto p-4'>
-				<span className='loading loading-spinner loading-lg' />
+				<Spinner size='lg' />
 			</div>
 		)
 	}
 
 	return (
-		<div className='container mx-auto p-4'>
+		<div className='container mx-auto p-4' data-testid='admin-events-page'>
 			<div className='mb-4 flex items-center justify-between'>
 				<h1 className='font-bold text-2xl'>Events Management</h1>
 				{activeTab === 'events' && (
-					<button
-						className='btn btn-primary'
+					<Button
+						variant='default'
+						data-testid='create-event-button'
 						onClick={() => setShowCreateEventModal(true)}
 						type='button'
 					>
 						Create Event
-					</button>
+					</Button>
 				)}
 				{activeTab === 'eventTypes' && (
-					<button
-						className='btn btn-primary'
+					<Button
+						variant='default'
+						data-testid='create-event-type-button'
 						onClick={() => setShowCreateEventTypeModal(true)}
 						type='button'
 					>
 						Create Event Type
-					</button>
+					</Button>
 				)}
 			</div>
 
 			{error && (
-				<div className='alert alert-error mb-4'>
+				<div
+					className='mb-4 rounded-lg bg-destructive/15 p-4 text-destructive'
+					data-testid='admin-events-error'
+				>
 					<span>{error}</span>
 				</div>
 			)}
 
 			{/* Sub-tabs */}
-			<div className='tabs tabs-boxed mb-4'>
-				<button
-					className={`tab ${activeTab === 'events' ? 'tab-active' : ''}`}
-					onClick={() => setActiveTab('events')}
-					type='button'
-				>
-					Events
-				</button>
-				<button
-					className={`tab ${activeTab === 'eventTypes' ? 'tab-active' : ''}`}
-					onClick={() => setActiveTab('eventTypes')}
-					type='button'
-				>
-					Event Types
-				</button>
-			</div>
+			<Tabs
+				value={activeTab}
+				onValueChange={(value: string) => setActiveTab(value as 'events' | 'eventTypes')}
+				className='mb-4'
+			>
+				<TabsList>
+					<TabsTrigger value='events' data-testid='events-tab'>
+						Events
+					</TabsTrigger>
+					<TabsTrigger value='eventTypes' data-testid='event-types-tab'>
+						Event Types
+					</TabsTrigger>
+				</TabsList>
+			</Tabs>
 
 			{/* Events Tab */}
 			{activeTab === 'events' && (
-				<div className='space-y-4'>
+				<div className='space-y-4' data-testid='events-list'>
 					{events.length === 0 ? (
-						<div className='alert alert-info'>
-							<span>
-								No events found. Create your first event to get started.
-							</span>
+						<div
+							className='rounded-lg bg-blue-500/15 p-4 text-blue-700 dark:text-blue-300'
+							data-testid='no-events-message'
+						>
+							<span>No events found. Create your first event to get started.</span>
 						</div>
 					) : (
-						<DataTable
-							columns={eventColumns}
-							data={events}
-							searchPlaceholder='Search events...'
-						/>
+						<DataTable columns={eventColumns} data={events} searchPlaceholder='Search events...' />
 					)}
 				</div>
 			)}
@@ -520,11 +505,8 @@ function EventsPage() {
 			{activeTab === 'eventTypes' && (
 				<div className='space-y-4'>
 					{eventTypes.length === 0 ? (
-						<div className='alert alert-info'>
-							<span>
-								No event types found. Create your first event type to get
-								started.
-							</span>
+						<div className='rounded-lg bg-blue-500/15 p-4 text-blue-700 dark:text-blue-300'>
+							<span>No event types found. Create your first event type to get started.</span>
 						</div>
 					) : (
 						<div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
@@ -540,12 +522,9 @@ function EventsPage() {
 								)
 
 								return (
-									<div
-										className='card bg-base-200 shadow-xl'
-										key={eventType.id}
-									>
-										<div className='card-body'>
-											<h3 className='card-title'>{eventType.name}</h3>
+									<Card data-testid='card-container' key={eventType.id}>
+										<CardContent className='pt-6'>
+											<CardTitle className='mb-2'>{eventType.name}</CardTitle>
 											<div className='space-y-1 text-sm'>
 												<p>
 													<span className='font-semibold'>Consent:</span>{' '}
@@ -560,24 +539,28 @@ function EventsPage() {
 													{surveyTemplate?.name || 'Not set'}
 												</p>
 											</div>
-											<div className='card-actions mt-4 justify-end'>
-												<button
-													className='btn btn-sm btn-primary'
+											<div className='mt-4 flex justify-end gap-2'>
+												<Button
+													size='sm'
+													variant='default'
+													data-testid='button-edit-event-type'
 													onClick={() => openEditEventTypeModal(eventType)}
 													type='button'
 												>
 													Edit
-												</button>
-												<button
-													className='btn btn-sm btn-error'
+												</Button>
+												<Button
+													size='sm'
+													variant='destructive'
+													data-testid='button-delete-event-type'
 													onClick={() => openDeleteEventTypeModal(eventType)}
 													type='button'
 												>
 													Delete
-												</button>
+												</Button>
 											</div>
-										</div>
-									</div>
+										</CardContent>
+									</Card>
 								)
 							})}
 						</div>
@@ -587,18 +570,19 @@ function EventsPage() {
 
 			{/* Create Event Modal */}
 			{showCreateEventModal && (
-				<div className='modal modal-open'>
-					<div className='modal-box'>
+				<div
+					className='fixed inset-0 z-50 flex items-center justify-center bg-black/50'
+					data-testid='create-event-modal'
+				>
+					<div className='max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-background p-6 shadow-xl'>
 						<h3 className='mb-4 font-bold text-lg'>Create Event</h3>
 						<form onSubmit={handleCreateEvent}>
-							<div className='form-control mb-4'>
-								<label className='label' htmlFor='event-name'>
-									<span className='label-text'>Name</span>
-								</label>
-								<input
-									className='input input-bordered w-full'
+							<div className='mb-4 space-y-2'>
+								<Label htmlFor='event-name'>Name</Label>
+								<Input
+									data-testid='event-name-input'
 									id='event-name'
-									onChange={e =>
+									onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 										setEventFormData({...eventFormData, name: e.target.value})
 									}
 									required={true}
@@ -606,14 +590,13 @@ function EventsPage() {
 									value={eventFormData.name}
 								/>
 							</div>
-							<div className='form-control mb-4'>
-								<label className='label' htmlFor='event-type'>
-									<span className='label-text'>Event Type</span>
-								</label>
+							<div className='mb-4 space-y-2'>
+								<Label htmlFor='event-type'>Event Type</Label>
 								<select
-									className='select select-bordered w-full'
+									className='flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
+									data-testid='event-type-select'
 									id='event-type'
-									onChange={e => {
+									onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
 										setEventFormData({
 											...eventFormData,
 											eventTypeId: e.target.value
@@ -631,14 +614,12 @@ function EventsPage() {
 									))}
 								</select>
 							</div>
-							<div className='form-control mb-4'>
-								<label className='label' htmlFor='event-date'>
-									<span className='label-text'>Event Date</span>
-								</label>
-								<input
-									className='input input-bordered w-full'
+							<div className='mb-4 space-y-2'>
+								<Label htmlFor='event-date'>Event Date</Label>
+								<Input
+									data-testid='event-date-input'
 									id='event-date'
-									onChange={e =>
+									onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 										setEventFormData({
 											...eventFormData,
 											eventDate: e.target.value
@@ -649,16 +630,14 @@ function EventsPage() {
 									value={eventFormData.eventDate}
 								/>
 							</div>
-							<div className='form-control mb-4'>
-								<label className='label' htmlFor='event-consent'>
-									<span className='label-text'>
-										Consent Form (optional, uses default if not set)
-									</span>
-								</label>
+							<div className='mb-4 space-y-2'>
+								<Label htmlFor='event-consent'>
+									Consent Form (optional, uses default if not set)
+								</Label>
 								<select
-									className='select select-bordered w-full'
+									className='flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
 									id='event-consent'
-									onChange={e =>
+									onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
 										setEventFormData({
 											...eventFormData,
 											consentFormTemplateId: e.target.value
@@ -674,16 +653,14 @@ function EventsPage() {
 									))}
 								</select>
 							</div>
-							<div className='form-control mb-4'>
-								<label className='label' htmlFor='event-demographics'>
-									<span className='label-text'>
-										Demographics Form (optional, uses default if not set)
-									</span>
-								</label>
+							<div className='mb-4 space-y-2'>
+								<Label htmlFor='event-demographics'>
+									Demographics Form (optional, uses default if not set)
+								</Label>
 								<select
-									className='select select-bordered w-full'
+									className='flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
 									id='event-demographics'
-									onChange={e =>
+									onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
 										setEventFormData({
 											...eventFormData,
 											demographicsFormTemplateId: e.target.value
@@ -699,16 +676,14 @@ function EventsPage() {
 									))}
 								</select>
 							</div>
-							<div className='form-control mb-4'>
-								<label className='label' htmlFor='event-survey'>
-									<span className='label-text'>
-										Survey Form (optional, uses default if not set)
-									</span>
-								</label>
+							<div className='mb-4 space-y-2'>
+								<Label htmlFor='event-survey'>
+									Survey Form (optional, uses default if not set)
+								</Label>
 								<select
-									className='select select-bordered w-full'
+									className='flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
 									id='event-survey'
-									onChange={e =>
+									onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
 										setEventFormData({
 											...eventFormData,
 											surveyTemplateId: e.target.value
@@ -724,27 +699,25 @@ function EventsPage() {
 									))}
 								</select>
 							</div>
-							<div className='form-control mb-4'>
-								<label className='label cursor-pointer justify-start'>
-									<input
-										checked={eventFormData.collectAdditionalDemographics}
-										className='checkbox checkbox-primary mr-2'
-										onChange={e =>
-											setEventFormData({
-												...eventFormData,
-												collectAdditionalDemographics: e.target.checked
-											})
-										}
-										type='checkbox'
-									/>
-									<span className='label-text'>
-										Collect Additional Demographics
-									</span>
-								</label>
+							<div className='mb-4 flex items-center gap-2'>
+								<Checkbox
+									id='collect-demographics'
+									checked={eventFormData.collectAdditionalDemographics}
+									onCheckedChange={(checked: boolean) =>
+										setEventFormData({
+											...eventFormData,
+											collectAdditionalDemographics: checked
+										})
+									}
+								/>
+								<Label htmlFor='collect-demographics' className='cursor-pointer'>
+									Collect Additional Demographics
+								</Label>
 							</div>
-							<div className='modal-action'>
-								<button
-									className='btn'
+							<div className='flex justify-end gap-2'>
+								<Button
+									variant='outline'
+									data-testid='cancel-create-event'
 									onClick={() => {
 										setShowCreateEventModal(false)
 										setEventFormData({
@@ -760,10 +733,10 @@ function EventsPage() {
 									type='button'
 								>
 									Cancel
-								</button>
-								<button className='btn btn-primary' type='submit'>
+								</Button>
+								<Button variant='default' data-testid='submit-create-event' type='submit'>
 									Create
-								</button>
+								</Button>
 							</div>
 						</form>
 					</div>
@@ -772,18 +745,15 @@ function EventsPage() {
 
 			{/* Create Event Type Modal */}
 			{showCreateEventTypeModal && (
-				<div className='modal modal-open'>
-					<div className='modal-box'>
+				<div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50'>
+					<div className='max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-background p-6 shadow-xl'>
 						<h3 className='mb-4 font-bold text-lg'>Create Event Type</h3>
 						<form onSubmit={handleCreateEventType}>
-							<div className='form-control mb-4'>
-								<label className='label' htmlFor='event-type-name'>
-									<span className='label-text'>Name</span>
-								</label>
-								<input
-									className='input input-bordered w-full'
+							<div className='mb-4 space-y-2'>
+								<Label htmlFor='event-type-name'>Name</Label>
+								<Input
 									id='event-type-name'
-									onChange={e =>
+									onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 										setEventTypeFormData({
 											...eventTypeFormData,
 											name: e.target.value
@@ -794,14 +764,12 @@ function EventsPage() {
 									value={eventTypeFormData.name}
 								/>
 							</div>
-							<div className='form-control mb-4'>
-								<label className='label' htmlFor='event-type-consent'>
-									<span className='label-text'>Default Consent Form</span>
-								</label>
+							<div className='mb-4 space-y-2'>
+								<Label htmlFor='event-type-consent'>Default Consent Form</Label>
 								<select
-									className='select select-bordered w-full'
+									className='flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
 									id='event-type-consent'
-									onChange={e =>
+									onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
 										setEventTypeFormData({
 											...eventTypeFormData,
 											defaultConsentFormTemplateId: e.target.value
@@ -818,14 +786,12 @@ function EventsPage() {
 									))}
 								</select>
 							</div>
-							<div className='form-control mb-4'>
-								<label className='label' htmlFor='event-type-demographics'>
-									<span className='label-text'>Default Demographics Form</span>
-								</label>
+							<div className='mb-4 space-y-2'>
+								<Label htmlFor='event-type-demographics'>Default Demographics Form</Label>
 								<select
-									className='select select-bordered w-full'
+									className='flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
 									id='event-type-demographics'
-									onChange={e =>
+									onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
 										setEventTypeFormData({
 											...eventTypeFormData,
 											defaultDemographicsFormTemplateId: e.target.value
@@ -842,16 +808,12 @@ function EventsPage() {
 									))}
 								</select>
 							</div>
-							<div className='form-control mb-4'>
-								<label className='label' htmlFor='event-type-survey'>
-									<span className='label-text'>
-										Default Survey Form (optional)
-									</span>
-								</label>
+							<div className='mb-4 space-y-2'>
+								<Label htmlFor='event-type-survey'>Default Survey Form (optional)</Label>
 								<select
-									className='select select-bordered w-full'
+									className='flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
 									id='event-type-survey'
-									onChange={e =>
+									onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
 										setEventTypeFormData({
 											...eventTypeFormData,
 											defaultSurveyTemplateId: e.target.value
@@ -867,9 +829,9 @@ function EventsPage() {
 									))}
 								</select>
 							</div>
-							<div className='modal-action'>
-								<button
-									className='btn'
+							<div className='flex justify-end gap-2'>
+								<Button
+									variant='outline'
 									onClick={() => {
 										setShowCreateEventTypeModal(false)
 										setEventTypeFormData({
@@ -882,10 +844,10 @@ function EventsPage() {
 									type='button'
 								>
 									Cancel
-								</button>
-								<button className='btn btn-primary' type='submit'>
+								</Button>
+								<Button variant='default' type='submit'>
 									Create
-								</button>
+								</Button>
 							</div>
 						</form>
 					</div>
@@ -894,18 +856,15 @@ function EventsPage() {
 
 			{/* Edit Event Type Modal */}
 			{showEditEventTypeModal && selectedEventType && (
-				<div className='modal modal-open'>
-					<div className='modal-box'>
+				<div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50'>
+					<div className='max-h-[90vh] w-full max-w-md overflow-y-auto rounded-lg bg-background p-6 shadow-xl'>
 						<h3 className='mb-4 font-bold text-lg'>Edit Event Type</h3>
 						<form onSubmit={handleUpdateEventType}>
-							<div className='form-control mb-4'>
-								<label className='label' htmlFor='edit-event-type-name'>
-									<span className='label-text'>Name</span>
-								</label>
-								<input
-									className='input input-bordered w-full'
+							<div className='mb-4 space-y-2'>
+								<Label htmlFor='edit-event-type-name'>Name</Label>
+								<Input
 									id='edit-event-type-name'
-									onChange={e =>
+									onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
 										setEventTypeFormData({
 											...eventTypeFormData,
 											name: e.target.value
@@ -916,14 +875,12 @@ function EventsPage() {
 									value={eventTypeFormData.name}
 								/>
 							</div>
-							<div className='form-control mb-4'>
-								<label className='label' htmlFor='edit-event-type-consent'>
-									<span className='label-text'>Default Consent Form</span>
-								</label>
+							<div className='mb-4 space-y-2'>
+								<Label htmlFor='edit-event-type-consent'>Default Consent Form</Label>
 								<select
-									className='select select-bordered w-full'
+									className='flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
 									id='edit-event-type-consent'
-									onChange={e =>
+									onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
 										setEventTypeFormData({
 											...eventTypeFormData,
 											defaultConsentFormTemplateId: e.target.value
@@ -940,14 +897,12 @@ function EventsPage() {
 									))}
 								</select>
 							</div>
-							<div className='form-control mb-4'>
-								<label className='label' htmlFor='edit-event-type-demographics'>
-									<span className='label-text'>Default Demographics Form</span>
-								</label>
+							<div className='mb-4 space-y-2'>
+								<Label htmlFor='edit-event-type-demographics'>Default Demographics Form</Label>
 								<select
-									className='select select-bordered w-full'
+									className='flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
 									id='edit-event-type-demographics'
-									onChange={e =>
+									onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
 										setEventTypeFormData({
 											...eventTypeFormData,
 											defaultDemographicsFormTemplateId: e.target.value
@@ -964,16 +919,12 @@ function EventsPage() {
 									))}
 								</select>
 							</div>
-							<div className='form-control mb-4'>
-								<label className='label' htmlFor='edit-event-type-survey'>
-									<span className='label-text'>
-										Default Survey Form (optional)
-									</span>
-								</label>
+							<div className='mb-4 space-y-2'>
+								<Label htmlFor='edit-event-type-survey'>Default Survey Form (optional)</Label>
 								<select
-									className='select select-bordered w-full'
+									className='flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 md:text-sm'
 									id='edit-event-type-survey'
-									onChange={e =>
+									onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
 										setEventTypeFormData({
 											...eventTypeFormData,
 											defaultSurveyTemplateId: e.target.value
@@ -989,9 +940,9 @@ function EventsPage() {
 									))}
 								</select>
 							</div>
-							<div className='modal-action'>
-								<button
-									className='btn'
+							<div className='flex justify-end gap-2'>
+								<Button
+									variant='outline'
 									onClick={() => {
 										setShowEditEventTypeModal(false)
 										setSelectedEventType(null)
@@ -999,10 +950,10 @@ function EventsPage() {
 									type='button'
 								>
 									Cancel
-								</button>
-								<button className='btn btn-primary' type='submit'>
+								</Button>
+								<Button variant='default' type='submit'>
 									Update
-								</button>
+								</Button>
 							</div>
 						</form>
 					</div>
@@ -1011,16 +962,16 @@ function EventsPage() {
 
 			{/* Delete Event Type Modal */}
 			{showDeleteEventTypeModal && selectedEventType && (
-				<div className='modal modal-open'>
-					<div className='modal-box'>
+				<div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50'>
+					<div className='w-full max-w-md rounded-lg bg-background p-6 shadow-xl'>
 						<h3 className='mb-4 font-bold text-lg'>Delete Event Type</h3>
 						<p className='mb-4'>
 							Are you sure you want to delete &quot;{selectedEventType.name}
 							&quot;? This action cannot be undone.
 						</p>
-						<div className='modal-action'>
-							<button
-								className='btn'
+						<div className='flex justify-end gap-2'>
+							<Button
+								variant='outline'
 								onClick={() => {
 									setShowDeleteEventTypeModal(false)
 									setSelectedEventType(null)
@@ -1028,14 +979,10 @@ function EventsPage() {
 								type='button'
 							>
 								Cancel
-							</button>
-							<button
-								className='btn btn-error'
-								onClick={handleDeleteEventType}
-								type='button'
-							>
+							</Button>
+							<Button variant='destructive' onClick={handleDeleteEventType} type='button'>
 								Delete
-							</button>
+							</Button>
 						</div>
 					</div>
 				</div>
@@ -1043,27 +990,26 @@ function EventsPage() {
 
 			{/* Activate Event Modal */}
 			{showActivateModal && selectedEvent && (
-				<div className='modal modal-open'>
-					<div className='modal-box'>
+				<div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50'>
+					<div className='w-full max-w-md rounded-lg bg-background p-6 shadow-xl'>
 						<h3 className='mb-4 font-bold text-lg'>Activate Event</h3>
 						<p className='mb-4'>
-							Activating &quot;{selectedEvent.name}&quot; will generate a unique
-							4-digit code that participants can use to register for this event.
+							Activating &quot;{selectedEvent.name}&quot; will generate a unique 4-digit code that
+							participants can use to register for this event.
 						</p>
 						{selectedEvent.code && (
-							<div className='alert alert-info mb-4'>
+							<div className='mb-4 rounded-lg bg-blue-100 p-4 dark:bg-blue-900/30'>
 								<div className='flex items-center gap-2'>
 									<span>Event Code:</span>
-									<span className='font-bold font-mono text-lg'>
-										{selectedEvent.code}
-									</span>
-									<button
-										className='btn btn-xs'
+									<span className='font-bold font-mono text-lg'>{selectedEvent.code}</span>
+									<Button
+										size='sm'
+										variant='outline'
 										onClick={() => copyToClipboard(selectedEvent.code || '')}
 										type='button'
 									>
 										Copy
-									</button>
+									</Button>
 								</div>
 								{selectedEvent.activatedAt && (
 									<p className='mt-2 text-sm'>
@@ -1072,15 +1018,14 @@ function EventsPage() {
 								)}
 								{selectedEvent.surveyAccessibleAt && (
 									<p className='text-sm'>
-										Surveys accessible:{' '}
-										{formatDateTime(selectedEvent.surveyAccessibleAt)}
+										Surveys accessible: {formatDateTime(selectedEvent.surveyAccessibleAt)}
 									</p>
 								)}
 							</div>
 						)}
-						<div className='modal-action'>
-							<button
-								className='btn'
+						<div className='flex justify-end gap-2'>
+							<Button
+								variant='outline'
 								onClick={() => {
 									setShowActivateModal(false)
 									setSelectedEvent(null)
@@ -1088,15 +1033,11 @@ function EventsPage() {
 								type='button'
 							>
 								{selectedEvent.code ? 'Close' : 'Cancel'}
-							</button>
+							</Button>
 							{!selectedEvent.code && (
-								<button
-									className='btn btn-primary'
-									onClick={handleActivateEvent}
-									type='button'
-								>
+								<Button variant='default' onClick={handleActivateEvent} type='button'>
 									Activate
-								</button>
+								</Button>
 							)}
 						</div>
 					</div>

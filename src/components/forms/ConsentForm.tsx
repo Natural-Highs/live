@@ -1,5 +1,8 @@
 import {useForm} from '@tanstack/react-form'
 import type React from 'react'
+import {Button} from '@/components/ui/button'
+import {Checkbox} from '@/components/ui/checkbox'
+import {Label} from '@/components/ui/label'
 import {type ConsentFormData, consentFormSchema} from '@/lib/schemas/consent'
 
 interface ConsentFormProps {
@@ -40,25 +43,20 @@ export function ConsentForm({
 		>
 			<div>
 				{templateName && (
-					<h2 className='mb-4 font-semibold text-2xl text-base-content'>
-						{templateName}
-					</h2>
+					<h2 className='mb-4 font-semibold text-2xl text-foreground'>{templateName}</h2>
 				)}
 				{templateQuestions && templateQuestions.length > 0 ? (
 					<div className='space-y-4'>
 						{templateQuestions.map((question, index) => (
 							<div className='space-y-2' key={question.id || index}>
-								<p className='font-medium text-base-content'>{question.text}</p>
+								<p className='font-medium text-foreground'>{question.text}</p>
 							</div>
 						))}
 					</div>
 				) : (
-					<div className='prose text-base-content'>
+					<div className='prose text-foreground'>
 						<p>TODO: Add consent form text here</p>
-						<p>
-							By checking the box below, you consent to participate in this
-							research study.
-						</p>
+						<p>By checking the box below, you consent to participate in this research study.</p>
 					</div>
 				)}
 			</div>
@@ -70,40 +68,34 @@ export function ConsentForm({
 				}}
 			>
 				{field => (
-					<div className='form-control'>
-						<label className='label cursor-pointer justify-start gap-3'>
-							<input
+					<div className='space-y-2'>
+						<div className='flex items-center gap-3'>
+							<Checkbox
 								checked={field.state.value}
-								className='checkbox checkbox-primary'
 								id={field.name}
 								onBlur={field.handleBlur}
-								onChange={e => field.handleChange(e.target.checked)}
+								onCheckedChange={checked => field.handleChange(checked === true)}
 								required={true}
-								type='checkbox'
 							/>
-							<span className='label-text text-base-content'>
-								I have read and understand the consent form and agree to
-								participate
-							</span>
-						</label>
+							<Label htmlFor={field.name} className='cursor-pointer text-foreground'>
+								I have read and understand the consent form and agree to participate
+							</Label>
+						</div>
 						{field.state.meta.errors.length > 0 && (
-							<label className='label' htmlFor={field.name}>
-								<span className='label-text-alt text-error'>
-									{String(field.state.meta.errors[0])}
-								</span>
-							</label>
+							<p className='text-destructive text-sm'>{String(field.state.meta.errors[0])}</p>
 						)}
 					</div>
 				)}
 			</form.Field>
 
-			<button
-				className='btn btn-primary w-full rounded-[20px] font-semibold shadow-md'
+			<Button
+				variant='default'
+				className='w-full rounded-[20px] font-semibold shadow-md'
 				disabled={submitting || !form.state.values.agreed}
 				type='submit'
 			>
 				{submitting ? 'Submitting...' : 'I Consent'}
-			</button>
+			</Button>
 		</form>
 	)
 }

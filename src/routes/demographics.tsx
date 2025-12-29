@@ -1,9 +1,7 @@
 import {createFileRoute, useNavigate} from '@tanstack/react-router'
 import {useState} from 'react'
-import {
-	type SurveyJSJson,
-	SurveyRenderer
-} from '@/components/forms/SurveyRenderer'
+import {type SurveyJSJson, SurveyRenderer} from '@/components/forms/SurveyRenderer'
+import {Alert, Spinner} from '@/components/ui'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
@@ -13,12 +11,7 @@ import {convertTemplateToSurveyJS} from '@/lib/forms/template-converter'
 interface DemographicsFormTemplate {
 	id: string
 	name: string
-	type?:
-		| 'consent'
-		| 'demographics'
-		| 'survey'
-		| 'facilitator-training'
-		| 'feedback'
+	type?: 'consent' | 'demographics' | 'survey' | 'facilitator-training' | 'feedback'
 	description?: string
 	questions?: Array<{
 		id?: string
@@ -56,9 +49,7 @@ export const Route = createFileRoute('/demographics')({
 
 		// Convert template to SurveyJS JSON format
 		const surveyJson = data.template
-			? convertTemplateToSurveyJS(
-					data.template as Parameters<typeof convertTemplateToSurveyJS>[0]
-				)
+			? convertTemplateToSurveyJS(data.template as Parameters<typeof convertTemplateToSurveyJS>[0])
 			: null
 
 		return {
@@ -99,11 +90,7 @@ function DemographicsComponent() {
 			// Navigate to profile page after successful submission
 			navigate({to: '/profile', replace: true})
 		} catch (err) {
-			setError(
-				err instanceof Error
-					? err.message
-					: 'Failed to submit demographics form'
-			)
+			setError(err instanceof Error ? err.message : 'Failed to submit demographics form')
 			setSubmitting(false)
 		}
 	}
@@ -120,19 +107,15 @@ function DemographicsComponent() {
 					<div className='mb-4 flex justify-center'>
 						<Logo size='md' />
 					</div>
-					<h1 className='mb-2 font-bold text-4xl text-base-content'>
-						Demographics Form
-					</h1>
-					<p className='text-sm opacity-70'>
-						Please provide your demographic information
-					</p>
+					<h1 className='mb-2 font-bold text-4xl text-foreground'>Demographics Form</h1>
+					<p className='text-sm opacity-70'>Please provide your demographic information</p>
 				</div>
 
 				<FormContainer>
 					{error && (
-						<div className='alert alert-error mb-4'>
+						<Alert variant='error' className='mb-4'>
 							<span>{error}</span>
-						</div>
+						</Alert>
 					)}
 
 					{surveyJson && !submitting ? (
@@ -144,16 +127,15 @@ function DemographicsComponent() {
 						/>
 					) : submitting ? (
 						<div className='py-8 text-center'>
-							<span className='loading loading-spinner loading-lg' />
-							<p className='mt-4 text-base-content opacity-70'>Submitting...</p>
+							<Spinner size='lg' />
+							<p className='mt-4 text-foreground opacity-70'>Submitting...</p>
 						</div>
 					) : (
-						<div className='alert alert-warning'>
+						<Alert variant='warning'>
 							<span>
-								Demographics form template not available. Please contact an
-								administrator.
+								Demographics form template not available. Please contact an administrator.
 							</span>
-						</div>
+						</Alert>
 					)}
 				</FormContainer>
 			</div>

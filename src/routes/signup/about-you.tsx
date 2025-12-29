@@ -2,7 +2,7 @@ import {createFileRoute, useNavigate} from '@tanstack/react-router'
 import {useEffect, useState} from 'react'
 import {z} from 'zod'
 import {AboutYouForm} from '@/components/forms/AboutYouForm'
-import {BrandLogo} from '@/components/ui'
+import {Alert, BrandLogo} from '@/components/ui'
 import GreenCard from '@/components/ui/GreenCard'
 import {PageContainer} from '@/components/ui/page-container'
 import TitleCard from '@/components/ui/TitleCard'
@@ -50,8 +50,7 @@ function SignUpAboutYouComponent() {
 					dateOfBirth: formData.dateOfBirth,
 					emergencyContactName: formData.emergencyContactName || undefined,
 					emergencyContactPhone: formData.emergencyContactPhone || undefined,
-					emergencyContactRelationship:
-						formData.emergencyContactRelationship || undefined
+					emergencyContactRelationship: formData.emergencyContactRelationship || undefined
 				})
 			})
 
@@ -66,9 +65,7 @@ function SignUpAboutYouComponent() {
 			// Navigate to consent form or demographics next
 			navigate({to: '/consent', replace: true})
 		} catch (error: unknown) {
-			setError(
-				error instanceof Error ? error.message : 'Failed to update profile'
-			)
+			setError(error instanceof Error ? error.message : 'Failed to update profile')
 		} finally {
 			setLoading(false)
 		}
@@ -79,7 +76,7 @@ function SignUpAboutYouComponent() {
 	}
 
 	return (
-		<PageContainer>
+		<PageContainer data-testid='about-you-page'>
 			<BrandLogo
 				direction='vertical'
 				gapClassName='gap-0'
@@ -96,16 +93,12 @@ function SignUpAboutYouComponent() {
 
 			<GreenCard>
 				{error && (
-					<div className='alert alert-error mb-4'>
+					<Alert className='mb-4' data-testid='about-you-error' variant='error'>
 						<span>{error}</span>
-					</div>
+					</Alert>
 				)}
 
-				<AboutYouForm
-					loading={loading}
-					onBack={handleBack}
-					onSubmit={handleSubmit}
-				/>
+				<AboutYouForm loading={loading} onBack={handleBack} onSubmit={handleSubmit} />
 			</GreenCard>
 		</PageContainer>
 	)

@@ -34,8 +34,7 @@ if (isClient) {
 
 	// Connect to emulators in development or when explicitly enabled (CI/tests)
 	const shouldConnectEmulators =
-		import.meta.env.MODE === 'development' ||
-		import.meta.env.VITE_USE_EMULATORS === 'true'
+		import.meta.env.MODE === 'development' || import.meta.env.VITE_USE_EMULATORS === 'true'
 
 	// Track if emulators are already connected (prevents errors on hot reload)
 	let emulatorsConnected = false

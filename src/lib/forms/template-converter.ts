@@ -18,12 +18,7 @@ export interface FormQuestion {
 export interface FormTemplate {
 	id: string
 	name: string
-	type?:
-		| 'consent'
-		| 'demographics'
-		| 'survey'
-		| 'facilitator-training'
-		| 'feedback'
+	type?: 'consent' | 'demographics' | 'survey' | 'facilitator-training' | 'feedback'
 	description?: string
 	questions?: readonly FormQuestion[]
 	surveyJson?: SurveyJSJson
@@ -53,17 +48,14 @@ export interface FormTemplate {
  * const surveyJson = convertTemplateToSurveyJS(template);
  * ```
  */
-export function convertTemplateToSurveyJS(
-	template: FormTemplate
-): SurveyJSJson {
+export function convertTemplateToSurveyJS(template: FormTemplate): SurveyJSJson {
 	if (template.surveyJson) {
 		return template.surveyJson
 	}
 
 	// Convert questions array to SurveyJS elements
 	const elements = (template.questions || []).map(question => {
-		const questionId =
-			question.id || `question-${Math.random().toString(36).substr(2, 9)}`
+		const questionId = question.id || `question-${Math.random().toString(36).substr(2, 9)}`
 		const questionType = question.type || 'text'
 
 		// Handle non-input question types

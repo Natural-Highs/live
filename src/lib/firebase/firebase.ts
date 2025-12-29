@@ -10,9 +10,7 @@ if (admin.apps.length === 0) {
 
 	if (process.env.FIREBASE_SERVICE_ACCOUNT) {
 		try {
-			serviceAccount = JSON.parse(
-				process.env.FIREBASE_SERVICE_ACCOUNT
-			) as ServiceAccount
+			serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT) as ServiceAccount
 		} catch {
 			throw new Error('Invalid FIREBASE_SERVICE_ACCOUNT format')
 		}

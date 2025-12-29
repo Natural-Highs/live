@@ -1,8 +1,12 @@
 import {useQuery, useQueryClient} from '@tanstack/react-query'
 import {createFileRoute} from '@tanstack/react-router'
 import type {ColumnDef} from '@tanstack/react-table'
-import {useMemo, useState} from 'react'
-import {type User, usersQueryOptions} from '@/lib/queries/index.js'
+import {useCallback, useMemo, useState} from 'react'
+import {Badge} from '@/components/ui/badge'
+import {Button} from '@/components/ui/button'
+import {Card, CardContent} from '@/components/ui/card'
+import {Spinner} from '@/components/ui/spinner'
+import {type User, usersQueryOptions} from '@/queries/index.js'
 import {DataTable} from '../../components/admin/DataTable'
 
 export const Route = createFileRoute('/_admin/users')({
@@ -20,15 +24,15 @@ function UsersPage() {
 	const [showDetailsModal, setShowDetailsModal] = useState(false)
 	const [showToggleAdminModal, setShowToggleAdminModal] = useState(false)
 
-	const handleViewDetails = (user: User) => {
+	const handleViewDetails = useCallback((user: User) => {
 		setSelectedUser(user)
 		setShowDetailsModal(true)
-	}
+	}, [])
 
-	const handleToggleAdminClick = (user: User) => {
+	const handleToggleAdminClick = useCallback((user: User) => {
 		setSelectedUser(user)
 		setShowToggleAdminModal(true)
-	}
+	}, [])
 
 	const handleToggleAdmin = async () => {
 		if (!selectedUser) return
@@ -36,16 +40,13 @@ function UsersPage() {
 		setError('')
 
 		try {
-			const response = await fetch(
-				`/api/admin/users/${selectedUser.id}/admin`,
-				{
-					method: 'PATCH',
-					headers: {'Content-Type': 'application/json'},
-					body: JSON.stringify({
-						admin: !selectedUser.admin
-					})
-				}
-			)
+			const response = await fetch(`/api/admin/users/${selectedUser.id}/admin`, {
+				method: 'PATCH',
+				headers: {'Content-Type': 'application/json'},
+				body: JSON.stringify({
+					admin: !selectedUser.admin
+				})
+			})
 
 			const data = (await response.json()) as {
 				success: boolean
@@ -61,13 +62,11 @@ function UsersPage() {
 			setSelectedUser(null)
 			await queryClient.invalidateQueries({queryKey: ['users']})
 		} catch (err) {
-			setError(
-				err instanceof Error ? err.message : 'Failed to update admin status'
-			)
+			setError(err instanceof Error ? err.message : 'Failed to update admin status')
 		}
 	}
 
-	const formatDate = (date: Date | string | {toDate: () => Date}): string => {
+	const formatDate = useCallback((date: Date | string | {toDate: () => Date}): string => {
 		let d: Date
 		if (date instanceof Date) {
 			d = date
@@ -77,7 +76,7 @@ function UsersPage() {
 			d = new Date(date as string)
 		}
 		return d.toLocaleString()
-	}
+	}, [])
 
 	// Define columns for users table
 	const userColumns = useMemo<ColumnDef<User>[]>(
@@ -101,9 +100,9 @@ function UsersPage() {
 				header: 'Admin',
 				cell: ({row}) =>
 					row.original.admin ? (
-						<span className='badge badge-primary'>Admin</span>
+						<Badge variant='default'>Admin</Badge>
 					) : (
-						<span className='badge badge-ghost'>User</span>
+						<Badge variant='ghost'>User</Badge>
 					)
 			},
 			{
@@ -111,9 +110,9 @@ function UsersPage() {
 				header: 'Consent',
 				cell: ({row}) =>
 					row.original.signedConsentForm ? (
-						<span className='badge badge-success'>Signed</span>
+						<Badge variant='success'>Signed</Badge>
 					) : (
-						<span className='badge badge-warning'>Not Signed</span>
+						<Badge variant='warning'>Not Signed</Badge>
 					)
 			},
 			{
@@ -126,31 +125,35 @@ function UsersPage() {
 				header: 'Actions',
 				cell: ({row}) => (
 					<div className='flex gap-2'>
-						<button
-							className='btn btn-sm btn-primary'
+						<Button
+							size='sm'
+							variant='default'
+							data-testid='button-view-details'
 							onClick={() => handleViewDetails(row.original)}
 							type='button'
 						>
 							View Details
-						</button>
-						<button
-							className='btn btn-sm btn-secondary'
+						</Button>
+						<Button
+							size='sm'
+							variant='secondary'
+							data-testid='button-toggle-admin'
 							onClick={() => handleToggleAdminClick(row.original)}
 							type='button'
 						>
 							{row.original.admin ? 'Remove Admin' : 'Make Admin'}
-						</button>
+						</Button>
 					</div>
 				)
 			}
 		],
-		[]
+		[formatDate, handleToggleAdminClick, handleViewDetails]
 	)
 
 	if (isLoading) {
 		return (
 			<div className='container mx-auto p-4'>
-				<span className='loading loading-spinner loading-lg' />
+				<Spinner size='lg' />
 			</div>
 		)
 	}
@@ -161,31 +164,27 @@ function UsersPage() {
 
 			{/* Error Message */}
 			{error && (
-				<div className='alert alert-error mb-4'>
+				<div className='mb-4 rounded-lg bg-destructive/15 p-4 text-destructive'>
 					<span>{error}</span>
 				</div>
 			)}
 
 			{/* Users Table */}
-			<div className='card bg-base-200 shadow-xl'>
-				<div className='card-body'>
+			<Card className='shadow-xl'>
+				<CardContent className='pt-6'>
 					<h2 className='card-title'>Users ({users.length})</h2>
 					{users.length === 0 ? (
 						<p className='py-8 text-center'>No users found</p>
 					) : (
-						<DataTable
-							columns={userColumns}
-							data={users}
-							searchPlaceholder='Search users...'
-						/>
+						<DataTable columns={userColumns} data={users} searchPlaceholder='Search users...' />
 					)}
-				</div>
-			</div>
+				</CardContent>
+			</Card>
 
 			{/* Details Modal */}
 			{showDetailsModal && selectedUser && (
-				<div className='modal modal-open'>
-					<div className='modal-box'>
+				<div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50'>
+					<div className='mx-4 max-w-md rounded-lg bg-background p-6 shadow-xl'>
 						<h3 className='mb-4 font-bold text-lg'>User Details</h3>
 						<div className='space-y-2'>
 							<p>
@@ -202,39 +201,24 @@ function UsersPage() {
 							</p>
 							<p>
 								<strong>Admin:</strong>{' '}
-								<span
-									className={`badge ${
-										selectedUser.admin ? 'badge-primary' : 'badge-ghost'
-									}`}
-								>
+								<Badge variant={selectedUser.admin ? 'default' : 'ghost'}>
 									{selectedUser.admin ? 'Yes' : 'No'}
-								</span>
+								</Badge>
 							</p>
 							<p>
 								<strong>Consent Form:</strong>{' '}
-								<span
-									className={`badge ${
-										selectedUser.signedConsentForm
-											? 'badge-success'
-											: 'badge-warning'
-									}`}
-								>
+								<Badge variant={selectedUser.signedConsentForm ? 'success' : 'warning'}>
 									{selectedUser.signedConsentForm ? 'Signed' : 'Not Signed'}
-								</span>
+								</Badge>
 							</p>
 							<p>
-								<strong>Created At:</strong>{' '}
-								{formatDate(selectedUser.createdAt)}
+								<strong>Created At:</strong> {formatDate(selectedUser.createdAt)}
 							</p>
 						</div>
-						<div className='modal-action'>
-							<button
-								className='btn'
-								onClick={() => setShowDetailsModal(false)}
-								type='button'
-							>
+						<div className='mt-6 flex justify-end'>
+							<Button variant='outline' onClick={() => setShowDetailsModal(false)} type='button'>
 								Close
-							</button>
+							</Button>
 						</div>
 					</div>
 				</div>
@@ -242,23 +226,19 @@ function UsersPage() {
 
 			{/* Toggle Admin Modal */}
 			{showToggleAdminModal && selectedUser && (
-				<div className='modal modal-open'>
-					<div className='modal-box'>
+				<div className='fixed inset-0 z-50 flex items-center justify-center bg-black/50'>
+					<div className='mx-4 max-w-md rounded-lg bg-background p-6 shadow-xl'>
 						<h3 className='mb-4 font-bold text-lg'>
-							{selectedUser.admin
-								? 'Remove Admin Rights'
-								: 'Grant Admin Rights'}
+							{selectedUser.admin ? 'Remove Admin Rights' : 'Grant Admin Rights'}
 						</h3>
 						<p className='mb-4'>
 							Are you sure you want to{' '}
-							{selectedUser.admin
-								? 'remove admin rights from'
-								: 'grant admin rights to'}{' '}
+							{selectedUser.admin ? 'remove admin rights from' : 'grant admin rights to'}{' '}
 							<strong>{selectedUser.email}</strong>?
 						</p>
-						<div className='modal-action'>
-							<button
-								className='btn'
+						<div className='flex justify-end gap-2'>
+							<Button
+								variant='outline'
 								onClick={() => {
 									setShowToggleAdminModal(false)
 									setSelectedUser(null)
@@ -266,14 +246,15 @@ function UsersPage() {
 								type='button'
 							>
 								Cancel
-							</button>
-							<button
-								className={`btn ${selectedUser.admin ? 'btn-warning' : 'btn-primary'}`}
+							</Button>
+							<Button
+								variant={selectedUser.admin ? 'destructive' : 'default'}
+								data-testid='button-confirm-toggle-admin'
 								onClick={handleToggleAdmin}
 								type='button'
 							>
 								Confirm
-							</button>
+							</Button>
 						</div>
 					</div>
 				</div>
