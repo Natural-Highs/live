@@ -19,8 +19,8 @@
 
 import type {BrowserContext} from '@playwright/test'
 import * as Iron from 'iron-webcrypto'
-import {SESSION_SECRET_TEST} from '../../playwright.config'
-import {SESSION_COOKIE_NAME, SESSION_MAX_AGE} from '../../src/lib/session'
+import {SESSION_SECRET_TEST} from '../../../playwright.config'
+import {SESSION_COOKIE_NAME, SESSION_MAX_AGE} from '../../lib/session'
 
 // Re-export session constants for test usage
 export {SESSION_COOKIE_NAME, SESSION_MAX_AGE, SESSION_SECRET_TEST}
@@ -221,7 +221,8 @@ export async function injectAdminSessionCookie(
 ): Promise<void> {
 	await injectSessionCookie(context, user, {
 		admin: true,
-		signedConsentForm: true
+		signedConsentForm: true,
+		profileComplete: true
 	})
 }
 
@@ -310,19 +311,30 @@ export async function injectAuthenticatedUser(
 	}
 
 	if (!isMinor && userDocData) {
-		if (userDocData.pronouns !== undefined) userDoc.pronouns = userDocData.pronouns
-		if (userDocData.gender !== undefined) userDoc.gender = userDocData.gender
-		if (userDocData.raceEthnicity !== undefined) userDoc.raceEthnicity = userDocData.raceEthnicity
-		if (userDocData.emergencyContactName !== undefined)
+		if (userDocData.pronouns !== undefined) {
+			userDoc.pronouns = userDocData.pronouns
+		}
+		if (userDocData.gender !== undefined) {
+			userDoc.gender = userDocData.gender
+		}
+		if (userDocData.raceEthnicity !== undefined) {
+			userDoc.raceEthnicity = userDocData.raceEthnicity
+		}
+		if (userDocData.emergencyContactName !== undefined) {
 			userDoc.emergencyContactName = userDocData.emergencyContactName
-		if (userDocData.emergencyContactPhone !== undefined)
+		}
+		if (userDocData.emergencyContactPhone !== undefined) {
 			userDoc.emergencyContactPhone = userDocData.emergencyContactPhone
-		if (userDocData.emergencyContactEmail !== undefined)
+		}
+		if (userDocData.emergencyContactEmail !== undefined) {
 			userDoc.emergencyContactEmail = userDocData.emergencyContactEmail
-		if (userDocData.dietaryRestrictions !== undefined)
+		}
+		if (userDocData.dietaryRestrictions !== undefined) {
 			userDoc.dietaryRestrictions = userDocData.dietaryRestrictions
-		if (userDocData.medicalConditions !== undefined)
+		}
+		if (userDocData.medicalConditions !== undefined) {
 			userDoc.medicalConditions = userDocData.medicalConditions
+		}
 	}
 
 	let minorDemographics: MinorDemographicsData | undefined
