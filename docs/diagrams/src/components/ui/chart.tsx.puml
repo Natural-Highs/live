@@ -1,6 +1,0 @@
-@startuml components__ui__chart_tsx
-title components/ui/chart.tsx
-class "components/ui/chart.tsx" as components_ui_chart_tsx <<Artifact>> {
-  -- no exports --
-}
-@enduml

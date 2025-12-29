@@ -1,6 +1,0 @@
-@startuml components__ProtectedRoute_tsx
-title components/ProtectedRoute.tsx
-class "components/ProtectedRoute.tsx" as components_ProtectedRoute_tsx <<Artifact>> {
-  -- no exports --
-}
-@enduml

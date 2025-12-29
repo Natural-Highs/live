@@ -1,11 +1,11 @@
-import type React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import {Navigate, useLocation} from '@tanstack/react-router'
+import type React from 'react'
+import {useAuth} from '../context/AuthContext'
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
-  requireConsentForm?: boolean;
-  requireAdmin?: boolean;
+	children: React.ReactNode
+	requireConsentForm?: boolean
+	requireAdmin?: boolean
 }
 
 /**
@@ -21,63 +21,63 @@ interface ProtectedRouteProps {
  * - If requireAdmin and not admin → redirect to /dashboard
  */
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
-  children,
-  requireConsentForm = false,
-  requireAdmin = false,
+	children,
+	requireConsentForm = false,
+	requireAdmin = false
 }) => {
-  const { user, loading, consentForm, admin } = useAuth();
-  const location = useLocation();
+	const {user, loading, consentForm, admin} = useAuth()
+	const location = useLocation()
 
-
+	/*
   const SKIP_AUTH = true;
   if (SKIP_AUTH) {
     return <>{children}</>;
   }
+  */
 
+	if (loading) {
+		return (
+			<div className='flex min-h-screen items-center justify-center'>
+				<div className='text-lg'>Loading...</div>
+			</div>
+		)
+	}
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-lg">Loading...</div>
-      </div>
-    );
-  }
+	const protectedRoutes = ['/dashboard', '/', '/admin', '/consent']
 
-  const protectedRoutes = ['/dashboard', '/', '/admin', '/consent'];
+	if (!user) {
+		return <Navigate replace={true} to='/authentication' />
+	}
 
-  if (!user) {
-    return <Navigate to="/authentication" replace state={{ from: location }} />;
-  }
+	if (consentForm) {
+		if (location.pathname === '/consent') {
+			return <Navigate replace={true} to='/dashboard' />
+		}
 
-  if (consentForm) {
-    if (location.pathname === '/consent') {
-      return <Navigate to="/dashboard" replace />;
-    }
+		if (location.pathname === '/authentication') {
+			return <Navigate replace={true} to='/dashboard' />
+		}
 
-    if (location.pathname === '/authentication') {
-      return <Navigate to="/dashboard" replace />;
-    }
+		if (requireAdmin && !admin) {
+			return <Navigate replace={true} to='/dashboard' />
+		}
 
-    if (requireAdmin && !admin) {
-      return <Navigate to="/dashboard" replace />;
-    }
+		return <>{children}</>
+	}
 
-    return <>{children}</>;
-  }
+	if (location.pathname === '/consent') {
+		return <>{children}</>
+	}
 
-  if (location.pathname === '/consent') {
-    return <>{children}</>;
-  }
+	if (protectedRoutes.includes(location.pathname) || requireConsentForm) {
+		return <Navigate replace={true} to='/consent' />
+	}
 
-  if (protectedRoutes.includes(location.pathname) || requireConsentForm) {
-    return <Navigate to="/consent" replace />;
-  }
+	if (requireAdmin && !admin) {
+		return <Navigate replace={true} to='/dashboard' />
+	}
 
-  if (requireAdmin && !admin) {
-    return <Navigate to="/dashboard" replace />;
-  }
+	return <>{children}</>
+}
 
-  return <>{children}</>;
-};
-
-export default ProtectedRoute;
+export default ProtectedRoute

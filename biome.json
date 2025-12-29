@@ -1,85 +1,223 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.3.2/schema.json",
-  "formatter": {
-    "enabled": true,
-    "formatWithErrors": false,
-    "indentStyle": "space",
-    "indentWidth": 2,
-    "lineEnding": "lf",
-    "lineWidth": 100,
-    "attributePosition": "auto"
-  },
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true,
-      "correctness": {
-        "noUnusedVariables": "error"
-      },
-      "suspicious": {
-        "noExplicitAny": "error",
-        "noDoubleEquals": "error"
-      }
-    }
-  },
-  "javascript": {
-    "formatter": {
-      "quoteStyle": "single",
-      "jsxQuoteStyle": "double",
-      "quoteProperties": "asNeeded",
-      "trailingCommas": "es5",
-      "semicolons": "always",
-      "arrowParentheses": "asNeeded",
-      "bracketSpacing": true,
-      "bracketSameLine": false,
-      "attributePosition": "auto"
-    },
-    "globals": ["Bun", "process"]
-  },
-  "json": {
-    "formatter": {
-      "enabled": true,
-      "trailingCommas": "none"
-    }
-  },
-  "files": {
-    "ignoreUnknown": true,
-    "includes": [
-      "src/**",
-      "tests/**",
-      "scripts/**",
-      "*.config.ts",
-      "*.config.js",
-      "*.config.mjs",
-      "*.config.cjs",
-      "*.json"
-    ]
-  },
-  "css": {
-    "linter": {
-      "enabled": false
-    }
-  },
-  "overrides": [
-    {
-      "includes": ["*.config.js", "*.config.ts", "*.config.mjs"],
-      "linter": {
-        "rules": {
-          "style": {
-            "noDefaultExport": "off"
-          }
-        }
-      }
-    },
-    {
-      "includes": ["scripts/**/*.mjs"],
-      "linter": {
-        "rules": {
-          "suspicious": {
-            "noAssignInExpressions": "off"
-          }
-        }
-      }
-    }
-  ]
+	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+	"vcs": { "clientKind": "git", "enabled": true, "useIgnoreFile": true },
+	"assist": {
+		"actions": {
+			"source": {
+				"organizeImports": "on",
+				"useSortedAttributes": "on",
+				"useSortedProperties": "on"
+			}
+		},
+		"enabled": true
+	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
+	"formatter": {
+		"enabled": true,
+		"indentStyle": "tab"
+	},
+	"javascript": {
+		"formatter": {
+			"arrowParentheses": "asNeeded",
+			"bracketSpacing": false,
+			"jsxQuoteStyle": "single",
+			"quoteStyle": "single",
+			"semicolons": "asNeeded",
+			"trailingCommas": "none"
+		},
+		"globals": [
+			"vi",
+			"describe",
+			"it",
+			"test",
+			"expect",
+			"beforeEach",
+			"afterEach",
+			"beforeAll",
+			"afterAll"
+		]
+	},
+	"linter": {
+		"domains": {
+			"project": "all",
+			"react": "all",
+			"test": "all"
+		},
+		"enabled": true,
+		"rules": {
+			"a11y": "error",
+			"complexity": "error",
+			"correctness": "error",
+			"nursery": "error",
+			"performance": "error",
+			"recommended": true,
+			"security": "error",
+			"style": "error",
+			"suspicious": "error"
+		}
+	},
+	"overrides": [
+		{
+			"includes": [
+				"src/lib/firebase/firebase.admin.ts",
+				"src/lib/firebase/firebase.ts"
+			],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noNodejsModules": "off"
+					},
+					"nursery": {
+						"noTernary": "off",
+						"noFloatingPromises": "off"
+					},
+					"suspicious": {
+						"noEmptyBlockStatements": "off"
+					},
+					"style": {
+						"noCommonJs": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["vitest.config.ts", "tailwind.config.js"],
+			"linter": {
+				"rules": {
+					"style": {
+						"noDefaultExport": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["**/*"],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"useImportExtensions": "off",
+						"noSolidDestructuredProps": "off",
+						"noUndeclaredVariables": "off",
+						"useUniqueElementIds": "off",
+						"noUnknownProperty": "off",
+						"useExhaustiveDependencies": "off",
+						"noNestedComponentDefinitions": "off",
+						"useImageSize": "off",
+						"noNodejsModules": "off"
+					},
+					"nursery": {
+						"useExplicitType": "off",
+						"noUnresolvedImports": "off",
+						"noJsxLiterals": "off",
+						"noTernary": "off",
+						"noLeakedRender": "off",
+						"useQwikValidLexicalScope": "off",
+						"noFloatingPromises": "off",
+						"noShadow": "off",
+						"noIncrementDecrement": "off",
+						"noEmptySource": "off",
+						"noUselessCatchBinding": "off"
+					},
+					"suspicious": {
+						"noReactSpecificProps": "off",
+						"noUnknownAtRules": "off",
+						"useAwait": "off",
+						"noEmptyBlockStatements": "off",
+						"noExplicitAny": "off",
+						"noAlert": "off",
+						"noEvolvingTypes": "off",
+						"useIterableCallbackReturn": "off"
+					},
+					"complexity": {
+						"noExcessiveLinesPerFunction": "off",
+						"noExcessiveCognitiveComplexity": "off",
+						"noForEach": "off",
+						"noBannedTypes": "off"
+					},
+					"performance": {
+						"noImgElement": "off",
+						"noNamespaceImport": "off",
+						"useSolidForComponent": "off",
+						"noBarrelFile": "off",
+						"useTopLevelRegex": "off",
+						"noAwaitInLoops": "off"
+					},
+					"style": {
+						"noMagicNumbers": "off",
+						"useExportsLast": "off",
+						"useBlockStatements": "off",
+						"noDefaultExport": "off",
+						"useComponentExportOnlyModules": "off",
+						"noNamespace": "off",
+						"noNestedTernary": "off",
+						"noNonNullAssertion": "off",
+						"useNamingConvention": "off",
+						"useFilenamingConvention": {
+							"level": "error",
+							"options": {
+								"strictCase": false,
+								"requireAscii": true,
+								"filenameCases": ["camelCase", "kebab-case", "PascalCase"]
+							}
+						}
+					},
+					"security": {
+						"noSecrets": {
+							"level": "error",
+							"options": {
+								"entropyThreshold": 100
+							}
+						}
+					}
+				}
+			}
+		},
+		{
+			"includes": [
+				"vite.config.ts",
+				"playwright.config.ts",
+				"vitest.config.ts"
+			],
+			"linter": {
+				"rules": {
+					"correctness": {
+						"noNodejsModules": "off"
+					},
+					"nursery": {
+						"noTernary": "off"
+					},
+					"style": {
+						"noDefaultExport": "off",
+						"useNamingConvention": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["src/**/*.test.ts", "src/**/*.test.tsx"],
+			"linter": {
+				"rules": {
+					"complexity": {
+						"noExcessiveLinesPerFunction": "off"
+					},
+					"performance": {
+						"useTopLevelRegex": "off"
+					}
+				}
+			}
+		},
+		{
+			"includes": ["public/**"],
+			"formatter": {
+				"enabled": false
+			},
+			"linter": {
+				"enabled": false
+			}
+		}
+	]
 }

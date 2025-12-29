@@ -1,66 +1,72 @@
-import { getIdTokenResult, onAuthStateChanged, type User } from 'firebase/auth';
-import type React from 'react';
-import { createContext, type ReactNode, useContext, useEffect, useState } from 'react';
-import { auth } from '$lib/firebase/firebase.app';
-import type { AuthContextUserData } from './types/authContext';
+import {getIdTokenResult, onAuthStateChanged, type User} from 'firebase/auth'
+import type React from 'react'
+import {
+	createContext,
+	type ReactNode,
+	useContext,
+	useEffect,
+	useState
+} from 'react'
+import {auth} from '$lib/firebase/firebase.app'
+import type {AuthContextUserData} from './types/authContext'
 
 interface AuthContextType {
-  user: User | null;
-  loading: boolean;
-  consentForm: boolean;
-  admin: boolean;
-  data: AuthContextUserData;
+	user: User | null
+	loading: boolean
+	consentForm: boolean
+	admin: boolean
+	data: AuthContextUserData
 }
 
 const AuthContext = createContext<AuthContextType>({
-  user: null,
-  loading: true,
-  consentForm: false,
-  admin: false,
-  data: {},
-});
+	user: null,
+	loading: true,
+	consentForm: false,
+	admin: false,
+	data: {}
+})
 
-export const useAuth = () => useContext(AuthContext);
+export const useAuth = () => useContext(AuthContext)
 
 interface AuthProviderProps {
-  children: ReactNode;
+	children: ReactNode
 }
 
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [authState, setAuthState] = useState<AuthContextType>({
-    user: null,
-    loading: true,
-    consentForm: false,
-    admin: false,
-    data: {},
-  });
+export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
+	const [authState, setAuthState] = useState<AuthContextType>({
+		user: null,
+		loading: true,
+		consentForm: false,
+		admin: false,
+		data: {}
+	})
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async user => {
-      console.log('Auth state changed');
+	useEffect(() => {
+		const unsubscribe = onAuthStateChanged(auth, async user => {
+			let claims = {
+				signedConsentForm: false,
+				admin: false
+			}
 
-      let claims = {
-        signedConsentForm: false,
-        admin: false,
-      };
+			if (user) {
+				await user.getIdToken(true)
+				const idTokenResult = await getIdTokenResult(user)
+				claims = idTokenResult.claims as typeof claims
+			}
 
-      if (user) {
-        await user.getIdToken(true);
-        const idTokenResult = await getIdTokenResult(user);
-        claims = idTokenResult.claims as typeof claims;
-      }
+			setAuthState({
+				user,
+				loading: false,
+				consentForm: claims?.signedConsentForm,
+				admin: claims?.admin,
+				data: {}
+			})
+		})
 
-      setAuthState({
-        user,
-        loading: false,
-        consentForm: claims?.signedConsentForm || false,
-        admin: claims?.admin || false,
-        data: {},
-      });
-    });
+		return () => unsubscribe()
+	}, [])
 
-    return () => unsubscribe();
-  }, []);
-
-  return <AuthContext.Provider value={authState}>{children}</AuthContext.Provider>;
-};
+	return (
+		<AuthContext.Provider value={authState}>{children}</AuthContext.Provider>
+	)
+}

@@ -1,6 +1,0 @@
-@startuml pages__AuthenticationPage_tsx
-title pages/AuthenticationPage.tsx
-class "pages/AuthenticationPage.tsx" as pages_AuthenticationPage_tsx <<Artifact>> {
-  -- no exports --
-}
-@enduml

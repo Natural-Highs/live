@@ -1,6 +1,0 @@
-@startuml context__AuthContext_tsx
-title context/AuthContext.tsx
-class "context/AuthContext.tsx" as context_AuthContext_tsx <<Artifact>> {
-  -- no exports --
-}
-@enduml

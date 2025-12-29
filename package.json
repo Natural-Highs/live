@@ -1,110 +1,76 @@
 {
-  "name": "natural-highs",
-  "version": "0.0.1",
-  "private": true,
-  "scripts": {
-    "setup": "bash scripts/doppler-setup.sh",
-    "dev": "doppler run -- vite",
-    "build": "doppler run -- vite build",
-    "preview": "vite preview",
-    "server": "doppler run -- bun src/server/index.ts",
-    "emulators": "doppler run -- bunx firebase-tools emulators:start",
-    "dev:full": "concurrently \"bun run emulators\" \"bun run server\" \"bun run dev\"",
-    "test": "bun run test:integration && bun run test:unit",
-    "check": "tsc --noEmit",
-    "check:watch": "tsc --noEmit --watch",
-    "lint": "biome lint .",
-    "lint:fix": "biome lint --write .",
-    "format": "biome format --write .",
-    "format:check": "biome format .",
-    "check:biome": "biome check .",
-    "check:biome:fix": "biome check --write .",
-    "commit": "commit",
-    "commitlint": "commitlint --edit",
-    "commitlint:last": "commitlint --last",
-    "test:integration": "bunx playwright test",
-    "test:unit": "bunx vitest",
-    "docs:puml": "bun scripts/generate-src-plantuml.mjs"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "^2.3.2",
-    "@commitlint/cli": "^20.1.0",
-    "@commitlint/config-conventional": "^20.0.0",
-    "@commitlint/prompt-cli": "^20.1.0",
-    "@playwright/test": "^1.56.1",
-    "@tailwindcss/postcss": "^4.1.16",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.0",
-    "@testing-library/user-event": "^14.6.1",
-    "@types/bun": "^1.3.1",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
-    "@vitejs/plugin-react": "^5.1.0",
-    "autoprefixer": "^10.4.21",
-    "concurrently": "^9.2.1",
-    "daisyui": "^5.4.2",
-    "firestore-vitest-mock": "^0.6.0",
-    "jsdom": "^27.1.0",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.16",
-    "typescript": "^5.9.3",
-    "vite": "^7.1.12",
-    "vitest": "^4.0.6"
-  },
-  "type": "module",
-  "dependencies": {
-    "@hookform/resolvers": "^5.2.2",
-    "chart.js": "^4.5.1",
-    "firebase": "^12.5.0",
-    "firebase-admin": "^13.5.0",
-    "hono": "^4.10.4",
-    "jspdf": "^3.0.4",
-    "react": "^19.2.0",
-    "react-chartjs-2": "^5.3.1",
-    "react-day-picker": "^9.11.2",
-    "react-dom": "^19.2.0",
-    "react-hook-form": "^7.66.0",
-    "react-router-dom": "^7.9.5",
-    "xlsx": "^0.18.5",
-    "zod": "^4.1.12"
-  },
-  "engines": {
-    "bun": ">=1.3.1"
-  },
-  "packageManager": "bun@1.3.1",
-  "commitlint": {
-    "extends": [
-      "@commitlint/config-conventional"
-    ]
-  },
-  "release": {
-    "branches": [
-      "dev",
-      {
-        "name": "main",
-        "prerelease": false
-      }
-    ],
-    "plugins": [
-      "@semantic-release/commit-analyzer",
-      "@semantic-release/release-notes-generator",
-      [
-        "@semantic-release/changelog",
-        {
-          "changelogFile": "CHANGELOG.md"
-        }
-      ],
-      [
-        "@semantic-release/git",
-        {
-          "assets": [
-            "CHANGELOG.md",
-            "package.json"
-          ],
-          "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
-        }
-      ],
-      "@semantic-release/github"
-    ]
-  }
+	"name": "natural-highs",
+	"type": "module",
+	"license": "MIT",
+	"private": true,
+	"version": "0.0.0",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"start": "vite preview",
+		"test": "vitest",
+		"test:e2e": "playwright test --ui",
+		"test:ci": "vitest run",
+		"test:e2e:ci": "playwright test",
+		"lint:tsc": "tsc -b",
+		"lint:biome": "biome check --write --unsafe",
+		"lint": "bun run lint:tsc && bun run lint:biome",
+		"format": "biome format --write",
+		"validate": "bun run lint && bun run test:ci && bun run test:e2e:ci"
+	},
+	"dependencies": {
+		"@mdx-js/react": "3.1.1",
+		"@tanstack/match-sorter-utils": "8.19.4",
+		"@tanstack/react-form": "1.27.1",
+		"@tanstack/react-query": "5.90.12",
+		"@tanstack/react-query-devtools": "5.91.1",
+		"@tanstack/react-router": "1.140.0",
+		"@tanstack/react-start": "1.140.0",
+		"@tanstack/react-table": "8.21.3",
+		"@tanstack/react-virtual": "3.13.12",
+		"@tanstack/zod-form-adapter": "0.42.1",
+		"chart.js": "4.5.1",
+		"firebase": "12.6.0",
+		"firebase-admin": "13.6.0",
+		"react": "19.2.1",
+		"react-chartjs-2": "5.3.1",
+		"react-dom": "19.2.1",
+		"react-error-boundary": "6.0.0",
+		"survey-core": "2.4.1",
+		"survey-creator-core": "2.4.1",
+		"survey-react-ui": "2.4.1",
+		"zod": "4.1.13"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.3.8",
+		"@playwright/test": "1.57.0",
+		"@tailwindcss/vite": "4.1.17",
+		"@tanstack/router-devtools": "1.140.0",
+		"@tanstack/router-plugin": "1.140.0",
+		"@testing-library/dom": "10.4.1",
+		"@testing-library/jest-dom": "6.9.1",
+		"@testing-library/react": "16.3.0",
+		"@testing-library/user-event": "14.6.1",
+		"@types/node": "24.10.1",
+		"@types/react": "19.2.7",
+		"@types/react-dom": "19.2.3",
+		"@vitejs/plugin-react": "5.1.1",
+		"@vitest/coverage-v8": "4.0.15",
+		"bun-types": "1.3.4",
+		"daisyui": "5.5.8",
+		"happy-dom": "20.0.11",
+		"msw": "2.12.4",
+		"tailwindcss": "4.1.17",
+		"typescript": "5.9.3",
+		"vite": "7.2.6",
+		"vite-plugin-pwa": "1.2.0",
+		"vite-tsconfig-paths": "5.1.4",
+		"vitest": "4.0.15"
+	},
+	"packageManager": "bun@1.3.4",
+	"msw": {
+		"workerDirectory": [
+			"public"
+		]
+	}
 }
