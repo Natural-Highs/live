@@ -11,8 +11,8 @@ test('debug: verify auth state with proper hydration', async ({page, context}) =
 
 	await page.goto('/')
 
-	// Wait for hydration
-	await page.waitForTimeout(2000)
+	// Wait for hydration by waiting for the navigation to be interactive
+	await page.waitForLoadState('networkidle')
 
 	// Check for Dashboard link (should appear when user is authenticated)
 	const dashboardLink = page.locator('text=Dashboard')

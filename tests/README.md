@@ -463,4 +463,8 @@ Coverage reports are generated in `tests/coverage/`.
 
 ---
 
+<<<<<<< HEAD
 Last Updated: 2025-12-26
+=======
+_Last Updated: 2025-12-26_
+>>>>>>> e4ef5165 (feat(tests): standardize test architecture with fixture composition)

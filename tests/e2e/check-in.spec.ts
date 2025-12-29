@@ -2,7 +2,8 @@
  * User Check-in E2E Tests
  *
  * Tests verify the authenticated user check-in flow including:
- * - Entering a valid 4-digit event code
+ * - Entering a valid 4-digit event code via OTP-style input
+ * - Auto-submit on 4th digit entry (no button needed)
  * - Successful check-in with welcome confirmation
  * - Performance timing (<3 seconds)
  * - Error handling for invalid codes
@@ -12,8 +13,7 @@
  * - Mock API endpoints for check-in operations
  * - Use data-testid selectors for stability
  *
- * Note: Uses pressSequentially() instead of fill() for input fields because
- * React controlled components require individual key events to trigger state updates.
+ * Note: Uses fill() for InputOTP which triggers onComplete callback for auto-submit.
  */
 
 import {TEST_CODES} from '../factories/events.factory'
@@ -21,46 +21,55 @@ import {expect, test} from '../fixtures/auth.fixture'
 
 test.describe('User Check-in Flow', () => {
 	test.describe('AC1: Check-in Happy Path', () => {
-		test('should display check-in form on dashboard', async ({page, authenticatedUser: _}) => {
+		test('should display OTP-style check-in input on dashboard', async ({
+			page,
+			authenticatedUser: _
+		}) => {
 			// GIVEN: User is authenticated with consent (via session cookie fixture)
 			// authenticatedUser fixture injects session cookie with signedConsentForm: true
 
 			// WHEN: User navigates to dashboard
 			await page.goto('/dashboard')
 
-			// THEN: Check-in form elements should be visible
+			// THEN: OTP-style check-in input should be visible
 			await expect(page.getByTestId('event-code-input')).toBeVisible()
-			await expect(page.getByTestId('check-in-submit-button')).toBeVisible()
+			// Should have 4 OTP slots
+			const slots = page.getByTestId('input-otp-slot')
+			await expect(slots).toHaveCount(4)
 		})
 
-		test('should have submit button disabled until 4-digit code entered', async ({
+		test('should auto-submit when 4 digits are entered (no button needed)', async ({
 			page,
 			authenticatedUser: _
 		}) => {
-			// GIVEN: User is on dashboard
-			await page.goto('/dashboard')
+			// Mock successful check-in
+			await page.route('**/api/users/eventCode', route => {
+				if (route.request().method() === 'POST') {
+					route.fulfill({
+						status: 200,
+						contentType: 'application/json',
+						body: JSON.stringify({
+							success: true,
+							message: 'Welcome back!'
+						})
+					})
+				} else {
+					route.continue()
+				}
+			})
 
-			// Wait for page to be fully interactive (hydrated)
-			// React hydration must complete before fill() works on controlled components.
-			// Without this wait, form inputs may not respond to programmatic value changes.
+			// Navigate to dashboard
+			await page.goto('/dashboard')
+			// Wait for React hydration before interacting with form inputs
 			await page.waitForLoadState('networkidle')
 
-			// THEN: Submit button should be disabled initially
-			const submitButton = page.getByTestId('check-in-submit-button')
-			await expect(submitButton).toBeDisabled()
-
-			// WHEN: User enters partial code (3 digits)
+			// WHEN: User enters 4 digits (auto-submits on 4th digit)
 			const input = page.getByTestId('event-code-input')
-			await input.fill('123')
+			await input.fill(TEST_CODES.VALID)
 
-			// THEN: Submit button should still be disabled
-			await expect(submitButton).toBeDisabled()
-
-			// WHEN: User enters full 4-digit code
-			await input.fill('1234')
-
-			// THEN: Submit button should be enabled
-			await expect(submitButton).toBeEnabled()
+			// THEN: Should show loading indicator then success confirmation
+			// Note: Loading may be too fast to catch, so we check for success
+			await expect(page.getByTestId('check-in-success')).toBeVisible()
 		})
 
 		test('should show success confirmation with welcome message after valid check-in', async ({
@@ -88,10 +97,9 @@ test.describe('User Check-in Flow', () => {
 			// Wait for React hydration before interacting with form inputs
 			await page.waitForLoadState('networkidle')
 
-			// WHEN: User enters valid event code and submits
+			// WHEN: User enters valid event code (auto-submits)
 			const input = page.getByTestId('event-code-input')
 			await input.fill(TEST_CODES.VALID)
-			await page.getByTestId('check-in-submit-button').click()
 
 			// THEN: Should show success confirmation
 			await expect(page.getByTestId('check-in-success')).toBeVisible()
@@ -119,10 +127,9 @@ test.describe('User Check-in Flow', () => {
 			await page.goto('/dashboard')
 			await page.waitForLoadState('networkidle')
 
-			// WHEN: User completes check-in
+			// WHEN: User completes check-in (auto-submit on 4th digit)
 			const input = page.getByTestId('event-code-input')
 			await input.fill(TEST_CODES.VALID)
-			await page.getByTestId('check-in-submit-button').click()
 
 			// Wait for success message
 			await expect(page.getByTestId('check-in-success')).toBeVisible()
@@ -160,10 +167,9 @@ test.describe('User Check-in Flow', () => {
 			await page.goto('/dashboard')
 			await page.waitForLoadState('networkidle')
 
-			// WHEN: Returning user enters valid event code and submits
+			// WHEN: Returning user enters valid event code (auto-submits on 4th digit)
 			const input = page.getByTestId('event-code-input')
 			await input.fill(TEST_CODES.VALID)
-			await page.getByTestId('check-in-submit-button').click()
 
 			// THEN: Should show success confirmation
 			// Note: AC2 specifies "Welcome back, [Name]" message. Current implementation
@@ -194,10 +200,9 @@ test.describe('User Check-in Flow', () => {
 			await page.goto('/dashboard')
 			await page.waitForLoadState('networkidle')
 
-			// WHEN: Returning user enters event code
+			// WHEN: Returning user enters event code (auto-submits)
 			const input = page.getByTestId('event-code-input')
 			await input.fill(TEST_CODES.VALID)
-			await page.getByTestId('check-in-submit-button').click()
 
 			// THEN: Should go directly to success (no profile form shown)
 			await expect(page.getByTestId('check-in-success')).toBeVisible()
@@ -231,11 +236,10 @@ test.describe('User Check-in Flow', () => {
 
 			// Fill in the code
 			const input = page.getByTestId('event-code-input')
-			await input.fill(TEST_CODES.VALID)
 
-			// WHEN: User clicks submit
+			// WHEN: User enters 4th digit (auto-submits)
 			const start = Date.now()
-			await page.getByTestId('check-in-submit-button').click()
+			await input.fill(TEST_CODES.VALID)
 
 			// Wait for success confirmation
 			await page.getByTestId('check-in-success').waitFor()
@@ -270,10 +274,9 @@ test.describe('User Check-in Flow', () => {
 			await page.goto('/dashboard')
 			await page.waitForLoadState('networkidle')
 
-			// WHEN: User enters invalid code and submits
+			// WHEN: User enters invalid code (auto-submits on 4th digit)
 			const input = page.getByTestId('event-code-input')
 			await input.fill(TEST_CODES.INVALID)
-			await page.getByTestId('check-in-submit-button').click()
 
 			// THEN: Should show error message
 			await expect(page.getByTestId('check-in-error')).toBeVisible()
@@ -300,10 +303,9 @@ test.describe('User Check-in Flow', () => {
 			await page.goto('/dashboard')
 			await page.waitForLoadState('networkidle')
 
-			// WHEN: User enters expired event code
+			// WHEN: User enters expired event code (auto-submits)
 			const input = page.getByTestId('event-code-input')
 			await input.fill(TEST_CODES.EXPIRED)
-			await page.getByTestId('check-in-submit-button').click()
 
 			// THEN: Should show error message
 			await expect(page.getByTestId('check-in-error')).toBeVisible()
@@ -323,10 +325,9 @@ test.describe('User Check-in Flow', () => {
 			await page.goto('/dashboard')
 			await page.waitForLoadState('networkidle')
 
-			// WHEN: User submits with network failure
+			// WHEN: User submits with network failure (auto-submits on 4th digit)
 			const input = page.getByTestId('event-code-input')
 			await input.fill(TEST_CODES.VALID)
-			await page.getByTestId('check-in-submit-button').click()
 
 			// THEN: Should show error message
 			await expect(page.getByTestId('check-in-error')).toBeVisible()
@@ -361,14 +362,13 @@ test.describe('User Check-in Flow', () => {
 			await page.waitForLoadState('networkidle')
 			const input = page.getByTestId('event-code-input')
 
-			// First attempt - should fail
+			// First attempt - should fail (auto-submits on 4th digit)
 			await input.fill(TEST_CODES.INVALID)
-			await page.getByTestId('check-in-submit-button').click()
 			await expect(page.getByTestId('check-in-error')).toBeVisible()
 
-			// WHEN: User tries again with valid code
+			// WHEN: User clears and tries again with valid code
+			await input.fill('')
 			await input.fill(TEST_CODES.VALID)
-			await page.getByTestId('check-in-submit-button').click()
 
 			// THEN: Should succeed
 			await expect(page.getByTestId('check-in-success')).toBeVisible()
@@ -400,10 +400,9 @@ test.describe('User Check-in Flow', () => {
 			await page.goto('/dashboard')
 			await page.waitForLoadState('networkidle')
 
-			// WHEN: User tries to check in again with same code
+			// WHEN: User tries to check in again with same code (auto-submits on 4th digit)
 			const input = page.getByTestId('event-code-input')
 			await input.fill(TEST_CODES.VALID)
-			await page.getByTestId('check-in-submit-button').click()
 
 			// THEN: Should show "already checked in" error message
 			await expect(page.getByTestId('check-in-error')).toBeVisible()
@@ -448,17 +447,15 @@ test.describe('User Check-in Flow', () => {
 			await page.goto('/dashboard')
 			await page.waitForLoadState('networkidle')
 
-			// First check-in succeeds
+			// First check-in succeeds (auto-submits on 4th digit)
 			const input = page.getByTestId('event-code-input')
 			await input.fill(TEST_CODES.VALID)
-			await page.getByTestId('check-in-submit-button').click()
 			await expect(page.getByTestId('check-in-success')).toBeVisible()
 
 			// Navigate back to dashboard and try again
 			await page.goto('/dashboard')
 			await page.waitForLoadState('networkidle')
 			await page.getByTestId('event-code-input').fill(TEST_CODES.VALID)
-			await page.getByTestId('check-in-submit-button').click()
 
 			// THEN: Should show error on second attempt
 			await expect(page.getByTestId('check-in-error')).toBeVisible()
@@ -490,10 +487,9 @@ test.describe('User Check-in Flow', () => {
 			await page.goto('/dashboard')
 			await page.waitForLoadState('networkidle')
 
-			// WHEN: User enters invalid code and submits
+			// WHEN: User enters invalid code (auto-submits on 4th digit)
 			const input = page.getByTestId('event-code-input')
 			await input.fill(TEST_CODES.INVALID)
-			await page.getByTestId('check-in-submit-button').click()
 
 			// THEN: Should show error message
 			await expect(page.getByTestId('check-in-error')).toBeVisible()
@@ -526,10 +522,9 @@ test.describe('User Check-in Flow', () => {
 			await page.goto('/dashboard')
 			await page.waitForLoadState('networkidle')
 
-			// WHEN: User enters invalid code
+			// WHEN: User enters invalid code (auto-submits on 4th digit)
 			const input = page.getByTestId('event-code-input')
 			await input.fill(TEST_CODES.INVALID)
-			await page.getByTestId('check-in-submit-button').click()
 
 			// THEN: Should show specific error message matching UX spec
 			await expect(page.getByTestId('check-in-error')).toBeVisible()
@@ -559,10 +554,9 @@ test.describe('User Check-in Flow', () => {
 			await page.goto('/dashboard')
 			await page.waitForLoadState('networkidle')
 
-			// WHEN: User enters expired event code
+			// WHEN: User enters expired event code (auto-submits on 4th digit)
 			const input = page.getByTestId('event-code-input')
 			await input.fill(TEST_CODES.EXPIRED)
-			await page.getByTestId('check-in-submit-button').click()
 
 			// THEN: Should show expired error message
 			await expect(page.getByTestId('check-in-error')).toBeVisible()
@@ -600,14 +594,13 @@ test.describe('User Check-in Flow', () => {
 			await page.waitForLoadState('networkidle')
 			const input = page.getByTestId('event-code-input')
 
-			// First attempt fails
+			// First attempt fails (auto-submits on 4th digit)
 			await input.fill(TEST_CODES.INVALID)
-			await page.getByTestId('check-in-submit-button').click()
 			await expect(page.getByTestId('check-in-error')).toBeVisible()
 
-			// WHEN: User enters valid code for retry
+			// WHEN: User clears and enters valid code for retry
+			await input.fill('')
 			await input.fill(TEST_CODES.VALID)
-			await page.getByTestId('check-in-submit-button').click()
 
 			// THEN: Should succeed on retry
 			await expect(page.getByTestId('check-in-success')).toBeVisible()
