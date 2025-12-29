@@ -1,0 +1,6 @@
+# Prettier friendly markdownlint config (all formatting rules disabled)
+extends: markdownlint/style/prettier
+
+# Allow duplicate headings in changelogs (e.g., "### Features" in each version)
+MD024:
+  siblings_only: true

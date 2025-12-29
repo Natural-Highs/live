@@ -1,0 +1,200 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Cache Trunk
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/trunk
+          key: trunk-${{ runner.os }}-${{ hashFiles('.trunk/trunk.yaml') }}
+          restore-keys: |
+            trunk-${{ runner.os }}-
+
+      - name: Trunk Check
+        uses: trunk-io/trunk-action@v1
+        with:
+          post-annotations: false
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@master
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --sarif-file-output=snyk.sarif
+
+      - name: Upload Snyk results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always() && hashFiles('snyk.sarif') != ''
+        with:
+          sarif_file: snyk.sarif
+
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run tests with coverage
+        run: bun run test:ci -- --coverage
+
+      - name: Coverage Summary
+        if: always()
+        run: |
+          echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+          if [ -f coverage/coverage-summary.json ]; then
+            cat coverage/coverage-summary.json | jq -r '.total | "- Lines: \(.lines.pct)%\n- Branches: \(.branches.pct)%\n- Functions: \(.functions.pct)%\n- Statements: \(.statements.pct)%"' >> $GITHUB_STEP_SUMMARY
+          else
+            echo "Coverage report not found" >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 7
+
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    env:
+      # Placeholder Firebase config for emulator mode (not real secrets)
+      # checkov:skip=CKV_SECRET_6:Intentional placeholder values for Firebase emulator testing
+      VITE_APIKEY: demo-test-key
+      VITE_AUTH_DOMAIN: localhost
+      VITE_PROJECT_ID: demo-natural-highs
+      VITE_STORAGE_BUCKET: demo-natural-highs.appspot.com
+      VITE_MESSAGING_SENDER_ID: "000000000000"
+      VITE_APP_ID: demo-app-id
+      VITE_USE_EMULATORS: "true"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Setup Java (for Firebase emulators)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Start Firebase emulators
+        run: |
+          firebase emulators:start --only auth,firestore --project demo-natural-highs &
+          # Wait for emulators to be ready with health check
+          for i in {1..30}; do
+            if curl -s http://localhost:9099 > /dev/null 2>&1; then
+              echo "Auth emulator ready"
+              break
+            fi
+            echo "Waiting for emulators... ($i/30)"
+            sleep 1
+          done
+          # Additional wait for full initialization
+          sleep 2
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps
+
+      - name: Run E2E tests
+        run: bun run test:e2e:ci
+
+  # Firestore rules deployment (runs on main branch push only)
+  deploy-firestore-rules:
+    name: Deploy Firestore Rules
+    runs-on: ubuntu-latest
+    needs: [lint, security, test, e2e]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: prd
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Deploy Firestore Rules
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          echo "$GOOGLE_APPLICATION_CREDENTIALS_JSON" > /tmp/sa.json
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/sa.json
+          
+          # Retry logic for intermittent Firebase API failures
+          max_attempts=3
+          attempt=1
+          while [ $attempt -le $max_attempts ]; do
+            echo "Attempt $attempt of $max_attempts..."
+            if firebase deploy --only firestore:rules --project naturalhighs; then
+              echo "Deployment successful"
+              break
+            fi
+            if [ $attempt -eq $max_attempts ]; then
+              echo "All attempts failed"
+              rm /tmp/sa.json
+              exit 1
+            fi
+            echo "Attempt $attempt failed, retrying in $((attempt * 10)) seconds..."
+            sleep $((attempt * 10))
+            attempt=$((attempt + 1))
+          done
+          
+          rm /tmp/sa.json

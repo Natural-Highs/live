@@ -16,3 +16,21 @@ coverage
 .output
 src/routeTree.gen.ts
 serviceAccount.json
+
+# Build-generated config files
+vite.config.js
+vite.config.d.ts
+
+# Trunk
+.trunk/out/
+.trunk/logs/
+.trunk/plugins/
+.trunk/tools/
+
+# User-only content (not for git history)
+.local/
+.secrets
+
+# Firebase emulator logs
+firebase-debug.log
+firestore-debug.log

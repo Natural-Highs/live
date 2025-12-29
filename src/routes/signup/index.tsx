@@ -19,6 +19,12 @@ function SignUpComponent() {
 		setError('')
 		setLoading(true)
 
+		if (!auth) {
+			setError('Authentication not available')
+			setLoading(false)
+			return
+		}
+
 		try {
 			const registerResponse = await fetch('/api/auth/register', {
 				method: 'POST',
