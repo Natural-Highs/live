@@ -63,6 +63,7 @@ service cloud.firestore {
         // Users can delete their own private documents
         allow delete: if isAuthenticated() && request.auth.uid == userId;
       }
+<<<<<<< HEAD:firebase/firestore.rules
 
       // Demographic History subcollection - user can read their own history
       // History records are created server-side only
@@ -74,6 +75,8 @@ service cloud.firestore {
         // Client cannot directly create/update/delete history
         allow create, update, delete: if false;
       }
+=======
+>>>>>>> 946bc3b8 (feat(profile): add minimal profile creation flow):firestore.rules
     }
 
     // Passkey Challenges Collection (root level, temporary storage)

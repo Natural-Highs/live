@@ -14,6 +14,7 @@ export function getRouter() {
 				user: null,
 				isAuthenticated: false,
 				hasConsent: false,
+				hasProfile: false,
 				isAdmin: false,
 				hasPasskey: false,
 				isSessionExpiring: false,

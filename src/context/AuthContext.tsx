@@ -16,6 +16,8 @@ interface AuthContextType {
 	loading: boolean
 	consentForm: boolean
 	admin: boolean
+	/** Whether user is a minor (under 18). Used for privacy-aware demographics storage. */
+	isMinor: boolean
 	data: AuthContextUserData
 	/** Grace period state for auth service outages */
 	gracePeriod: GracePeriodState
@@ -33,6 +35,7 @@ const AuthContext = createContext<AuthContextType>({
 	loading: true,
 	consentForm: false,
 	admin: false,
+	isMinor: false,
 	data: {},
 	gracePeriod: defaultGracePeriodState
 })
@@ -55,6 +58,7 @@ export function useRouterAuth(): SessionAuthContext {
 			user: null,
 			isAuthenticated: false,
 			hasConsent: false,
+			hasProfile: false,
 			isAdmin: false,
 			hasPasskey: false,
 			isSessionExpiring: false,
@@ -77,6 +81,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
 		loading: !routerAuth.isAuthenticated && routerAuth.user === null,
 		consentForm: routerAuth.hasConsent,
 		admin: routerAuth.isAdmin,
+		isMinor: false,
 		data: {},
 		gracePeriod: defaultGracePeriodState
 	}))
