@@ -50,8 +50,12 @@ const mockFirestoreDoc = {
 	set: vi.fn(),
 	update: vi.fn(),
 	collection: vi.fn((name: string) => {
-		if (name === 'demographicHistory') return mockHistoryCollection
-		if (name === 'private') return mockPrivateCollection
+		if (name === 'demographicHistory') {
+			return mockHistoryCollection
+		}
+		if (name === 'private') {
+			return mockPrivateCollection
+		}
 		return mockHistoryCollection
 	})
 }

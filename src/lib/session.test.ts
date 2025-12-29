@@ -193,7 +193,7 @@ describe('session', () => {
 
 		it('should throw when SESSION_SECRET is undefined', () => {
 			// Don't set SESSION_SECRET at all
-			delete process.env.SESSION_SECRET
+			process.env.SESSION_SECRET = undefined
 
 			expect(() => validateSessionSecret()).toThrow(
 				'SESSION_SECRET must be set and at least 32 characters'
@@ -256,7 +256,7 @@ describe('session', () => {
 
 		it('should pass single string when no previous secret', async () => {
 			vi.stubEnv('SESSION_SECRET', 'current-secret-32-characters-xxx')
-			delete process.env.SESSION_SECRET_PREVIOUS
+			process.env.SESSION_SECRET_PREVIOUS = undefined
 			vi.stubEnv('NODE_ENV', 'development')
 
 			mockUseSession.mockResolvedValue({data: {}, update: vi.fn(), clear: vi.fn()})
@@ -347,7 +347,7 @@ describe('session', () => {
 		})
 
 		it('should return undefined when previous secret is not set', () => {
-			delete process.env.SESSION_SECRET_PREVIOUS
+			process.env.SESSION_SECRET_PREVIOUS = undefined
 
 			expect(getPreviousSessionSecret()).toBeUndefined()
 		})

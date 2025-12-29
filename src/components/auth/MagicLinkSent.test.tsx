@@ -108,6 +108,6 @@ describe('MagicLinkSent', () => {
 	it('mentions the link expiration time', () => {
 		render(<MagicLinkSent email={testEmail} onBack={mockOnBack} />)
 
-		expect(screen.getByText(/expire in 1 hour/i)).toBeInTheDocument()
+		expect(screen.getByText(/expire in 15 minutes/i)).toBeInTheDocument()
 	})
 })

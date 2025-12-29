@@ -1,9 +1,6 @@
 /**
  * Magic Link Authentication E2E Tests
  *
- * Story: 1-1-magic-link-authentication
- * Epic: Epic 1 - User Authentication & Identity
- *
  * These tests verify the magic link authentication flow including:
  * - Requesting a magic link from the sign-in page
  * - Same-device sign-in (email stored in localStorage)
@@ -35,7 +32,7 @@ function buildMagicLinkUrl(_email: string, valid = true): string {
 	return `${baseUrl}?mode=${mode}&oobCode=${oobCode}&apiKey=${apiKey}&continueUrl=${continueUrl}`
 }
 
-test.describe('Magic Link Authentication', () => {
+test.describe('Magic Link Authentication @smoke', () => {
 	test.describe('Scenario 1: Request magic link from sign-in page', () => {
 		test('should display magic link form as primary sign-in option', async ({page}) => {
 			// GIVEN: User navigates to authentication page
@@ -487,8 +484,8 @@ test.describe('Magic Link Authentication', () => {
 			// WHEN: User resends 3 times
 			for (let i = 0; i < 3; i++) {
 				await page.getByTestId('resend-magic-link-button').click()
-				// Wait briefly for UI update
-				await page.waitForTimeout(100)
+				// Wait for button state to update after each click
+				await expect(page.getByTestId('resend-magic-link-button')).toBeVisible()
 			}
 
 			// THEN: Resend button should be disabled

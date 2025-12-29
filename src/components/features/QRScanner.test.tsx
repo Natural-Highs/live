@@ -27,7 +27,9 @@ function createMockAdapter(): QRScannerAdapter {
 			isRunning = false
 		},
 		getCapabilities(): ScannerCapabilities | null {
-			if (!isRunning) return null
+			if (!isRunning) {
+				return null
+			}
 			return {
 				torchFeature: () => ({
 					isSupported: () => false,
@@ -41,7 +43,9 @@ function createMockAdapter(): QRScannerAdapter {
 // Mock extractEventCode
 vi.mock('@/lib/events/qr-code', () => ({
 	extractEventCode: vi.fn((text: string) => {
-		if (/^\d{4}$/.test(text)) return text
+		if (/^\d{4}$/.test(text)) {
+			return text
+		}
 		return null
 	})
 }))
@@ -424,7 +428,7 @@ describe('QRScanner - Timeout Behavior', () => {
 		//
 		// The actual 10-second delay is tested via:
 		// 1. Manual testing in browser
-		// 2. E2E test (src/tests/e2e/qr-scanner.spec.ts) when scanner works
+		// 2. E2E test (tests/e2e/qr-scanner.spec.ts) when scanner works
 		await act(async () => {
 			render(<QRScanner onDetected={mockOnDetected} onClose={mockOnClose} adapter={mockAdapter} />)
 		})
