@@ -48,6 +48,20 @@ export class ConflictError extends Error {
 	}
 }
 
+/**
+ * Error for time window validation failures (FR56)
+ * Carries scheduled time for display to user
+ */
+export class TimeWindowError extends Error {
+	readonly scheduledTime?: string
+
+	constructor(message: string, scheduledTime?: string) {
+		super(message)
+		this.name = 'TimeWindowError'
+		this.scheduledTime = scheduledTime
+	}
+}
+
 export class InternalServerError extends Error {
 	constructor(message = 'Internal server error') {
 		super(message)
@@ -62,6 +76,7 @@ export function formatErrorResponse(error: unknown): {
 	error: string
 	message: string
 	statusCode: number
+	scheduledTime?: string
 } {
 	if (error instanceof AuthenticationError) {
 		return {error: 'Unauthorized', message: error.message, statusCode: 401}
@@ -81,6 +96,15 @@ export function formatErrorResponse(error: unknown): {
 
 	if (error instanceof ConflictError) {
 		return {error: 'Conflict', message: error.message, statusCode: 409}
+	}
+
+	if (error instanceof TimeWindowError) {
+		return {
+			error: 'Forbidden',
+			message: error.message,
+			statusCode: 403,
+			scheduledTime: error.scheduledTime
+		}
 	}
 
 	if (error instanceof InternalServerError) {

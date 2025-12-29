@@ -1,7 +1,8 @@
 import {useQuery, useQueryClient} from '@tanstack/react-query'
-import {createFileRoute} from '@tanstack/react-router'
-import {useState} from 'react'
+import {createFileRoute, getRouteApi} from '@tanstack/react-router'
+import {useEffect, useRef, useState} from 'react'
 import {z} from 'zod'
+import {SuccessConfirmation} from '@/components/features/SuccessConfirmation'
 import {Button} from '@/components/ui/button'
 import Greencard from '@/components/ui/GreenCard'
 import {InputOTP, InputOTPGroup, InputOTPSlot} from '@/components/ui/input-otp'
@@ -14,11 +15,17 @@ import {type Event as EventData, eventsQueryOptions} from '@/queries/index.js'
 const eventCodeResponseSchema = z.object({
 	success: z.boolean(),
 	message: z.string().optional(),
-	error: z.string().optional()
+	error: z.string().optional(),
+	eventName: z.string().optional(),
+	eventDate: z.string().nullable().optional(),
+	eventLocation: z.string().optional(),
+	scheduledTime: z.string().optional()
 })
 
 const EVENTS_QUERY_KEY = ['events'] as const
 const REQUEST_TIMEOUT_MS = 3000
+
+const routeApi = getRouteApi('/_authed/dashboard')
 
 export const Route = createFileRoute('/_authed/dashboard')({
 	loader: async ({context}) => {
@@ -27,17 +34,95 @@ export const Route = createFileRoute('/_authed/dashboard')({
 	component: DashboardComponent
 })
 
+interface ConfirmationData {
+	eventName: string
+	eventDate: string
+	eventLocation: string
+	userName: string
+}
+
+// Error message mapping based on API response
+const ERROR_MESSAGES = {
+	NOT_FOUND: 'Code not found. Double-check and try again.',
+	DUPLICATE: "You're already checked in for this event",
+	TIME_WINDOW: 'This event is not currently accepting check-ins',
+	NETWORK: 'No connection. Please check your internet.',
+	TIMEOUT: 'Request timed out. Please try again.',
+	DEFAULT: 'Failed to register for event'
+} as const
+
+// Map HTTP status codes and error patterns to user-friendly messages
+function getErrorMessage(status: number, errorText?: string, scheduledTime?: string): string {
+	if (status === 404) return ERROR_MESSAGES.NOT_FOUND
+	if (status === 409) return ERROR_MESSAGES.DUPLICATE
+	if (status === 403) {
+		// Time window error - include scheduled time if available
+		if (scheduledTime) {
+			try {
+				const date = new Date(scheduledTime)
+				if (!Number.isNaN(date.getTime())) {
+					const formatted = date.toLocaleString('en-US', {
+						weekday: 'short',
+						month: 'short',
+						day: 'numeric',
+						hour: 'numeric',
+						minute: '2-digit'
+					})
+					return `${ERROR_MESSAGES.TIME_WINDOW}. Scheduled: ${formatted}`
+				}
+			} catch {
+				// Fall through to default time window message
+			}
+		}
+		return ERROR_MESSAGES.TIME_WINDOW
+	}
+
+	// Check error text for patterns
+	if (errorText) {
+		const lowerError = errorText.toLowerCase()
+		if (lowerError.includes('not found') || lowerError.includes('invalid')) {
+			return ERROR_MESSAGES.NOT_FOUND
+		}
+		if (lowerError.includes('already') || lowerError.includes('duplicate')) {
+			return ERROR_MESSAGES.DUPLICATE
+		}
+		if (
+			lowerError.includes('time') ||
+			lowerError.includes('window') ||
+			lowerError.includes('accepting')
+		) {
+			return ERROR_MESSAGES.TIME_WINDOW
+		}
+	}
+
+	return errorText || ERROR_MESSAGES.DEFAULT
+}
+
+const SHAKE_ANIMATION_MS = 500
+
 export function DashboardComponent() {
 	const queryClient = useQueryClient()
+	const {auth} = routeApi.useRouteContext()
 	const {data: events = []} = useQuery(eventsQueryOptions())
 	const [eventCode, setEventCode] = useState('')
 	const [submittingCode, setSubmittingCode] = useState(false)
 	const [error, setError] = useState('')
-	const [success, setSuccess] = useState('')
+	const [isShaking, setIsShaking] = useState(false)
+	const [confirmationData, setConfirmationData] = useState<ConfirmationData | null>(null)
+	const shakeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+	// Cleanup shake timer on unmount
+	useEffect(() => {
+		return () => {
+			if (shakeTimerRef.current) {
+				clearTimeout(shakeTimerRef.current)
+			}
+		}
+	}, [])
 
 	const handleAutoSubmit = async (code: string) => {
 		setError('')
-		setSuccess('')
+		setConfirmationData(null)
 		setSubmittingCode(true)
 
 		const controller = new AbortController()
@@ -57,33 +142,62 @@ export function DashboardComponent() {
 			const parseResult = eventCodeResponseSchema.safeParse(rawData)
 
 			if (!parseResult.success) {
-				setError('Invalid response from server')
-				setSubmittingCode(false)
+				triggerShakeAndClear('Invalid response from server')
 				return
 			}
 
 			const data = parseResult.data
 
 			if (!response.ok || !data.success) {
-				setError(data.error || 'Failed to register for event')
-				setSubmittingCode(false)
+				const errorMessage = getErrorMessage(response.status, data.error, data.scheduledTime)
+				triggerShakeAndClear(errorMessage)
 				return
 			}
 
-			setSuccess(data.message || 'Successfully registered for event')
-			setEventCode('')
+			// Show success confirmation overlay with event details
+			const firstName = auth.user?.displayName?.split(' ')[0] || 'Friend'
+			setConfirmationData({
+				eventName: data.eventName || 'Event',
+				eventDate: data.eventDate || new Date().toISOString(),
+				eventLocation: data.eventLocation || 'Location TBD',
+				userName: firstName
+			})
 			// Invalidate events query to refresh the list
 			await queryClient.invalidateQueries({queryKey: EVENTS_QUERY_KEY})
 			setSubmittingCode(false)
 		} catch (err) {
 			clearTimeout(timeoutId)
 			if (err instanceof DOMException && err.name === 'AbortError') {
-				setError('Request timed out. Please try again.')
+				triggerShakeAndClear(ERROR_MESSAGES.TIMEOUT)
+			} else if (err instanceof TypeError && (err as Error).message.includes('fetch')) {
+				triggerShakeAndClear(ERROR_MESSAGES.NETWORK)
 			} else {
-				setError(err instanceof Error ? err.message : 'Failed to register for event')
+				triggerShakeAndClear(err instanceof Error ? err.message : ERROR_MESSAGES.DEFAULT)
 			}
-			setSubmittingCode(false)
 		}
+	}
+
+	const triggerShakeAndClear = (errorMessage: string) => {
+		setSubmittingCode(false)
+		setError(errorMessage)
+		setIsShaking(true)
+
+		// Clear any existing shake timer
+		if (shakeTimerRef.current) {
+			clearTimeout(shakeTimerRef.current)
+		}
+
+		// Clear input after shake animation completes
+		shakeTimerRef.current = setTimeout(() => {
+			setIsShaking(false)
+			setEventCode('')
+			shakeTimerRef.current = null
+		}, SHAKE_ANIMATION_MS)
+	}
+
+	const handleDismissConfirmation = () => {
+		setConfirmationData(null)
+		setEventCode('')
 	}
 
 	const formatDate = (dateString?: string): string => {
@@ -102,6 +216,17 @@ export function DashboardComponent() {
 
 	return (
 		<PageContainer className='gap-2'>
+			{/* Success Confirmation Overlay - rendered at top level for full-screen display */}
+			{confirmationData && (
+				<SuccessConfirmation
+					eventName={confirmationData.eventName}
+					eventDate={confirmationData.eventDate}
+					eventLocation={confirmationData.eventLocation}
+					userName={confirmationData.userName}
+					onDismiss={handleDismissConfirmation}
+				/>
+			)}
+
 			{/* Header with Logo */}
 			<div className='mb-6 flex flex-col items-center'>
 				<div className='mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-lg'>
@@ -125,13 +250,6 @@ export function DashboardComponent() {
 					</div>
 				)}
 
-				{success && (
-					<div className='mb-3 text-center text-green-800 italic' data-testid='check-in-success'>
-						<p className='font-semibold'>Success!</p>
-						<p>{success}</p>
-					</div>
-				)}
-
 				<div className='flex flex-col items-center gap-4'>
 					<form onSubmit={e => e.preventDefault()} aria-label='Event check-in'>
 						<InputOTP
@@ -146,8 +264,9 @@ export function DashboardComponent() {
 							data-testid='event-code-input'
 							inputMode='numeric'
 							autoFocus
-							disabled={submittingCode}
+							disabled={submittingCode || isShaking}
 							aria-label='Enter 4-digit event code'
+							containerClassName={isShaking ? 'animate-shake' : ''}
 						>
 							<InputOTPGroup>
 								<InputOTPSlot index={0} className='text-2xl' />
