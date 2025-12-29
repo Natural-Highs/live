@@ -1,7 +1,9 @@
 import {Link} from '@tanstack/react-router'
 import type React from 'react'
 import {Button} from '@/components/ui/button'
+import {logoutFn} from '@/server/functions/auth'
 import {useAuth} from '../context/AuthContext'
+import {SessionExpirationWarning} from './session/SessionExpirationWarning'
 
 const Navbar: React.FC = () => {
 	const {user, admin} = useAuth()
@@ -18,6 +20,7 @@ const Navbar: React.FC = () => {
 			<div className='flex items-center gap-2'>
 				{user ? (
 					<>
+						<SessionExpirationWarning />
 						{admin && (
 							<Link to='/admin-dashboard'>
 								<Button variant='ghost'>Admin</Button>
@@ -26,7 +29,7 @@ const Navbar: React.FC = () => {
 						<Link to='/dashboard'>
 							<Button variant='ghost'>Dashboard</Button>
 						</Link>
-						<Button variant='ghost' type='button'>
+						<Button variant='ghost' type='button' onClick={() => logoutFn()}>
 							Logout
 						</Button>
 					</>
