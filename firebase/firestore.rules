@@ -214,6 +214,23 @@ service cloud.firestore {
       // Only admins can update/delete registrations (prevent duplicates)
       allow update, delete: if isAdmin();
     }
+
+    // Guests Collection
+    // Guest records are created server-side only via admin SDK
+    // Guests check in without Firebase Auth accounts - all access via server functions
+    match /guests/{guestId} {
+      // No client access - all guest operations via server functions with admin SDK
+      // Guests don't have Firebase Auth accounts, so they can't authenticate
+      allow read, write: if false;
+    }
+
+    // Guest Events Collection
+    // Links guests to events they've registered for
+    // Server-side only access via admin SDK
+    match /guestEvents/{guestEventId} {
+      // No client access - all operations via server functions with admin SDK
+      allow read, write: if false;
+    }
   }
 }
 
