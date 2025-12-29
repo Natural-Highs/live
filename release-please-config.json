@@ -2,6 +2,7 @@
 	"packages": {
 		".": {
 			"release-type": "node",
+			"changelog-type": "github",
 			"changelog-path": "CHANGELOG.md",
 			"bump-minor-pre-major": true,
 			"bump-patch-for-minor-pre-major": true,
@@ -12,11 +13,11 @@
 				{ "type": "fix", "section": "Changes" },
 				{ "type": "perf", "section": "Performance" },
 				{ "type": "security", "section": "Security" },
-				{ "type": "refactor", "section": "Refactoring", "hidden": true },
-				{ "type": "docs", "section": "Documentation", "hidden": true },
-				{ "type": "test", "section": "Tests", "hidden": true },
-				{ "type": "ci", "section": "CI", "hidden": true },
-				{ "type": "build", "section": "Build", "hidden": true },
+				{ "type": "refactor", "section": "Refactoring" },
+				{ "type": "docs", "section": "Documentation" },
+				{ "type": "test", "section": "Tests" },
+				{ "type": "ci", "section": "CI" },
+				{ "type": "build", "section": "Build" },
 				{ "type": "deps", "section": "Dependencies", "hidden": true },
 				{ "type": "chore", "section": "Chores", "hidden": true }
 			]

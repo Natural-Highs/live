@@ -24,7 +24,7 @@ function GuestEntryComponent() {
 	const [hasSession, setHasSession] = useState<boolean | null>(null)
 	const [checkingSession, setCheckingSession] = useState(true)
 
-	// Check if session cookie exists (similar to ProtectedRoute)
+	// Check if session cookie exists (similar to layout route auth check)
 	// This prevents Firebase Auth emulator persistence from causing incorrect redirects
 	useEffect(() => {
 		const checkSession = async () => {

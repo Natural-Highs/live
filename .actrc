@@ -1,0 +1,4 @@
+# GitHub Actions local runner configuration
+-P ubuntu-latest=catthehacker/ubuntu:act-latest
+--container-architecture linux/amd64
+--reuse

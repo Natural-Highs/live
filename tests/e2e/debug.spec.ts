@@ -1,0 +1,34 @@
+import {test} from '@playwright/test'
+import {injectAdminSessionCookie} from '../fixtures/session.fixture'
+
+test('debug: verify auth state with proper hydration', async ({page, context}) => {
+	// Set up session cookie BEFORE any navigation
+	await injectAdminSessionCookie(context, {
+		uid: 'test-uid',
+		email: 'test@test.com',
+		displayName: 'Test'
+	})
+
+	await page.goto('/')
+
+	// Wait for hydration
+	await page.waitForTimeout(2000)
+
+	// Check for Dashboard link (should appear when user is authenticated)
+	const dashboardLink = page.locator('text=Dashboard')
+	const loginLink = page.locator('text=Login')
+
+	const _hasDashboard = await dashboardLink.count()
+	const _hasLogin = await loginLink.count()
+
+	// Check the debug state
+	const _debugState = await page.evaluate(() => {
+		const win = window as Window & {
+			__AUTH_DEBUG__?: {loading: boolean; user: unknown; admin: boolean}
+		}
+		return win.__AUTH_DEBUG__
+	})
+
+	// Check nav content
+	const _navText = await page.locator('nav').textContent()
+})

@@ -1,5 +1,5 @@
 import {useForm} from '@tanstack/react-form'
-import {createFileRoute, useNavigate} from '@tanstack/react-router'
+import {createFileRoute, redirect, useNavigate, useRouter} from '@tanstack/react-router'
 import {createUserWithEmailAndPassword, signInWithEmailAndPassword} from 'firebase/auth'
 import type React from 'react'
 import {useState} from 'react'
@@ -37,6 +37,12 @@ type SignupFormValues = z.infer<typeof signupSchema>
 type AuthView = 'magic-link' | 'magic-link-sent' | 'password' | 'signup'
 
 export const Route = createFileRoute('/authentication')({
+	beforeLoad: async ({context}) => {
+		// Redirect authenticated users to dashboard
+		if (context.auth.isAuthenticated) {
+			throw redirect({to: '/dashboard'})
+		}
+	},
 	component: AuthenticationComponent
 })
 
@@ -46,6 +52,7 @@ function AuthenticationComponent() {
 	const [magicLinkEmail, setMagicLinkEmail] = useState('')
 	const [authError, setAuthError] = useState('')
 	const navigate = useNavigate()
+	const router = useRouter()
 
 	const loginForm = useForm({
 		defaultValues: {
@@ -95,7 +102,8 @@ function AuthenticationComponent() {
 			})
 
 			if (sessionResponse.ok) {
-				window.location.reload()
+				// Invalidate router to re-run beforeLoad hooks with new session
+				await router.invalidate()
 			} else {
 				const data = await sessionResponse.json()
 				setAuthError(data.error || 'Failed to create session')
@@ -155,7 +163,7 @@ function AuthenticationComponent() {
 			})
 
 			if (sessionResponse.ok) {
-				window.location.href = '/signup/about-you'
+				navigate({to: '/signup/about-you'})
 			} else {
 				const data = await sessionResponse.json()
 				setAuthError(data.error || 'Failed to create session')

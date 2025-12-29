@@ -22,6 +22,17 @@ let app: FirebaseApp | null = null
 let db: Firestore | null = null
 let auth: Auth | null = null
 
+let emulatorsConnected = false
+
+/**
+ * Single source of truth for emulator configuration.
+ * Uses VITE_USE_EMULATORS environment variable.
+ *
+ * Set VITE_USE_EMULATORS=true to connect to Firebase emulators.
+ * This flag controls both client and server emulator connections.
+ */
+export const shouldUseEmulators = import.meta.env.VITE_USE_EMULATORS === 'true'
+
 if (isClient) {
 	if (getApps().length > 0) {
 		app = getApp()
@@ -32,14 +43,8 @@ if (isClient) {
 	db = getFirestore(app)
 	auth = getAuth(app)
 
-	// Connect to emulators in development or when explicitly enabled (CI/tests)
-	const shouldConnectEmulators =
-		import.meta.env.MODE === 'development' || import.meta.env.VITE_USE_EMULATORS === 'true'
-
-	// Track if emulators are already connected (prevents errors on hot reload)
-	let emulatorsConnected = false
-
-	if (shouldConnectEmulators && !emulatorsConnected) {
+	// Connect to emulators when explicitly enabled via VITE_USE_EMULATORS
+	if (shouldUseEmulators && !emulatorsConnected) {
 		try {
 			connectFirestoreEmulator(db, 'localhost', 8080)
 			connectAuthEmulator(auth, 'http://localhost:9099')
@@ -48,4 +53,4 @@ if (isClient) {
 	}
 }
 
-export {app, db, auth}
+export {app, db, auth, emulatorsConnected}
