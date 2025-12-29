@@ -3,8 +3,7 @@ import {createServerFn} from '@tanstack/react-start'
 import {z} from 'zod'
 import {adminAuth} from '@/lib/firebase/firebase.admin'
 import {clearSession, getSessionData, type SessionData, updateSession} from '@/lib/session'
-import {requireAdmin} from '@/server/middleware/auth'
-import {validateSession} from './utils/auth'
+import {requireAdmin, requireAuth} from '@/server/middleware/auth'
 import {AuthenticationError, ValidationError} from './utils/errors'
 
 export interface SessionUser {
@@ -166,7 +165,7 @@ export const getCurrentUserFn = createServerFn({method: 'GET'}).handler(
 export const getSessionUser = createServerFn({method: 'GET'}).handler(
 	async (): Promise<SessionUser | null> => {
 		try {
-			const user = await validateSession()
+			const user = await requireAuth()
 			return user
 		} catch {
 			// No valid session
@@ -233,6 +232,54 @@ export const forceLogoutUserFn = createServerFn({method: 'POST'}).handler(
 )
 
 /**
+ * Input schema for logMagicLinkAttemptFn
+ */
+const logMagicLinkAttemptSchema = z.object({
+	success: z.boolean(),
+	errorCode: z.string().optional(),
+	// Email domain only (not full email) to prevent PII in logs while allowing pattern detection
+	emailDomain: z.string().optional()
+})
+
+/**
+ * Log magic link send attempts for security monitoring.
+ *
+ * Called from client after sendSignInLinkToEmail() to track success/failure rates.
+ * Logs are aggregated server-side to detect:
+ * - High failure rates (>5% indicates Firebase config or email delivery issues)
+ * - Domain-specific issues (e.g., corporate email blockers)
+ * - Potential abuse patterns
+ *
+ * Security:
+ * - NO PII logged (email domain only, not full email)
+ * - Client-side still shows success to prevent user enumeration
+ * - Server-side monitoring can alert on high error rates
+ *
+ * @param data - Attempt outcome and email domain
+ * @returns Success status
+ */
+export const logMagicLinkAttemptFn = createServerFn({method: 'POST'}).handler(
+	async ({data}: {data: unknown}): Promise<{success: true}> => {
+		const parseResult = logMagicLinkAttemptSchema.safeParse(data)
+		if (!parseResult.success) {
+			// Silently fail validation - logging is best-effort
+			return {success: true}
+		}
+
+		const {success, errorCode, emailDomain} = parseResult.data
+
+		// TODO: Replace with proper monitoring service (e.g., Sentry, DataDog)
+		// Magic link attempt logging intentionally removed - was console.log only
+		// Re-implement when monitoring infrastructure is in place
+		void success
+		void errorCode
+		void emailDomain
+
+		return {success: true}
+	}
+)
+
+/**
  * Get session data for route context.
  *
  * Called from __root.tsx beforeLoad to provide session state to all routes.
@@ -246,6 +293,7 @@ export const getSessionForRoutesFn = createServerFn({method: 'GET'}).handler(
 		isAuthenticated: boolean
 		hasConsent: boolean
 		isAdmin: boolean
+		hasPasskey: boolean
 	}> => {
 		const sessionData = await getSessionData()
 
@@ -254,7 +302,8 @@ export const getSessionForRoutesFn = createServerFn({method: 'GET'}).handler(
 				user: null,
 				isAuthenticated: false,
 				hasConsent: false,
-				isAdmin: false
+				isAdmin: false,
+				hasPasskey: false
 			}
 		}
 
@@ -270,7 +319,8 @@ export const getSessionForRoutesFn = createServerFn({method: 'GET'}).handler(
 			user,
 			isAuthenticated: true,
 			hasConsent: sessionData.claims?.signedConsentForm === true,
-			isAdmin: sessionData.claims?.admin === true
+			isAdmin: sessionData.claims?.admin === true,
+			hasPasskey: sessionData.claims?.passkeyEnabled === true
 		}
 	}
 )

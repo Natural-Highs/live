@@ -27,6 +27,8 @@ export interface SessionAuthContext {
 	isAuthenticated: boolean
 	hasConsent: boolean
 	isAdmin: boolean
+	/** Whether user has registered a passkey for authentication */
+	hasPasskey: boolean
 }
 
 export interface RouterContext {

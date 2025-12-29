@@ -6,8 +6,8 @@
 import {isValidEventCodeFormat} from '../../lib/events/event-validation'
 
 // Mock dependencies
-vi.mock('./utils/auth', () => ({
-	validateSession: vi.fn(),
+vi.mock('@/server/middleware/auth', () => ({
+	requireAuth: vi.fn(),
 	requireAdmin: vi.fn()
 }))
 

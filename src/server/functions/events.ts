@@ -1,4 +1,5 @@
 import {createServerFn} from '@tanstack/react-start'
+import {requireAdmin, requireAuth} from '@/server/middleware/auth'
 import {isValidEventCodeFormat} from '../../lib/events/event-validation'
 import {db} from '../../lib/firebase/firebase'
 import {
@@ -7,7 +8,6 @@ import {
 	overrideSurveyTimingSchema
 } from '../schemas/events'
 import type {EventDocument} from '../types/events'
-import {requireAdmin, validateSession} from './utils/auth'
 import {NotFoundError, ValidationError} from './utils/errors'
 
 /**
@@ -53,7 +53,7 @@ export const getEventByCode = createServerFn({method: 'GET'}).handler(
  * Admin users see all events, regular users see their registered events
  */
 export const getEvents = createServerFn({method: 'GET'}).handler(async () => {
-	const user = await validateSession()
+	const user = await requireAuth()
 
 	const eventsRef = db.collection('events')
 	let query = eventsRef.orderBy('createdAt', 'desc')

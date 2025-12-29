@@ -1,11 +1,11 @@
 import {createServerFn} from '@tanstack/react-start'
+import {requireAuth, requireConsent} from '@/server/middleware/auth'
 import {db} from '../../lib/firebase/firebase'
 import {
 	getAccessibleSurveysSchema,
 	getSurveyQuestionsSchema,
 	submitResponseSchema
 } from '../schemas/surveys'
-import {requireConsent, validateSession} from './utils/auth'
 import {ConflictError, NotFoundError} from './utils/errors'
 
 /**
@@ -107,7 +107,7 @@ export const getSurveyQuestions = createServerFn({method: 'GET'}).handler(
  */
 export const getAccessibleSurveys = createServerFn({method: 'GET'}).handler(
 	async ({data}: {data: unknown}) => {
-		const user = await validateSession()
+		const user = await requireAuth()
 
 		const validated = getAccessibleSurveysSchema.parse(data)
 		const {eventId} = validated

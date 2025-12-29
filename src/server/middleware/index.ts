@@ -5,12 +5,12 @@
  */
 
 export {
-	requireAuth,
-	requireAdmin,
-	requireConsent,
-	verifyFirebaseUserExists,
-	requireAuthWithFirebaseCheck,
 	checkTokenRevocation,
+	requireAdmin,
+	requireAuth,
+	requireAuthFull,
+	requireAuthWithFirebaseCheck,
 	requireAuthWithRevocationCheck,
-	requireAuthFull
+	requireConsent,
+	verifyFirebaseUserExists
 } from './auth'

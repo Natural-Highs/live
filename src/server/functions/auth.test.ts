@@ -60,11 +60,11 @@ vi.mock('@tanstack/react-router', () => ({
 	})
 }))
 
+import {redirect} from '@tanstack/react-router'
 import type {Mock} from 'vitest'
 import {adminAuth} from '@/lib/firebase/firebase.admin'
 import {clearSession, getSessionData, updateSession} from '@/lib/session'
 import {requireAdmin} from '@/server/middleware/auth'
-import {redirect} from '@tanstack/react-router'
 import {AuthenticationError, ValidationError} from './utils/errors'
 
 // Cast mocks
@@ -78,7 +78,7 @@ const mockRevokeRefreshTokens = adminAuth.revokeRefreshTokens as Mock
 const mockGetUser = adminAuth.getUser as Mock
 
 // Import after mocking
-import {createSessionFn, logoutFn, getCurrentUserFn, forceLogoutUserFn} from './auth'
+import {createSessionFn, forceLogoutUserFn, getCurrentUserFn, logoutFn} from './auth'
 
 describe('auth server functions (Task 2, 3, 4)', () => {
 	beforeEach(() => {
@@ -550,9 +550,7 @@ describe('auth server functions (Task 2, 3, 4)', () => {
 
 		it('should reject when caller is not admin', async () => {
 			// Arrange - requireAdmin throws for non-admin
-			mockRequireAdmin.mockRejectedValue(
-				new AuthenticationError('Admin privileges required')
-			)
+			mockRequireAdmin.mockRejectedValue(new AuthenticationError('Admin privileges required'))
 
 			// Act & Assert
 			await expect(forceLogoutUserFn({data: {uid: 'target-user-123'}})).rejects.toThrow(
@@ -583,9 +581,7 @@ describe('auth server functions (Task 2, 3, 4)', () => {
 
 		it('should throw AuthenticationError when caller has no claims', async () => {
 			// Arrange - requireAdmin throws when user has no admin claim
-			mockRequireAdmin.mockRejectedValue(
-				new AuthenticationError('Admin privileges required')
-			)
+			mockRequireAdmin.mockRejectedValue(new AuthenticationError('Admin privileges required'))
 
 			// Act & Assert
 			await expect(forceLogoutUserFn({data: {uid: 'target-user-123'}})).rejects.toThrow(

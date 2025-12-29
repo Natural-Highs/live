@@ -3,11 +3,11 @@
  * Tests profile retrieval, consent updates, and event registration
  */
 
-import * as authUtils from './utils/auth'
+import * as authMiddleware from '@/server/middleware/auth'
 
 // Mock dependencies
-vi.mock('./utils/auth', () => ({
-	validateSession: vi.fn()
+vi.mock('@/server/middleware/auth', () => ({
+	requireAuth: vi.fn()
 }))
 
 vi.mock('../../lib/firebase/firebase', () => ({
@@ -42,7 +42,7 @@ describe('users server functions', () => {
 
 	describe('getProfile behavior', () => {
 		it('should require authentication', () => {
-			// getProfile uses validateSession() which throws if not authenticated
+			// getProfile uses requireAuth() which throws if not authenticated
 			const mockUser = {
 				uid: 'user-123',
 				email: 'test@example.com',
@@ -50,8 +50,8 @@ describe('users server functions', () => {
 				photoURL: null,
 				claims: {admin: false, signedConsentForm: false}
 			}
-			vi.mocked(authUtils.validateSession).mockResolvedValue(mockUser)
-			expect(authUtils.validateSession).toBeDefined()
+			vi.mocked(authMiddleware.requireAuth).mockResolvedValue(mockUser)
+			expect(authMiddleware.requireAuth).toBeDefined()
 		})
 
 		it('should allow users to view their own profile', () => {
@@ -81,7 +81,7 @@ describe('users server functions', () => {
 
 	describe('updateConsentStatus behavior', () => {
 		it('should require authentication', () => {
-			expect(authUtils.validateSession).toBeDefined()
+			expect(authMiddleware.requireAuth).toBeDefined()
 		})
 
 		it('should accept boolean consent value', () => {
@@ -99,7 +99,7 @@ describe('users server functions', () => {
 
 	describe('registerForEvent behavior', () => {
 		it('should require authentication', () => {
-			expect(authUtils.validateSession).toBeDefined()
+			expect(authMiddleware.requireAuth).toBeDefined()
 		})
 
 		it('should validate event code format', () => {
@@ -126,7 +126,7 @@ describe('users server functions', () => {
 
 	describe('getUserEvents behavior', () => {
 		it('should require authentication', () => {
-			expect(authUtils.validateSession).toBeDefined()
+			expect(authMiddleware.requireAuth).toBeDefined()
 		})
 
 		it('should filter events by user participation', () => {

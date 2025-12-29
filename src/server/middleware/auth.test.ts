@@ -26,8 +26,8 @@ vi.mock('@/lib/firebase/firebase.admin', () => ({
 }))
 
 import type {Mock} from 'vitest'
-import {getSessionData, validateSessionEnvironment, clearSession} from '@/lib/session'
 import {adminAuth} from '@/lib/firebase/firebase.admin'
+import {clearSession, getSessionData, validateSessionEnvironment} from '@/lib/session'
 import {AuthenticationError} from '../functions/utils/errors'
 
 // Cast mocks
@@ -37,7 +37,15 @@ const mockGetUser = adminAuth.getUser as Mock
 const mockClearSession = clearSession as Mock
 
 // Import after mocking
-import {requireAuth, requireAdmin, verifyFirebaseUserExists, requireAuthWithFirebaseCheck, checkTokenRevocation, requireAuthWithRevocationCheck, requireAuthFull} from './auth'
+import {
+	checkTokenRevocation,
+	requireAdmin,
+	requireAuth,
+	requireAuthFull,
+	requireAuthWithFirebaseCheck,
+	requireAuthWithRevocationCheck,
+	verifyFirebaseUserExists
+} from './auth'
 
 describe('auth middleware (Task 5)', () => {
 	beforeEach(() => {
@@ -308,7 +316,9 @@ describe('auth middleware (Task 5)', () => {
 
 			// Act & Assert
 			await expect(verifyFirebaseUserExists('banned-user-123')).rejects.toThrow(AuthenticationError)
-			await expect(verifyFirebaseUserExists('banned-user-123')).rejects.toThrow('User account is disabled')
+			await expect(verifyFirebaseUserExists('banned-user-123')).rejects.toThrow(
+				'User account is disabled'
+			)
 			expect(mockClearSession).toHaveBeenCalled()
 		})
 
@@ -317,8 +327,12 @@ describe('auth middleware (Task 5)', () => {
 			mockGetUser.mockRejectedValue({code: 'auth/user-not-found'})
 
 			// Act & Assert
-			await expect(verifyFirebaseUserExists('deleted-user-123')).rejects.toThrow(AuthenticationError)
-			await expect(verifyFirebaseUserExists('deleted-user-123')).rejects.toThrow('User account no longer exists')
+			await expect(verifyFirebaseUserExists('deleted-user-123')).rejects.toThrow(
+				AuthenticationError
+			)
+			await expect(verifyFirebaseUserExists('deleted-user-123')).rejects.toThrow(
+				'User account no longer exists'
+			)
 			expect(mockClearSession).toHaveBeenCalled()
 		})
 	})
@@ -429,10 +443,12 @@ describe('auth middleware (Task 5)', () => {
 			})
 
 			// Act & Assert - session created before revocation
-			await expect(checkTokenRevocation('user-123', '2025-01-01T00:00:00.000Z'))
-				.rejects.toThrow(AuthenticationError)
-			await expect(checkTokenRevocation('user-123', '2025-01-01T00:00:00.000Z'))
-				.rejects.toThrow('Session invalidated due to security event')
+			await expect(checkTokenRevocation('user-123', '2025-01-01T00:00:00.000Z')).rejects.toThrow(
+				AuthenticationError
+			)
+			await expect(checkTokenRevocation('user-123', '2025-01-01T00:00:00.000Z')).rejects.toThrow(
+				'Session invalidated due to security event'
+			)
 			expect(mockClearSession).toHaveBeenCalled()
 		})
 
@@ -441,10 +457,12 @@ describe('auth middleware (Task 5)', () => {
 			mockGetUser.mockRejectedValue(new Error('Network error'))
 
 			// Act & Assert - should fail safely
-			await expect(checkTokenRevocation('user-123', '2025-01-01T00:00:00.000Z'))
-				.rejects.toThrow(AuthenticationError)
-			await expect(checkTokenRevocation('user-123', '2025-01-01T00:00:00.000Z'))
-				.rejects.toThrow('Unable to verify session validity')
+			await expect(checkTokenRevocation('user-123', '2025-01-01T00:00:00.000Z')).rejects.toThrow(
+				AuthenticationError
+			)
+			await expect(checkTokenRevocation('user-123', '2025-01-01T00:00:00.000Z')).rejects.toThrow(
+				'Unable to verify session validity'
+			)
 		})
 	})
 
@@ -512,7 +530,9 @@ describe('auth middleware (Task 5)', () => {
 
 			// Act & Assert
 			await expect(requireAuthWithRevocationCheck()).rejects.toThrow(AuthenticationError)
-			await expect(requireAuthWithRevocationCheck()).rejects.toThrow('Session invalidated due to security event')
+			await expect(requireAuthWithRevocationCheck()).rejects.toThrow(
+				'Session invalidated due to security event'
+			)
 			expect(mockClearSession).toHaveBeenCalled()
 		})
 	})

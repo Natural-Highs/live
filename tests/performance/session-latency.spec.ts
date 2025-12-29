@@ -52,9 +52,6 @@ test.describe('Session Latency Baseline', () => {
 
 			const coldStartLatency = endTime - startTime
 
-			// Log for baseline documentation
-			console.log(`Cold start session latency: ${coldStartLatency.toFixed(2)}ms`)
-
 			// Verify within threshold
 			expect(coldStartLatency).toBeLessThan(COLD_START_THRESHOLD)
 
@@ -105,10 +102,6 @@ test.describe('Session Latency Baseline', () => {
 			// Calculate average warm start latency
 			const avgWarmLatency = measurements.reduce((a, b) => a + b, 0) / measurements.length
 
-			// Log for baseline documentation
-			console.log(`Warm start measurements: ${measurements.map(m => m.toFixed(2)).join('ms, ')}ms`)
-			console.log(`Average warm start latency: ${avgWarmLatency.toFixed(2)}ms`)
-
 			// Verify within threshold
 			expect(avgWarmLatency).toBeLessThan(WARM_START_THRESHOLD)
 
@@ -136,9 +129,6 @@ test.describe('Session Latency Baseline', () => {
 		}
 
 		const avgLatency = measurements.reduce((a, b) => a + b, 0) / measurements.length
-
-		console.log(`Health check measurements: ${measurements.map(m => m.toFixed(2)).join('ms, ')}ms`)
-		console.log(`Average health check latency: ${avgLatency.toFixed(2)}ms`)
 
 		expect(avgLatency).toBeLessThan(HEALTH_CHECK_THRESHOLD)
 	})
@@ -179,8 +169,6 @@ test.describe('Session Latency Baseline', () => {
 
 			const endTime = performance.now()
 			const concurrentLatency = endTime - startTime
-
-			console.log(`Concurrent (3 users) latency: ${concurrentLatency.toFixed(2)}ms`)
 
 			// All pages should reach protected route
 			for (const page of pages) {
