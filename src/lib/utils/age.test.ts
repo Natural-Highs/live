@@ -2,11 +2,7 @@
  * Unit tests for age calculation and category determination
  * Following Test Pyramid Balance directive: Unit tests for business logic functions
  */
-import {
-	calculateAge,
-	determineAgeCategory,
-	determineAgeCategoryFromDOB
-} from './age'
+import {calculateAge, determineAgeCategory, determineAgeCategoryFromDOB} from './age'
 
 describe('Age Calculation', () => {
 	describe('calculateAge', () => {

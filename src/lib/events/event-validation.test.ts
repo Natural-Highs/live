@@ -3,7 +3,7 @@
  * Following Test Pyramid Balance directive: Unit tests for business logic functions
  */
 
-import type {EventDocument} from '@/types/events'
+import type {EventDocument} from '../../server/types/events'
 import {isValidEventCodeFormat, validateEventRegistration} from './event-validation'
 
 describe('Event Validation', () => {
