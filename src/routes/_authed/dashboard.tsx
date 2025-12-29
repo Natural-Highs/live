@@ -1,6 +1,7 @@
 import {useQuery, useQueryClient} from '@tanstack/react-query'
 import {createFileRoute, getRouteApi} from '@tanstack/react-router'
-import {useEffect, useRef, useState} from 'react'
+import {QrCode} from 'lucide-react'
+import {lazy, Suspense, useEffect, useRef, useState} from 'react'
 import {z} from 'zod'
 import {SuccessConfirmation} from '@/components/features/SuccessConfirmation'
 import {Button} from '@/components/ui/button'
@@ -10,7 +11,14 @@ import {PageContainer} from '@/components/ui/page-container'
 import {Spinner} from '@/components/ui/spinner'
 import Titlecard from '@/components/ui/TitleCard'
 import {WebsiteLogo} from '@/components/ui/website-logo'
+import {createDefaultAdapter, type QRScannerAdapter} from '@/lib/events/qr-scanner-adapter'
+import {useCameraAvailability} from '@/lib/events/use-camera-availability'
 import {type Event as EventData, eventsQueryOptions} from '@/queries/index.js'
+
+// Lazy load QRScanner to reduce initial bundle size
+const QRScanner = lazy(() =>
+	import('@/components/features/QRScanner').then(mod => ({default: mod.QRScanner}))
+)
 
 const eventCodeResponseSchema = z.object({
 	success: z.boolean(),
@@ -109,7 +117,50 @@ export function DashboardComponent() {
 	const [error, setError] = useState('')
 	const [isShaking, setIsShaking] = useState(false)
 	const [confirmationData, setConfirmationData] = useState<ConfirmationData | null>(null)
+	const [showQrOption, setShowQrOption] = useState(false)
+	const [showScanner, setShowScanner] = useState(false)
 	const shakeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+	const qrButtonRef = useRef<HTMLButtonElement>(null)
+	const {hasCamera} = useCameraAvailability()
+
+	// Create QR scanner adapter - uses mock in E2E tests, real adapter in production
+	// Note: During SSR, window is undefined so we can't detect E2E mode
+	// The useEffect below handles switching to mock adapter after hydration
+	const [qrAdapter, setQrAdapter] = useState<QRScannerAdapter | null>(() => {
+		if (typeof window === 'undefined') {
+			// SSR: return null, will be set in useEffect after hydration
+			return null
+		}
+		if (window.__qrScannerMockConfig) {
+			// E2E test mode: return null, load async in useEffect
+			return null
+		}
+		// Production: use default adapter
+		return createDefaultAdapter()
+	})
+
+	// Track whether adapter is ready (for E2E tests to detect)
+	const adapterReady = qrAdapter !== null
+
+	useEffect(() => {
+		// Skip if adapter already loaded
+		if (qrAdapter) return
+
+		if (typeof window !== 'undefined' && window.__qrScannerMockConfig) {
+			// E2E test mode: load mock adapter
+			import('@/lib/events/qr-scanner-mock-adapter')
+				.then(({createMockAdapter}) => {
+					setQrAdapter(createMockAdapter())
+				})
+				.catch(() => {
+					// Fallback to default adapter if mock fails
+					setQrAdapter(createDefaultAdapter())
+				})
+		} else if (typeof window !== 'undefined') {
+			// Production: use default adapter (handles SSR hydration case)
+			setQrAdapter(createDefaultAdapter())
+		}
+	}, [qrAdapter])
 
 	// Cleanup shake timer on unmount
 	useEffect(() => {
@@ -182,6 +233,11 @@ export function DashboardComponent() {
 		setError(errorMessage)
 		setIsShaking(true)
 
+		// Show QR option after first failed attempt (if camera available)
+		if (hasCamera) {
+			setShowQrOption(true)
+		}
+
 		// Clear any existing shake timer
 		if (shakeTimerRef.current) {
 			clearTimeout(shakeTimerRef.current)
@@ -198,6 +254,19 @@ export function DashboardComponent() {
 	const handleDismissConfirmation = () => {
 		setConfirmationData(null)
 		setEventCode('')
+		setShowQrOption(false) // Reset QR option on successful check-in
+	}
+
+	const handleQrDetected = (code: string) => {
+		setShowScanner(false)
+		setShowQrOption(false) // Hide option on success
+		handleAutoSubmit(code)
+	}
+
+	const handleCloseScanner = () => {
+		setShowScanner(false)
+		// Return focus to QR button
+		qrButtonRef.current?.focus()
 	}
 
 	const formatDate = (dateString?: string): string => {
@@ -215,7 +284,7 @@ export function DashboardComponent() {
 	}
 
 	return (
-		<PageContainer className='gap-2'>
+		<PageContainer className='gap-2' data-qr-adapter-ready={adapterReady}>
 			{/* Success Confirmation Overlay - rendered at top level for full-screen display */}
 			{confirmationData && (
 				<SuccessConfirmation
@@ -282,8 +351,56 @@ export function DashboardComponent() {
 							<span className='text-gray-600'>Checking in...</span>
 						</div>
 					)}
+
+					{/* QR Option - appears after first failed attempt (progressive disclosure) */}
+					{/* min-h-[72px] reserves space to prevent CLS when option appears after camera check */}
+					<div className={showQrOption && hasCamera ? 'min-h-[72px]' : ''}>
+						{showQrOption && hasCamera && (
+							<div
+								className='animate-in fade-in slide-in-from-bottom-2 text-center'
+								data-testid='qr-option-container'
+							>
+								<p className='mb-2 text-muted-foreground text-sm'>
+									Having trouble? Try scanning instead
+								</p>
+								<Button
+									ref={qrButtonRef}
+									variant='ghost'
+									size='sm'
+									type='button'
+									onClick={() => {
+										setShowScanner(true)
+									}}
+									data-testid='open-qr-scanner'
+								>
+									<QrCode className='mr-2 h-4 w-4' />
+									Scan QR Code
+								</Button>
+							</div>
+						)}
+					</div>
 				</div>
 			</Greencard>
+
+			{/* QR Scanner Overlay (lazy loaded) */}
+			{showScanner && qrAdapter && (
+				<Suspense
+					fallback={
+						<div className='fixed inset-0 z-50 flex items-center justify-center bg-black'>
+							<div className='text-center text-white'>
+								<Spinner size='lg' />
+								<p className='mt-2'>Loading scanner...</p>
+							</div>
+						</div>
+					}
+				>
+					<QRScanner
+						adapter={qrAdapter}
+						onDetected={handleQrDetected}
+						onClose={handleCloseScanner}
+					/>
+				</Suspense>
+			)}
 
 			{/* Navigation Buttons */}
 			<div className='w-1/5 space-y-3 text-center'>
