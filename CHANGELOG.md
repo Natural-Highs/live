@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.1.0 (2025-12-29)
+
+## What's Changed
+* docs: add dev notes by @wistb in https://github.com/Natural-Highs/live/pull/11
+* feat: TanStack Start architecture and ecosystem by @wistb in https://github.com/Natural-Highs/live/pull/15
+* feat(ci): initial automated ci/cd pipeline by @wistb in https://github.com/Natural-Highs/live/pull/16
+* feat(core): authentication, sessions, and admin features by @wistb in https://github.com/Natural-Highs/live/pull/17
+
+## New Contributors
+* @wistb made their first contribution in https://github.com/Natural-Highs/live/pull/11
+
+**Full Changelog**: https://github.com/Natural-Highs/live/compare/v0.0.0...v0.1.0
+
+## Changelog
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
