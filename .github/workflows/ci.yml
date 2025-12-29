@@ -125,7 +125,7 @@ jobs:
 
             FAILED=0
 
-            # Threshold check (70% for all metrics - matches vitest.config.ts)
+            # Threshold check (70% for all metrics - matches vite.config.ts)
             # Using awk for portable float comparison
             if awk "BEGIN {exit !($LINES < 70)}"; then
               echo "::error::Line coverage ${LINES}% is below 70% threshold"

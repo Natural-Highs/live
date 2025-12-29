@@ -90,6 +90,9 @@ if [ "$SKIP_E2E" = false ]; then
   echo "E2E tests passed"
   echo ""
 
+  # Move Firebase emulator logs to .build
+  mv -f firebase-debug.log firestore-debug.log .build/ 2>/dev/null || true
+
   # Optional burn-in
   if [ "$RUN_BURN_IN" = true ]; then
     echo "Stage 5: Burn-In (3 iterations)"

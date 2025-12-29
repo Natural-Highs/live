@@ -59,7 +59,7 @@ ignore:
   - "**/*.config.js"
   - .trunk/**
   - .build/**
-  - tests/**
+  - src/tests/**
   - scripts/**
 
 # Coverage flags for different test types

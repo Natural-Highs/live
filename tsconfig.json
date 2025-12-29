@@ -27,7 +27,6 @@
 			"@/*": ["./src/*", "./app/*"]
 		}
 	},
-	"include": ["src", "app", "vitest.d.ts"],
-	"exclude": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"],
-	"references": [{ "path": "./tsconfig.node.json" }]
+	"include": ["src", "app", "vitest.d.ts", "vite.config.ts", "playwright.config.ts"],
+	"exclude": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"]
 }
