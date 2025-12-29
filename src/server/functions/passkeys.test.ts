@@ -52,7 +52,8 @@ vi.mock('@/lib/firebase/firebase.admin', () => ({
 	adminDb: {
 		collection: vi.fn((name: string) => createMockCollection(name)),
 		runTransaction: mockRunTransaction
-	}
+	},
+	increment: vi.fn((n: number) => ({_increment: n}))
 }))
 
 // Mock session module

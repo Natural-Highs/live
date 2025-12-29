@@ -1,9 +1,8 @@
 import {createServerFn} from '@tanstack/react-start'
-import {FieldValue} from 'firebase-admin/firestore'
 import {requireAuth} from '@/server/middleware/auth'
 import {auth, db} from '../../lib/firebase/firebase'
 import {registerGuestSchema, upgradeGuestSchema, validateGuestCodeSchema} from '../schemas/guests'
-import {ConflictError, NotFoundError, ValidationError} from './utils/errors'
+import {ConflictError, NotFoundError} from './utils/errors'
 
 /**
  * Validate guest event code
@@ -11,138 +10,108 @@ import {ConflictError, NotFoundError, ValidationError} from './utils/errors'
  * Returns event info if code is valid
  */
 export const validateGuestCode = createServerFn({method: 'GET'})
-	.inputValidator((d: unknown) => {
-		const result = validateGuestCodeSchema.safeParse(d)
-		if (!result.success) {
-			throw new ValidationError(result.error.issues[0]?.message ?? 'Invalid input')
+	.inputValidator((d: unknown) => validateGuestCodeSchema.parse(d))
+	.handler(async ({data}) => {
+		const {eventCode} = data
+
+		const eventsSnapshot = await db
+			.collection('events')
+			.where('eventCode', '==', eventCode)
+			.where('isActive', '==', true)
+			.limit(1)
+			.get()
+
+		if (eventsSnapshot.empty) {
+			throw new NotFoundError('Invalid or inactive event code')
 		}
-		return result.data
+
+		const eventDoc = eventsSnapshot.docs[0]!
+		const eventData = eventDoc.data()
+
+		return {
+			valid: true,
+			eventId: eventDoc.id,
+			eventName: eventData.name,
+			eventDescription: eventData.description,
+			startDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
+			endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate
+		}
 	})
-	.handler(
-		async ({
-			data
-		}): Promise<{
-			valid: true
-			eventId: string
-			eventName: string
-			eventDescription?: string
-			startDate?: string
-			endDate?: string
-		}> => {
-			const {eventCode} = data
-
-			const eventsSnapshot = await db
-				.collection('events')
-				.where('eventCode', '==', eventCode)
-				.where('isActive', '==', true)
-				.limit(1)
-				.get()
-
-			if (eventsSnapshot.empty) {
-				throw new NotFoundError('Invalid or inactive event code')
-			}
-
-			const eventDoc = eventsSnapshot.docs[0]!
-			const eventData = eventDoc.data()
-
-			return {
-				valid: true,
-				eventId: eventDoc.id,
-				eventName: eventData.name,
-				eventDescription: eventData.description,
-				startDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
-				endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate
-			}
-		}
-	)
 
 /**
  * Register as guest user for event
- * Creates guest record with firstName, lastName, email, phone, consentSignature
+ * Creates anonymous or identified guest account
  * Public endpoint - no auth required
  */
 export const registerGuest = createServerFn({method: 'POST'})
-	.inputValidator((d: unknown) => {
-		const result = registerGuestSchema.safeParse(d)
-		if (!result.success) {
-			throw new ValidationError(result.error.issues[0]?.message ?? 'Invalid input')
+	.inputValidator((d: unknown) => registerGuestSchema.parse(d))
+	.handler(async ({data}) => {
+		const {eventCode, email, displayName} = data
+
+		// Validate event code
+		const eventsSnapshot = await db
+			.collection('events')
+			.where('eventCode', '==', eventCode)
+			.where('isActive', '==', true)
+			.limit(1)
+			.get()
+
+		if (eventsSnapshot.empty) {
+			throw new NotFoundError('Invalid or inactive event code')
 		}
-		return result.data
-	})
-	.handler(
-		async ({
-			data
-		}): Promise<{
-			success: true
-			guestId: string
-			eventId: string
-			eventName: string
-			firstName: string
-		}> => {
-			const {eventCode, firstName, lastName, email, phone, consentSignature} = data
 
-			// Validate event code
-			const eventsSnapshot = await db
-				.collection('events')
-				.where('eventCode', '==', eventCode)
-				.where('isActive', '==', true)
-				.limit(1)
-				.get()
+		const eventDoc = eventsSnapshot.docs[0]!
+		const eventData = eventDoc.data()
 
-			if (eventsSnapshot.empty) {
-				throw new NotFoundError('Invalid or inactive event code')
-			}
+		// Create anonymous Firebase Auth user
+		const userRecord = await auth.createUser({
+			email: email || undefined,
+			displayName: displayName || 'Guest User',
+			emailVerified: false
+		})
 
-			const eventDoc = eventsSnapshot.docs[0]!
-			const eventData = eventDoc.data()
+		// Create guest user document
+		const guestData = {
+			isGuest: true,
+			email: email || null,
+			displayName: displayName || 'Guest User',
+			eventId: eventDoc.id,
+			consentSigned: false,
+			createdAt: new Date(),
+			updatedAt: new Date()
+		}
 
-			// Generate unique guest ID (no Firebase Auth for guests)
-			const guestId = crypto.randomUUID()
-			const now = new Date()
+		await db.collection('users').doc(userRecord.uid).set(guestData)
 
-			// Create guest document in guests collection (separate from users)
-			const guestData = {
-				isGuest: true,
-				firstName,
-				lastName,
-				email: email || null,
-				phone: phone || null,
-				eventId: eventDoc.id,
-				consentSignedAt: now,
-				consentSignature,
-				createdAt: now,
-				updatedAt: now
-			}
-
-			await db.collection('guests').doc(guestId).set(guestData)
-
-			// Register for event - use atomic arrayUnion to prevent race conditions
-			await db
-				.collection('events')
-				.doc(eventDoc.id)
-				.update({
-					participants: FieldValue.arrayUnion(guestId),
-					currentParticipants: FieldValue.increment(1),
-					updatedAt: new Date()
-				})
-
-			// Create guest event registration record
-			await db.collection('guestEvents').add({
-				guestId,
-				eventId: eventDoc.id,
-				registeredAt: now,
-				createdAt: now
+		// Register for event
+		const participants = eventData.participants || []
+		await db
+			.collection('events')
+			.doc(eventDoc.id)
+			.update({
+				participants: [...participants, userRecord.uid],
+				currentParticipants: participants.length + 1,
+				updatedAt: new Date()
 			})
 
-			return {
-				success: true,
-				guestId,
-				eventId: eventDoc.id,
-				eventName: eventData.name,
-				firstName
-			}
+		// Create user event registration
+		await db.collection('userEvents').add({
+			userId: userRecord.uid,
+			eventId: eventDoc.id,
+			registeredAt: new Date(),
+			createdAt: new Date()
+		})
+
+		// Create session cookie for guest
+		const customToken = await auth.createCustomToken(userRecord.uid)
+
+		return {
+			uid: userRecord.uid,
+			customToken,
+			eventId: eventDoc.id,
+			eventName: eventData.name
 		}
-	)
+	})
 
 /**
  * Upgrade guest account to full user account

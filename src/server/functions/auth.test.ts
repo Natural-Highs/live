@@ -19,9 +19,19 @@ const {mockCreateServerFn} = vi.hoisted(() => ({
 	mockCreateServerFn: vi.fn()
 }))
 
-// Mock @tanstack/react-start to capture handler functions
+// Mock @tanstack/react-start to capture handler functions and simulate inputValidator chain
 vi.mock('@tanstack/react-start', () => ({
 	createServerFn: () => ({
+		inputValidator: (validator: (d: unknown) => unknown) => ({
+			handler: (fn: (args: {data: unknown}) => unknown) => {
+				mockCreateServerFn(fn)
+				// Return a function that runs validator first, then handler
+				return async (input: {data: unknown}) => {
+					const validated = validator(input.data)
+					return fn({data: validated})
+				}
+			}
+		}),
 		handler: (fn: (...args: unknown[]) => unknown) => {
 			mockCreateServerFn(fn)
 			return fn

@@ -44,6 +44,9 @@ export default defineConfig({
 				'**/*.test.{ts,tsx}',
 				'**/*.config.{ts,js}',
 				'**/test-setup.ts',
+				'**/mocks/**', // MSW test infrastructure
+				'**/queries/**', // Query definitions - integration tested via E2E
+				'**/routes/**', // Route components - E2E tested
 				'.trunk/**'
 			],
 			thresholds: {
@@ -53,12 +56,6 @@ export default defineConfig({
 				functions: 70,
 				lines: 70,
 				// Layer-specific thresholds
-				'src/lib/queries/**': {
-					statements: 100,
-					branches: 100,
-					functions: 100,
-					lines: 100
-				},
 				'src/server/functions/utils/**': {
 					statements: 100,
 					branches: 100,
