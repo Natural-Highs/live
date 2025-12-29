@@ -88,7 +88,7 @@ export const createSessionFn = createServerFn({method: 'POST'}).handler(
 		//
 		// ARCHITECTURE NOTE: There's a theoretical race condition window (~4ms) between
 		// clearSession() and updateSession() where concurrent login requests could interfere.
-		// This follows "last-write-wins" semantics as documented in Story -1.2 Dev Notes.
+		// This follows "last-write-wins" semantics for concurrent session operations.
 		// The risk is LOW (requires precise timing) with HIGH impact (session corruption).
 		// Mitigation: Application-level request deduplication should prevent this in practice.
 		// TanStack session layer doesn't provide mutex/locking as of TanStack Start v1.142.5.

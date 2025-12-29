@@ -17,6 +17,26 @@ import {z} from 'zod'
 export const MAX_ALLOWED_AGE = 120
 
 /**
+ * Phone number regex supporting common US formats.
+ * Matches: 555-123-4567, (555) 123-4567, +1 555 123 4567, etc.
+ * Exported for reuse in form validation.
+ */
+export const PHONE_REGEX = /^(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/
+
+/**
+ * Email regex for basic email format validation.
+ * Exported for reuse in form validation.
+ */
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/**
+ * Maximum length for medical conditions text field.
+ * Exported for reuse in form component maxLength attribute to provide
+ * client-side character limit feedback (consistent with PHONE_REGEX/EMAIL_REGEX pattern).
+ */
+export const MAX_MEDICAL_CONDITIONS_LENGTH = 500
+
+/**
  * Display name validation schema.
  * Used for individual field validation in forms.
  */
@@ -90,12 +110,6 @@ export const createProfileSchema = z
 export type CreateProfileData = z.infer<typeof createProfileSchema>
 
 /**
- * Phone number regex supporting common US formats.
- * Matches: 555-123-4567, (555) 123-4567, +1 555 123 4567, etc.
- */
-const phoneRegex = /^(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/
-
-/**
  * Demographics schema for event-driven data collection.
  * These fields are collected at check-in based on event type requirements.
  */
@@ -110,7 +124,7 @@ export const demographicsSchema = z
 		emergencyContactName: z.string().max(100).optional().nullable(),
 		emergencyContactPhone: z
 			.string()
-			.regex(phoneRegex, {message: 'Invalid phone format'})
+			.regex(PHONE_REGEX, {message: 'Invalid phone format'})
 			.optional()
 			.nullable(),
 		emergencyContactEmail: z.string().email({message: 'Invalid email'}).optional().nullable(),

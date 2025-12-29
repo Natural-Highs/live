@@ -21,6 +21,10 @@ const emulatorEnv = {
 	VITE_MESSAGING_SENDER_ID: '000000000000',
 	VITE_APP_ID: 'demo-app-id',
 	VITE_USE_EMULATORS: 'true',
+	// Server-side emulator flag (used by firebase.admin.ts)
+	USE_EMULATORS: 'true',
+	// Firestore emulator host (used by tests/fixtures/firestore.fixture.ts)
+	FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080',
 	// Session secret for server-side session validation
 	// Must match SESSION_SECRET_TEST used in session.fixture.ts
 	SESSION_SECRET: SESSION_SECRET_TEST

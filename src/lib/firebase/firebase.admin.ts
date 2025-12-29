@@ -19,6 +19,24 @@ function initializeAdmin(): void {
 	if (initialized) return
 	if (initError) throw initError
 
+	// When using emulators, we can initialize without credentials
+	if (shouldUseEmulators) {
+		// Initialize without credentials for emulator usage
+		// The demo-* project ID pattern works without authentication
+		admin.initializeApp({
+			projectId: 'demo-natural-highs'
+		})
+
+		admin.firestore().settings({
+			host: 'localhost:8080',
+			ssl: false
+		})
+
+		process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099'
+		initialized = true
+		return
+	}
+
 	// Service account can come from:
 	// 1. Doppler secret (FIREBASE_SERVICE_ACCOUNT as JSON string)
 	// 2. serviceAccount.json file (fallback for local dev)
@@ -53,16 +71,6 @@ function initializeAdmin(): void {
 		credential: admin.credential.cert(serviceAccount),
 		storageBucket
 	})
-
-	// Connect to emulators when explicitly enabled via USE_EMULATORS
-	if (shouldUseEmulators) {
-		admin.firestore().settings({
-			host: 'localhost:8080',
-			ssl: false
-		})
-
-		process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099'
-	}
 
 	initialized = true
 }

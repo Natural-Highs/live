@@ -252,8 +252,22 @@ export async function clearFirestoreEmulator(): Promise<void> {
 		)
 
 		if (!response.ok && response.status !== 404) {
+<<<<<<< HEAD
 		}
 	} catch (_error) {}
+=======
+			console.warn(
+				`[firestore.fixture] clearFirestoreEmulator unexpected status: ${response.status} ${response.statusText}`
+			)
+		}
+	} catch (error) {
+		// Log connection failures to help debug emulator issues
+		console.warn(
+			`[firestore.fixture] clearFirestoreEmulator failed to connect to emulator at ${host}:`,
+			error instanceof Error ? error.message : error
+		)
+	}
+>>>>>>> 032e02b6 (feat(settings): add profile settings page with history tracking)
 }
 
 /**
@@ -286,6 +300,7 @@ export async function cleanupTestApp(): Promise<void> {
 		testDb = null
 	}
 }
+<<<<<<< HEAD
 
 /**
  * Create a minimal user document for E2E testing.
@@ -337,3 +352,5 @@ export async function createTestUser(
 export async function deleteTestUser(uid: string): Promise<void> {
 	await deleteTestUserDocument(uid)
 }
+=======
+>>>>>>> 032e02b6 (feat(settings): add profile settings page with history tracking)
