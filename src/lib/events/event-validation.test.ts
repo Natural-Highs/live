@@ -3,17 +3,12 @@
  * Following Test Pyramid Balance directive: Unit tests for business logic functions
  */
 
-<<<<<<< HEAD
-import type {EventDocument} from '../../server/types/events'
-import {isValidEventCodeFormat, validateEventRegistration} from './event-validation'
-=======
 import type {EventDocument} from '@/types/events'
 import {
 	isValidEventCodeFormat,
 	isWithinCheckInWindow,
 	validateEventRegistration
 } from './event-validation'
->>>>>>> 62ec4374 (feat(check-in): add success confirmation with time window validation)
 
 describe('Event Validation', () => {
 	describe('isWithinCheckInWindow', () => {

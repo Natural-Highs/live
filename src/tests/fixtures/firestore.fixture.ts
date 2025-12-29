@@ -45,9 +45,7 @@ let testDb: Firestore | null = null
  * Uses demo-* project ID pattern for emulator compatibility.
  */
 function getTestApp(): App {
-	if (testApp) {
-		return testApp
-	}
+	if (testApp) return testApp
 
 	// Set emulator environment before initializing
 	process.env.FIRESTORE_EMULATOR_HOST = FIRESTORE_EMULATOR_HOST
@@ -75,9 +73,7 @@ function getTestApp(): App {
  * Get Firestore instance for E2E tests.
  */
 function getTestDb(): Firestore {
-	if (testDb) {
-		return testDb
-	}
+	if (testDb) return testDb
 
 	const app = getTestApp()
 	testDb = getFirestore(app)
@@ -172,30 +168,18 @@ export async function createTestUserDocument(
 
 	// For adults, demographics go on the main document
 	if (!isMinor) {
-		if (user.pronouns !== undefined) {
-			userDoc.pronouns = user.pronouns
-		}
-		if (user.gender !== undefined) {
-			userDoc.gender = user.gender
-		}
-		if (user.raceEthnicity !== undefined) {
-			userDoc.raceEthnicity = user.raceEthnicity
-		}
-		if (user.emergencyContactName !== undefined) {
+		if (user.pronouns !== undefined) userDoc.pronouns = user.pronouns
+		if (user.gender !== undefined) userDoc.gender = user.gender
+		if (user.raceEthnicity !== undefined) userDoc.raceEthnicity = user.raceEthnicity
+		if (user.emergencyContactName !== undefined)
 			userDoc.emergencyContactName = user.emergencyContactName
-		}
-		if (user.emergencyContactPhone !== undefined) {
+		if (user.emergencyContactPhone !== undefined)
 			userDoc.emergencyContactPhone = user.emergencyContactPhone
-		}
-		if (user.emergencyContactEmail !== undefined) {
+		if (user.emergencyContactEmail !== undefined)
 			userDoc.emergencyContactEmail = user.emergencyContactEmail
-		}
-		if (user.dietaryRestrictions !== undefined) {
+		if (user.dietaryRestrictions !== undefined)
 			userDoc.dietaryRestrictions = user.dietaryRestrictions
-		}
-		if (user.medicalConditions !== undefined) {
-			userDoc.medicalConditions = user.medicalConditions
-		}
+		if (user.medicalConditions !== undefined) userDoc.medicalConditions = user.medicalConditions
 	}
 
 	// Use set without merge to overwrite any existing document
@@ -268,22 +252,8 @@ export async function clearFirestoreEmulator(): Promise<void> {
 		)
 
 		if (!response.ok && response.status !== 404) {
-<<<<<<< HEAD
 		}
 	} catch (_error) {}
-=======
-			console.warn(
-				`[firestore.fixture] clearFirestoreEmulator unexpected status: ${response.status} ${response.statusText}`
-			)
-		}
-	} catch (error) {
-		// Log connection failures to help debug emulator issues
-		console.warn(
-			`[firestore.fixture] clearFirestoreEmulator failed to connect to emulator at ${host}:`,
-			error instanceof Error ? error.message : error
-		)
-	}
->>>>>>> 032e02b6 (feat(settings): add profile settings page with history tracking)
 }
 
 /**
@@ -316,7 +286,6 @@ export async function cleanupTestApp(): Promise<void> {
 		testDb = null
 	}
 }
-<<<<<<< HEAD
 
 /**
  * Create a minimal user document for E2E testing.
@@ -368,5 +337,3 @@ export async function createTestUser(
 export async function deleteTestUser(uid: string): Promise<void> {
 	await deleteTestUserDocument(uid)
 }
-=======
->>>>>>> 032e02b6 (feat(settings): add profile settings page with history tracking)
