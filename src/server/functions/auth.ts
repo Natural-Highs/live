@@ -295,6 +295,8 @@ export const getSessionForRoutesFn = createServerFn({method: 'GET'}).handler(
 		hasConsent: boolean
 		isAdmin: boolean
 		hasPasskey: boolean
+		/** Whether user has completed profile setup (display name + DOB) */
+		hasProfile: boolean
 		/** Whether session expires within 7 days */
 		isSessionExpiring: boolean
 		/** Session expiration date (ISO string) or null */
@@ -309,6 +311,7 @@ export const getSessionForRoutesFn = createServerFn({method: 'GET'}).handler(
 				hasConsent: false,
 				isAdmin: false,
 				hasPasskey: false,
+				hasProfile: false,
 				isSessionExpiring: false,
 				sessionExpiresAt: null
 			}
@@ -330,6 +333,7 @@ export const getSessionForRoutesFn = createServerFn({method: 'GET'}).handler(
 			hasConsent: sessionData.claims?.signedConsentForm === true,
 			isAdmin: sessionData.claims?.admin === true,
 			hasPasskey: sessionData.claims?.passkeyEnabled === true,
+			hasProfile: sessionData.claims?.profileComplete === true,
 			isSessionExpiring: isSessionExpiringSoon(sessionData),
 			sessionExpiresAt: expiration?.toISOString() ?? null
 		}

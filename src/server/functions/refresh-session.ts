@@ -24,10 +24,7 @@ import {refreshSessionTimestamp} from '../middleware/session'
  * - Session cookie max-age is reset on next response
  */
 export const refreshSessionFn = createServerFn({method: 'POST'}).handler(async () => {
-	// Validate current session
 	await requireAuth()
-
-	// Refresh session timestamp
 	await refreshSessionTimestamp()
 
 	return {
