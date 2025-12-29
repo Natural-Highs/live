@@ -5,8 +5,6 @@
  * server functions. Replaces direct validateSession() calls with
  * a cleaner middleware pattern.
  *
- * Story -1.2, Task 5, Task 7, Task 8
- *
  * @module server/middleware/auth
  */
 
@@ -14,17 +12,22 @@ import {adminAuth} from '@/lib/firebase/firebase.admin'
 import {clearSession, getSessionData, validateSessionEnvironment} from '@/lib/session'
 import type {SessionUser} from '../functions/auth'
 import {AuthenticationError} from '../functions/utils/errors'
+import {checkSessionRevoked, refreshSessionTimestamp, shouldRefreshSession} from './session'
 
 /**
- * Require authenticated session.
+ * Require authenticated session with session validation.
  *
  * Validates the TanStack session and returns the authenticated user.
- * Throws AuthenticationError if not authenticated.
+ * Performs session validation including:
+ * - Session existence check
+ * - Environment binding validation (R-023)
+ * - Firestore-based session revocation check (NFR2)
+ * - Sliding window session refresh (after 30 days)
  *
- * Security:
- * - Session is already decrypted/verified by iron-webcrypto
- * - Cross-environment replay protection via validateSessionEnvironment (R-023)
+ * Throws AuthenticationError if not authenticated or session invalid.
  *
+ * @param options - Configuration options
+ * @param options.skipRefresh - Skip session refresh (for read-only operations)
  * @returns SessionUser object with user data and claims
  * @throws AuthenticationError if not authenticated
  *
@@ -37,7 +40,7 @@ import {AuthenticationError} from '../functions/utils/errors'
  * })
  * ```
  */
-export async function requireAuth(): Promise<SessionUser> {
+export async function requireAuth(options?: {skipRefresh?: boolean}): Promise<SessionUser> {
 	const sessionData = await getSessionData()
 
 	// Check if session has a user
@@ -48,6 +51,18 @@ export async function requireAuth(): Promise<SessionUser> {
 	// Validate environment to prevent cross-env replay attacks (R-023)
 	if (!validateSessionEnvironment(sessionData)) {
 		throw new AuthenticationError('Session environment mismatch')
+	}
+
+	// Check Firestore-based session revocation events (NFR2)
+	const isRevoked = await checkSessionRevoked(sessionData.userId, sessionData.sessionCreatedAt)
+	if (isRevoked) {
+		await clearSession()
+		throw new AuthenticationError('Session has been revoked')
+	}
+
+	// Sliding window session refresh (after 30 days)
+	if (!options?.skipRefresh && shouldRefreshSession(sessionData.sessionCreatedAt)) {
+		await refreshSessionTimestamp()
 	}
 
 	return {
@@ -189,6 +204,20 @@ export async function requireConsent(): Promise<SessionUser> {
  * If the Firebase user's tokensValidAfterTime is after the session creation time,
  * the session is invalid and must be cleared.
  *
+ * CREDENTIAL CHANGE DETECTION:
+ * Firebase automatically updates tokensValidAfterTime when:
+ * - Password is changed
+ * - Email is changed
+ * - Admin calls revokeRefreshTokens()
+ *
+ * Since we use server-side sessions (not Firebase ID tokens for auth),
+ * credential changes are detected on the NEXT request when this function
+ * is called via requireAuthWithRevocationCheck(). There is no webhook/
+ * push notification - detection is pull-based.
+ *
+ * For immediate invalidation, admin can call forceLogoutUserFn() which
+ * both revokes Firebase tokens AND creates a Firestore revocation event.
+ *
  * @param uid - Firebase user ID
  * @param sessionCreatedAt - ISO timestamp of when the session was created
  * @returns true if session is valid (not revoked)
@@ -239,38 +268,39 @@ export async function checkTokenRevocation(
 }
 
 /**
- * Require authentication with token revocation check.
+ * Require authentication with Firebase token revocation check.
  *
- * Like requireAuth() but also checks if the session was created before
- * a token revocation event (password change, passkey change, admin revocation).
- * Use for sensitive operations. (R-024)
+ * Extends requireAuth() with an additional Firebase Admin call to verify
+ * the session wasn't created before a credential change event.
  *
+ * Use this for SENSITIVE operations where you need to detect:
+ * - Password changes
+ * - Email changes
+ * - Admin-initiated token revocation
+ *
+ * Note: requireAuth() already checks Firestore-based revocation events
+ * (passkey removal, user-requested logout). This function adds Firebase's
+ * tokensValidAfterTime check which catches credential changes.
+ *
+ * Performance: Makes an additional Firebase Admin API call. Use sparingly.
+ *
+ * @param options - Configuration options
+ * @param options.skipRefresh - Skip session refresh (for read-only operations)
  * @returns SessionUser with verified non-revoked session
  * @throws AuthenticationError if not authenticated or session was revoked
  */
-export async function requireAuthWithRevocationCheck(): Promise<SessionUser> {
+export async function requireAuthWithRevocationCheck(options?: {
+	skipRefresh?: boolean
+}): Promise<SessionUser> {
+	// First do standard auth checks (Firestore revocation, env binding, refresh)
+	const user = await requireAuth(options)
+
+	// Additionally check Firebase token revocation (R-024)
+	// This catches password/email changes that don't create Firestore events
 	const sessionData = await getSessionData()
+	await checkTokenRevocation(user.uid, sessionData.sessionCreatedAt)
 
-	// Check if session has a user
-	if (!sessionData.userId) {
-		throw new AuthenticationError('Authentication required')
-	}
-
-	// Validate environment to prevent cross-env replay attacks (R-023)
-	if (!validateSessionEnvironment(sessionData)) {
-		throw new AuthenticationError('Session environment mismatch')
-	}
-
-	// Check token revocation (R-024)
-	await checkTokenRevocation(sessionData.userId, sessionData.sessionCreatedAt)
-
-	return {
-		uid: sessionData.userId,
-		email: sessionData.email ?? null,
-		displayName: sessionData.displayName ?? null,
-		photoURL: null,
-		claims: sessionData.claims ?? {}
-	}
+	return user
 }
 
 /**

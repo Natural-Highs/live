@@ -83,6 +83,7 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+<<<<<<< HEAD:firebase/firestore.rules
     // Passkey Credential Index Collection
     // Enables O(1) credential lookup during authentication
     // Contains only userId reference, not credential secrets
@@ -95,6 +96,8 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+=======
+>>>>>>> ec69776d (feat(auth): add extended session management with revocation and grace period):firestore.rules
     // Session Revocations Collection
     // Server-only access - tracks when user sessions should be invalidated
     match /sessionRevocations/{revocationId} {

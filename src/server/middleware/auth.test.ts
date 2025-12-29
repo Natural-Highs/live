@@ -1,5 +1,5 @@
 /**
- * Unit tests for auth middleware (Story -1.2, Task 5, Task 7, Task 8)
+ * Unit tests for auth middleware
  *
  * Tests:
  * - Auth middleware rejects unauthenticated requests
@@ -7,6 +7,8 @@
  * - Admin middleware rejects non-admin users
  * - Admin middleware verifies claim against Firebase (R-004)
  * - Token revocation check clears session when token revoked (R-024)
+ * - Firestore session revocation check (NFR2)
+ * - Session refresh logic (sliding window)
  */
 
 import {beforeEach, describe, expect, it, vi} from 'vitest'
@@ -15,19 +17,38 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 vi.mock('@/lib/session', () => ({
 	getSessionData: vi.fn(),
 	validateSessionEnvironment: vi.fn(),
-	clearSession: vi.fn()
+	clearSession: vi.fn(),
+	updateSession: vi.fn()
 }))
 
 // Mock Firebase Admin for admin claim verification (R-004)
+// Added adminDb mock for Firestore session revocation
 vi.mock('@/lib/firebase/firebase.admin', () => ({
 	adminAuth: {
 		getUser: vi.fn()
+	},
+	adminDb: {
+		collection: vi.fn(() => ({
+			where: vi.fn(() => ({
+				where: vi.fn(() => ({
+					limit: vi.fn(() => ({
+						get: vi.fn().mockResolvedValue({empty: true}) // Default: no revocations
+					}))
+				}))
+			})),
+			add: vi.fn()
+		}))
 	}
 }))
 
 import type {Mock} from 'vitest'
 import {adminAuth} from '@/lib/firebase/firebase.admin'
-import {clearSession, getSessionData, validateSessionEnvironment} from '@/lib/session'
+import {
+	clearSession,
+	getSessionData,
+	updateSession,
+	validateSessionEnvironment
+} from '@/lib/session'
 import {AuthenticationError} from '../functions/utils/errors'
 
 // Cast mocks
@@ -35,6 +56,7 @@ const mockGetSessionData = getSessionData as Mock
 const mockValidateSessionEnvironment = validateSessionEnvironment as Mock
 const mockGetUser = adminAuth.getUser as Mock
 const mockClearSession = clearSession as Mock
+const _mockUpdateSession = updateSession as Mock
 
 // Import after mocking
 import {

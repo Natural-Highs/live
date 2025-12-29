@@ -4,6 +4,7 @@ import {z} from 'zod'
 import {adminAuth} from '@/lib/firebase/firebase.admin'
 import {clearSession, getSessionData, type SessionData, updateSession} from '@/lib/session'
 import {requireAdmin, requireAuth} from '@/server/middleware/auth'
+import {getSessionExpiration, isSessionExpiringSoon} from '@/server/middleware/session'
 import {AuthenticationError, ValidationError} from './utils/errors'
 
 export interface SessionUser {
@@ -294,6 +295,10 @@ export const getSessionForRoutesFn = createServerFn({method: 'GET'}).handler(
 		hasConsent: boolean
 		isAdmin: boolean
 		hasPasskey: boolean
+		/** Whether session expires within 7 days */
+		isSessionExpiring: boolean
+		/** Session expiration date (ISO string) or null */
+		sessionExpiresAt: string | null
 	}> => {
 		const sessionData = await getSessionData()
 
@@ -303,7 +308,9 @@ export const getSessionForRoutesFn = createServerFn({method: 'GET'}).handler(
 				isAuthenticated: false,
 				hasConsent: false,
 				isAdmin: false,
-				hasPasskey: false
+				hasPasskey: false,
+				isSessionExpiring: false,
+				sessionExpiresAt: null
 			}
 		}
 
@@ -315,12 +322,16 @@ export const getSessionForRoutesFn = createServerFn({method: 'GET'}).handler(
 			claims: sessionData.claims ?? {}
 		}
 
+		const expiration = getSessionExpiration(sessionData)
+
 		return {
 			user,
 			isAuthenticated: true,
 			hasConsent: sessionData.claims?.signedConsentForm === true,
 			isAdmin: sessionData.claims?.admin === true,
-			hasPasskey: sessionData.claims?.passkeyEnabled === true
+			hasPasskey: sessionData.claims?.passkeyEnabled === true,
+			isSessionExpiring: isSessionExpiringSoon(sessionData),
+			sessionExpiresAt: expiration?.toISOString() ?? null
 		}
 	}
 )
