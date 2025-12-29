@@ -3,7 +3,7 @@
  * Following Test Pyramid Balance directive: Unit tests for business logic functions
  */
 
-import type {GuestUserDocument} from '../../server/types/forms'
+import type {GuestUserDocument} from '@/types/forms'
 import {validateGuestUser} from './guest-validation'
 
 describe('Guest Validation', () => {

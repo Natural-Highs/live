@@ -15,7 +15,7 @@ export const signupAccountSchema = z
 				/^[a-zA-Z0-9_-]+$/,
 				'Username can only contain letters, numbers, hyphens, and underscores'
 			),
-		email: z.string().email('Invalid email address'),
+		email: z.email('Invalid email address'),
 		password: z
 			.string()
 			.min(8, 'Password must be at least 8 characters')
@@ -44,20 +44,14 @@ export const aboutYouSchema = z
 			.max(100, 'Last name must be less than 100 characters'),
 		phone: z
 			.string()
-			.regex(
-				/^(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/,
-				'Invalid phone number format'
-			)
+			.regex(/^(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/, 'Invalid phone number format')
 			.optional()
 			.or(z.literal('')),
 		dateOfBirth: z.string().min(1, 'Date of birth is required'),
 		emergencyContactName: z.string().max(100).optional().or(z.literal('')),
 		emergencyContactPhone: z
 			.string()
-			.regex(
-				/^(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/,
-				'Invalid phone number format'
-			)
+			.regex(/^(\+?1[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}$/, 'Invalid phone number format')
 			.optional()
 			.or(z.literal('')),
 		emergencyContactRelationship: z.string().optional()

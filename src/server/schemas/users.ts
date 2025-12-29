@@ -1,5 +1,4 @@
 import {z} from 'zod'
-import {eventCodeSchema} from './common'
 
 /**
  * Zod schemas for user server functions
@@ -7,10 +6,6 @@ import {eventCodeSchema} from './common'
 
 export const updateConsentStatusSchema = z.object({
 	consentSigned: z.boolean()
-})
-
-export const registerForEventSchema = z.object({
-	eventCode: eventCodeSchema
 })
 
 export const getProfileSchema = z.object({

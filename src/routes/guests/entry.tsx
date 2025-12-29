@@ -1,6 +1,8 @@
 import {createFileRoute, useNavigate} from '@tanstack/react-router'
 import type React from 'react'
 import {useEffect, useState} from 'react'
+import {Alert, Input, Label, Spinner} from '@/components/ui'
+import {Button} from '@/components/ui/button'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
@@ -22,7 +24,7 @@ function GuestEntryComponent() {
 	const [hasSession, setHasSession] = useState<boolean | null>(null)
 	const [checkingSession, setCheckingSession] = useState(true)
 
-	// Check if session cookie exists (similar to ProtectedRoute)
+	// Check if session cookie exists (similar to layout route auth check)
 	// This prevents Firebase Auth emulator persistence from causing incorrect redirects
 	useEffect(() => {
 		const checkSession = async () => {
@@ -97,9 +99,7 @@ function GuestEntryComponent() {
 			setShowChoice(true)
 			setLoading(false)
 		} catch (err) {
-			setError(
-				err instanceof Error ? err.message : 'Failed to validate event code'
-			)
+			setError(err instanceof Error ? err.message : 'Failed to validate event code')
 			setLoading(false)
 		}
 	}
@@ -119,7 +119,7 @@ function GuestEntryComponent() {
 		return (
 			<PageContainer>
 				<div className='flex w-full max-w-md justify-center'>
-					<span className='loading loading-spinner loading-lg' />
+					<Spinner size='lg' />
 				</div>
 			</PageContainer>
 		)
@@ -129,53 +129,48 @@ function GuestEntryComponent() {
 	if (showChoice) {
 		return (
 			<PageContainer>
-				<div className='w-full max-w-md'>
+				<div className='w-full max-w-md' data-testid='guest-choice-screen'>
 					<div className='mb-6 text-center'>
 						<div className='mb-4 flex justify-center'>
 							<Logo size='md' />
 						</div>
-						<h1 className='mb-2 font-bold text-4xl text-base-content'>
-							Event Code Valid
-						</h1>
-						<p className='text-sm opacity-70'>
-							Choose how you'd like to continue
-						</p>
+						<h1 className='mb-2 font-bold text-4xl text-foreground'>Event Code Valid</h1>
+						<p className='text-sm opacity-70'>Choose how you'd like to continue</p>
 					</div>
 
 					<FormContainer>
 						<div className='space-y-4'>
-							<div className='alert alert-info'>
-								<span>
-									Event code validated successfully. Please choose an option:
-								</span>
-							</div>
+							<Alert data-testid='guest-code-valid-alert' variant='info'>
+								<span>Event code validated successfully. Please choose an option:</span>
+							</Alert>
 
 							<div className='space-y-3'>
 								<PrimaryButton
 									className='w-full'
+									data-testid='guest-login-button'
 									onClick={handleLogin}
 									type='button'
 								>
 									Login to Register
 								</PrimaryButton>
 								<p className='text-center text-sm opacity-70'>or</p>
-								<button
-									className='btn btn-outline w-full'
+								<Button
+									className='w-full'
+									data-testid='guest-continue-as-guest-button'
 									onClick={handleContinueAsGuest}
 									type='button'
+									variant='outline'
 								>
 									Continue as Guest
-								</button>
+								</Button>
 							</div>
 
 							<div className='mt-4 text-center text-sm opacity-70'>
 								<p>
-									<strong>Login:</strong> Register for the event with your
-									account
+									<strong>Login:</strong> Register for the event with your account
 								</p>
 								<p className='mt-2'>
-									<strong>Guest:</strong> Quick registration without creating an
-									account
+									<strong>Guest:</strong> Quick registration without creating an account
 								</p>
 							</div>
 						</div>
@@ -192,9 +187,7 @@ function GuestEntryComponent() {
 					<div className='mb-4 flex justify-center'>
 						<Logo size='md' />
 					</div>
-					<h1 className='mb-2 font-bold text-4xl text-base-content'>
-						Event Code Entry
-					</h1>
+					<h1 className='mb-2 font-bold text-4xl text-foreground'>Event Code Entry</h1>
 					<p className='text-sm opacity-70'>
 						{isLoggedIn
 							? 'Enter your event code to register for the event'
@@ -204,20 +197,16 @@ function GuestEntryComponent() {
 
 				<FormContainer>
 					{error && (
-						<div className='alert alert-error mb-4'>
+						<Alert className='mb-4' data-testid='guest-entry-error' variant='error'>
 							<span>{error}</span>
-						</div>
+						</Alert>
 					)}
 
 					<form className='space-y-4' onSubmit={handleSubmit}>
-						<div className='form-control'>
-							<label className='label' htmlFor='eventCode'>
-								<span className='label-text font-medium text-base-content'>
-									Event Code
-								</span>
-							</label>
-							<input
-								className='input input-bordered'
+						<div className='flex flex-col gap-1'>
+							<Label htmlFor='eventCode'>Event Code</Label>
+							<Input
+								data-testid='guest-entry-code-input'
 								disabled={loading}
 								id='eventCode'
 								maxLength={4}
@@ -231,6 +220,7 @@ function GuestEntryComponent() {
 
 						<PrimaryButton
 							className='w-full'
+							data-testid='guest-entry-continue-button'
 							disabled={loading || !eventCode}
 							type='submit'
 						>

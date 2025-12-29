@@ -1,0 +1,207 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      // Users can read their own documents
+      // Admins can read any user document for management purposes
+      allow read: if isAuthenticated() && (
+        request.auth.uid == userId ||
+        isAdmin()
+      );
+      
+      // Users can update their own documents, admins can update any
+      allow update: if isAuthenticated() && (
+        request.auth.uid == userId ||
+        isAdmin()
+      ) && (
+        // Prevent non-admins from modifying admin flags
+        (!('isAdmin' in request.resource.data) || isAdmin())
+      );
+      
+      // Only admins can create user documents (registration handled by backend)
+      allow create: if isAdmin();
+      
+      // Only admins can delete users
+      allow delete: if isAdmin();
+
+      // Passkeys subcollection - user can only access their own passkeys
+      match /passkeys/{credentialId} {
+        // Users can read their own passkeys
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+        
+        // Users can create passkeys for themselves (server-side validation handles security)
+        allow create: if isAuthenticated() && request.auth.uid == userId;
+        
+        // Users can delete their own passkeys
+        allow delete: if isAuthenticated() && request.auth.uid == userId;
+        
+        // No client-side updates - credential updates must go through server functions
+        allow update: if false;
+      }
+
+      // Private subcollection - user can only access their own private data
+      // Demographics for minors are stored here to prevent exposure to other authenticated users
+      match /private/{docId} {
+        // Users can read their own private documents
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+        
+        // Users can create/update their own private documents
+        allow create, update: if isAuthenticated() && request.auth.uid == userId;
+        
+        // Users can delete their own private documents
+        allow delete: if isAuthenticated() && request.auth.uid == userId;
+      }
+
+      // Demographic History subcollection - user can read their own history
+      // History records are created server-side only
+      match /demographicHistory/{versionId} {
+        // Users can read their own demographic history
+        allow read: if isAuthenticated() && request.auth.uid == userId;
+        
+        // Only server (admin SDK) creates history records
+        // Client cannot directly create/update/delete history
+        allow create, update, delete: if false;
+      }
+    }
+
+    // Passkey Challenges Collection (root level, temporary storage)
+    // Server-only access - clients should never directly access challenges
+    match /passkeyChallenges/{challengeId} {
+      // No client access - all operations via server functions with admin SDK
+      allow read, write: if false;
+    }
+
+    // Passkey Credential Index Collection
+    // Enables O(1) credential lookup during authentication
+    // Contains only userId reference, not credential secrets
+    match /passkeyCredentials/{credentialId} {
+      // Anyone can read (needed for authentication before user is known)
+      // This is safe because it only exposes userId, not credential secrets
+      allow read: if true;
+
+      // Only server (admin SDK) can create/update/delete
+      allow create, update, delete: if false;
+    }
+
+    // Session Revocations Collection
+    // Server-only access - tracks when user sessions should be invalidated
+    match /sessionRevocations/{revocationId} {
+      // No client access - all operations via server functions with admin SDK
+      // This collection is read by session middleware to check for revocation events
+      allow read, write: if false;
+    }
+
+    // Events Collection
+    match /events/{eventId} {
+      // Admins and authenticated users can read active events
+      allow read: if isAuthenticated() && (
+        resource.data.isActive == true ||
+        isAdmin()
+      );
+      
+      // Only admins can create/update/delete events
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Event Types Collection
+    match /eventTypes/{eventTypeId} {
+      // Admins and authenticated users can read event types
+      allow read: if isAuthenticated();
+      
+      // Only admins can create/update/delete event types
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Form Templates Collection
+    match /formTemplates/{templateId} {
+      // Admins and authenticated users can read form templates
+      allow read: if isAuthenticated();
+      
+      // Only admins can create/update/delete templates
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Surveys Collection
+    match /surveys/{surveyId} {
+      // Admins and authenticated users can read surveys
+      allow read: if isAuthenticated();
+      
+      // Only admins can create/update/delete surveys
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Questions Collection
+    match /questions/{questionId} {
+      // Admins and authenticated users can read questions
+      allow read: if isAuthenticated();
+      
+      // Only admins can create/update/delete questions
+      allow create, update, delete: if isAdmin();
+    }
+
+    // Survey Responses Collection
+    match /surveyResponses/{responseId} {
+      // Admins and authenticated users can read responses
+      allow read: if isAuthenticated();
+      
+      // Authenticated users can create responses
+      allow create: if isAuthenticated();
+      
+      // Users can update their own responses (before completion)
+      // Admins can update any response
+      allow update: if isAuthenticated() && (
+        (resource.data.userId == request.auth.uid && 
+         resource.data.isComplete == false) ||
+        isAdmin()
+      );
+      
+      // Only admins can delete responses
+      allow delete: if isAdmin();
+    }
+
+    // Responses Collection (Individual Question Responses)
+    match /responses/{responseId} {
+      // Admins and authenticated users can read responses
+      allow read: if isAuthenticated();
+      
+      // Authenticated users can create responses
+      allow create: if isAuthenticated();
+      
+      // Users can update their own responses (before survey completion)
+      // Admins can update any response
+      allow update: if isAuthenticated() && (
+        (get(/databases/$(database)/documents/surveyResponses/$(resource.data.surveyResponseId)).data.userId == request.auth.uid &&
+         get(/databases/$(database)/documents/surveyResponses/$(resource.data.surveyResponseId)).data.isComplete == false) ||
+        isAdmin()
+      );
+      
+      // Only admins can delete responses
+      allow delete: if isAdmin();
+    }
+
+    // User Events Collection
+    match /userEvents/{userEventId} {
+      // Admins and authenticated users can read event registrations
+      allow read: if isAuthenticated();
+      
+      // Authenticated users can create event registrations
+      allow create: if isAuthenticated();
+      
+      // Only admins can update/delete registrations (prevent duplicates)
+      allow update, delete: if isAdmin();
+    }
+  }
+}
+

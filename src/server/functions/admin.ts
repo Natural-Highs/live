@@ -40,11 +40,8 @@ export const exportData = createServerFn({method: 'GET'}).handler(
 				id: doc.id,
 				...responseData,
 				submittedAt:
-					responseData.submittedAt?.toDate?.()?.toISOString() ??
-					responseData.submittedAt,
-				createdAt:
-					responseData.createdAt?.toDate?.()?.toISOString() ??
-					responseData.createdAt
+					responseData.submittedAt?.toDate?.()?.toISOString() ?? responseData.submittedAt,
+				createdAt: responseData.createdAt?.toDate?.()?.toISOString() ?? responseData.createdAt
 			}
 		})
 
@@ -125,11 +122,8 @@ export const getResponses = createServerFn({method: 'GET'}).handler(
 				id: doc.id,
 				...responseData,
 				submittedAt:
-					responseData.submittedAt?.toDate?.()?.toISOString() ??
-					responseData.submittedAt,
-				createdAt:
-					responseData.createdAt?.toDate?.()?.toISOString() ??
-					responseData.createdAt
+					responseData.submittedAt?.toDate?.()?.toISOString() ?? responseData.submittedAt,
+				createdAt: responseData.createdAt?.toDate?.()?.toISOString() ?? responseData.createdAt
 			}
 		})
 
@@ -164,8 +158,9 @@ export const getUserByEmail = createServerFn({method: 'GET'}).handler(
 				disabled: userRecord.disabled,
 				claims: userRecord.customClaims || {}
 			}
-		} catch (error: any) {
-			if (error.code === 'auth/user-not-found') {
+		} catch (error: unknown) {
+			const authError = error as {code?: string}
+			if (authError.code === 'auth/user-not-found') {
 				throw new NotFoundError('User not found with this email')
 			}
 			throw error
@@ -176,16 +171,18 @@ export const getUserByEmail = createServerFn({method: 'GET'}).handler(
 /**
  * Convert array of objects to CSV format
  */
-function convertToCSV(data: any[]): string {
+function convertToCSV(data: Record<string, unknown>[]): string {
 	if (data.length === 0) {
 		return ''
 	}
 
 	// Get all unique keys across all objects
 	const allKeys = new Set<string>()
-	data.forEach(item => {
-		Object.keys(item).forEach(key => allKeys.add(key))
-	})
+	for (const item of data) {
+		for (const key of Object.keys(item)) {
+			allKeys.add(key)
+		}
+	}
 
 	const headers = Array.from(allKeys)
 
@@ -195,10 +192,7 @@ function convertToCSV(data: any[]): string {
 			.map(header => {
 				const value = item[header]
 				// Handle nested objects/arrays
-				const stringValue =
-					typeof value === 'object'
-						? JSON.stringify(value)
-						: String(value ?? '')
+				const stringValue = typeof value === 'object' ? JSON.stringify(value) : String(value ?? '')
 				// Escape quotes and wrap in quotes if contains comma or quote
 				if (stringValue.includes(',') || stringValue.includes('"')) {
 					return `"${stringValue.replace(/"/g, '""')}"`

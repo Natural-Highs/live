@@ -1,7 +1,6 @@
 import type * as React from 'react'
 
-export interface PageContainerProps
-	extends React.HTMLAttributes<HTMLDivElement> {
+export interface PageContainerProps extends React.HTMLAttributes<HTMLDivElement> {
 	children: React.ReactNode
 }
 

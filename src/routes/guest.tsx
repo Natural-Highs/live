@@ -1,11 +1,10 @@
 import {createFileRoute, useNavigate} from '@tanstack/react-router'
 import type React from 'react'
-import {useEffect, useState} from 'react'
-import {BrandLogo, PageContainer} from '@/components/ui'
+import {useCallback, useEffect, useState} from 'react'
+import {Alert, BrandLogo, Checkbox, Label, PageContainer, Spinner} from '@/components/ui'
+import {Button} from '@/components/ui/button'
 import {FormContainer} from '@/components/ui/form-container'
 import GreenCard from '@/components/ui/GreenCard'
-import GreyButton from '@/components/ui/GreyButton'
-import GrnButton from '@/components/ui/GrnButton'
 import GuestTitleCard from '@/components/ui/GuestTitleCard'
 import {auth} from '$lib/firebase/firebase.app'
 
@@ -38,35 +37,33 @@ function GuestComponent() {
 	const [success, setSuccess] = useState('')
 	const [agreed, setAgreed] = useState(false)
 
-	useEffect(() => {
-		const fetchEvents = async () => {
-			try {
-				const response = await fetch('/api/events')
-				const data = (await response.json()) as {
-					success: boolean
-					events?: Event[]
-					error?: string
-				}
-
-				if (!(response.ok && data.success)) {
-					setEventError(data.error || 'Failed to load events')
-					return
-				}
-
-				if (data.events) {
-					setEvents(data.events)
-				}
-			} catch (err) {
-				setEventError(
-					err instanceof Error ? err.message : 'Failed to load events'
-				)
-			} finally {
-				setEventLoading(false)
+	const fetchEvents = useCallback(async () => {
+		try {
+			const response = await fetch('/api/events')
+			const data = (await response.json()) as {
+				success: boolean
+				events?: Event[]
+				error?: string
 			}
-		}
 
-		fetchEvents()
+			if (!(response.ok && data.success)) {
+				setEventError(data.error || 'Failed to load events')
+				return
+			}
+
+			if (data.events) {
+				setEvents(data.events)
+			}
+		} catch (err) {
+			setEventError(err instanceof Error ? err.message : 'Failed to load events')
+		} finally {
+			setEventLoading(false)
+		}
 	}, [])
+
+	useEffect(() => {
+		fetchEvents()
+	}, [fetchEvents])
 
 	useEffect(() => {
 		const fetchTemplate = async () => {
@@ -87,9 +84,7 @@ function GuestComponent() {
 					setTemplate(data.template)
 				}
 			} catch (err) {
-				setConsentError(
-					err instanceof Error ? err.message : 'Failed to load consent form'
-				)
+				setConsentError(err instanceof Error ? err.message : 'Failed to load consent form')
 			} finally {
 				setConsentLoading(false)
 			}
@@ -126,11 +121,11 @@ function GuestComponent() {
 
 			setSuccess(data.message || 'Successfully registered for event')
 			setEventCode('')
-			window.location.reload()
+			// Refresh events list
+			await fetchEvents()
+			setSubmittingCode(false)
 		} catch (err) {
-			setEventError(
-				err instanceof Error ? err.message : 'Failed to register for event'
-			)
+			setEventError(err instanceof Error ? err.message : 'Failed to register for event')
 			setSubmittingCode(false)
 		}
 	}
@@ -167,17 +162,15 @@ function GuestComponent() {
 			}
 
 			// Refresh auth token to get updated custom claims (signedConsentForm)
-			const currentUser = auth.currentUser
+			const currentUser = auth?.currentUser
 			if (currentUser) {
 				// Force token refresh to get updated claims from backend
 				await currentUser.getIdToken(true)
-				// Navigate to dashboard - ProtectedRoute will allow access now that consentForm is true
+				// Navigate to dashboard - layout route will allow access now that consentForm is true
 				navigate({to: '/dashboard', replace: true})
 			}
 		} catch (err) {
-			setConsentError(
-				err instanceof Error ? err.message : 'Failed to submit consent form'
-			)
+			setConsentError(err instanceof Error ? err.message : 'Failed to submit consent form')
 			setSubmitting(false)
 		}
 	}
@@ -205,26 +198,33 @@ function GuestComponent() {
 					<div className='flex flex-col items-center'>
 						<GreenCard showDivider={false}>
 							{eventLoading ? (
-								<span className='loading loading-spinner loading-lg' />
+								<Spinner data-testid='guest-loading' size='lg' />
 							) : (
 								<>
 									{eventError && (
-										<div className='mb-3 rounded-lg border border-red-400 bg-red-100 px-4 py-2 text-center text-red-700 text-sm'>
+										<div
+											className='mb-3 rounded-lg border border-red-400 bg-red-100 px-4 py-2 text-center text-red-700 text-sm'
+											data-testid='guest-check-in-error'
+										>
 											{eventError}
 										</div>
 									)}
 
 									{success && (
-										<div className='mb-3 text-center text-green-800 italic'>
+										<div
+											className='mb-3 text-center text-green-800 italic'
+											data-testid='guest-check-in-success'
+										>
 											<p className='font-semibold'>Success!</p>
 											<p>You've checked in!</p>
-											<GrnButton>Edit your response</GrnButton>
+											<Button>Edit your response</Button>
 										</div>
 									)}
 
 									<form onSubmit={handleEventCodeSubmit}>
 										<input
 											className='mb-4 w-full rounded-lg border-[2.2px] border-btnGreen bg-white px-4 py-3 text-center font-inria text-2xl text-[#2A2A2Ae5] tracking-widest focus:outline-none'
+											data-testid='guest-event-code-input'
 											maxLength={4}
 											onChange={e => setEventCode(e.target.value)}
 											placeholder='Enter 4-digit code'
@@ -233,12 +233,13 @@ function GuestComponent() {
 											value={eventCode}
 										/>
 
-										<GrnButton
+										<Button
+											data-testid='guest-check-in-submit'
 											disabled={submittingCode || eventCode.length !== 4}
 											type='submit'
 										>
 											{submittingCode ? 'Registering...' : 'Submit'}
-										</GrnButton>
+										</Button>
 									</form>
 								</>
 							)}
@@ -262,78 +263,68 @@ function GuestComponent() {
 					<div className='flex items-center'>
 						<GreenCard showDivider={false}>
 							{consentLoading ? (
-								<span className='loading loading-spinner loading-lg' />
+								<Spinner size='lg' />
 							) : (
 								<FormContainer>
 									{consentError && (
-										<div className='alert alert-error'>
+										<Alert variant='error'>
 											<span>{consentError}</span>
-										</div>
+										</Alert>
 									)}
 
 									{template && (
 										<form className='space-y-6' onSubmit={handleSubmit}>
 											<div>
-												<h2 className='mb-4 font-semibold text-2xl text-base-content'>
+												<h2 className='mb-4 font-semibold text-2xl text-foreground'>
 													{template.name}
 												</h2>
 												{template.questions && template.questions.length > 0 ? (
 													<div className='space-y-4'>
 														{template.questions.map((question, index) => (
-															<div
-																className='space-y-2'
-																key={question.id || index}
-															>
-																<p className='font-medium text-base-content'>
-																	{question.text}
-																</p>
+															<div className='space-y-2' key={question.id || index}>
+																<p className='font-medium text-foreground'>{question.text}</p>
 															</div>
 														))}
 													</div>
 												) : (
-													<div className='prose text-base-content'>
+													<div className='prose text-foreground'>
 														<p>TODO: Add consent form text here</p>
 														<p>
-															By checking the box below, you consent to
-															participate in this research study.
+															By checking the box below, you consent to participate in this research
+															study.
 														</p>
 													</div>
 												)}
 											</div>
 
-											<div className='form-control'>
-												<label className='label cursor-pointer justify-start gap-3'>
-													<input
-														checked={agreed}
-														className='checkbox checkbox-primary'
-														onChange={e => setAgreed(e.target.checked)}
-														required={true}
-														type='checkbox'
-													/>
-													<span className='label-text text-base-content'>
-														I have read and understand the consent form and
-														agree to participate
-													</span>
-												</label>
+											<div className='flex items-center gap-3'>
+												<Checkbox
+													checked={agreed}
+													id='consent-agree'
+													onCheckedChange={checked => setAgreed(checked === true)}
+													required={true}
+												/>
+												<Label className='cursor-pointer' htmlFor='consent-agree'>
+													I have read and understand the consent form and agree to participate
+												</Label>
 											</div>
 
-											<button
-												className='btn btn-primary w-full rounded-[20px] font-semibold shadow-md'
+											<Button
+												data-testid='button-primary'
 												disabled={submitting || !agreed}
 												type='submit'
 											>
 												{submitting ? 'Submitting...' : 'I Consent'}
-											</button>
+											</Button>
 										</form>
 									)}
 
 									{!(template || consentLoading) && (
-										<div className='alert alert-warning'>
+										<Alert variant='warning'>
 											<span>
-												Consent form template not available. Please contact an
-												administrator.
+												Consent form template not available. Please contact an administrator.
 											</span>
-										</div>
+										</Alert>
 									)}
 								</FormContainer>
 							)}
@@ -342,13 +333,14 @@ function GuestComponent() {
 
 					{/* Nav Buttons */}
 					<div className='child flex w-full flex-col items-center justify-center gap-[.7rem]'>
-						<GrnButton>Finish</GrnButton>
-						<GreyButton
+						<Button>Finish</Button>
+						<Button
 							onClick={() => navigate({to: '/authentication'})}
 							type='button'
+							variant='secondary'
 						>
 							Back to Login
-						</GreyButton>
+						</Button>
 					</div>
 				</div>
 			</div>

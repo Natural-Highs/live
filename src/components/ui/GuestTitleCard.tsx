@@ -1,26 +1,28 @@
-import type * as React from 'react'
+import * as React from 'react'
+import {cn} from '@/lib/utils'
+import {Card} from './card'
 
-interface Props extends React.HTMLAttributes<HTMLDivElement> {
+interface GuestTitleCardProps extends React.HTMLAttributes<HTMLDivElement> {
 	children: React.ReactNode
 }
 
-const GuestTitleCard = ({
-	className,
-	children,
-	ref,
-	...props
-}: Props & {ref?: React.RefObject<HTMLDivElement | null>}) => {
-	/* const baseClasses = 'card bg-midGreen shadow-xl pb-1 px-[2rem] rounded-lg mb-[-0.75rem] h-auto'; */
-	const baseClasses =
-		'card bg-midGreen rounded-lg shadow-xl pl-[1.2rem] mb-[-1.2rem] w-[66%] pb-1'
-	//flex justify-center
-
-	return (
-		<div className={`${baseClasses} ${className ?? ''}`} ref={ref} {...props}>
-			{children}
-		</div>
-	)
-}
+const GuestTitleCard = React.forwardRef<HTMLDivElement, GuestTitleCardProps>(
+	({className, children, ...props}, ref) => {
+		return (
+			<Card
+				ref={ref}
+				className={cn(
+					'mb-[-1.2rem] w-[66%] rounded-lg border-none bg-accent pb-1 pl-[1.2rem] shadow-xl',
+					className
+				)}
+				data-testid='card-guest'
+				{...props}
+			>
+				{children}
+			</Card>
+		)
+	}
+)
 
 GuestTitleCard.displayName = 'GuestTitleCard'
 

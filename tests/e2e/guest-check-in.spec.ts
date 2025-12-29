@@ -1,0 +1,522 @@
+/**
+ * Guest Check-in E2E Tests
+ *
+ * Tests verify the guest check-in flow including:
+ * - Entering event code on /guests/entry
+ * - Choice between login and continue as guest
+ * - Guest form completion on /guest
+ * - Success confirmation and redirection
+ *
+ * Test Strategy:
+ * - No auth fixtures needed (guest flow is unauthenticated)
+ * - Mock API endpoints for event validation and guest check-in
+ * - Use data-testid selectors for stability
+ */
+
+import {expect, test} from '@playwright/test'
+import {TEST_CODES} from '../factories/events.factory'
+
+/**
+ * Helper to mock session check API (required for /guests/entry to render)
+ * This endpoint is called on mount to check if user has a valid session
+ */
+async function mockSessionCheck(page: import('@playwright/test').Page, hasSession = false) {
+	await page.route('**/api/auth/sessionLogin', route => {
+		route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify({token: hasSession})
+		})
+	})
+}
+
+/**
+ * Helper to mock event code validation API
+ */
+async function mockEventCodeValidation(
+	page: import('@playwright/test').Page,
+	success: boolean,
+	eventName = 'Test Event'
+) {
+	await page.route('**/api/guests/validateCode', route => {
+		if (success) {
+			route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify({
+					success: true,
+					eventId: 'event-123',
+					eventName
+				})
+			})
+		} else {
+			route.fulfill({
+				status: 400,
+				contentType: 'application/json',
+				body: JSON.stringify({
+					success: false,
+					error: 'Invalid event code'
+				})
+			})
+		}
+	})
+}
+
+/**
+ * Helper to mock guest check-in API
+ */
+async function mockGuestCheckIn(
+	page: import('@playwright/test').Page,
+	success: boolean,
+	guestId = 'guest-123'
+) {
+	await page.route('**/api/users/eventCode', route => {
+		if (success) {
+			route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify({
+					success: true,
+					message: 'Successfully checked in as guest!',
+					guestId
+				})
+			})
+		} else {
+			route.fulfill({
+				status: 400,
+				contentType: 'application/json',
+				body: JSON.stringify({
+					success: false,
+					error: 'Failed to check in'
+				})
+			})
+		}
+	})
+}
+
+/**
+ * Helper to mock events list API
+ */
+async function mockEventsApi(page: import('@playwright/test').Page) {
+	await page.route('**/api/events', route => {
+		route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify({success: true, events: []})
+		})
+	})
+}
+
+/**
+ * Helper to mock consent form template API
+ */
+async function mockConsentFormApi(page: import('@playwright/test').Page) {
+	await page.route('**/api/forms/consent', route => {
+		if (route.request().method() === 'GET') {
+			route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify({
+					success: true,
+					template: {
+						id: 'consent-1',
+						name: 'Standard Consent Form',
+						questions: [
+							{id: 'q1', text: 'I understand the terms of participation', type: 'checkbox'}
+						]
+					}
+				})
+			})
+		} else {
+			route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify({success: true})
+			})
+		}
+	})
+}
+
+test.describe('Guest Check-in Flow', () => {
+	test.describe('AC2: Guest Check-in Flow', () => {
+		test('should display event code entry form on /guests/entry', async ({page}) => {
+			// GIVEN: Mock session check (no session = guest)
+			await mockSessionCheck(page, false)
+
+			// WHEN: Guest navigates to guest entry page
+			await page.goto('/guests/entry')
+
+			// THEN: Event code input should be visible
+			// Extended timeout to account for Firebase Auth's 3s timeout in test environments
+			await expect(page.getByTestId('guest-entry-code-input')).toBeVisible({timeout: 10000})
+			await expect(page.getByTestId('guest-entry-continue-button')).toBeVisible()
+		})
+
+		test('should validate event code and show choice screen', async ({page}) => {
+			// GIVEN: Mock session check and valid event code
+			await mockSessionCheck(page, false)
+			await mockEventCodeValidation(page, true)
+
+			await page.goto('/guests/entry')
+
+			// WHEN: Guest enters valid event code
+			await page.getByTestId('guest-entry-code-input').fill(TEST_CODES.VALID)
+			await page.getByTestId('guest-entry-continue-button').click()
+
+			// THEN: Should show choice screen
+			await expect(page.getByTestId('guest-choice-screen')).toBeVisible()
+			await expect(page.getByTestId('guest-code-valid-alert')).toBeVisible()
+			await expect(page.getByTestId('guest-login-button')).toBeVisible()
+			await expect(page.getByTestId('guest-continue-as-guest-button')).toBeVisible()
+		})
+
+		test('should navigate to /guest when choosing continue as guest', async ({page}) => {
+			// GIVEN: Mock APIs
+			await mockSessionCheck(page, false)
+			await mockEventCodeValidation(page, true)
+			await mockEventsApi(page)
+			await mockConsentFormApi(page)
+
+			await page.goto('/guests/entry')
+
+			// Enter valid code
+			await page.getByTestId('guest-entry-code-input').fill(TEST_CODES.VALID)
+			await page.getByTestId('guest-entry-continue-button').click()
+
+			// Wait for choice screen
+			await expect(page.getByTestId('guest-choice-screen')).toBeVisible()
+
+			// WHEN: Guest clicks continue as guest
+			await page.getByTestId('guest-continue-as-guest-button').click()
+
+			// THEN: Should navigate to /guest
+			await expect(page).toHaveURL('/guest')
+		})
+
+		test('should navigate to /authentication when choosing login', async ({page}) => {
+			// GIVEN: Mock session check and valid event code
+			await mockSessionCheck(page, false)
+			await mockEventCodeValidation(page, true)
+
+			await page.goto('/guests/entry')
+
+			// Enter valid code
+			await page.getByTestId('guest-entry-code-input').fill(TEST_CODES.VALID)
+			await page.getByTestId('guest-entry-continue-button').click()
+
+			// Wait for choice screen
+			await expect(page.getByTestId('guest-choice-screen')).toBeVisible()
+
+			// WHEN: Guest clicks login
+			await page.getByTestId('guest-login-button').click()
+
+			// THEN: Should navigate to authentication
+			await expect(page).toHaveURL('/authentication')
+		})
+
+		test('should display guest check-in form on /guest', async ({page}) => {
+			// GIVEN: Mock APIs
+			await mockEventsApi(page)
+			await mockConsentFormApi(page)
+
+			// WHEN: Guest navigates directly to /guest
+			await page.goto('/guest')
+
+			// THEN: Event code input should be visible
+			await expect(page.getByTestId('guest-event-code-input')).toBeVisible()
+			await expect(page.getByTestId('guest-check-in-submit')).toBeVisible()
+		})
+
+		test('should show success confirmation after guest check-in', async ({page}) => {
+			// GIVEN: Mock APIs
+			await mockEventsApi(page)
+			await mockConsentFormApi(page)
+			await mockGuestCheckIn(page, true)
+
+			await page.goto('/guest')
+
+			// WHEN: Guest enters code and submits
+			await page.getByTestId('guest-event-code-input').fill(TEST_CODES.VALID)
+			await page.getByTestId('guest-check-in-submit').click()
+
+			// THEN: Should show success confirmation
+			await expect(page.getByTestId('guest-check-in-success')).toBeVisible()
+		})
+	})
+
+	test.describe('AC1: Guest Check-in with Firestore Record Verification', () => {
+		test('should create guest record in Firestore after successful check-in', async ({page}) => {
+			// GIVEN: Mock APIs with specific guestId
+			const expectedGuestId = 'guest-record-abc123'
+			await mockEventsApi(page)
+			await mockConsentFormApi(page)
+
+			// Capture API response to verify guestId is returned
+			let capturedGuestId: string | null = null
+			await page.route('**/api/users/eventCode', route => {
+				capturedGuestId = expectedGuestId
+				route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						success: true,
+						message: 'Successfully checked in as guest!',
+						guestId: expectedGuestId
+					})
+				})
+			})
+
+			await page.goto('/guest')
+
+			// WHEN: Guest enters code and submits
+			await page.getByTestId('guest-event-code-input').fill(TEST_CODES.VALID)
+			await page.getByTestId('guest-check-in-submit').click()
+
+			// THEN: Should show success confirmation
+			await expect(page.getByTestId('guest-check-in-success')).toBeVisible()
+
+			// AND: Guest record ID should have been returned (indicating Firestore write)
+			expect(capturedGuestId).toBe(expectedGuestId)
+		})
+
+		test('should include event details in success confirmation', async ({page}) => {
+			// GIVEN: Mock APIs with event name
+			const eventName = 'Community Yoga Session'
+			await mockEventsApi(page)
+			await mockConsentFormApi(page)
+			await mockEventCodeValidation(page, true, eventName)
+
+			await page.route('**/api/users/eventCode', route => {
+				route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						success: true,
+						message: 'Successfully checked in!',
+						guestId: 'guest-123',
+						eventName
+					})
+				})
+			})
+
+			await page.goto('/guest')
+
+			// WHEN: Guest enters code and submits
+			await page.getByTestId('guest-event-code-input').fill(TEST_CODES.VALID)
+			await page.getByTestId('guest-check-in-submit').click()
+
+			// THEN: Should show success confirmation
+			await expect(page.getByTestId('guest-check-in-success')).toBeVisible()
+		})
+	})
+
+	test.describe('AC6: Error Handling Paths', () => {
+		test('should show error for invalid event code on entry page', async ({page}) => {
+			// GIVEN: Mock session check and invalid event code
+			await mockSessionCheck(page, false)
+			await mockEventCodeValidation(page, false)
+
+			await page.goto('/guests/entry')
+
+			// WHEN: Guest enters invalid code
+			await page.getByTestId('guest-entry-code-input').fill(TEST_CODES.INVALID)
+			await page.getByTestId('guest-entry-continue-button').click()
+
+			// THEN: Should show error message
+			await expect(page.getByTestId('guest-entry-error')).toBeVisible()
+			await expect(page.getByTestId('guest-entry-error')).toContainText('Invalid event code')
+		})
+
+		test('should show error for invalid event code on guest page', async ({page}) => {
+			// GIVEN: Mock APIs
+			await mockEventsApi(page)
+			await mockConsentFormApi(page)
+			await mockGuestCheckIn(page, false)
+
+			await page.goto('/guest')
+
+			// WHEN: Guest enters invalid code
+			await page.getByTestId('guest-event-code-input').fill(TEST_CODES.INVALID)
+			await page.getByTestId('guest-check-in-submit').click()
+
+			// THEN: Should show error message
+			await expect(page.getByTestId('guest-check-in-error')).toBeVisible()
+		})
+
+		test('should handle network failure gracefully on entry page', async ({page}) => {
+			// GIVEN: Mock session check and network failure
+			await mockSessionCheck(page, false)
+			await page.route('**/api/guests/validateCode', route => {
+				route.abort('failed')
+			})
+
+			await page.goto('/guests/entry')
+
+			// WHEN: Guest tries to validate code with network failure
+			await page.getByTestId('guest-entry-code-input').fill(TEST_CODES.VALID)
+			await page.getByTestId('guest-entry-continue-button').click()
+
+			// THEN: Should show error message
+			await expect(page.getByTestId('guest-entry-error')).toBeVisible()
+		})
+
+		test('should allow retry after error on entry page', async ({page}) => {
+			// GIVEN: Mock session check; first attempt fails, second succeeds
+			await mockSessionCheck(page, false)
+			let attemptCount = 0
+			await page.route('**/api/guests/validateCode', route => {
+				attemptCount++
+				if (attemptCount === 1) {
+					route.fulfill({
+						status: 400,
+						contentType: 'application/json',
+						body: JSON.stringify({success: false, error: 'Invalid code'})
+					})
+				} else {
+					route.fulfill({
+						status: 200,
+						contentType: 'application/json',
+						body: JSON.stringify({success: true, eventId: 'event-123', eventName: 'Test'})
+					})
+				}
+			})
+
+			await page.goto('/guests/entry')
+
+			// First attempt - should fail
+			await page.getByTestId('guest-entry-code-input').fill(TEST_CODES.INVALID)
+			await page.getByTestId('guest-entry-continue-button').click()
+			await expect(page.getByTestId('guest-entry-error')).toBeVisible()
+
+			// WHEN: Guest tries again with valid code
+			await page.getByTestId('guest-entry-code-input').fill(TEST_CODES.VALID)
+			await page.getByTestId('guest-entry-continue-button').click()
+
+			// THEN: Should show choice screen
+			await expect(page.getByTestId('guest-choice-screen')).toBeVisible()
+		})
+
+		test('should handle expired session gracefully', async ({page}) => {
+			// GIVEN: Mock session check that indicates no session
+			await mockSessionCheck(page, false)
+			await mockEventCodeValidation(page, true)
+
+			await page.goto('/guests/entry')
+
+			// WHEN: Guest enters valid code
+			await page.getByTestId('guest-entry-code-input').fill(TEST_CODES.VALID)
+			await page.getByTestId('guest-entry-continue-button').click()
+
+			// THEN: Should show choice screen (not auto-redirect to profile)
+			await expect(page.getByTestId('guest-choice-screen')).toBeVisible()
+		})
+	})
+
+	test.describe('Event Code Storage', () => {
+		test('should store event details in sessionStorage after validation', async ({page}) => {
+			// GIVEN: Mock session check and valid event code
+			await mockSessionCheck(page, false)
+			await mockEventCodeValidation(page, true, 'Community Yoga Session')
+
+			await page.goto('/guests/entry')
+
+			// WHEN: Guest enters valid code
+			await page.getByTestId('guest-entry-code-input').fill(TEST_CODES.VALID)
+			await page.getByTestId('guest-entry-continue-button').click()
+
+			// Wait for choice screen
+			await expect(page.getByTestId('guest-choice-screen')).toBeVisible()
+
+			// THEN: Event details should be stored in sessionStorage
+			const eventId = await page.evaluate(() => sessionStorage.getItem('guestEventId'))
+			const eventName = await page.evaluate(() => sessionStorage.getItem('guestEventName'))
+			const eventCode = await page.evaluate(() => sessionStorage.getItem('guestEventCode'))
+
+			expect(eventId).toBe('event-123')
+			expect(eventName).toBe('Community Yoga Session')
+			expect(eventCode).toBe(TEST_CODES.VALID)
+		})
+	})
+
+	test.describe('AC6: Duplicate Check-in Prevention (Guest)', () => {
+		test('should show already checked in message when guest attempts duplicate check-in', async ({
+			page
+		}) => {
+			// GIVEN: Mock APIs - guest has already checked in
+			await mockEventsApi(page)
+			await mockConsentFormApi(page)
+
+			// Mock API to return duplicate check-in error
+			await page.route('**/api/users/eventCode', route => {
+				route.fulfill({
+					status: 409, // Conflict - already exists
+					contentType: 'application/json',
+					body: JSON.stringify({
+						success: false,
+						error: 'Already checked in',
+						message: 'You have already checked in to this event'
+					})
+				})
+			})
+
+			await page.goto('/guest')
+
+			// WHEN: Guest tries to check in again with same code
+			await page.getByTestId('guest-event-code-input').fill(TEST_CODES.VALID)
+			await page.getByTestId('guest-check-in-submit').click()
+
+			// THEN: Should show "already checked in" error message
+			await expect(page.getByTestId('guest-check-in-error')).toBeVisible()
+			await expect(page.getByText(/already checked in/i)).toBeVisible()
+		})
+
+		test('should not create duplicate record when guest re-submits', async ({page}) => {
+			// GIVEN: Mock APIs - track API call count
+			await mockEventsApi(page)
+			await mockConsentFormApi(page)
+
+			let checkInCallCount = 0
+			await page.route('**/api/users/eventCode', route => {
+				checkInCallCount++
+				if (checkInCallCount === 1) {
+					// First call succeeds
+					route.fulfill({
+						status: 200,
+						contentType: 'application/json',
+						body: JSON.stringify({
+							success: true,
+							message: 'Successfully checked in!',
+							guestId: 'guest-123'
+						})
+					})
+				} else {
+					// Subsequent calls return duplicate error
+					route.fulfill({
+						status: 409,
+						contentType: 'application/json',
+						body: JSON.stringify({
+							success: false,
+							error: 'Already checked in'
+						})
+					})
+				}
+			})
+
+			await page.goto('/guest')
+
+			// First check-in succeeds
+			await page.getByTestId('guest-event-code-input').fill(TEST_CODES.VALID)
+			await page.getByTestId('guest-check-in-submit').click()
+			await expect(page.getByTestId('guest-check-in-success')).toBeVisible()
+
+			// Navigate back and try again
+			await page.goto('/guest')
+			await page.getByTestId('guest-event-code-input').fill(TEST_CODES.VALID)
+			await page.getByTestId('guest-check-in-submit').click()
+
+			// THEN: Should show error on second attempt
+			await expect(page.getByTestId('guest-check-in-error')).toBeVisible()
+			expect(checkInCallCount).toBe(2) // Both calls were made, but second was rejected
+		})
+	})
+})

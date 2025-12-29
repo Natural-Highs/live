@@ -30,10 +30,42 @@ export class NotFoundError extends Error {
 	}
 }
 
+/**
+ * Error code constant for ConflictError.
+ * Exported for client-side error type checking without relying on message string matching.
+ */
+export const CONFLICT_ERROR_CODE = 'CONFLICT_VERSION_MISMATCH'
+
 export class ConflictError extends Error {
-	constructor(message: string) {
+	/**
+	 * Error code for reliable type checking across serialization boundaries.
+	 */
+	readonly code = CONFLICT_ERROR_CODE
+
+	/**
+	 * Original check-in timestamp for duplicate check-in errors (FR9).
+	 * ISO 8601 format string when available.
+	 */
+	readonly checkedInAt?: string
+
+	constructor(message: string, checkedInAt?: string) {
 		super(message)
 		this.name = 'ConflictError'
+		this.checkedInAt = checkedInAt
+	}
+}
+
+/**
+ * Error for time window validation failures (FR56)
+ * Carries scheduled time for display to user
+ */
+export class TimeWindowError extends Error {
+	readonly scheduledTime?: string
+
+	constructor(message: string, scheduledTime?: string) {
+		super(message)
+		this.name = 'TimeWindowError'
+		this.scheduledTime = scheduledTime
 	}
 }
 
@@ -51,6 +83,8 @@ export function formatErrorResponse(error: unknown): {
 	error: string
 	message: string
 	statusCode: number
+	scheduledTime?: string
+	checkedInAt?: string
 } {
 	if (error instanceof AuthenticationError) {
 		return {error: 'Unauthorized', message: error.message, statusCode: 401}
@@ -69,7 +103,21 @@ export function formatErrorResponse(error: unknown): {
 	}
 
 	if (error instanceof ConflictError) {
-		return {error: 'Conflict', message: error.message, statusCode: 409}
+		return {
+			error: 'Conflict',
+			message: error.message,
+			statusCode: 409,
+			checkedInAt: error.checkedInAt
+		}
+	}
+
+	if (error instanceof TimeWindowError) {
+		return {
+			error: 'Forbidden',
+			message: error.message,
+			statusCode: 403,
+			scheduledTime: error.scheduledTime
+		}
 	}
 
 	if (error instanceof InternalServerError) {

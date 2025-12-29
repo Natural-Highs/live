@@ -2,6 +2,7 @@ import {createFileRoute, useNavigate} from '@tanstack/react-router'
 import {createUserWithEmailAndPassword} from 'firebase/auth'
 import {useState} from 'react'
 import {SignUpForm} from '@/components/forms/SignUpForm'
+import {Alert} from '@/components/ui'
 import {PageContainer} from '@/components/ui/page-container'
 import type {SignupAccountData} from '@/lib/schemas/signup'
 import {auth} from '$lib/firebase/firebase.app'
@@ -18,6 +19,12 @@ function SignUpComponent() {
 	const handleSubmit = async (formData: SignupAccountData) => {
 		setError('')
 		setLoading(true)
+
+		if (!auth) {
+			setError('Authentication not available')
+			setLoading(false)
+			return
+		}
 
 		try {
 			const registerResponse = await fetch('/api/auth/register', {
@@ -65,8 +72,7 @@ function SignUpComponent() {
 				setError('Failed to create session')
 			}
 		} catch (error: unknown) {
-			const errorMessage =
-				error instanceof Error ? error.message : 'Registration failed'
+			const errorMessage = error instanceof Error ? error.message : 'Registration failed'
 
 			if (errorMessage.includes('email-already-in-use')) {
 				setError('This email is already registered')
@@ -86,21 +92,21 @@ function SignUpComponent() {
 
 	return (
 		<PageContainer>
-			<div className='w-full max-w-md'>
+			<div className='w-full max-w-md' data-testid='signup-page'>
 				<div className='mb-6 text-center'>
 					<div className='mb-4 flex justify-center'>
-						<div className='flex h-28 w-28 items-center justify-center rounded-lg bg-base-200'>
+						<div className='flex h-28 w-28 items-center justify-center rounded-lg bg-muted'>
 							<span className='text-4xl'>🌿</span>
 						</div>
 					</div>
-					<h1 className='mb-2 font-bold text-4xl text-base-content'>Sign Up</h1>
+					<h1 className='mb-2 font-bold text-4xl text-foreground'>Sign Up</h1>
 					<div className='mb-4 text-xs opacity-70'>Page indicators</div>
 				</div>
 
 				{error && (
-					<div className='alert alert-error mb-4'>
+					<Alert className='mb-4' data-testid='signup-error' variant='error'>
 						<span>{error}</span>
-					</div>
+					</Alert>
 				)}
 
 				<SignUpForm

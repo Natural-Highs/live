@@ -1,7 +1,9 @@
 import {useForm} from '@tanstack/react-form'
 import type React from 'react'
-import GreyButton from '@/components/ui/GreyButton'
-import GrnButton from '@/components/ui/GrnButton'
+import {Button} from '@/components/ui/button'
+import {Input} from '@/components/ui/input'
+import {Label} from '@/components/ui/label'
+import {Separator} from '@/components/ui/separator'
 import {type SignupAccountData, signupAccountSchema} from '@/lib/schemas/signup'
 
 interface SignUpFormProps {
@@ -10,11 +12,7 @@ interface SignUpFormProps {
 	loading?: boolean
 }
 
-export function SignUpForm({
-	onSubmit,
-	onNavigateToSignIn,
-	loading = false
-}: SignUpFormProps) {
+export function SignUpForm({onSubmit, onNavigateToSignIn, loading = false}: SignUpFormProps) {
 	const form = useForm({
 		defaultValues: {
 			username: '',
@@ -29,7 +27,8 @@ export function SignUpForm({
 
 	return (
 		<form
-			className='relative space-y-4 rounded-lg bg-base-200 p-6'
+			className='relative space-y-4 rounded-lg bg-muted p-6'
+			data-testid='signup-form'
 			onSubmit={(e: React.FormEvent) => {
 				e.preventDefault()
 				e.stopPropagation()
@@ -43,12 +42,10 @@ export function SignUpForm({
 				}}
 			>
 				{field => (
-					<div className='form-control'>
-						<label className='label' htmlFor={field.name}>
-							<span className='label-text'>Username</span>
-						</label>
-						<input
-							className='input input-bordered'
+					<div className='space-y-2'>
+						<Label htmlFor={field.name}>Username</Label>
+						<Input
+							data-testid='signup-username-input'
 							id={field.name}
 							name={field.name}
 							onBlur={field.handleBlur}
@@ -58,11 +55,7 @@ export function SignUpForm({
 							value={field.state.value}
 						/>
 						{field.state.meta.errors.length > 0 && (
-							<label className='label' htmlFor={field.name}>
-								<span className='label-text-alt text-error'>
-									{String(field.state.meta.errors[0])}
-								</span>
-							</label>
+							<p className='text-destructive text-sm'>{String(field.state.meta.errors[0])}</p>
 						)}
 					</div>
 				)}
@@ -75,12 +68,10 @@ export function SignUpForm({
 				}}
 			>
 				{field => (
-					<div className='form-control'>
-						<label className='label' htmlFor={field.name}>
-							<span className='label-text'>Email</span>
-						</label>
-						<input
-							className='input input-bordered'
+					<div className='space-y-2'>
+						<Label htmlFor={field.name}>Email</Label>
+						<Input
+							data-testid='signup-email-input'
 							id={field.name}
 							name={field.name}
 							onBlur={field.handleBlur}
@@ -90,11 +81,7 @@ export function SignUpForm({
 							value={field.state.value}
 						/>
 						{field.state.meta.errors.length > 0 && (
-							<label className='label' htmlFor={field.name}>
-								<span className='label-text-alt text-error'>
-									{String(field.state.meta.errors[0])}
-								</span>
-							</label>
+							<p className='text-destructive text-sm'>{String(field.state.meta.errors[0])}</p>
 						)}
 					</div>
 				)}
@@ -107,12 +94,10 @@ export function SignUpForm({
 				}}
 			>
 				{field => (
-					<div className='form-control'>
-						<label className='label' htmlFor={field.name}>
-							<span className='label-text'>Password</span>
-						</label>
-						<input
-							className='input input-bordered'
+					<div className='space-y-2'>
+						<Label htmlFor={field.name}>Password</Label>
+						<Input
+							data-testid='signup-password-input'
 							id={field.name}
 							name={field.name}
 							onBlur={field.handleBlur}
@@ -122,11 +107,7 @@ export function SignUpForm({
 							value={field.state.value}
 						/>
 						{field.state.meta.errors.length > 0 && (
-							<label className='label' htmlFor={field.name}>
-								<span className='label-text-alt text-error'>
-									{String(field.state.meta.errors[0])}
-								</span>
-							</label>
+							<p className='text-destructive text-sm'>{String(field.state.meta.errors[0])}</p>
 						)}
 					</div>
 				)}
@@ -139,12 +120,10 @@ export function SignUpForm({
 				}}
 			>
 				{field => (
-					<div className='form-control'>
-						<label className='label' htmlFor={field.name}>
-							<span className='label-text'>Confirm Password</span>
-						</label>
-						<input
-							className='input input-bordered'
+					<div className='space-y-2'>
+						<Label htmlFor={field.name}>Confirm Password</Label>
+						<Input
+							data-testid='signup-confirm-password-input'
 							id={field.name}
 							name={field.name}
 							onBlur={field.handleBlur}
@@ -154,11 +133,7 @@ export function SignUpForm({
 							value={field.state.value}
 						/>
 						{field.state.meta.errors.length > 0 && (
-							<label className='label' htmlFor={field.name}>
-								<span className='label-text-alt text-error'>
-									{String(field.state.meta.errors[0])}
-								</span>
-							</label>
+							<p className='text-destructive text-sm'>{String(field.state.meta.errors[0])}</p>
 						)}
 					</div>
 				)}
@@ -166,33 +141,41 @@ export function SignUpForm({
 
 			<form.Subscribe selector={state => [state.values]}>
 				{([values]) => {
+					if (!values) {
+						return null
+					}
 					const result = signupAccountSchema.safeParse(values)
 					if (!result.success && values.confirmPassword) {
 						const passwordMismatchError = result.error.issues.find(
 							issue => issue.path[0] === 'confirmPassword'
 						)
 						if (passwordMismatchError) {
-							return (
-								<div className='text-error text-sm'>
-									{passwordMismatchError.message}
-								</div>
-							)
+							return <div className='text-destructive text-sm'>{passwordMismatchError.message}</div>
 						}
 					}
 					return null
 				}}
 			</form.Subscribe>
 
-			<GrnButton disabled={loading} type='submit'>
+			<Button data-testid='signup-submit-button' disabled={loading} type='submit'>
 				{loading ? 'Creating Account...' : 'Create Account'}
-			</GrnButton>
+			</Button>
 
-			<div className='divider'>Or</div>
+			<div className='flex items-center gap-4'>
+				<Separator className='flex-1' />
+				<span className='text-muted-foreground text-sm'>Or</span>
+				<Separator className='flex-1' />
+			</div>
 
 			{onNavigateToSignIn && (
-				<GreyButton onClick={onNavigateToSignIn} type='button'>
+				<Button
+					data-testid='signup-signin-button'
+					onClick={onNavigateToSignIn}
+					type='button'
+					variant='secondary'
+				>
 					Sign In
-				</GreyButton>
+				</Button>
 			)}
 		</form>
 	)

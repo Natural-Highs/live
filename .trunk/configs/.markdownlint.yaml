@@ -1,2 +1,12 @@
 # Prettier friendly markdownlint config (all formatting rules disabled)
 extends: markdownlint/style/prettier
+
+# Allow duplicate headings in changelogs and structured docs
+MD024:
+  siblings_only: true
+
+# MD013 - Line length (documentation often has long lines)
+MD013: false
+
+# MD060 - Table column style (tables render correctly)
+MD060: false

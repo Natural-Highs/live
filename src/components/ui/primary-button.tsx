@@ -1,29 +1,28 @@
-import type * as React from 'react'
+import type {VariantProps} from 'class-variance-authority'
+import * as React from 'react'
+import {cn} from '@/lib/utils'
+import {Button, type buttonVariants} from './button'
 
 export interface PrimaryButtonProps
-	extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-	children: React.ReactNode
-	className?: string
+	extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+		Omit<VariantProps<typeof buttonVariants>, 'variant'> {
 	fullWidth?: boolean
+	asChild?: boolean
 }
 
-const PrimaryButton = ({
-	children,
-	className,
-	fullWidth = true,
-	ref,
-	...props
-}: PrimaryButtonProps & {ref?: React.RefObject<HTMLButtonElement | null>}) => (
-	<button
-		className={`btn btn-primary rounded-[20px] font-normal text-[20px] leading-[30px] ${
-			fullWidth ? 'w-full max-w-[338px]' : ''
-		} h-12 ${className || ''}`}
-		ref={ref}
-		type='button'
-		{...props}
-	>
-		{children}
-	</button>
+const PrimaryButton = React.forwardRef<HTMLButtonElement, PrimaryButtonProps>(
+	({children, className, fullWidth = true, size, ...props}, ref) => (
+		<Button
+			ref={ref}
+			variant='default'
+			size={fullWidth ? 'full' : size}
+			className={cn(className)}
+			data-testid='button-primary'
+			{...props}
+		>
+			{children}
+		</Button>
+	)
 )
 PrimaryButton.displayName = 'PrimaryButton'
 

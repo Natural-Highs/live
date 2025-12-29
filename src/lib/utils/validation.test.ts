@@ -46,9 +46,7 @@ describe('Validation Utilities', () => {
 		it('should return true when passwords match', () => {
 			expect(passwordsMatch('password123', 'password123')).toBe(true)
 			expect(passwordsMatch('', '')).toBe(true)
-			expect(passwordsMatch('complex!@#$%^&*()', 'complex!@#$%^&*()')).toBe(
-				true
-			)
+			expect(passwordsMatch('complex!@#$%^&*()', 'complex!@#$%^&*()')).toBe(true)
 		})
 
 		it('should return false when passwords do not match', () => {
@@ -70,9 +68,7 @@ describe('Validation Utilities', () => {
 				email: 'test@example.com',
 				password: 'password123'
 			}
-			expect(hasRequiredFields(fields, ['username', 'email', 'password'])).toBe(
-				true
-			)
+			expect(hasRequiredFields(fields, ['username', 'email', 'password'])).toBe(true)
 		})
 
 		it('should return false when a required field is missing', () => {
@@ -80,9 +76,7 @@ describe('Validation Utilities', () => {
 				username: 'testuser',
 				email: 'test@example.com'
 			}
-			expect(hasRequiredFields(fields, ['username', 'email', 'password'])).toBe(
-				false
-			)
+			expect(hasRequiredFields(fields, ['username', 'email', 'password'])).toBe(false)
 		})
 
 		it('should return false when a required field is undefined', () => {
@@ -91,9 +85,7 @@ describe('Validation Utilities', () => {
 				email: undefined,
 				password: 'password123'
 			}
-			expect(hasRequiredFields(fields, ['username', 'email', 'password'])).toBe(
-				false
-			)
+			expect(hasRequiredFields(fields, ['username', 'email', 'password'])).toBe(false)
 		})
 
 		it('should return false when a required field is null', () => {
@@ -102,9 +94,7 @@ describe('Validation Utilities', () => {
 				email: null,
 				password: 'password123'
 			}
-			expect(hasRequiredFields(fields, ['username', 'email', 'password'])).toBe(
-				false
-			)
+			expect(hasRequiredFields(fields, ['username', 'email', 'password'])).toBe(false)
 		})
 
 		it('should return false when a required field is empty string', () => {
@@ -113,9 +103,7 @@ describe('Validation Utilities', () => {
 				email: '',
 				password: 'password123'
 			}
-			expect(hasRequiredFields(fields, ['username', 'email', 'password'])).toBe(
-				false
-			)
+			expect(hasRequiredFields(fields, ['username', 'email', 'password'])).toBe(false)
 		})
 
 		it('should return true for empty required fields array', () => {

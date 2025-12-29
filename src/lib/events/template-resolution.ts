@@ -33,19 +33,13 @@ export function resolveEventTemplates(
 	eventTypeData: EventTypeData | null | undefined,
 	providedTemplates: ProvidedTemplates = {}
 ): ResolvedTemplates {
-	const {consentFormTemplateId, demographicsFormTemplateId, surveyTemplateId} =
-		providedTemplates
+	const {consentFormTemplateId, demographicsFormTemplateId, surveyTemplateId} = providedTemplates
 
 	return {
 		consentFormTemplateId:
-			consentFormTemplateId ??
-			eventTypeData?.defaultConsentFormTemplateId ??
-			null,
+			consentFormTemplateId ?? eventTypeData?.defaultConsentFormTemplateId ?? null,
 		demographicsFormTemplateId:
-			demographicsFormTemplateId ??
-			eventTypeData?.defaultDemographicsFormTemplateId ??
-			null,
-		surveyTemplateId:
-			surveyTemplateId ?? eventTypeData?.defaultSurveyTemplateId ?? null
+			demographicsFormTemplateId ?? eventTypeData?.defaultDemographicsFormTemplateId ?? null,
+		surveyTemplateId: surveyTemplateId ?? eventTypeData?.defaultSurveyTemplateId ?? null
 	}
 }

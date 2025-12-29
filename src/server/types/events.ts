@@ -11,6 +11,6 @@ export interface EventDocument {
 	isActive?: boolean
 	maxParticipants?: number
 	currentParticipants?: number
-	// TanStack Start requires {} instead of unknown for index signatures
+	// biome-ignore lint/complexity/noBannedTypes: TanStack Start requires {} for index signatures in serializable types
 	[key: string]: {} | undefined
 }

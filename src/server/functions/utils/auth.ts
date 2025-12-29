@@ -1,49 +1,51 @@
-import {getRequest} from '@tanstack/react-start/server'
-import {auth} from '../../../lib/firebase/firebase'
+import {getSessionData, validateSessionEnvironment} from '@/lib/session'
 import type {SessionUser} from '../auth'
 import {AuthenticationError} from './errors'
 
+// TODO: Remove this file after all consumers migrate to @/server/middleware/auth
+// All functions here are deprecated.
+
 /**
- * Validate session cookie and return authenticated user
- * Reads __session cookie from request and verifies with Firebase Admin SDK
+ * Validate TanStack session and return authenticated user.
+ *
+ * Uses getSessionData() from src/lib/session.ts which reads the encrypted
+ * nh-session cookie via TanStack Start's useSession (iron-webcrypto).
+ *
+ * Security:
+ * - Session is already decrypted/verified by iron-webcrypto
+ * - Cross-environment replay protection via validateSessionEnvironment (R-023)
+ * - No Firebase Admin call needed - session was validated at creation time
+ *
+ * @deprecated Use `requireAuth()` from `@/server/middleware/auth` instead.
+ * This function will be removed in a future version.
  */
 export async function validateSession(): Promise<SessionUser> {
-	const request = getRequest()
-	const cookieHeader = request.headers.get('cookie')
+	const sessionData = await getSessionData()
 
-	if (!cookieHeader) {
-		throw new AuthenticationError('No session cookie found')
+	// Check if session has a user
+	if (!sessionData.userId) {
+		throw new AuthenticationError('No session found')
 	}
 
-	// Parse __session cookie
-	const cookies = parseCookies(cookieHeader)
-	const sessionCookie = cookies.__session
-
-	if (!sessionCookie) {
-		throw new AuthenticationError('No session cookie found')
+	// Validate environment to prevent cross-env replay attacks (R-023)
+	if (!validateSessionEnvironment(sessionData)) {
+		throw new AuthenticationError('Session environment mismatch')
 	}
 
-	try {
-		// Verify session cookie with Firebase Admin SDK
-		const decodedToken = await auth.verifySessionCookie(sessionCookie, true)
-
-		return {
-			uid: decodedToken.uid,
-			email: decodedToken.email ?? null,
-			displayName: decodedToken.name ?? null,
-			photoURL: decodedToken.picture ?? null,
-			claims: {
-				admin: decodedToken.admin === true,
-				signedConsentForm: decodedToken.signedConsentForm === true
-			}
-		}
-	} catch (_error) {
-		throw new AuthenticationError('Invalid or expired session cookie')
+	return {
+		uid: sessionData.userId,
+		email: sessionData.email ?? null,
+		displayName: sessionData.displayName ?? null,
+		photoURL: null,
+		claims: sessionData.claims ?? {}
 	}
 }
 
 /**
  * Validate session and require admin privileges
+ *
+ * @deprecated Use `requireAdmin()` from `@/server/middleware/auth` instead.
+ * The middleware version verifies admin claims against Firebase (R-004).
  */
 export async function requireAdmin(): Promise<SessionUser> {
 	const user = await validateSession()
@@ -57,6 +59,8 @@ export async function requireAdmin(): Promise<SessionUser> {
 
 /**
  * Validate session and require consent form signed
+ *
+ * @deprecated Use `requireConsent()` from `@/server/middleware/auth` instead.
  */
 export async function requireConsent(): Promise<SessionUser> {
 	const user = await validateSession()
@@ -66,20 +70,4 @@ export async function requireConsent(): Promise<SessionUser> {
 	}
 
 	return user
-}
-
-/**
- * Parse cookie header into key-value pairs
- */
-function parseCookies(cookieHeader: string): Record<string, string> {
-	const cookies: Record<string, string> = {}
-
-	cookieHeader.split(';').forEach(cookie => {
-		const [name, value] = cookie.trim().split('=')
-		if (name && value) {
-			cookies[name] = decodeURIComponent(value)
-		}
-	})
-
-	return cookies
 }

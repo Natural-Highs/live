@@ -1,19 +1,59 @@
-name: Release Please
+name: Release
 
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
   pull-requests: write
 
 jobs:
-  release-please:
+  release:
     runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      pr: ${{ steps.release.outputs.pr }}
     steps:
-      - uses: googleapis/release-please-action@v4
+      - name: Generate token
+        id: app-token
+        uses: actions/create-github-app-token@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
+      - name: Run release-please
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ steps.app-token.outputs.token }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      - name: Style release PR
+        if: steps.release.outputs.pr
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ fromJson(steps.release.outputs.pr).number }}
+        run: |
+          echo "Styling PR #$PR_NUMBER"
+          
+          # Get current PR body
+          BODY=$(gh pr view "$PR_NUMBER" --repo "$GH_REPO" --json body -q '.body')
+          
+          # Check if already styled (no robot emoji)
+          if ! echo "$BODY" | head -1 | grep -q ":robot:"; then
+            echo "PR already styled"
+            exit 0
+          fi
+          
+          # Remove robot header and release-please footer
+          CLEAN_BODY=$(echo "$BODY" | sed '1{/^:robot:/d}' | sed '1{/^---$/d}' | sed '/^---$/,/release-please/d')
+          
+          # Update PR with clean body
+          echo "$CLEAN_BODY" | gh pr edit "$PR_NUMBER" --repo "$GH_REPO" --body-file -
+          
+          echo "Styled PR #$PR_NUMBER"

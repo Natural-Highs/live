@@ -1,21 +1,27 @@
 node_modules
 .DS_Store
-dist
+
+# Build artifacts
+.build/
+.output/
+
 dist-ssr
 *.local
-coverage
+
 .nyc_output
-/test-results/
-/playwright-report/
 /blob-report/
 /playwright/.cache/
-*.tsbuildinfo
-
+.local/
+.secrets
+.env
 # TanStack Start
 .vinxi
-.output
 src/routeTree.gen.ts
 serviceAccount.json
+
+# Build-generated config files
+vite.config.js
+vite.config.d.ts
 
 # Trunk
 .trunk/out/
@@ -23,6 +29,10 @@ serviceAccount.json
 .trunk/plugins/
 .trunk/tools/
 
-# User-only content (not for git history)
-.local/
-.secrets
+# Firebase emulator logs
+firebase-debug.log
+firestore-debug.log
+
+# Husky internals
+.husky/_
+.netlify/

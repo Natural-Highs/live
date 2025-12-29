@@ -23,6 +23,7 @@ lint:
   ignore:
     - linters: [ALL]
       paths:
+        - .build/**
         - dist/**
         - coverage/**
         - node_modules/**
@@ -30,6 +31,11 @@ lint:
         - public/mockServiceWorker.js # MSW generated file
         - "*.min.js"
         - "*.min.css"
+    - linters: [osv-scanner]
+      paths:
+        - bun.lock # Generated lockfile - dependencies managed by bun
+        - package-lock.json
+        - yarn.lock
   # Blocking thresholds - gradual adoption for security scanners
   threshold:
     - linters: [checkov]
@@ -47,8 +53,6 @@ lint:
         - .
   enabled:
     - actionlint@1.7.9
-    - biome@2.3.8:
-        commands: [check, format]
     - checkov@3.2.495
     - git-diff-check
     - markdownlint@0.46.0

@@ -9,9 +9,7 @@
  * @param value - Value to validate
  * @returns True if value is a non-array object, false otherwise
  */
-export function isValidObject(
-	value: unknown
-): value is Record<string, unknown> {
+export function isValidObject(value: unknown): value is Record<string, unknown> {
 	return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
@@ -22,10 +20,7 @@ export function isValidObject(
  * @param confirmPassword - Confirmation password value
  * @returns True if passwords match, false otherwise
  */
-export function passwordsMatch(
-	password: string,
-	confirmPassword: string
-): boolean {
+export function passwordsMatch(password: string, confirmPassword: string): boolean {
 	return password === confirmPassword
 }
 

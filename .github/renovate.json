@@ -1,0 +1,69 @@
+{
+	"$schema": "https://docs.renovatebot.com/renovate-schema.json",
+	"description": "Self-hosted Renovate via GitHub Actions. Note: schedule:weekly preset controls when Renovate CREATES PRs (weekly windows). The workflow cron (0 3 * * 0) controls when Renovate RUNS. Both are set to weekly for consistency.",
+	"extends": ["config:recommended", "schedule:weekly"],
+	"labels": ["dependencies"],
+	"minimumReleaseAge": "3 days",
+	"prHourlyLimit": 2,
+	"prConcurrentLimit": 5,
+	"packageRules": [
+		{
+			"description": "Auto-merge patch updates for all deps after CI passes",
+			"matchUpdateTypes": ["patch"],
+			"automerge": true,
+			"automergeType": "pr",
+			"automergeStrategy": "squash"
+		},
+		{
+			"description": "Group all type definitions",
+			"matchPackagePatterns": ["^@types/"],
+			"groupName": "type definitions",
+			"automerge": true
+		},
+		{
+			"description": "Group all ESLint/Biome/lint packages",
+			"matchPackagePatterns": ["eslint", "biome", "prettier"],
+			"groupName": "linting tools"
+		},
+		{
+			"description": "Group all test packages",
+			"matchPackagePatterns": ["vitest", "playwright", "@testing-library"],
+			"groupName": "testing tools"
+		},
+		{
+			"description": "Group TanStack packages",
+			"matchPackagePatterns": ["^@tanstack/"],
+			"groupName": "TanStack packages"
+		},
+		{
+			"description": "Group Firebase packages",
+			"matchPackagePatterns": ["^firebase", "^@firebase/"],
+			"groupName": "Firebase packages"
+		},
+		{
+			"description": "Group shadcn/ui related",
+			"matchPackagePatterns": ["^@radix-ui/", "^class-variance-authority", "^clsx", "^tailwind-merge"],
+			"groupName": "shadcn/ui dependencies"
+		},
+		{
+			"description": "Group Netlify packages",
+			"matchPackagePatterns": ["^@netlify/", "^netlify"],
+			"groupName": "Netlify packages"
+		},
+		{
+			"description": "Minor updates require manual review",
+			"matchUpdateTypes": ["minor"],
+			"automerge": false
+		},
+		{
+			"description": "Major updates require manual review with label",
+			"matchUpdateTypes": ["major"],
+			"automerge": false,
+			"labels": ["dependencies", "breaking-change"]
+		}
+	],
+	"vulnerabilityAlerts": {
+		"labels": ["security"],
+		"automerge": true
+	}
+}

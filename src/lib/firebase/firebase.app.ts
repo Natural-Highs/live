@@ -1,8 +1,14 @@
+import type {FirebaseApp} from 'firebase/app'
 import {getApp, getApps, initializeApp} from 'firebase/app'
+import type {Auth} from 'firebase/auth'
 import {connectAuthEmulator, getAuth} from 'firebase/auth'
+import type {Firestore} from 'firebase/firestore'
 import {connectFirestoreEmulator, getFirestore} from 'firebase/firestore'
 
-// Firebase configuration (client-side)
+// SSR-safe: Only initialize Firebase on the client
+const isClient = typeof window !== 'undefined'
+
+// Firebase configuration (client-side only)
 const firebaseConfig = {
 	apiKey: import.meta.env.VITE_APIKEY,
 	authDomain: import.meta.env.VITE_AUTH_DOMAIN,
@@ -12,18 +18,39 @@ const firebaseConfig = {
 	appId: import.meta.env.VITE_APP_ID
 }
 
-let firebaseApp: ReturnType<typeof initializeApp> | undefined
-if (getApps().length > 0) {
-	// If an app has already been initialized, use the existing one
-	firebaseApp = getApp()
-} else {
-	firebaseApp = initializeApp(firebaseConfig)
+let app: FirebaseApp | null = null
+let db: Firestore | null = null
+let auth: Auth | null = null
+
+let emulatorsConnected = false
+
+/**
+ * Single source of truth for emulator configuration.
+ * Uses VITE_USE_EMULATORS environment variable.
+ *
+ * Set VITE_USE_EMULATORS=true to connect to Firebase emulators.
+ * This flag controls both client and server emulator connections.
+ */
+export const shouldUseEmulators = import.meta.env.VITE_USE_EMULATORS === 'true'
+
+if (isClient) {
+	if (getApps().length > 0) {
+		app = getApp()
+	} else {
+		app = initializeApp(firebaseConfig)
+	}
+
+	db = getFirestore(app)
+	auth = getAuth(app)
+
+	// Connect to emulators when explicitly enabled via VITE_USE_EMULATORS
+	if (shouldUseEmulators && !emulatorsConnected) {
+		try {
+			connectFirestoreEmulator(db, 'localhost', 8080)
+			connectAuthEmulator(auth, 'http://localhost:9099')
+			emulatorsConnected = true
+		} catch (_error) {}
+	}
 }
 
-// Initialize Firestore and Auth
-export const db = getFirestore(firebaseApp)
-export const auth = getAuth(firebaseApp)
-if (import.meta.env.MODE === 'development') {
-	connectFirestoreEmulator(db, 'localhost', 8080) // Use correct Firestore emulator port if different
-	connectAuthEmulator(auth, 'http://localhost:9099') // Use correct Auth emulator port if different
-}
+export {app, db, auth, emulatorsConnected}

@@ -121,11 +121,9 @@ const BrandLogo = ({
 	}
 
 	const flexDirection = direction === 'horizontal' ? 'flex-row' : 'flex-col'
-	const alignItems =
-		direction === 'horizontal' ? 'items-center' : 'items-center'
+	const alignItems = direction === 'horizontal' ? 'items-center' : 'items-center'
 	const gapClass = gapClassName || gapClasses[size]
-	const resolvedGap =
-		gap !== undefined ? (typeof gap === 'number' ? `${gap}px` : gap) : undefined
+	const resolvedGap = gap !== undefined ? (typeof gap === 'number' ? `${gap}px` : gap) : undefined
 	const resolvedTitleSpacing =
 		titleSpacing !== undefined
 			? typeof titleSpacing === 'number'
@@ -154,7 +152,7 @@ const BrandLogo = ({
 	const Title = () =>
 		showTitle ? (
 			<h1
-				className={`m-0 font-bold text-base-content ${titleSizeClasses[size]} ${
+				className={`m-0 font-bold text-foreground ${titleSizeClasses[size]} ${
 					direction === 'horizontal' ? '' : 'text-center'
 				} ${titleClassName || ''}`}
 				style={
@@ -171,9 +169,7 @@ const BrandLogo = ({
 
 	const LogoEl = () =>
 		showLogo ? (
-			<div
-				className={`flex flex-shrink-0 items-center justify-center ${logoSizeClasses[size]}`}
-			>
+			<div className={`flex flex-shrink-0 items-center justify-center ${logoSizeClasses[size]}`}>
 				{logoSrc || DEFAULT_LOGO_SRC ? (
 					<img
 						alt={`${title} logo`}

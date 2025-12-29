@@ -44,10 +44,7 @@ export async function registerUser(
  * @param password - The password of the user.
  * @returns A promise that resolves with a sign-in result or rejects with an error.
  */
-export async function signInUser(
-	email: string,
-	_password: string
-): Promise<boolean> {
+export async function signInUser(email: string, _password: string): Promise<boolean> {
 	try {
 		const userRecord = await adminAuth.getUserByEmail(email)
 		if (userRecord) {

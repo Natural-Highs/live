@@ -1,4 +1,5 @@
 import {createServerFn} from '@tanstack/react-start'
+import {requireAdmin, requireAuth} from '@/server/middleware/auth'
 import {isValidEventCodeFormat} from '../../lib/events/event-validation'
 import {db} from '../../lib/firebase/firebase'
 import {
@@ -7,7 +8,6 @@ import {
 	overrideSurveyTimingSchema
 } from '../schemas/events'
 import type {EventDocument} from '../types/events'
-import {requireAdmin, validateSession} from './utils/auth'
 import {NotFoundError, ValidationError} from './utils/errors'
 
 /**
@@ -34,20 +34,16 @@ export const getEventByCode = createServerFn({method: 'GET'}).handler(
 			throw new NotFoundError('Event not found with this code')
 		}
 
-		const doc = snapshot.docs[0]
+		const doc = snapshot.docs[0]!
 		const eventData = doc.data()
 
 		return {
 			id: doc.id,
 			...eventData,
-			startDate:
-				eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
-			endDate:
-				eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
-			createdAt:
-				eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
-			updatedAt:
-				eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
+			startDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
+			endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
+			createdAt: eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
+			updatedAt: eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
 		} as EventDocument
 	}
 )
@@ -57,7 +53,7 @@ export const getEventByCode = createServerFn({method: 'GET'}).handler(
  * Admin users see all events, regular users see their registered events
  */
 export const getEvents = createServerFn({method: 'GET'}).handler(async () => {
-	const user = await validateSession()
+	const user = await requireAuth()
 
 	const eventsRef = db.collection('events')
 	let query = eventsRef.orderBy('createdAt', 'desc')
@@ -74,14 +70,10 @@ export const getEvents = createServerFn({method: 'GET'}).handler(async () => {
 		return {
 			id: doc.id,
 			...eventData,
-			startDate:
-				eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
-			endDate:
-				eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
-			createdAt:
-				eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
-			updatedAt:
-				eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
+			startDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
+			endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
+			createdAt: eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
+			updatedAt: eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
 		} as EventDocument
 	})
 })
@@ -121,8 +113,7 @@ export const overrideSurveyTiming = createServerFn({method: 'POST'}).handler(
 		const validated = overrideSurveyTimingSchema.parse(data)
 		const {eventId, surveyType, enabled} = validated
 
-		const updateField =
-			surveyType === 'pre' ? 'preSurveyEnabled' : 'postSurveyEnabled'
+		const updateField = surveyType === 'pre' ? 'preSurveyEnabled' : 'postSurveyEnabled'
 
 		await db
 			.collection('events')
@@ -147,11 +138,7 @@ async function generateUniqueEventCode(): Promise<string> {
 		const code = Math.floor(1000 + Math.random() * 9000).toString()
 
 		// Check if code already exists
-		const snapshot = await db
-			.collection('events')
-			.where('eventCode', '==', code)
-			.limit(1)
-			.get()
+		const snapshot = await db.collection('events').where('eventCode', '==', code).limit(1).get()
 
 		if (snapshot.empty) {
 			return code

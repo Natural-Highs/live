@@ -1,11 +1,7 @@
 import {createServerFn} from '@tanstack/react-start'
+import {requireAuth} from '@/server/middleware/auth'
 import {auth, db} from '../../lib/firebase/firebase'
-import {
-	registerGuestSchema,
-	upgradeGuestSchema,
-	validateGuestCodeSchema
-} from '../schemas/guests'
-import {validateSession} from './utils/auth'
+import {registerGuestSchema, upgradeGuestSchema, validateGuestCodeSchema} from '../schemas/guests'
 import {ConflictError, NotFoundError} from './utils/errors'
 
 /**
@@ -29,7 +25,7 @@ export const validateGuestCode = createServerFn({method: 'GET'}).handler(
 			throw new NotFoundError('Invalid or inactive event code')
 		}
 
-		const eventDoc = eventsSnapshot.docs[0]
+		const eventDoc = eventsSnapshot.docs[0]!
 		const eventData = eventDoc.data()
 
 		return {
@@ -37,8 +33,7 @@ export const validateGuestCode = createServerFn({method: 'GET'}).handler(
 			eventId: eventDoc.id,
 			eventName: eventData.name,
 			eventDescription: eventData.description,
-			startDate:
-				eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
+			startDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
 			endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate
 		}
 	}
@@ -66,7 +61,7 @@ export const registerGuest = createServerFn({method: 'POST'}).handler(
 			throw new NotFoundError('Invalid or inactive event code')
 		}
 
-		const eventDoc = eventsSnapshot.docs[0]
+		const eventDoc = eventsSnapshot.docs[0]!
 		const eventData = eventDoc.data()
 
 		// Create anonymous Firebase Auth user
@@ -126,7 +121,7 @@ export const registerGuest = createServerFn({method: 'POST'}).handler(
  */
 export const upgradeGuest = createServerFn({method: 'POST'}).handler(
 	async ({data}: {data: unknown}) => {
-		const user = await validateSession()
+		const user = await requireAuth()
 
 		const validated = upgradeGuestSchema.parse(data)
 		const {email, password} = validated
@@ -138,7 +133,10 @@ export const upgradeGuest = createServerFn({method: 'POST'}).handler(
 			throw new NotFoundError('User profile not found')
 		}
 
-		const userData = userDoc.data()!
+		const userData = userDoc.data()
+		if (!userData) {
+			throw new NotFoundError('User data not found')
+		}
 
 		if (!userData.isGuest) {
 			throw new ConflictError('User is already a full account')
@@ -148,9 +146,10 @@ export const upgradeGuest = createServerFn({method: 'POST'}).handler(
 		try {
 			await auth.getUserByEmail(email)
 			throw new ConflictError('Email is already in use')
-		} catch (error: any) {
+		} catch (error: unknown) {
+			const authError = error as {code?: string}
 			// Email not found is expected
-			if (error.code !== 'auth/user-not-found') {
+			if (authError.code !== 'auth/user-not-found') {
 				throw error
 			}
 		}
