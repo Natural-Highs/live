@@ -3,11 +3,7 @@
  * Following Test Pyramid Balance directive: Unit tests for business logic functions
  */
 
-import {
-	getGuestIdentifier,
-	requiresConsentForm,
-	shouldAddEventToGuest
-} from './guest-registration'
+import {getGuestIdentifier, requiresConsentForm, shouldAddEventToGuest} from './guest-registration'
 
 describe('Guest Registration Business Logic', () => {
 	describe('requiresConsentForm', () => {
@@ -64,15 +60,11 @@ describe('Guest Registration Business Logic', () => {
 		})
 
 		it('should return true when event is not in the list', () => {
-			expect(shouldAddEventToGuest(['event-1', 'event-2'], 'event-123')).toBe(
-				true
-			)
+			expect(shouldAddEventToGuest(['event-1', 'event-2'], 'event-123')).toBe(true)
 		})
 
 		it('should return false when event is already in the list', () => {
-			expect(
-				shouldAddEventToGuest(['event-1', 'event-123', 'event-2'], 'event-123')
-			).toBe(false)
+			expect(shouldAddEventToGuest(['event-1', 'event-123', 'event-2'], 'event-123')).toBe(false)
 		})
 
 		it('should return true for first event when list has other events', () => {

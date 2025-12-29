@@ -35,18 +35,12 @@ describe('Firebase Utility Functions', () => {
 				})
 			}
 
-			;(adminDb.collection as ReturnType<typeof vi.fn>).mockReturnValue(
-				mockCollection as never
-			)
+			;(adminDb.collection as ReturnType<typeof vi.fn>).mockReturnValue(mockCollection as never)
 
 			const result = await fetchByQuery('users', 'email', 'user1@example.com')
 
 			expect(adminDb.collection).toHaveBeenCalledWith('users')
-			expect(mockCollection.where).toHaveBeenCalledWith(
-				'email',
-				'==',
-				'user1@example.com'
-			)
+			expect(mockCollection.where).toHaveBeenCalledWith('email', '==', 'user1@example.com')
 			expect(mockCollection.get).toHaveBeenCalled()
 			expect(result).toEqual([
 				{id: 'doc1', name: 'User 1', email: 'user1@example.com'},
@@ -62,22 +56,12 @@ describe('Firebase Utility Functions', () => {
 				})
 			}
 
-			;(adminDb.collection as ReturnType<typeof vi.fn>).mockReturnValue(
-				mockCollection as never
-			)
+			;(adminDb.collection as ReturnType<typeof vi.fn>).mockReturnValue(mockCollection as never)
 
-			const result = await fetchByQuery(
-				'users',
-				'email',
-				'nonexistent@example.com'
-			)
+			const result = await fetchByQuery('users', 'email', 'nonexistent@example.com')
 
 			expect(result).toEqual([])
-			expect(mockCollection.where).toHaveBeenCalledWith(
-				'email',
-				'==',
-				'nonexistent@example.com'
-			)
+			expect(mockCollection.where).toHaveBeenCalledWith('email', '==', 'nonexistent@example.com')
 		})
 
 		it('should handle multiple documents with same field value', async () => {
@@ -94,9 +78,7 @@ describe('Firebase Utility Functions', () => {
 				})
 			}
 
-			;(adminDb.collection as ReturnType<typeof vi.fn>).mockReturnValue(
-				mockCollection as never
-			)
+			;(adminDb.collection as ReturnType<typeof vi.fn>).mockReturnValue(mockCollection as never)
 
 			const result = await fetchByQuery('users', 'role', 'admin')
 
@@ -120,9 +102,7 @@ describe('Firebase Utility Functions', () => {
 				})
 			}
 
-			;(adminDb.collection as ReturnType<typeof vi.fn>).mockReturnValue(
-				mockCollection as never
-			)
+			;(adminDb.collection as ReturnType<typeof vi.fn>).mockReturnValue(mockCollection as never)
 
 			const result = await fetchById('users', 'user123')
 
@@ -147,9 +127,7 @@ describe('Firebase Utility Functions', () => {
 				})
 			}
 
-			;(adminDb.collection as ReturnType<typeof vi.fn>).mockReturnValue(
-				mockCollection as never
-			)
+			;(adminDb.collection as ReturnType<typeof vi.fn>).mockReturnValue(mockCollection as never)
 
 			const result = await fetchById('users', 'empty123')
 
@@ -168,9 +146,7 @@ describe('Firebase Utility Functions', () => {
 				})
 			}
 
-			;(adminDb.collection as ReturnType<typeof vi.fn>).mockReturnValue(
-				mockCollection as never
-			)
+			;(adminDb.collection as ReturnType<typeof vi.fn>).mockReturnValue(mockCollection as never)
 
 			const result = await fetchById('events', 'event456')
 

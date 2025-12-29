@@ -268,8 +268,7 @@ describe('VirtualDataTable', () => {
 
 			const columnsButton = screen.getByRole('button', {name: /columns/i})
 			expect(columnsButton).toBeInTheDocument()
-			// shadcn Button uses variant classes instead of DaisyUI btn classes
-			expect(columnsButton).toHaveAttribute('type', 'button')
+			expect(columnsButton).toHaveClass('btn')
 		})
 	})
 
@@ -287,14 +286,10 @@ describe('VirtualDataTable', () => {
 			expect(document.querySelector('tbody')).toBeInTheDocument()
 		})
 
-		it('should apply alternating row colors for zebra striping', () => {
+		it('should apply zebra striping class', () => {
 			render(<VirtualDataTable data={testData} columns={testColumns} />)
 
-			// Virtual table renders rows lazily based on scroll position
-			// Zebra striping is now handled via alternating bg-background/bg-muted-50 classes
-			// The table structure should exist even if no rows are virtualized yet
-			const table = document.querySelector('table')
-			expect(table).toHaveClass('w-full', 'border-collapse')
+			expect(document.querySelector('.table-zebra')).toBeInTheDocument()
 		})
 	})
 })
