@@ -269,11 +269,10 @@ flowchart LR
 
 | File | Purpose |
 |------|---------|
-| `vite.config.ts` | Build configuration |
+| `vite.config.ts` | Build and test configuration |
 | `tsconfig.json` | TypeScript settings |
 | `biome.json` | Linting and formatting |
 | `playwright.config.ts` | E2E test configuration |
-| `vitest.config.ts` | Unit test configuration |
 | `firebase.json` | Emulator configuration |
 | `netlify.toml` | Deployment settings |
 

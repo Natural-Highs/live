@@ -24,7 +24,6 @@ lint:
     - linters: [ALL]
       paths:
         - .build/**
-        - dist/**
         - coverage/**
         - node_modules/**
         - .firebase/**

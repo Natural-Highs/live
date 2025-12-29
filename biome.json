@@ -48,19 +48,50 @@
 		"enabled": true,
 		"rules": {
 			"recommended": true,
+			"complexity": {
+				"noUselessTypeConstraint": "error",
+				"useLiteralKeys": "error",
+				"useOptionalChain": "error"
+			},
 			"correctness": {
 				"noUnusedImports": "error",
 				"noUnusedVariables": "error",
-				"useHookAtTopLevel": "error"
+				"useHookAtTopLevel": "error",
+				"noUndeclaredVariables": "error",
+				"useExhaustiveDependencies": "error"
 			},
 			"style": {
-				"noNonNullAssertion": "warn",
+				"noNonNullAssertion": "off",
 				"useConst": "error",
-				"useImportType": "error"
+				"useImportType": "error",
+				"useBlockStatements": "error",
+				"useCollapsedElseIf": "error",
+				"useConsistentArrayType": "error",
+				"useShorthandAssign": "error",
+				"useTemplate": "error",
+				"noDefaultExport": "off",
+				"useFilenamingConvention": "off",
+				"useNamingConvention": "off"
 			},
 			"suspicious": {
-				"noExplicitAny": "warn",
-				"noConsole": "warn"
+				"noExplicitAny": "error",
+				"noImplicitAnyLet": "error",
+				"noFocusedTests": "error",
+				"noDuplicateTestHooks": "error",
+				"noExportsInTest": "error",
+				"noArrayIndexKey": "off",
+				"noConsole": "off",
+				"noEmptyBlockStatements": "off"
+			},
+			"security": {
+				"noDangerouslySetInnerHtml": "error",
+				"noGlobalEval": "error"
+			},
+			"performance": {
+				"noAccumulatingSpread": "error",
+				"noBarrelFile": "off",
+				"noReExportAll": "off",
+				"noDelete": "error"
 			},
 			"a11y": {
 				"recommended": true
@@ -79,23 +110,7 @@
 			}
 		},
 		{
-			"includes": [
-				"*.config.ts",
-				"*.config.js",
-				"vite.config.ts",
-				"vitest.config.ts",
-				"playwright.config.ts"
-			],
-			"linter": {
-				"rules": {
-					"style": {
-						"noDefaultExport": "off"
-					}
-				}
-			}
-		},
-		{
-			"includes": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx", "tests/**/*"],
+			"includes": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx", "src/tests/**/*"],
 			"linter": {
 				"rules": {
 					"suspicious": {
@@ -105,24 +120,9 @@
 			}
 		},
 		{
-			"includes": ["src/routes/api/**/*.ts"],
-			"linter": {
-				"rules": {
-					"suspicious": {
-						"noConsole": "off"
-					}
-				}
-			}
-		},
-		{
-			"includes": ["public/**"],
-			"formatter": { "enabled": false },
-			"linter": { "enabled": false }
-		},
-		{
-			"includes": ["_*/**"],
-			"formatter": { "enabled": false },
-			"linter": { "enabled": false }
+			"includes": ["public/**", "_*/**", ".build/**"],
+			"formatter": {"enabled": false},
+			"linter": {"enabled": false}
 		}
 	]
 }

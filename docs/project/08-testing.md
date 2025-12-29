@@ -1,6 +1,6 @@
 # Testing
 
-> **TL;DR**: `bun run test` for unit tests (Vitest), `bun run test:e2e` for E2E (Playwright). Tests co-locate with source in `src/`, fixtures in `tests/`.
+> **TL;DR**: `bun run test` for unit tests (Vitest), `bun run test:e2e` for E2E (Playwright). Tests co-locate with source in `src/`, fixtures in `src/tests/`.
 
 ## Quick Reference
 
@@ -22,19 +22,18 @@
 ## Test Organization
 
 ```text
-tests/
-├── e2e/              # Playwright E2E tests
-├── fixtures/         # Session, auth, Firestore helpers
-└── factories/        # Test data builders
-
 src/
+├── tests/
+│   ├── e2e/              # Playwright E2E tests
+│   ├── fixtures/         # Session, auth, Firestore helpers
+│   └── factories/        # Test data builders
 └── components/
     └── Button.test.tsx   # Co-located unit tests
 ```
 
 ## Vitest (Unit Tests)
 
-Config: See [`vitest.config.ts`](../vitest.config.ts). Key settings: `environment: 'happy-dom'`, coverage threshold 70%.
+Config: See [`vite.config.ts`](../../vite.config.ts) `test` section. Key settings: `environment: 'happy-dom'`, coverage threshold 70%.
 
 ```typescript
 // Basic test
@@ -140,9 +139,9 @@ export class LoginPage {
 
 | File | Purpose |
 |------|---------|
-| `tests/fixtures/session.fixture.ts` | Create authenticated sessions |
-| `tests/fixtures/firestore.fixture.ts` | Seed/cleanup Firestore data |
-| `tests/factories/user.factory.ts` | Generate test user data |
+| `src/tests/fixtures/session.fixture.ts` | Create authenticated sessions |
+| `src/tests/fixtures/firestore.fixture.ts` | Seed/cleanup Firestore data |
+| `src/tests/factories/user.factory.ts` | Generate test user data |
 
 Use `mergeTests()` from `@playwright/test` to compose fixtures.
 

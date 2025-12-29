@@ -7,7 +7,7 @@ const isCI = Boolean(process.env.CI)
  * Hardcoded test session secret for E2E tests.
  * - 32+ characters required by iron-webcrypto
  * - Different from production secret (security isolation)
- * - Matches SESSION_SECRET_TEST in tests/fixtures/session.fixture.ts
+ * - Matches SESSION_SECRET_TEST in src/tests/fixtures/session.fixture.ts
  */
 export const SESSION_SECRET_TEST =
 	'test-session-secret-32-characters-minimum-length-for-iron-webcrypto'
@@ -23,7 +23,7 @@ const emulatorEnv = {
 	VITE_USE_EMULATORS: 'true',
 	// Server-side emulator flag (used by firebase.admin.ts)
 	USE_EMULATORS: 'true',
-	// Firestore emulator host (used by tests/fixtures/firestore.fixture.ts)
+	// Firestore emulator host (used by src/tests/fixtures/firestore.fixture.ts)
 	FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080',
 	// Session secret for server-side session validation
 	// Must match SESSION_SECRET_TEST used in session.fixture.ts
@@ -46,12 +46,18 @@ export default defineConfig({
 	// CI: Use multiple reporters for GitHub Actions integration
 	// Local: HTML reporter for interactive viewing
 	reporter: isCI
-		? [['html', {open: 'never', outputFolder: '.build/playwright-report'}], ['github'], ['list']]
+		? [
+				['html', {open: 'never', outputFolder: '.build/playwright-report'}],
+				['github'],
+				['list'],
+				['junit', {outputFile: '.build/e2e-results/junit.xml'}]
+			]
 		: [['html', {outputFolder: '.build/playwright-report'}]],
-	retries: isCI ? 2 : 0,
-	// Only run E2E tests (*.spec.ts files in tests/e2e directory)
+	// Disable retries - Trunk quarantining handles flaky tests
+	retries: 0,
+	// Only run E2E tests (*.spec.ts files in src/tests/e2e directory)
 	// Separates from Vitest unit tests to avoid expect symbol conflict
-	testDir: './tests/e2e',
+	testDir: './src/tests/e2e',
 	testMatch: '**/*.spec.ts',
 	// Output directories for CI artifact collection
 	outputDir: '.build/test-results',
