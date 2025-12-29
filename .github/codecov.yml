@@ -1,0 +1,104 @@
+# Codecov Configuration
+# Docs: https://docs.codecov.com/docs/codecov-yaml
+
+codecov:
+  require_ci_to_pass: true
+  notify:
+    wait_for_ci: true
+
+coverage:
+  precision: 2
+  round: down
+  range: 60...90
+  status:
+    project:
+      default:
+        target: 70%
+        threshold: 2%
+        # Only check on PRs, not every push
+        only_pulls: true
+        # Require coverage data to pass
+        informational: false
+      # Critical paths require higher coverage
+      critical:
+        paths:
+          - src/lib/queries/**
+          - src/server/functions/utils/**
+        target: 90%
+        threshold: 1%
+    patch:
+      default:
+        target: 70%
+        threshold: 5%
+        only_pulls: true
+
+parsers:
+  gcov:
+    branch_detection:
+      conditional: true
+      loop: true
+      macro: false
+      method: false
+
+comment:
+  layout: header,diff,flags,components,tree,footer
+  behavior: default
+  require_changes: true
+  require_base: false
+  require_head: true
+
+# Exclude test files and config from coverage
+ignore:
+  - "**/*.test.ts"
+  - "**/*.test.tsx"
+  - "**/*.spec.ts"
+  - "**/mocks/**"
+  - "**/test-setup.ts"
+  - "**/vitest-env-setup.ts"
+  - "**/*.config.ts"
+  - "**/*.config.js"
+  - .trunk/**
+  - .build/**
+  - tests/**
+  - scripts/**
+
+# Coverage flags for different test types
+flags:
+  unittests:
+    paths:
+      - src/
+    carryforward: true
+    after_n_builds: 1
+  e2e:
+    paths:
+      - src/
+    carryforward: true
+    after_n_builds: 4  # Wait for all 4 shards
+
+# Component-level coverage tracking
+component_management:
+  default_rules:
+    statuses:
+      - type: project
+        target: 70%
+  individual_components:
+    - component_id: lib
+      name: Libraries
+      paths:
+        - src/lib/**
+    - component_id: server
+      name: Server Functions
+      paths:
+        - src/server/**
+    - component_id: components
+      name: React Components
+      paths:
+        - src/components/**
+    - component_id: context
+      name: Context Providers
+      paths:
+        - src/context/**
+
+# GitHub integration settings
+github_checks:
+  annotations: true

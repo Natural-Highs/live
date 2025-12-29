@@ -23,6 +23,7 @@ lint:
   ignore:
     - linters: [ALL]
       paths:
+        - .build/**
         - dist/**
         - coverage/**
         - node_modules/**

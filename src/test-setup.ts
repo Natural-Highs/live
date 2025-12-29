@@ -1,6 +1,17 @@
 import '@testing-library/jest-dom'
 import {beforeEach, vi} from 'vitest'
 
+// Mock Firebase Admin module globally before any imports
+vi.mock('$lib/firebase/firebase.admin', () => ({
+	adminDb: {
+		collection: vi.fn()
+	},
+	adminAuth: {
+		getUserByEmail: vi.fn(),
+		createUser: vi.fn()
+	}
+}))
+
 // Polyfill localStorage for Happy DOM
 const localStorageStore: Record<string, string> = {}
 const localStorageMock = {
