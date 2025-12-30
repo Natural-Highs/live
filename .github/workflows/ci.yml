@@ -3,16 +3,8 @@ name: CI
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.vscode/**'
   pull_request:
     branches: [main]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.vscode/**'
   workflow_dispatch:
 
 permissions:
@@ -36,11 +28,65 @@ env:
 
 jobs:
   # ============================================
+  # Stage 0: Detect Changes
+  # ============================================
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    # Skip for release-please bot PRs (only version bumps)
+    if: github.actor != 'natural-highs-bot[bot]'
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+      tests: ${{ steps.filter.outputs.tests }}
+      config: ${{ steps.filter.outputs.config }}
+      ci: ${{ steps.filter.outputs.ci }}
+      firestore: ${{ steps.filter.outputs.firestore }}
+      any-code: ${{ steps.filter.outputs.code == 'true' || steps.filter.outputs.tests == 'true' || steps.filter.outputs.config == 'true' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Filter paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            code:
+              - 'src/**'
+              - '*.ts'
+              - '*.js'
+              - '*.mjs'
+              - '*.cjs'
+            tests:
+              - 'tests/**'
+              - '**/*.test.ts'
+              - '**/*.test.tsx'
+              - '**/*.spec.ts'
+              - 'playwright.config.ts'
+              - 'vitest.config.ts'
+            config:
+              - 'package.json'
+              - 'bun.lock'
+              - 'tsconfig*.json'
+              - 'vite.config.ts'
+              - 'tailwind.config.ts'
+              - 'postcss.config.js'
+            ci:
+              - '.github/workflows/ci.yml'
+              - '.trunk/**'
+              - 'biome.json'
+            firestore:
+              - 'firestore.rules'
+              - 'firebase.json'
+
+  # ============================================
   # Stage 1: Code Quality (Trunk.io)
   # ============================================
   lint:
     name: Code Quality
     runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.any-code == 'true' || needs.detect-changes.outputs.ci == 'true'
     permissions:
       contents: read
       checks: write
@@ -68,6 +114,8 @@ jobs:
   test-unit:
     name: Unit Tests
     runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.any-code == 'true'
     permissions:
       contents: read
       pull-requests: write
@@ -193,7 +241,13 @@ jobs:
   test-e2e:
     name: E2E Tests (Shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
-    needs: [lint, test-unit]
+    needs: [detect-changes, lint, test-unit]
+    # Run if code changed AND upstream jobs succeeded or were skipped (due to no changes)
+    if: |
+      always() &&
+      needs.detect-changes.outputs.any-code == 'true' &&
+      (needs.lint.result == 'success' || needs.lint.result == 'skipped') &&
+      (needs.test-unit.result == 'success' || needs.test-unit.result == 'skipped')
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -285,11 +339,12 @@ jobs:
   deploy-test-report:
     name: Deploy Test Report
     runs-on: ubuntu-latest
-    needs: [test-e2e]
-    # Only deploy on main branch OR when tests fail (to debug failures)
+    needs: [detect-changes, test-e2e]
+    # Only deploy if E2E tests ran (not skipped) AND (on main OR tests failed)
     if: |
       always() && 
       needs.test-e2e.result != 'cancelled' &&
+      needs.test-e2e.result != 'skipped' &&
       (github.ref == 'refs/heads/main' || needs.test-e2e.result == 'failure')
     permissions:
       contents: read
@@ -344,8 +399,12 @@ jobs:
   burn-in:
     name: Flaky Test Detection
     runs-on: ubuntu-latest
-    needs: [test-e2e]
-    if: github.event_name == 'pull_request'
+    needs: [detect-changes, test-e2e]
+    # Run on PRs when tests changed AND E2E passed
+    if: |
+      github.event_name == 'pull_request' &&
+      needs.detect-changes.outputs.tests == 'true' &&
+      needs.test-e2e.result == 'success'
     timeout-minutes: 45
     steps:
       - name: Checkout code
@@ -449,8 +508,13 @@ jobs:
   deploy-firestore-rules:
     name: Deploy Firestore Rules
     runs-on: ubuntu-latest
-    needs: [lint, test-unit, test-e2e]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [detect-changes, lint, test-unit, test-e2e]
+    # Deploy only on main push when firestore rules changed AND tests passed/skipped
+    if: |
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'push' &&
+      needs.detect-changes.outputs.firestore == 'true' &&
+      (needs.test-e2e.result == 'success' || needs.test-e2e.result == 'skipped')
     environment: prd
     permissions:
       contents: read
