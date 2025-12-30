@@ -40,10 +40,3 @@
 ### Tests
 
 * add layer test coverage for all architecture layers ([#23](https://github.com/Natural-Highs/live/issues/23)) ([2aec493](https://github.com/Natural-Highs/live/commit/2aec4930e51a21d1d0ceb744f2c4029368e5ac96))
-
-## Changelog
-
-All notable changes to this project will be documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
