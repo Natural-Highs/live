@@ -2,7 +2,6 @@
 	"packages": {
 		".": {
 			"release-type": "node",
-			"changelog-type": "github",
 			"changelog-path": "CHANGELOG.md",
 			"bump-minor-pre-major": true,
 			"bump-patch-for-minor-pre-major": true,
@@ -10,7 +9,7 @@
 			"include-v-in-tag": true,
 			"changelog-sections": [
 				{ "type": "feat", "section": "Features" },
-				{ "type": "fix", "section": "Changes" },
+				{ "type": "fix", "section": "Bug Fixes" },
 				{ "type": "perf", "section": "Performance" },
 				{ "type": "security", "section": "Security" },
 				{ "type": "refactor", "section": "Refactoring" },
