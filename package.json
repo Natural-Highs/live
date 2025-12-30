@@ -3,7 +3,7 @@
 	"type": "module",
 	"license": "MIT",
 	"private": true,
-	"version": "0.0.0",
+	"version": "0.0.1",
 	"scripts": {
 		"dev": "doppler run -c dev -- vite",
 		"dev:bare": "vite",
