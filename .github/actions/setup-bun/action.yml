@@ -1,0 +1,82 @@
+name: Setup Bun Environment
+description: Consolidated setup for Bun projects with caching
+
+inputs:
+  bun-version:
+    description: Bun version to install
+    required: false
+    default: latest
+  node-version:
+    description: Node.js version (optional, for compatibility)
+    required: false
+    default: ""
+  java-version:
+    description: Java version for Firebase emulators (optional)
+    required: false
+    default: ""
+  install-playwright:
+    description: Install Playwright browsers
+    required: false
+    default: "false"
+  install-firebase:
+    description: Install Firebase CLI
+    required: false
+    default: "false"
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Node.js
+      if: inputs.node-version != ''
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+
+    - name: Setup Java
+      if: inputs.java-version != ''
+      uses: actions/setup-java@v4
+      with:
+        distribution: temurin
+        java-version: ${{ inputs.java-version }}
+
+    - name: Setup Bun
+      uses: oven-sh/setup-bun@v2
+      with:
+        bun-version: ${{ inputs.bun-version }}
+
+    - name: Cache Bun dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.bun/install/cache
+        key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+        restore-keys: |
+          bun-${{ runner.os }}-
+
+    - name: Install dependencies
+      shell: bash
+      run: bun install --frozen-lockfile
+
+    - name: Cache Playwright browsers
+      if: inputs.install-playwright == 'true'
+      uses: actions/cache@v4
+      id: playwright-cache
+      with:
+        path: ~/.cache/ms-playwright
+        key: playwright-${{ runner.os }}-${{ hashFiles('bun.lock') }}
+        restore-keys: |
+          playwright-${{ runner.os }}-
+
+    - name: Install Playwright browsers
+      if: inputs.install-playwright == 'true' && steps.playwright-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: bunx playwright install --with-deps
+
+    - name: Install Playwright system deps only
+      if: inputs.install-playwright == 'true' && steps.playwright-cache.outputs.cache-hit == 'true'
+      shell: bash
+      run: bunx playwright install-deps
+
+    - name: Install Firebase CLI
+      if: inputs.install-firebase == 'true'
+      shell: bash
+      run: npm install -g firebase-tools
