@@ -1,9 +1,9 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest'
-import {clearEmailForSignIn, getEmailForSignIn, setEmailForSignIn} from '$lib/auth/magic-link'
+import {clearEmailForSignIn, getEmailForSignIn, setEmailForSignIn} from '@/lib/auth/magic-link'
 
-// Mock firebase/auth module
-const mockIsSignInWithEmailLink = vi.fn(() => true)
-const mockSignInWithEmailLink = vi.fn(() =>
+// Mock firebase/auth module - typed to accept the expected arguments
+const mockIsSignInWithEmailLink = vi.fn((_auth: unknown, _emailLink: string) => true)
+const mockSignInWithEmailLink = vi.fn((_auth: unknown, _email: string, _emailLink: string) =>
 	Promise.resolve({user: {getIdToken: () => Promise.resolve('mock-token')}})
 )
 
@@ -13,7 +13,7 @@ vi.mock('firebase/auth', () => ({
 }))
 
 // Mock firebase app
-vi.mock('$lib/firebase/firebase.app', () => ({
+vi.mock('@/lib/firebase/firebase.app', () => ({
 	auth: {currentUser: null}
 }))
 

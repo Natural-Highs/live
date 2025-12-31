@@ -113,7 +113,9 @@ export function createDefaultAdapter(): QRScannerAdapter {
 		},
 
 		getCapabilities() {
-			if (!scanner) return null
+			if (!scanner) {
+				return null
+			}
 			try {
 				return scanner.getRunningTrackCameraCapabilities()
 			} catch {

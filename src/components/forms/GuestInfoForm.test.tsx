@@ -201,7 +201,7 @@ describe('GuestInfoForm', () => {
 	it('shows loading state during submission', async () => {
 		const user = userEvent.setup()
 		// Make onSubmit return a promise that doesn't resolve immediately
-		const slowSubmit = vi.fn(() => new Promise(() => {}))
+		const slowSubmit = vi.fn((): Promise<void> => new Promise(() => {}))
 
 		render(
 			<GuestInfoForm

@@ -97,7 +97,7 @@ describe('GuestConsentSignature', () => {
 
 	it('disables button during submission', async () => {
 		const user = userEvent.setup()
-		const slowSubmit = vi.fn(() => new Promise(() => {}))
+		const slowSubmit = vi.fn((): Promise<void> => new Promise(() => {}))
 
 		render(<GuestConsentSignature {...defaultProps} onSubmit={slowSubmit} />)
 

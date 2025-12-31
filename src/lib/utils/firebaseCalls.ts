@@ -1,4 +1,4 @@
-import {adminDb} from '$lib/firebase/firebase.admin'
+import {adminDb} from '@/lib/firebase/firebase.admin'
 
 export const fetchByQuery = async (collection: string, field: string, value: string) => {
 	const snapshot = await adminDb.collection(collection).where(field, '==', value).get()

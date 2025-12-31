@@ -45,9 +45,15 @@ export const responsesQueryOptions = (filters?: ResponseFilters) =>
 		queryKey: ['responses', filters ?? {}] as const,
 		queryFn: async () => {
 			const params = new URLSearchParams()
-			if (filters?.eventId) params.append('eventId', filters.eventId)
-			if (filters?.startDate) params.append('startDate', filters.startDate)
-			if (filters?.endDate) params.append('endDate', filters.endDate)
+			if (filters?.eventId) {
+				params.append('eventId', filters.eventId)
+			}
+			if (filters?.startDate) {
+				params.append('startDate', filters.startDate)
+			}
+			if (filters?.endDate) {
+				params.append('endDate', filters.endDate)
+			}
 
 			const url = `/api/admin/responses${params.toString() ? `?${params.toString()}` : ''}`
 			const response = await fetch(url)

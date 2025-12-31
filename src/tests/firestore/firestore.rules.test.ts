@@ -45,7 +45,9 @@ let testEnv: RulesTestEnvironment
 // Skip entire test suite if emulator is not configured
 describe.skipIf(skipTests)('Firestore Security Rules - NFR9 Minor Privacy Protection', () => {
 	beforeAll(async () => {
-		if (skipTests || !EMULATOR_HOST) return
+		if (skipTests || !EMULATOR_HOST) {
+			return
+		}
 
 		const parts = EMULATOR_HOST.split(':')
 		const host = parts[0]

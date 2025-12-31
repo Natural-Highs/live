@@ -63,9 +63,9 @@ test('debug: check modal structure', async ({page, context}) => {
 	const cancelLocator = page.getByTestId('cancel-create-event')
 	const cancelVisible = await cancelLocator.isVisible({timeout: 1000}).catch(() => false)
 
-	// Get modal HTML if visible
+	// Get modal HTML if visible (for debugging)
 	if (modalVisible) {
-		const _modalHtml = await modalLocator.innerHTML()
+		void (await modalLocator.innerHTML())
 	}
 
 	// Try clicking cancel with force
@@ -76,6 +76,6 @@ test('debug: check modal structure', async ({page, context}) => {
 		await expect(modalLocator)
 			.toBeHidden({timeout: 2000})
 			.catch(() => {})
-		const _modalStillVisible = await modalLocator.isVisible({timeout: 1000}).catch(() => false)
+		void (await modalLocator.isVisible({timeout: 1000}).catch(() => false))
 	}
 })

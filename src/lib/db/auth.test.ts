@@ -3,11 +3,11 @@
  * Following Test Pyramid Balance directive: Unit tests for business logic functions
  * Following Incremental Verification directive: Verify this milestone before proceeding
  */
-import {adminAuth, adminDb} from '$lib/firebase/firebase.admin'
+import {adminAuth, adminDb} from '@/lib/firebase/firebase.admin'
 import {registerUser, signInUser} from './auth'
 
 // Mock Firebase Admin
-vi.mock('$lib/firebase/firebase.admin', () => ({
+vi.mock('@/lib/firebase/firebase.admin', () => ({
 	adminAuth: {
 		createUser: vi.fn(),
 		getUserByEmail: vi.fn()

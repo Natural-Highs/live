@@ -12,7 +12,7 @@ import {Button} from '@/components/ui/button'
 import GreenCard from '@/components/ui/GreenCard'
 import {PageContainer} from '@/components/ui/page-container'
 import TitleCard from '@/components/ui/TitleCard'
-import {auth} from '$lib/firebase/firebase.app'
+import {auth} from '@/lib/firebase/firebase.app'
 import {useAuth} from '../context/AuthContext'
 
 const loginSchema = z.object({

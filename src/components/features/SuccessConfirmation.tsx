@@ -33,7 +33,9 @@ export function SuccessConfirmation({
 
 	// Memoized dismiss handler to ensure single invocation with fade-out
 	const handleDismiss = useCallback(() => {
-		if (hasDismissed.current) return
+		if (hasDismissed.current) {
+			return
+		}
 		hasDismissed.current = true
 
 		if (timerRef.current) {

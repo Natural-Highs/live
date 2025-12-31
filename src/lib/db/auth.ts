@@ -1,5 +1,5 @@
-// import { auth, db } from '$lib/firebase/firebase'; // Adjust the import path as needed
-import {adminAuth, adminDb} from '$lib/firebase/firebase.admin'
+// import { auth, db } from '@/lib/firebase/firebase'; // Adjust the import path as needed
+import {adminAuth, adminDb} from '@/lib/firebase/firebase.admin'
 
 /**
  * Creates a new user with email and password. Validates that password and confirmPassword match.

@@ -57,7 +57,7 @@ describe('demographics', () => {
 		it('should return group field with nested fields', () => {
 			const field = getFieldById('emergencyContact')
 			expect(field.type).toBe('group')
-			if (field.type === 'group') {
+			if (isGroupField(field)) {
 				expect(field.fields.name).toBeDefined()
 				expect(field.fields.phone).toBeDefined()
 				expect(field.fields.email).toBeDefined()

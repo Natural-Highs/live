@@ -10,7 +10,7 @@ vi.mock('firebase/auth', () => ({
 }))
 
 // Mock Firebase app
-vi.mock('$lib/firebase/firebase.app', () => ({
+vi.mock('@/lib/firebase/firebase.app', () => ({
 	auth: {currentUser: null}
 }))
 

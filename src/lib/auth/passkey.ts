@@ -54,7 +54,9 @@ export function supportsWebAuthn(): boolean {
  * @returns Promise resolving to true if a platform authenticator is available
  */
 export async function hasAvailableAuthenticator(): Promise<boolean> {
-	if (!supportsWebAuthn()) return false
+	if (!supportsWebAuthn()) {
+		return false
+	}
 
 	try {
 		return await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
@@ -70,7 +72,9 @@ export async function hasAvailableAuthenticator(): Promise<boolean> {
  * @returns Promise resolving to true if conditional mediation is supported
  */
 export async function supportsConditionalMediation(): Promise<boolean> {
-	if (!supportsWebAuthn()) return false
+	if (!supportsWebAuthn()) {
+		return false
+	}
 
 	try {
 		if (typeof window.PublicKeyCredential.isConditionalMediationAvailable === 'function') {

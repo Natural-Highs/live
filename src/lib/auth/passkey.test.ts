@@ -10,8 +10,11 @@ import {
 	supportsWebAuthn
 } from './passkey'
 
-// Mock PublicKeyCredential
-const mockPublicKeyCredential = {
+// Mock PublicKeyCredential - typed to allow reassignment for edge case testing
+const mockPublicKeyCredential: {
+	isUserVerifyingPlatformAuthenticatorAvailable: ReturnType<typeof vi.fn>
+	isConditionalMediationAvailable: ReturnType<typeof vi.fn> | undefined
+} = {
 	isUserVerifyingPlatformAuthenticatorAvailable: vi.fn(),
 	isConditionalMediationAvailable: vi.fn()
 }
@@ -103,8 +106,7 @@ describe('passkey utilities', () => {
 
 		it('should return false when isConditionalMediationAvailable is not a function', async () => {
 			vi.stubGlobal('PublicKeyCredential', mockPublicKeyCredential)
-			mockPublicKeyCredential.isConditionalMediationAvailable =
-				undefined as unknown as () => Promise<boolean>
+			mockPublicKeyCredential.isConditionalMediationAvailable = undefined
 
 			const result = await supportsConditionalMediation()
 			expect(result).toBe(false)

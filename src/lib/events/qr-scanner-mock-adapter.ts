@@ -105,7 +105,9 @@ export function createMockAdapter(): QRScannerAdapter {
 		},
 
 		getCapabilities(): ScannerCapabilities | null {
-			if (!isRunning) return null
+			if (!isRunning) {
+				return null
+			}
 			return {
 				torchFeature: () => ({
 					isSupported: () => false,

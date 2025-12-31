@@ -5,7 +5,7 @@ import {Button} from '@/components/ui/button'
 import GreenCard from '@/components/ui/GreenCard'
 import {Separator} from '@/components/ui/separator'
 import {Spinner} from '@/components/ui/spinner'
-import {auth} from '$lib/firebase/firebase.app'
+import {auth} from '@/lib/firebase/firebase.app'
 
 export interface MagicLinkSentProps {
 	/** The email address the magic link was sent to */
