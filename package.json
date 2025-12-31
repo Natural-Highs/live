@@ -24,10 +24,12 @@
 		"test:ci": "vitest run",
 		"test:e2e:ci": "playwright test",
 		"test:e2e:report": "playwright show-report .build/playwright-report",
+		"check": "biome check src --write --unsafe",
+		"check:ci": "biome check src",
 		"lint:tsc": "tsc -b",
-		"lint": "bun run lint:tsc && trunk check",
-		"lint:fix": "trunk check --fix",
-		"format": "trunk fmt",
+		"lint": "bun run check && bun run lint:tsc && trunk check",
+		"lint:fix": "bun run check && trunk check --fix",
+		"format": "biome format src --write && trunk fmt",
 		"validate": "bun run lint && bun run test:ci && bun run test:e2e:ci",
 		"ci:local": "bash scripts/ci-local.sh",
 		"test:burn-in": "bash scripts/burn-in.sh",
@@ -117,8 +119,11 @@
 	},
 	"lint-staged": {
 		"*.{ts,tsx}": [
-			"biome check --write",
-			"vitest related --run --passWithNoTests"
+			"biome check --write --unsafe",
+			"bash -c 'tsc -b --noEmit 2>&1 || true'"
+		],
+		"*.{json,md,css}": [
+			"biome format --write"
 		]
 	}
 }

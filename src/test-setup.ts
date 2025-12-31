@@ -1,9 +1,9 @@
-import '@testing-library/jest-dom'
+import '@testing-library/jest-dom/vitest'
 import {afterAll, afterEach, beforeAll, beforeEach, vi} from 'vitest'
 import {server} from './mocks/server'
 
 // Mock Firebase Admin module globally before any imports
-vi.mock('$lib/firebase/firebase.admin', () => ({
+vi.mock('@/lib/firebase/firebase.admin', () => ({
 	adminDb: {
 		collection: vi.fn()
 	},
@@ -88,7 +88,7 @@ vi.mock('firebase/app', () => ({
 }))
 
 // Mock Firebase app instance
-vi.mock('$lib/firebase/firebase.app', () => ({
+vi.mock('@/lib/firebase/firebase.app', () => ({
 	auth: {
 		currentUser: null,
 		onAuthStateChanged: vi.fn()
