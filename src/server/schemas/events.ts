@@ -9,6 +9,10 @@ export const getEventByCodeSchema = z.object({
 	code: eventCodeSchema
 })
 
+export const checkInToEventSchema = z.object({
+	eventCode: eventCodeSchema
+})
+
 export const createEventSchema = z.object({
 	name: z.string().min(1).max(255),
 	description: z.string().optional(),

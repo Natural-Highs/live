@@ -8,6 +8,7 @@ import {Card, CardContent} from '@/components/ui/card'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
+import {checkInToEvent} from '@/server/functions/events'
 import {getProfileFn} from '@/server/functions/profile'
 import {getUserEvents} from '@/server/functions/users'
 
@@ -30,6 +31,7 @@ interface UserEvent {
 	endDate?: string
 	code?: string
 	isActive?: boolean
+	wasGuest?: boolean // True if event was attended as guest before account conversion
 	createdAt?: string
 	updatedAt?: string
 	[key: string]: string | boolean | undefined
@@ -95,37 +97,36 @@ function ProfileComponent() {
 		setSubmittingCode(true)
 
 		try {
-			const response = await fetch('/api/users/eventCode', {
-				method: 'POST',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({eventCode})
-			})
+			const result = await checkInToEvent({data: {eventCode}})
 
-			const data = (await response.json()) as {
-				success: boolean
-				message?: string
-				error?: string
-			}
-
-			if (!(response.ok && data.success)) {
-				setError(data.error || 'Failed to register for event')
-				setSubmittingCode(false)
-				return
-			}
-
-			setSuccess(data.message || 'Successfully registered for event')
+			setSuccess(`Successfully registered for ${result.eventName}`)
 			setEventCode('')
 			// Invalidate router to re-run loader and refresh events list
 			await router.invalidate()
 			setSubmittingCode(false)
 		} catch (err) {
-			setError(err instanceof Error ? err.message : 'Failed to register for event')
+			// Map error types to user-friendly messages
+			if (err instanceof Error) {
+				if (err.name === 'NotFoundError' || err.message.includes('not found')) {
+					setError('Code not found. Double-check and try again.')
+				} else if (err.name === 'ConflictError' || err.message.includes('already')) {
+					setError("You're already checked in for this event")
+				} else if (err.name === 'TimeWindowError' || err.message.includes('accepting')) {
+					setError('This event is not currently accepting check-ins')
+				} else {
+					setError(err.message || 'Failed to register for event')
+				}
+			} else {
+				setError('Failed to register for event')
+			}
 			setSubmittingCode(false)
 		}
 	}
 
 	const formatDate = (dateString?: string | Date | {toDate?: () => Date}): string => {
-		if (!dateString) return 'Date TBD'
+		if (!dateString) {
+			return 'Date TBD'
+		}
 		try {
 			let date: Date
 			if (typeof dateString === 'string') {

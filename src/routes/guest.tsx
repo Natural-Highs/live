@@ -1,5 +1,6 @@
 import {createFileRoute, useNavigate} from '@tanstack/react-router'
 import {useCallback, useState} from 'react'
+import {GuestConversionPrompt} from '@/components/features/GuestConversionPrompt'
 import {SuccessConfirmation} from '@/components/features/SuccessConfirmation'
 import {GuestConsentSignature} from '@/components/forms/GuestConsentSignature'
 import {type GuestInfoData, GuestInfoForm} from '@/components/forms/GuestInfoForm'
@@ -14,9 +15,9 @@ import {
 } from '@/components/ui'
 import {Button} from '@/components/ui/button'
 import {FormContainer} from '@/components/ui/form-container'
-import {registerGuest, validateGuestCode} from '@/server/functions/guests'
+import {getGuestEventCount, registerGuest, validateGuestCode} from '@/server/functions/guests'
 
-type Step = 'code' | 'info' | 'consent' | 'success'
+type Step = 'code' | 'info' | 'consent' | 'success' | 'conversion-prompt'
 
 interface EventData {
 	eventId: string
@@ -38,10 +39,15 @@ const STEP_LABELS: Record<Step, string> = {
 	code: 'Code Entry',
 	info: 'Info',
 	consent: 'Consent',
-	success: 'Success'
+	success: 'Success',
+	'conversion-prompt': 'Success'
 }
 
+// Steps shown in the step indicator (conversion-prompt is not shown separately)
 const STEP_ORDER: Step[] = ['code', 'info', 'consent', 'success']
+
+// Session storage key for dismissal flag (AC4: prompt does not reappear during session)
+const CONVERSION_DISMISSED_KEY = 'guest-conversion-dismissed'
 
 export const Route = createFileRoute('/guest')({
 	component: GuestComponent
@@ -66,6 +72,17 @@ function GuestComponent() {
 
 	// Registration result
 	const [registrationData, setRegistrationData] = useState<RegistrationData | null>(null)
+
+	// Guest event count for conversion prompt messaging
+	const [guestEventCount, setGuestEventCount] = useState(1)
+
+	// Session-scoped dismissal flag (AC4)
+	const [conversionDismissed, setConversionDismissed] = useState(() => {
+		if (typeof window !== 'undefined') {
+			return sessionStorage.getItem(CONVERSION_DISMISSED_KEY) === 'true'
+		}
+		return false
+	})
 
 	// Handle event code submission
 	const handleCodeSubmit = useCallback(async () => {
@@ -161,8 +178,60 @@ function GuestComponent() {
 		}
 	}, [step])
 
-	// Handle success dismissal
-	const handleSuccessDismiss = useCallback(() => {
+	// Handle success dismissal - show conversion prompt if not previously dismissed
+	const handleSuccessDismiss = useCallback(async () => {
+		// If user has already dismissed conversion prompt this session, reset directly
+		if (conversionDismissed) {
+			setStep('code')
+			setEventCode('')
+			setEventData(null)
+			setGuestInfo(null)
+			setRegistrationData(null)
+			return
+		}
+
+		// Query guest event count for messaging variant (1.4)
+		if (registrationData?.guestId) {
+			try {
+				const result = await getGuestEventCount({data: {guestId: registrationData.guestId}})
+				setGuestEventCount(result.eventCount)
+			} catch {
+				// Default to 1 if query fails
+				setGuestEventCount(1)
+			}
+		}
+
+		// Show conversion prompt (1.6: appears after SuccessConfirmation dismisses)
+		setStep('conversion-prompt')
+	}, [conversionDismissed, registrationData?.guestId])
+
+	// Handle "Create Account" button click
+	const handleCreateAccount = useCallback(() => {
+		// guestId is required for conversion - should always be present after registration
+		const guestId = registrationData?.guestId
+		if (!guestId) {
+			console.error('Cannot navigate to conversion: guestId is missing')
+			return
+		}
+
+		// Navigate to guest conversion route with guestId and email
+		navigate({
+			to: '/guest-convert',
+			search: {
+				guestId,
+				email: guestInfo?.email
+			}
+		})
+	}, [navigate, registrationData?.guestId, guestInfo?.email])
+
+	// Handle "Maybe Later" button click (AC4: session-scoped dismissal)
+	const handleMaybeLater = useCallback(() => {
+		// Set session storage flag to prevent prompt reappearing
+		if (typeof window !== 'undefined') {
+			sessionStorage.setItem(CONVERSION_DISMISSED_KEY, 'true')
+		}
+		setConversionDismissed(true)
+
 		// Reset to initial state for next guest
 		setStep('code')
 		setEventCode('')
@@ -336,6 +405,15 @@ function GuestComponent() {
 					/>
 				)
 
+			case 'conversion-prompt':
+				return (
+					<GuestConversionPrompt
+						eventCount={guestEventCount}
+						onCreateAccount={handleCreateAccount}
+						onMaybeLater={handleMaybeLater}
+					/>
+				)
+
 			default:
 				return null
 		}
@@ -343,7 +421,7 @@ function GuestComponent() {
 
 	return (
 		<PageContainer className='flex min-h-screen flex-col items-center justify-center gap-8 p-4'>
-			{step !== 'success' && (
+			{step !== 'success' && step !== 'conversion-prompt' && (
 				<BrandLogo
 					direction='vertical'
 					gapClassName='gap-0'

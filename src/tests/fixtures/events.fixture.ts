@@ -498,6 +498,67 @@ export async function isEventsEmulatorAvailable(): Promise<boolean> {
 	}
 }
 
+/**
+ * Create a guest document in the Firestore emulator.
+ *
+ * @param guest - Guest document data
+ * @returns The created guest ID
+ */
+export async function createFirestoreGuest(guest: FirestoreGuestDocument): Promise<string> {
+	const db = getEventsTestDb()
+	const now = new Date()
+	const guestId = guest.id ?? `test-guest-${Date.now()}`
+	const guestRef = db.collection('guests').doc(guestId)
+
+	await guestRef.set({
+		isGuest: guest.isGuest,
+		firstName: guest.firstName,
+		lastName: guest.lastName,
+		email: guest.email ?? null,
+		phone: guest.phone ?? null,
+		eventId: guest.eventId,
+		consentSignature: guest.consentSignature,
+		consentSignedAt: guest.consentSignedAt ?? now,
+		createdAt: guest.createdAt ?? now,
+		updatedAt: guest.updatedAt ?? now
+	})
+
+	return guestId
+}
+
+/**
+ * Create a pending conversion record in the Firestore emulator.
+ * Used for cross-device guest-to-user conversion testing.
+ *
+ * @param email - Email address (used as document ID)
+ * @param guestId - Guest ID to convert
+ * @returns The email (document ID)
+ */
+export async function createPendingConversion(email: string, guestId: string): Promise<string> {
+	const db = getEventsTestDb()
+	const normalizedEmail = email.toLowerCase().trim()
+	const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
+
+	await db.collection('pendingConversions').doc(normalizedEmail).set({
+		guestId,
+		createdAt: new Date(),
+		expiresAt
+	})
+
+	return normalizedEmail
+}
+
+/**
+ * Delete a pending conversion record from the Firestore emulator.
+ *
+ * @param email - Email address (document ID)
+ */
+export async function deletePendingConversion(email: string): Promise<void> {
+	const db = getEventsTestDb()
+	const normalizedEmail = email.toLowerCase().trim()
+	await db.collection('pendingConversions').doc(normalizedEmail).delete()
+}
+
 // ============================================================================
 // End Firestore Emulator Fixtures
 // ============================================================================

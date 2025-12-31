@@ -83,37 +83,111 @@ export const updateConsentStatus = createServerFn({method: 'POST'})
 
 /**
  * Get user's registered events
+ * Includes events attended as a guest that were migrated during conversion (marked with wasGuest: true)
  */
 export const getUserEvents = createServerFn({method: 'GET'}).handler(async () => {
 	const user = await requireAuth()
 
 	try {
-		// Get events where user is a participant
-		// Note: array-contains with orderBy requires a composite index
-		const eventsSnapshot = await adminDb
+		// Get userEvents for this user (includes migrated guest events)
+		const userEventsSnapshot = await adminDb
+			.collection('userEvents')
+			.where('userId', '==', user.uid)
+			.get()
+
+		// Also get events where user is directly a participant (legacy support)
+		const directEventsSnapshot = await adminDb
 			.collection('events')
 			.where('participants', 'array-contains', user.uid)
 			.get()
 
-		// Sort client-side to avoid index requirement
-		const events = eventsSnapshot.docs.map(doc => {
-			const eventData = doc.data()
-			return {
-				id: doc.id,
-				...eventData,
-				startDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
-				endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
-				createdAt: eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
-				updatedAt: eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
-			}
-		})
+		// Collect all unique event IDs from userEvents
+		const eventIdsFromUserEvents = new Set<string>()
+		const userEventMeta = new Map<
+			string,
+			{registeredAt: string | null; wasGuest: boolean; userEventId: string}
+		>()
 
-		// Sort by startDate ascending
-		return events.sort((a, b) => {
-			if (!a.startDate) {
+		for (const doc of userEventsSnapshot.docs) {
+			const data = doc.data()
+			const eventId = data.eventId
+			if (eventId) {
+				eventIdsFromUserEvents.add(eventId)
+				userEventMeta.set(eventId, {
+					registeredAt: data.registeredAt?.toDate?.()?.toISOString() ?? data.registeredAt ?? null,
+					wasGuest: !!data.migratedFromGuestEventId,
+					userEventId: doc.id
+				})
+			}
+		}
+
+		// Fetch event details for userEvents
+		const eventIds = Array.from(eventIdsFromUserEvents)
+		const eventDocsMap = new Map<string, FirebaseFirestore.DocumentSnapshot>()
+
+		// Batch fetch events (max 30 per query for Firestore 'in' clause)
+		for (let i = 0; i < eventIds.length; i += 30) {
+			const batch = eventIds.slice(i, i + 30)
+			if (batch.length > 0) {
+				const batchSnapshot = await adminDb
+					.collection('events')
+					.where('__name__', 'in', batch)
+					.get()
+				for (const doc of batchSnapshot.docs) {
+					eventDocsMap.set(doc.id, doc)
+				}
+			}
+		}
+
+		// Build events from userEvents
+		const eventsFromUserEvents = eventIds
+			.map(eventId => {
+				const eventDoc = eventDocsMap.get(eventId)
+				const meta = userEventMeta.get(eventId)
+				if (!eventDoc?.exists || !meta) {
+					return null
+				}
+
+				const eventData = eventDoc.data()!
+				return {
+					id: eventDoc.id,
+					...eventData,
+					// Add "(as Guest)" suffix to name if migrated from guest
+					name: meta.wasGuest
+						? `${eventData.name || 'Event'} (as Guest)`
+						: eventData.name || 'Event',
+					wasGuest: meta.wasGuest,
+					startDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
+					endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
+					createdAt: meta.registeredAt ?? eventData.createdAt?.toDate?.()?.toISOString() ?? null,
+					updatedAt: eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
+				}
+			})
+			.filter(Boolean)
+
+		// Build events from direct participants (legacy - events without userEvents records)
+		const eventsFromDirect = directEventsSnapshot.docs
+			.filter(doc => !eventIdsFromUserEvents.has(doc.id)) // Avoid duplicates
+			.map(doc => {
+				const eventData = doc.data()
+				return {
+					id: doc.id,
+					...eventData,
+					wasGuest: false,
+					startDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
+					endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
+					createdAt: eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
+					updatedAt: eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
+				}
+			})
+
+		// Combine and sort by startDate ascending
+		const allEvents = [...eventsFromUserEvents, ...eventsFromDirect]
+		return allEvents.sort((a, b) => {
+			if (!a?.startDate) {
 				return 1
 			}
-			if (!b.startDate) {
+			if (!b?.startDate) {
 				return -1
 			}
 			return new Date(a.startDate).getTime() - new Date(b.startDate).getTime()

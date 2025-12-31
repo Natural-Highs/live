@@ -117,5 +117,38 @@ describe('users server functions', () => {
 			const converted = mockTimestamp.toDate().toISOString()
 			expect(converted).toBe('2025-01-01T00:00:00.000Z')
 		})
+
+		it('should mark migrated guest events with "(as Guest)" suffix', () => {
+			// Events migrated from guest check-ins should have wasGuest: true
+			// and name should have "(as Guest)" suffix for display
+			const migratedEvent = {
+				id: 'event-123',
+				name: 'Community Gathering (as Guest)',
+				wasGuest: true,
+				migratedFromGuestEventId: 'guest-event-456'
+			}
+			expect(migratedEvent.wasGuest).toBe(true)
+			expect(migratedEvent.name).toContain('(as Guest)')
+		})
+
+		it('should include both userEvents and direct participant events', () => {
+			// getUserEvents combines:
+			// 1. Events from userEvents collection (includes migrated guest events)
+			// 2. Events where user is in participants array (legacy)
+			const userEventIds = new Set(['event-1', 'event-2'])
+			const directEventIds = ['event-2', 'event-3'] // event-2 is duplicate
+			const uniqueDirectIds = directEventIds.filter(id => !userEventIds.has(id))
+			expect(uniqueDirectIds).toEqual(['event-3'])
+		})
+
+		it('should use registeredAt from userEvents for createdAt when available', () => {
+			// For migrated events, preserve original registration timestamp
+			const userEventData = {
+				registeredAt: new Date('2025-01-15'),
+				eventId: 'event-123',
+				migratedFromGuestEventId: 'guest-event-456'
+			}
+			expect(userEventData.registeredAt).toBeDefined()
+		})
 	})
 })

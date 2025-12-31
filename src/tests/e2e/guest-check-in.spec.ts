@@ -446,7 +446,7 @@ test.describe('Guest Check-in Flow', () => {
 			await expect(page.getByText('Community Peer-mentor Session')).toBeVisible()
 		})
 
-		test('should dismiss success overlay on click', async ({page}) => {
+		test('should dismiss success overlay on click and show conversion prompt', async ({page}) => {
 			await page.goto('/guest')
 			await page.waitForLoadState('networkidle')
 
@@ -463,11 +463,11 @@ test.describe('Guest Check-in Flow', () => {
 			// Wait for success overlay
 			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
 
-			// Click to dismiss
+			// Click to dismiss - should show conversion prompt
 			await page.getByTestId('success-confirmation-overlay').click()
 
-			// Should return to code entry for next guest
-			await expect(page.getByTestId('guest-event-code-input')).toBeVisible()
+			// Should show conversion prompt instead of returning directly to code entry
+			await expect(page.getByTestId('guest-conversion-prompt')).toBeVisible({timeout: 5000})
 		})
 	})
 
@@ -480,6 +480,154 @@ test.describe('Guest Check-in Flow', () => {
 			const boundingBox = await submitButton.boundingBox()
 
 			expect(boundingBox?.height).toBeGreaterThanOrEqual(44)
+		})
+	})
+
+	test.describe('Guest Conversion Prompt (Story 3-2)', () => {
+		test('should show conversion prompt after dismissing success overlay', async ({page}) => {
+			await page.goto('/guest')
+			await page.waitForLoadState('networkidle')
+
+			// Complete check-in flow
+			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
+			await expect(page.getByLabel(/first name/i)).toBeVisible({timeout: 10000})
+			await page.getByLabel(/first name/i).fill('John')
+			await page.getByLabel(/last name/i).fill('Doe')
+			await page.getByRole('button', {name: /continue/i}).click()
+			await expect(page.getByLabel(/signature/i)).toBeVisible()
+			await page.getByLabel(/signature/i).fill('John Doe')
+			await page.getByRole('button', {name: /i agree/i}).click()
+
+			// Wait for success overlay and dismiss it
+			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
+			await page.getByTestId('success-confirmation-overlay').click()
+
+			// Should show conversion prompt
+			await expect(page.getByTestId('guest-conversion-prompt')).toBeVisible({timeout: 5000})
+			await expect(page.getByTestId('guest-conversion-create-account')).toBeVisible()
+			await expect(page.getByTestId('guest-conversion-maybe-later')).toBeVisible()
+		})
+
+		test('should show first-time guest messaging for single event', async ({page}) => {
+			await page.goto('/guest')
+			await page.waitForLoadState('networkidle')
+
+			// Complete check-in flow
+			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
+			await expect(page.getByLabel(/first name/i)).toBeVisible({timeout: 10000})
+			await page.getByLabel(/first name/i).fill('First')
+			await page.getByLabel(/last name/i).fill('Timer')
+			await page.getByRole('button', {name: /continue/i}).click()
+			await expect(page.getByLabel(/signature/i)).toBeVisible()
+			await page.getByLabel(/signature/i).fill('First Timer')
+			await page.getByRole('button', {name: /i agree/i}).click()
+
+			// Dismiss success overlay
+			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
+			await page.getByTestId('success-confirmation-overlay').click()
+
+			// Should show first-time guest message
+			await expect(page.getByTestId('guest-conversion-prompt')).toBeVisible({timeout: 5000})
+			await expect(page.getByText(/save time on your next check-in/i)).toBeVisible()
+		})
+
+		test('should dismiss prompt and return to code entry on Maybe Later', async ({page}) => {
+			await page.goto('/guest')
+			await page.waitForLoadState('networkidle')
+
+			// Complete check-in flow
+			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
+			await expect(page.getByLabel(/first name/i)).toBeVisible({timeout: 10000})
+			await page.getByLabel(/first name/i).fill('John')
+			await page.getByLabel(/last name/i).fill('Doe')
+			await page.getByRole('button', {name: /continue/i}).click()
+			await expect(page.getByLabel(/signature/i)).toBeVisible()
+			await page.getByLabel(/signature/i).fill('John Doe')
+			await page.getByRole('button', {name: /i agree/i}).click()
+
+			// Dismiss success overlay
+			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
+			await page.getByTestId('success-confirmation-overlay').click()
+
+			// Click Maybe Later
+			await expect(page.getByTestId('guest-conversion-prompt')).toBeVisible({timeout: 5000})
+			await page.getByTestId('guest-conversion-maybe-later').click()
+
+			// Should return to code entry
+			await expect(page.getByTestId('guest-event-code-input')).toBeVisible()
+			await expect(page.getByTestId('guest-conversion-prompt')).not.toBeVisible()
+		})
+
+		test('should not show prompt again after Maybe Later in same session', async ({page}) => {
+			await page.goto('/guest')
+			await page.waitForLoadState('networkidle')
+
+			// First check-in
+			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
+			await expect(page.getByLabel(/first name/i)).toBeVisible({timeout: 10000})
+			await page.getByLabel(/first name/i).fill('John')
+			await page.getByLabel(/last name/i).fill('Doe')
+			await page.getByRole('button', {name: /continue/i}).click()
+			await expect(page.getByLabel(/signature/i)).toBeVisible()
+			await page.getByLabel(/signature/i).fill('John Doe')
+			await page.getByRole('button', {name: /i agree/i}).click()
+
+			// Dismiss success and click Maybe Later
+			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
+			await page.getByTestId('success-confirmation-overlay').click()
+			await expect(page.getByTestId('guest-conversion-prompt')).toBeVisible({timeout: 5000})
+			await page.getByTestId('guest-conversion-maybe-later').click()
+
+			// Second check-in (same session)
+			await expect(page.getByTestId('guest-event-code-input')).toBeVisible()
+			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
+			await expect(page.getByLabel(/first name/i)).toBeVisible({timeout: 10000})
+			await page.getByLabel(/first name/i).fill('Jane')
+			await page.getByLabel(/last name/i).fill('Smith')
+			await page.getByRole('button', {name: /continue/i}).click()
+			await expect(page.getByLabel(/signature/i)).toBeVisible()
+			await page.getByLabel(/signature/i).fill('Jane Smith')
+			await page.getByRole('button', {name: /i agree/i}).click()
+
+			// Dismiss success overlay
+			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
+			await page.getByTestId('success-confirmation-overlay').click()
+
+			// Should NOT show conversion prompt (already dismissed this session)
+			await expect(page.getByTestId('guest-event-code-input')).toBeVisible()
+			await expect(page.getByTestId('guest-conversion-prompt')).not.toBeVisible()
+		})
+
+		test('should navigate to /guest/convert on Create Account click', async ({page}) => {
+			await page.goto('/guest')
+			await page.waitForLoadState('networkidle')
+
+			// Complete check-in flow with email
+			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
+			await expect(page.getByLabel(/first name/i)).toBeVisible({timeout: 10000})
+			await page.getByLabel(/first name/i).fill('Convert')
+			await page.getByLabel(/last name/i).fill('User')
+			await page.getByLabel(/email/i).fill('convert@example.com')
+			await page.getByRole('button', {name: /continue/i}).click()
+			await expect(page.getByLabel(/signature/i)).toBeVisible()
+			await page.getByLabel(/signature/i).fill('Convert User')
+			await page.getByRole('button', {name: /i agree/i}).click()
+
+			// Dismiss success and click Create Account
+			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
+			await page.getByTestId('success-confirmation-overlay').click()
+			await expect(page.getByTestId('guest-conversion-prompt')).toBeVisible({timeout: 5000})
+			await page.getByTestId('guest-conversion-create-account').click()
+
+			// Should navigate to /guest-convert with params
+			// Wait for navigation to complete and URL to change
+			await page.waitForURL(/\/guest-convert/, {timeout: 15000})
+			// Wait for page content to load completely
+			await page.waitForLoadState('domcontentloaded')
+			// The convert page should now show the form
+			await expect(page.getByTestId('guest-convert-form')).toBeVisible({timeout: 15000})
+			// Email should be pre-filled
+			await expect(page.getByTestId('guest-convert-email-input')).toHaveValue('convert@example.com')
 		})
 	})
 })

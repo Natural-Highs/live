@@ -1,14 +1,16 @@
 import {createFileRoute, useNavigate} from '@tanstack/react-router'
 import {isSignInWithEmailLink, signInWithEmailLink} from 'firebase/auth'
 import {useCallback, useEffect, useState} from 'react'
+import {PasskeySetup} from '@/components/auth/PasskeySetup'
 import {Alert, BrandLogo, Input, Label, Spinner} from '@/components/ui'
 import {Button} from '@/components/ui/button'
 import GreenCard from '@/components/ui/GreenCard'
 import {PageContainer} from '@/components/ui/page-container'
 import TitleCard from '@/components/ui/TitleCard'
+import {clearEmailForSignIn, getEmailForSignIn} from '@/lib/auth/magic-link'
+import {auth} from '@/lib/firebase/firebase.app'
 import {createSessionFn, type SessionUser} from '@/server/functions/auth'
-import {clearEmailForSignIn, getEmailForSignIn} from '$lib/auth/magic-link'
-import {auth} from '$lib/firebase/firebase.app'
+import {completeGuestConversion, getPendingConversion} from '@/server/functions/guests'
 import {useAuth} from '../context/AuthContext'
 
 /**
@@ -31,7 +33,15 @@ type CreateSessionFnType = (opts: {data: CreateSessionData}) => Promise<{
 	user: SessionUser
 }>
 
-type MagicLinkState = 'loading' | 'cross-device-prompt' | 'signing-in' | 'success' | 'error'
+type MagicLinkState =
+	| 'loading'
+	| 'cross-device-prompt'
+	| 'signing-in'
+	| 'success'
+	| 'converting'
+	| 'conversion-success'
+	| 'passkey-offer'
+	| 'error'
 
 interface MagicLinkError {
 	code: string
@@ -67,6 +77,7 @@ function MagicLinkComponent() {
 	const [email, setEmail] = useState('')
 	const [error, setError] = useState('')
 	const [userName, setUserName] = useState('')
+	const [migratedEventCount, setMigratedEventCount] = useState(0)
 
 	const handleSignIn = useCallback(
 		async (emailToUse: string) => {
@@ -89,40 +100,101 @@ function MagicLinkComponent() {
 				// Get ID token for session creation
 				const idToken = await result.user.getIdToken()
 
-				// Create TanStack server session via createSessionFn
-				// Type assertion workaround for TanStack Start v1.142.5 handler type inference
-				const sessionResult = await (createSessionFn as unknown as CreateSessionFnType)({
-					data: {
-						uid: result.user.uid,
-						email: result.user.email ?? null,
-						displayName: result.user.displayName ?? null,
-						idToken
-					}
-				})
-
-				if (!sessionResult.success) {
-					throw new Error('Failed to create session')
+				// Check for pending guest conversion before creating session
+				// Fail gracefully - if this check fails, continue with normal sign-in
+				let pendingResult: {found: boolean; guestId?: string} = {found: false}
+				try {
+					pendingResult = await getPendingConversion({
+						data: {email: emailToUse}
+					})
+				} catch (conversionCheckError) {
+					// Log but don't fail - user can still sign in normally
+					console.warn('Failed to check pending conversion:', conversionCheckError)
 				}
 
-				// Extract user name for welcome message
-				const displayName = result.user.displayName || result.user.email?.split('@')[0] || 'User'
-				setUserName(displayName)
-				setState('success')
+				if (pendingResult.found && pendingResult.guestId) {
+					// Guest conversion flow
+					setState('converting')
 
-				// Note: AuthContext syncs automatically via onAuthStateChanged
-				// which fires after signInWithEmailLink succeeds (M1)
+					// Complete the guest-to-user conversion
+					const conversionResult = await completeGuestConversion({
+						data: {
+							email: emailToUse,
+							userId: result.user.uid
+						}
+					})
 
-				// Redirect to dashboard using router navigation
-				// Delay increased to 3000ms for screen reader accessibility
-				setTimeout(() => {
-					navigate({to: '/dashboard'})
-				}, 3000)
+					setMigratedEventCount(conversionResult.migratedEventCount)
+
+					// Create TanStack server session
+					const sessionResult = await (createSessionFn as unknown as CreateSessionFnType)({
+						data: {
+							uid: result.user.uid,
+							email: result.user.email ?? null,
+							displayName: result.user.displayName ?? null,
+							idToken
+						}
+					})
+
+					if (!sessionResult.success) {
+						throw new Error('Failed to create session')
+					}
+
+					const displayName = result.user.displayName || result.user.email?.split('@')[0] || 'User'
+					setUserName(displayName)
+					setState('conversion-success')
+
+					// Show passkey offer instead of auto-redirect
+					// User can choose to set up passkey or skip to dashboard
+					setTimeout(() => {
+						setState('passkey-offer')
+					}, 2000)
+				} else {
+					// Normal sign-in flow (no guest conversion)
+					const sessionResult = await (createSessionFn as unknown as CreateSessionFnType)({
+						data: {
+							uid: result.user.uid,
+							email: result.user.email ?? null,
+							displayName: result.user.displayName ?? null,
+							idToken
+						}
+					})
+
+					if (!sessionResult.success) {
+						throw new Error('Failed to create session')
+					}
+
+					const displayName = result.user.displayName || result.user.email?.split('@')[0] || 'User'
+					setUserName(displayName)
+					setState('success')
+
+					// Redirect to dashboard using router navigation
+					// Delay increased to 3000ms for screen reader accessibility
+					setTimeout(() => {
+						navigate({to: '/dashboard'})
+					}, 3000)
+				}
 			} catch (err) {
 				setState('error')
 				if (err && typeof err === 'object' && 'code' in err) {
 					setError(getErrorMessage(err as MagicLinkError))
 				} else if (err instanceof Error) {
-					setError(err.message)
+					// Handle conversion-specific errors with user-friendly messages
+					if (err.name === 'ConflictError' || err.message.includes('already been converted')) {
+						setError('This guest account has already been converted. Please sign in normally.')
+					} else if (err.name === 'NotFoundError') {
+						if (err.message.includes('pending conversion')) {
+							setError(
+								'Your conversion request has expired. Please start again from guest check-in.'
+							)
+						} else if (err.message.includes('Guest not found')) {
+							setError('Guest record not found. Please complete guest check-in first.')
+						} else {
+							setError(err.message)
+						}
+					} else {
+						setError(err.message)
+					}
 				} else {
 					setError('An unexpected error occurred. Please try again.')
 				}
@@ -225,6 +297,116 @@ function MagicLinkComponent() {
 					<h2 className='mb-2 font-semibold text-xl'>Welcome back, {userName}</h2>
 					<p className='text-gray-600'>Redirecting to your dashboard...</p>
 					<Spinner size='sm' className='mt-4' />
+				</GreenCard>
+			</PageContainer>
+		)
+	}
+
+	// Converting state - guest-to-user migration in progress
+	if (state === 'converting') {
+		return (
+			<PageContainer>
+				<BrandLogo
+					direction='vertical'
+					gapClassName='gap-0'
+					showTitle={true}
+					size='lg'
+					titleClassName='font-kapakana text-[75px] leading-none tracking-normal [word-spacing:0.40em]'
+					titlePosition='above'
+					titleSpacing={-55}
+				/>
+				<TitleCard>
+					<h1>Creating Account</h1>
+				</TitleCard>
+				<GreenCard className='flex max-w-full! flex-col items-center'>
+					<Spinner size='lg' />
+					<p className='mt-4 text-gray-600'>
+						Setting up your account and migrating your history...
+					</p>
+				</GreenCard>
+			</PageContainer>
+		)
+	}
+
+	// Conversion success state - guest converted to full user
+	if (state === 'conversion-success') {
+		return (
+			<PageContainer>
+				<BrandLogo
+					direction='vertical'
+					gapClassName='gap-0'
+					showTitle={true}
+					size='lg'
+					titleClassName='font-kapakana text-[75px] leading-none tracking-normal [word-spacing:0.40em]'
+					titlePosition='above'
+					titleSpacing={-55}
+				/>
+				<TitleCard>
+					<h1>Account Created</h1>
+				</TitleCard>
+				<GreenCard
+					className='flex max-w-full! flex-col items-center text-center'
+					data-testid='guest-conversion-success'
+				>
+					<div aria-label='Success' className='mb-4 text-6xl' role='img'>
+						✓
+					</div>
+					<h2 className='mb-2 font-semibold text-xl'>Welcome, {userName}</h2>
+					<p className='text-gray-600'>
+						Your account is ready
+						{migratedEventCount > 0 &&
+							` with ${migratedEventCount} event${migratedEventCount === 1 ? '' : 's'} from your guest history`}
+						.
+					</p>
+					<Spinner size='sm' className='mt-4' />
+				</GreenCard>
+			</PageContainer>
+		)
+	}
+
+	// Passkey offer state - offer faster sign-in after conversion
+	if (state === 'passkey-offer') {
+		return (
+			<PageContainer>
+				<BrandLogo
+					direction='vertical'
+					gapClassName='gap-0'
+					showTitle={true}
+					size='lg'
+					titleClassName='font-kapakana text-[75px] leading-none tracking-normal [word-spacing:0.40em]'
+					titlePosition='above'
+					titleSpacing={-55}
+				/>
+				<TitleCard>
+					<h1>Faster Sign-Ins</h1>
+				</TitleCard>
+				<GreenCard className='flex max-w-full! flex-col' data-testid='passkey-offer'>
+					<p className='mb-4 text-gray-600 text-sm'>
+						Set up a passkey for instant sign-in with Face ID, Touch ID, or your device PIN. No
+						email link needed next time.
+					</p>
+
+					<PasskeySetup
+						onSuccess={() => {
+							// Redirect to dashboard after passkey setup
+							setTimeout(() => navigate({to: '/dashboard'}), 1500)
+						}}
+						onError={() => {
+							// Still redirect on error - passkey is optional
+						}}
+					/>
+
+					<div className='divider'>OR</div>
+
+					<Button
+						className='min-h-[48px] w-full'
+						data-testid='skip-passkey-button'
+						onClick={() => navigate({to: '/dashboard'})}
+						type='button'
+						variant='secondary'
+					>
+						Skip for Now
+					</Button>
 				</GreenCard>
 			</PageContainer>
 		)

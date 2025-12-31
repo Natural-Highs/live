@@ -27,3 +27,44 @@ export const upgradeGuestSchema = z.object({
 	email: emailSchema,
 	password: z.string().min(8)
 })
+
+/**
+ * Schema for getting guest event count (Story 3-2: Guest-to-User Conversion)
+ * Used to determine messaging variant in GuestConversionPrompt
+ */
+export const getGuestEventCountSchema = z.object({
+	guestId: z.string().min(1, 'Guest ID is required')
+})
+
+/**
+ * Schema for converting guest to user (Story 3-2: Guest-to-User Conversion)
+ * Called after magic link/passkey verification completes
+ */
+export const convertGuestToUserSchema = z.object({
+	guestId: z.string().min(1, 'Guest ID is required'),
+	userId: z.string().min(1, 'User ID is required')
+})
+
+/**
+ * Schema for creating a pending conversion record
+ * Stores guestId before magic link is sent to support cross-device conversion
+ */
+export const createPendingConversionSchema = z.object({
+	guestId: z.string().min(1, 'Guest ID is required'),
+	email: emailSchema
+})
+
+/**
+ * Schema for retrieving a pending conversion by email
+ */
+export const getPendingConversionSchema = z.object({
+	email: emailSchema
+})
+
+/**
+ * Schema for completing guest conversion after magic link verification
+ */
+export const completeGuestConversionSchema = z.object({
+	email: emailSchema,
+	userId: z.string().min(1, 'User ID is required')
+})
