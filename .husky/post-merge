@@ -1,0 +1,9 @@
+#!/bin/sh
+
+# Auto-install dependencies when package.json or bun.lock changes
+changed_files=$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD)
+
+if echo "$changed_files" | grep -q "package.json\|bun.lock"; then
+	echo "Dependencies changed. Running bun install..."
+	bun install
+fi

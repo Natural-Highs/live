@@ -17,23 +17,33 @@ import {
 	createRouter,
 	RouterProvider
 } from '@tanstack/react-router'
-import {act, cleanup, render, screen, waitFor} from '@testing-library/react'
+import {cleanup, render, screen, waitFor} from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import type React from 'react'
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest'
 import type {RouterContext, SessionAuthContext} from '@/routes/__root'
 import {DashboardComponent} from '@/routes/_authed/dashboard'
 
+// Mock the checkInToEvent server function
+vi.mock('@/server/functions/events', () => ({
+	checkInToEvent: vi.fn()
+}))
+
+// Import the mock for manipulation in tests
+import {checkInToEvent} from '@/server/functions/events'
+
+const mockCheckInToEvent = vi.mocked(checkInToEvent)
+
 /**
  * Create mock auth context for testing
  */
 const createMockAuth = (overrides: Partial<SessionAuthContext> = {}): SessionAuthContext => ({
 	user: {
-		userId: 'test-user-123',
+		uid: 'test-user-123',
 		email: 'test@example.com',
 		displayName: 'Test User',
-		claims: {},
-		env: 'development'
+		photoURL: null,
+		claims: {}
 	},
 	isAuthenticated: true,
 	hasConsent: true,
@@ -53,9 +63,13 @@ const createTestRouter = (mockAuth: SessionAuthContext = createMockAuth()) => {
 		defaultOptions: {queries: {retry: false}}
 	})
 
-	const rootRoute = createRootRouteWithContext<RouterContext>()({
+	// Test mock: bypass serialization check by using type assertion on config object
+	const routeConfig = {
 		beforeLoad: () => ({auth: mockAuth, queryClient})
-	})
+	}
+	const rootRoute = createRootRouteWithContext<RouterContext>()(
+		routeConfig as Parameters<ReturnType<typeof createRootRouteWithContext<RouterContext>>>[0]
+	)
 
 	const authedRoute = createRoute({
 		getParentRoute: () => rootRoute,
@@ -182,16 +196,18 @@ describe('Dashboard Event Code Input', () => {
 			const {router, queryClient} = createTestRouter()
 			render(<RouterProvider router={router} />, {wrapper: createWrapper(queryClient)})
 
-			// Mock fetch to delay response
-			vi.spyOn(global, 'fetch').mockImplementation(
+			// Mock checkInToEvent to delay response
+			mockCheckInToEvent.mockImplementation(
 				() =>
 					new Promise(resolve =>
 						setTimeout(
 							() =>
 								resolve({
-									ok: true,
-									json: () => Promise.resolve({success: true, message: 'Registered'})
-								} as Response),
+									success: true,
+									eventName: 'Test Event',
+									eventDate: '2025-01-15T10:00:00Z',
+									eventLocation: 'Test Location'
+								}),
 							1000
 						)
 					)
@@ -211,7 +227,7 @@ describe('Dashboard Event Code Input', () => {
 			})
 
 			// Cleanup
-			vi.restoreAllMocks()
+			mockCheckInToEvent.mockReset()
 		})
 
 		it('should show disabled visual state on OTP slots during submission', async () => {
@@ -219,16 +235,18 @@ describe('Dashboard Event Code Input', () => {
 			const {router, queryClient} = createTestRouter()
 			render(<RouterProvider router={router} />, {wrapper: createWrapper(queryClient)})
 
-			// Mock fetch to delay response
-			vi.spyOn(global, 'fetch').mockImplementation(
+			// Mock checkInToEvent to delay response
+			mockCheckInToEvent.mockImplementation(
 				() =>
 					new Promise(resolve =>
 						setTimeout(
 							() =>
 								resolve({
-									ok: true,
-									json: () => Promise.resolve({success: true, message: 'Registered'})
-								} as Response),
+									success: true,
+									eventName: 'Test Event',
+									eventDate: '2025-01-15T10:00:00Z',
+									eventLocation: 'Test Location'
+								}),
 							1000
 						)
 					)
@@ -249,7 +267,7 @@ describe('Dashboard Event Code Input', () => {
 			})
 
 			// Cleanup
-			vi.restoreAllMocks()
+			mockCheckInToEvent.mockReset()
 		})
 	})
 
@@ -259,16 +277,18 @@ describe('Dashboard Event Code Input', () => {
 			const {router, queryClient} = createTestRouter()
 			render(<RouterProvider router={router} />, {wrapper: createWrapper(queryClient)})
 
-			// Mock fetch to delay response
-			vi.spyOn(global, 'fetch').mockImplementation(
+			// Mock checkInToEvent to delay response
+			mockCheckInToEvent.mockImplementation(
 				() =>
 					new Promise(resolve =>
 						setTimeout(
 							() =>
 								resolve({
-									ok: true,
-									json: () => Promise.resolve({success: true, message: 'Registered'})
-								} as Response),
+									success: true,
+									eventName: 'Test Event',
+									eventDate: '2025-01-15T10:00:00Z',
+									eventLocation: 'Test Location'
+								}),
 							1000
 						)
 					)
@@ -290,7 +310,7 @@ describe('Dashboard Event Code Input', () => {
 			})
 
 			// Cleanup
-			vi.restoreAllMocks()
+			mockCheckInToEvent.mockReset()
 		})
 
 		it('should hide loading spinner after submission completes', async () => {
@@ -298,18 +318,13 @@ describe('Dashboard Event Code Input', () => {
 			const {router, queryClient} = createTestRouter()
 			render(<RouterProvider router={router} />, {wrapper: createWrapper(queryClient)})
 
-			// Mock fetch to resolve quickly with full event details
-			vi.spyOn(global, 'fetch').mockResolvedValue({
-				ok: true,
-				json: () =>
-					Promise.resolve({
-						success: true,
-						message: 'Registered',
-						eventName: 'Test Event',
-						eventDate: '2025-01-15T10:00:00Z',
-						eventLocation: 'Test Location'
-					})
-			} as Response)
+			// Mock checkInToEvent to resolve quickly with full event details
+			mockCheckInToEvent.mockResolvedValue({
+				success: true,
+				eventName: 'Test Event',
+				eventDate: '2025-01-15T10:00:00Z',
+				eventLocation: 'Test Location'
+			})
 
 			await waitFor(() => {
 				expect(screen.getByTestId('event-code-input')).toBeInTheDocument()
@@ -329,27 +344,20 @@ describe('Dashboard Event Code Input', () => {
 			})
 
 			// Cleanup
-			vi.restoreAllMocks()
+			mockCheckInToEvent.mockReset()
 		})
 	})
 
 	describe('Request Timeout Handling', () => {
-		it('should show timeout error when request takes too long', async () => {
+		it('should show error when server function throws', async () => {
 			const user = userEvent.setup({advanceTimers: vi.advanceTimersByTime})
 			const {router, queryClient} = createTestRouter()
 			render(<RouterProvider router={router} />, {wrapper: createWrapper(queryClient)})
 
-			// Mock fetch to respect abort signal
-			vi.spyOn(global, 'fetch').mockImplementation((_, options) => {
-				return new Promise((_, reject) => {
-					const signal = options?.signal as AbortSignal | undefined
-					if (signal) {
-						signal.addEventListener('abort', () => {
-							reject(new DOMException('The operation was aborted', 'AbortError'))
-						})
-					}
-				})
-			})
+			// Mock checkInToEvent to throw NotFoundError
+			const notFoundError = new Error('Event not found with this code')
+			notFoundError.name = 'NotFoundError'
+			mockCheckInToEvent.mockRejectedValue(notFoundError)
 
 			await waitFor(() => {
 				expect(screen.getByTestId('event-code-input')).toBeInTheDocument()
@@ -358,19 +366,14 @@ describe('Dashboard Event Code Input', () => {
 			// Enter 4 digits to trigger auto-submit
 			await user.keyboard('1234')
 
-			// Advance time past the 3 second timeout - wrap in act for React state updates
-			await act(async () => {
-				vi.advanceTimersByTime(3100)
-			})
-
-			// Should show timeout error message
+			// Should show error message
 			await waitFor(() => {
 				expect(screen.getByTestId('check-in-error')).toBeInTheDocument()
-				expect(screen.getByTestId('check-in-error')).toHaveTextContent(/timed out/i)
+				expect(screen.getByTestId('check-in-error')).toHaveTextContent(/not found/i)
 			})
 
 			// Cleanup
-			vi.restoreAllMocks()
+			mockCheckInToEvent.mockReset()
 		})
 	})
 })

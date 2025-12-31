@@ -21,7 +21,9 @@ export const formTemplatesQueryOptions = () =>
 		queryKey: ['formTemplates'] as const,
 		queryFn: async () => {
 			const response = await fetch('/api/formTemplates')
-			if (!response.ok) throw new Error('Failed to fetch form templates')
+			if (!response.ok) {
+				throw new Error('Failed to fetch form templates')
+			}
 			const data = (await response.json()) as ApiResponse
 			if (!(data.success && data.templates)) {
 				throw new Error(data.error || 'Failed to load form templates')

@@ -53,10 +53,10 @@ test.describe('Concurrent Sessions', () => {
 			await Promise.all([pageA.goto('/dashboard'), pageB.goto('/dashboard')])
 
 			// Both should have access (not redirected to login)
-			// Wait for navigation to complete and check final URL
+			// Wait for dashboard content to be visible (deterministic, avoids networkidle flakiness)
 			await Promise.all([
-				pageA.waitForLoadState('networkidle'),
-				pageB.waitForLoadState('networkidle')
+				pageA.waitForURL(/\/dashboard|\/consent/),
+				pageB.waitForURL(/\/dashboard|\/consent/)
 			])
 
 			// Verify both pages are on protected routes (not redirected away)
@@ -106,11 +106,11 @@ test.describe('Concurrent Sessions', () => {
 
 			// Admin accesses admin route
 			await adminPage.goto('/admin-dashboard')
-			await adminPage.waitForLoadState('networkidle')
+			await adminPage.waitForURL(/\/admin-dashboard|\/dashboard/)
 
 			// Regular user accesses regular protected route
 			await userPage.goto('/dashboard')
-			await userPage.waitForLoadState('networkidle')
+			await userPage.waitForURL(/\/dashboard|\/consent/)
 
 			// Admin should have access to admin route
 			const adminUrl = adminPage.url()
@@ -122,7 +122,7 @@ test.describe('Concurrent Sessions', () => {
 
 			// Verify regular user cannot access admin routes
 			await userPage.goto('/admin-dashboard')
-			await userPage.waitForLoadState('networkidle')
+			await userPage.waitForURL(/\/dashboard|\/authentication/)
 
 			// Regular user should be redirected away from admin route
 			const userAdminAttemptUrl = userPage.url()
@@ -159,11 +159,11 @@ test.describe('Concurrent Sessions', () => {
 
 			// Authenticated user accesses protected route
 			await authPage.goto('/dashboard')
-			await authPage.waitForLoadState('networkidle')
+			await authPage.waitForURL(/\/dashboard|\/consent/)
 
 			// Unauthenticated context tries to access same route
 			await unauthPage.goto('/dashboard')
-			await unauthPage.waitForLoadState('networkidle')
+			await unauthPage.waitForURL(/\/authentication/)
 
 			// Authenticated context should stay on dashboard
 			expect(authPage.url()).not.toContain('/authentication')
@@ -211,8 +211,8 @@ test.describe('Concurrent Sessions', () => {
 			await Promise.all([pageA.goto('/dashboard'), pageB.goto('/dashboard')])
 
 			await Promise.all([
-				pageA.waitForLoadState('networkidle'),
-				pageB.waitForLoadState('networkidle')
+				pageA.waitForURL(/\/authentication|\/dashboard|\/consent/),
+				pageB.waitForURL(/\/dashboard|\/consent/)
 			])
 
 			// Context A (cleared) should be redirected to auth

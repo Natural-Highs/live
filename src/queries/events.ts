@@ -29,7 +29,9 @@ export const eventsQueryOptions = () =>
 		queryKey: ['events'] as const,
 		queryFn: async () => {
 			const response = await fetch('/api/events')
-			if (!response.ok) throw new Error('Failed to fetch events')
+			if (!response.ok) {
+				throw new Error('Failed to fetch events')
+			}
 			const data = (await response.json()) as ApiResponse
 			if (!(data.success && data.events)) {
 				throw new Error(data.error || 'Failed to load events')

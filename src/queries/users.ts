@@ -22,7 +22,9 @@ export const usersQueryOptions = () =>
 		queryKey: ['users'] as const,
 		queryFn: async () => {
 			const response = await fetch('/api/admin/users')
-			if (!response.ok) throw new Error('Failed to fetch users')
+			if (!response.ok) {
+				throw new Error('Failed to fetch users')
+			}
 			const data = (await response.json()) as ApiResponse
 			if (!(data.success && data.users)) {
 				throw new Error(data.error || 'Failed to load users')

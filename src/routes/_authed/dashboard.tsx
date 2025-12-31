@@ -2,7 +2,6 @@ import {useQuery, useQueryClient} from '@tanstack/react-query'
 import {createFileRoute, getRouteApi} from '@tanstack/react-router'
 import {QrCode} from 'lucide-react'
 import {lazy, Suspense, useEffect, useRef, useState} from 'react'
-import {z} from 'zod'
 import {SuccessConfirmation} from '@/components/features/SuccessConfirmation'
 import {Button} from '@/components/ui/button'
 import Greencard from '@/components/ui/GreenCard'
@@ -14,24 +13,14 @@ import {WebsiteLogo} from '@/components/ui/website-logo'
 import {createDefaultAdapter, type QRScannerAdapter} from '@/lib/events/qr-scanner-adapter'
 import {useCameraAvailability} from '@/lib/events/use-camera-availability'
 import {type Event as EventData, eventsQueryOptions} from '@/queries/index.js'
+import {checkInToEvent} from '@/server/functions/events'
 
 // Lazy load QRScanner to reduce initial bundle size
 const QRScanner = lazy(() =>
 	import('@/components/features/QRScanner').then(mod => ({default: mod.QRScanner}))
 )
 
-const eventCodeResponseSchema = z.object({
-	success: z.boolean(),
-	message: z.string().optional(),
-	error: z.string().optional(),
-	eventName: z.string().optional(),
-	eventDate: z.string().nullable().optional(),
-	eventLocation: z.string().optional(),
-	scheduledTime: z.string().optional()
-})
-
 const EVENTS_QUERY_KEY = ['events'] as const
-const REQUEST_TIMEOUT_MS = 3000
 
 const routeApi = getRouteApi('/_authed/dashboard')
 
@@ -49,61 +38,58 @@ interface ConfirmationData {
 	userName: string
 }
 
-// Error message mapping based on API response
+// Error message mapping for server function errors
 const ERROR_MESSAGES = {
 	NOT_FOUND: 'Code not found. Double-check and try again.',
 	DUPLICATE: "You're already checked in for this event",
 	TIME_WINDOW: 'This event is not currently accepting check-ins',
 	NETWORK: 'No connection. Please check your internet.',
-	TIMEOUT: 'Request timed out. Please try again.',
 	DEFAULT: 'Failed to register for event'
 } as const
 
-// Map HTTP status codes and error patterns to user-friendly messages
-function getErrorMessage(status: number, errorText?: string, scheduledTime?: string): string {
-	if (status === 404) return ERROR_MESSAGES.NOT_FOUND
-	if (status === 409) return ERROR_MESSAGES.DUPLICATE
-	if (status === 403) {
-		// Time window error - include scheduled time if available
-		if (scheduledTime) {
-			try {
-				const date = new Date(scheduledTime)
-				if (!Number.isNaN(date.getTime())) {
-					const formatted = date.toLocaleString('en-US', {
-						weekday: 'short',
-						month: 'short',
-						day: 'numeric',
-						hour: 'numeric',
-						minute: '2-digit'
-					})
-					return `${ERROR_MESSAGES.TIME_WINDOW}. Scheduled: ${formatted}`
-				}
-			} catch {
-				// Fall through to default time window message
-			}
-		}
-		return ERROR_MESSAGES.TIME_WINDOW
-	}
+// Map server function errors to user-friendly messages
+function getErrorMessage(error: unknown): string {
+	if (error instanceof Error) {
+		const errorName = error.name
+		const message = error.message
 
-	// Check error text for patterns
-	if (errorText) {
-		const lowerError = errorText.toLowerCase()
-		if (lowerError.includes('not found') || lowerError.includes('invalid')) {
+		if (errorName === 'NotFoundError' || message.includes('not found')) {
 			return ERROR_MESSAGES.NOT_FOUND
 		}
-		if (lowerError.includes('already') || lowerError.includes('duplicate')) {
+		if (errorName === 'ConflictError' || message.includes('already')) {
 			return ERROR_MESSAGES.DUPLICATE
 		}
-		if (
-			lowerError.includes('time') ||
-			lowerError.includes('window') ||
-			lowerError.includes('accepting')
-		) {
+		if (errorName === 'TimeWindowError' || message.includes('accepting')) {
+			// Check for scheduled time in error
+			const timeWindowError = error as {scheduledTime?: string}
+			if (timeWindowError.scheduledTime) {
+				try {
+					const date = new Date(timeWindowError.scheduledTime)
+					if (!Number.isNaN(date.getTime())) {
+						const formatted = date.toLocaleString('en-US', {
+							weekday: 'short',
+							month: 'short',
+							day: 'numeric',
+							hour: 'numeric',
+							minute: '2-digit'
+						})
+						return `${ERROR_MESSAGES.TIME_WINDOW}. Scheduled: ${formatted}`
+					}
+				} catch {
+					// Fall through to default time window message
+				}
+			}
 			return ERROR_MESSAGES.TIME_WINDOW
 		}
+		if (errorName === 'ValidationError') {
+			return ERROR_MESSAGES.NOT_FOUND
+		}
+		if (message.includes('fetch') || message.includes('network')) {
+			return ERROR_MESSAGES.NETWORK
+		}
+		return message || ERROR_MESSAGES.DEFAULT
 	}
-
-	return errorText || ERROR_MESSAGES.DEFAULT
+	return ERROR_MESSAGES.DEFAULT
 }
 
 const SHAKE_ANIMATION_MS = 500
@@ -144,7 +130,9 @@ export function DashboardComponent() {
 
 	useEffect(() => {
 		// Skip if adapter already loaded
-		if (qrAdapter) return
+		if (qrAdapter) {
+			return
+		}
 
 		if (typeof window !== 'undefined' && window.__qrScannerMockConfig) {
 			// E2E test mode: load mock adapter
@@ -176,55 +164,23 @@ export function DashboardComponent() {
 		setConfirmationData(null)
 		setSubmittingCode(true)
 
-		const controller = new AbortController()
-		const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
-
 		try {
-			const response = await fetch('/api/users/eventCode', {
-				method: 'POST',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({eventCode: code}),
-				signal: controller.signal
-			})
-
-			clearTimeout(timeoutId)
-
-			const rawData: unknown = await response.json()
-			const parseResult = eventCodeResponseSchema.safeParse(rawData)
-
-			if (!parseResult.success) {
-				triggerShakeAndClear('Invalid response from server')
-				return
-			}
-
-			const data = parseResult.data
-
-			if (!response.ok || !data.success) {
-				const errorMessage = getErrorMessage(response.status, data.error, data.scheduledTime)
-				triggerShakeAndClear(errorMessage)
-				return
-			}
+			const result = await checkInToEvent({data: {eventCode: code}})
 
 			// Show success confirmation overlay with event details
 			const firstName = auth.user?.displayName?.split(' ')[0] || 'Friend'
 			setConfirmationData({
-				eventName: data.eventName || 'Event',
-				eventDate: data.eventDate || new Date().toISOString(),
-				eventLocation: data.eventLocation || 'Location TBD',
+				eventName: result.eventName,
+				eventDate: result.eventDate || new Date().toISOString(),
+				eventLocation: result.eventLocation,
 				userName: firstName
 			})
 			// Invalidate events query to refresh the list
 			await queryClient.invalidateQueries({queryKey: EVENTS_QUERY_KEY})
 			setSubmittingCode(false)
 		} catch (err) {
-			clearTimeout(timeoutId)
-			if (err instanceof DOMException && err.name === 'AbortError') {
-				triggerShakeAndClear(ERROR_MESSAGES.TIMEOUT)
-			} else if (err instanceof TypeError && (err as Error).message.includes('fetch')) {
-				triggerShakeAndClear(ERROR_MESSAGES.NETWORK)
-			} else {
-				triggerShakeAndClear(err instanceof Error ? err.message : ERROR_MESSAGES.DEFAULT)
-			}
+			const errorMessage = getErrorMessage(err)
+			triggerShakeAndClear(errorMessage)
 		}
 	}
 
@@ -270,7 +226,9 @@ export function DashboardComponent() {
 	}
 
 	const formatDate = (dateString?: string): string => {
-		if (!dateString) return 'TODO: Date TBD'
+		if (!dateString) {
+			return 'TODO: Date TBD'
+		}
 		try {
 			const date = new Date(dateString)
 			return date.toLocaleDateString('en-US', {
@@ -327,7 +285,9 @@ export function DashboardComponent() {
 							onChange={val => {
 								setEventCode(val)
 								// Clear error message when user starts typing again
-								if (error) setError('')
+								if (error) {
+									setError('')
+								}
 							}}
 							onComplete={handleAutoSubmit}
 							data-testid='event-code-input'

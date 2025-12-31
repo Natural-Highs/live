@@ -5,8 +5,8 @@ import {Alert} from '@/components/ui'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
+import {auth} from '@/lib/firebase/firebase.app'
 import type {ConsentFormData} from '@/lib/schemas/consent'
-import {auth} from '$lib/firebase/firebase.app'
 
 interface ConsentFormTemplate {
 	id: string

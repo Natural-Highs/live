@@ -3,12 +3,13 @@
  * Tests data export, admin claims, and response retrieval
  */
 
-import * as authUtils from './utils/auth'
-
 // Mock dependencies
-vi.mock('./utils/auth', () => ({
-	requireAdmin: vi.fn()
+vi.mock('@/server/middleware/auth', () => ({
+	requireAdmin: vi.fn(),
+	requireAuth: vi.fn()
 }))
+
+import {requireAdmin} from '@/server/middleware/auth'
 
 vi.mock('../../lib/firebase/firebase', () => ({
 	db: {
@@ -34,7 +35,7 @@ describe('admin server functions', () => {
 
 	describe('exportData behavior', () => {
 		it('should require admin privileges', () => {
-			expect(authUtils.requireAdmin).toBeDefined()
+			expect(requireAdmin).toBeDefined()
 		})
 
 		it('should support JSON format export', () => {
@@ -66,7 +67,7 @@ describe('admin server functions', () => {
 
 	describe('setAdminClaim behavior', () => {
 		it('should require admin privileges', () => {
-			expect(authUtils.requireAdmin).toBeDefined()
+			expect(requireAdmin).toBeDefined()
 		})
 
 		it('should validate userId is provided', () => {
@@ -90,7 +91,7 @@ describe('admin server functions', () => {
 
 	describe('getResponses behavior', () => {
 		it('should require admin privileges', () => {
-			expect(authUtils.requireAdmin).toBeDefined()
+			expect(requireAdmin).toBeDefined()
 		})
 
 		it('should support filtering by eventId', () => {
@@ -130,7 +131,7 @@ describe('admin server functions', () => {
 
 	describe('getUserByEmail behavior', () => {
 		it('should require admin privileges', () => {
-			expect(authUtils.requireAdmin).toBeDefined()
+			expect(requireAdmin).toBeDefined()
 		})
 
 		it('should validate email is provided', () => {

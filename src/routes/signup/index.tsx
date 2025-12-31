@@ -4,8 +4,8 @@ import {useState} from 'react'
 import {SignUpForm} from '@/components/forms/SignUpForm'
 import {Alert} from '@/components/ui'
 import {PageContainer} from '@/components/ui/page-container'
+import {auth} from '@/lib/firebase/firebase.app'
 import type {SignupAccountData} from '@/lib/schemas/signup'
-import {auth} from '$lib/firebase/firebase.app'
 
 export const Route = createFileRoute('/signup/')({
 	component: SignUpComponent

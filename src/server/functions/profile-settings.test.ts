@@ -94,8 +94,8 @@ import {NotFoundError, ValidationError} from './utils/errors'
 
 // Cast mocks
 const mockRequireAuth = requireAuth as Mock
-const mockAdminDbCollection = (adminDb as {collection: Mock}).collection
-const mockRunTransaction = (adminDb as {runTransaction: Mock}).runTransaction
+const mockAdminDbCollection = (adminDb as unknown as {collection: Mock}).collection
+const mockRunTransaction = (adminDb as unknown as {runTransaction: Mock}).runTransaction
 
 // Import after mocking
 import {

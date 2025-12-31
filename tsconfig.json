@@ -1,6 +1,6 @@
 {
 	"compilerOptions": {
-		"target": "ES2020",
+		"target": "ES2022",
 		"useDefineForClassFields": true,
 		"lib": ["ES2022", "DOM", "DOM.Iterable"],
 		"module": "ESNext",
@@ -23,10 +23,8 @@
 		"tsBuildInfoFile": ".build/tsconfig.tsbuildinfo",
 		"types": ["vitest/globals", "@testing-library/jest-dom", "bun-types"],
 		"paths": {
-			"$lib/*": ["./src/lib/*", "./app/lib/*"],
-			"@/*": ["./src/*", "./app/*"]
+			"@/*": ["./src/*"]
 		}
 	},
-	"include": ["src", "app", "vitest.d.ts", "vite.config.ts", "playwright.config.ts"],
-	"exclude": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx"]
+	"include": ["src", "vite.config.ts", "playwright.config.ts"]
 }

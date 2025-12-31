@@ -8,9 +8,9 @@ import GreenCard from '@/components/ui/GreenCard'
 import {Input} from '@/components/ui/input'
 import {Label} from '@/components/ui/label'
 import {Spinner} from '@/components/ui/spinner'
+import {setEmailForSignIn} from '@/lib/auth/magic-link'
+import {auth} from '@/lib/firebase/firebase.app'
 import {logMagicLinkAttemptFn} from '@/server/functions/auth'
-import {setEmailForSignIn} from '$lib/auth/magic-link'
-import {auth} from '$lib/firebase/firebase.app'
 
 const emailSchema = z.object({
 	email: z.string().email('Invalid email address')

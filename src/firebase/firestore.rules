@@ -219,6 +219,14 @@ service cloud.firestore {
       // No client access - all operations via server functions with admin SDK
       allow read, write: if false;
     }
+
+    // Pending Conversions Collection
+    // Stores guestId before magic link is sent for cross-device guest-to-user conversion
+    // Server-side only access via admin SDK (24h TTL enforced server-side)
+    match /pendingConversions/{email} {
+      // No client access - all operations via server functions with admin SDK
+      allow read, write: if false;
+    }
   }
 }
 

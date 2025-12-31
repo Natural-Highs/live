@@ -1,1 +1,7 @@
+#!/bin/sh
+
+# Auto-fix and format staged files
 npx lint-staged
+
+# Type check (fail-fast on errors)
+bun run lint:tsc

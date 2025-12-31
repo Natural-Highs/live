@@ -10,16 +10,16 @@ vi.mock('firebase/auth', () => ({
 }))
 
 // Mock Firebase app
-vi.mock('$lib/firebase/firebase.app', () => ({
+vi.mock('@/lib/firebase/firebase.app', () => ({
 	auth: {currentUser: null}
 }))
 
 // Mock localStorage helpers
-vi.mock('$lib/auth/magic-link', () => ({
+vi.mock('@/lib/auth/magic-link', () => ({
 	setEmailForSignIn: vi.fn()
 }))
 
-import {setEmailForSignIn} from '$lib/auth/magic-link'
+import {setEmailForSignIn} from '@/lib/auth/magic-link'
 
 describe('MagicLinkRequest', () => {
 	const mockOnSuccess = vi.fn()

@@ -6,6 +6,12 @@
 
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 
+// Mock transaction type for Firebase Admin
+interface MockTransaction {
+	set: ReturnType<typeof vi.fn>
+	delete: ReturnType<typeof vi.fn>
+}
+
 // Mock Firebase Admin
 const mockRunTransaction = vi.fn()
 const mockDocGet = vi.fn()
@@ -169,7 +175,7 @@ describe('passkey server functions', () => {
 			}
 
 			// Call the actual function - this verifies the O(1) pattern is used
-			const _result = await verifyPasskeyAuthenticationFn({data: authResponse})
+			await verifyPasskeyAuthenticationFn({data: authResponse})
 
 			// Verify passkeyCredentials was accessed (O(1) index lookup)
 			expect(vi.mocked(adminDb.collection)).toHaveBeenCalledWith('passkeyCredentials')
@@ -180,7 +186,13 @@ describe('passkey server functions', () => {
 
 		it('should write credential and index atomically via transaction during registration', async () => {
 			const {requireAuth} = await import('@/server/middleware/auth')
-			vi.mocked(requireAuth).mockResolvedValue({uid: 'test-user-123', email: 'test@example.com'})
+			vi.mocked(requireAuth).mockResolvedValue({
+				uid: 'test-user-123',
+				email: 'test@example.com',
+				displayName: null,
+				photoURL: null,
+				claims: {}
+			})
 
 			// Mock existing credentials check (empty)
 			mockCollectionGet.mockResolvedValueOnce({docs: []})
@@ -201,11 +213,12 @@ describe('passkey server functions', () => {
 
 			// Track transaction operations
 			const transactionOps: Array<{op: string; path: string}> = []
-			mockRunTransaction.mockImplementation(async (fn: (t: any) => Promise<void>) => {
-				const mockTxn = {
+			mockRunTransaction.mockImplementation(async (fn: (t: MockTransaction) => Promise<void>) => {
+				const mockTxn: MockTransaction = {
 					set: vi.fn((ref, _data) => {
 						transactionOps.push({op: 'set', path: ref._path || 'unknown'})
-					})
+					}),
+					delete: vi.fn()
 				}
 				await fn(mockTxn)
 			})
@@ -239,7 +252,13 @@ describe('passkey server functions', () => {
 
 		it('should delete credential and index atomically via transaction during removal', async () => {
 			const {requireAuth} = await import('@/server/middleware/auth')
-			vi.mocked(requireAuth).mockResolvedValue({uid: 'test-user-123', email: 'test@example.com'})
+			vi.mocked(requireAuth).mockResolvedValue({
+				uid: 'test-user-123',
+				email: 'test@example.com',
+				displayName: null,
+				photoURL: null,
+				claims: {}
+			})
 
 			// Mock credential exists
 			mockDocGet.mockResolvedValueOnce({
@@ -249,8 +268,8 @@ describe('passkey server functions', () => {
 
 			// Track transaction deletions
 			const deleteOps: string[] = []
-			mockRunTransaction.mockImplementation(async (fn: (t: any) => Promise<void>) => {
-				const mockTxn = {
+			mockRunTransaction.mockImplementation(async (fn: (t: MockTransaction) => Promise<void>) => {
+				const mockTxn: MockTransaction = {
 					delete: vi.fn(ref => {
 						deleteOps.push(ref._path || 'unknown')
 					}),

@@ -76,7 +76,7 @@ export default defineConfig({
 		url: 'http://localhost:3000',
 		timeout: 120_000
 	},
-	// CI: Allow parallel execution per shard (sharding divides tests across jobs)
+	// CI: Use 50% of available cores for parallel execution
 	// Local: Use all available cores
-	workers: isCI ? 2 : undefined
+	workers: isCI ? '50%' : undefined
 })

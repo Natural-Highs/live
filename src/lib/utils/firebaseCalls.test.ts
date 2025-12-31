@@ -3,11 +3,11 @@
  * Following Test Pyramid Balance directive: Unit tests for utility functions
  * Following Incremental Verification directive: Verify this milestone before proceeding
  */
-import {adminDb} from '$lib/firebase/firebase.admin'
+import {adminDb} from '@/lib/firebase/firebase.admin'
 import {fetchById, fetchByQuery} from './firebaseCalls'
 
 // Mock Firestore
-vi.mock('$lib/firebase/firebase.admin', () => ({
+vi.mock('@/lib/firebase/firebase.admin', () => ({
 	adminDb: {
 		collection: vi.fn()
 	}

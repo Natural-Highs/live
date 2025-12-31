@@ -45,7 +45,9 @@ vi.mock('@/lib/firebase/firebase.admin', () => ({
 		verifyIdToken: vi.fn(),
 		revokeRefreshTokens: vi.fn(),
 		getUser: vi.fn()
-	}
+	},
+	// Always false in unit tests - token verification is mocked
+	shouldUseEmulators: false
 }))
 
 // Mock session module before imports

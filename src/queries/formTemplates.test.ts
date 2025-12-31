@@ -22,6 +22,17 @@ describe('formTemplatesQueryOptions', () => {
 		queryClient.clear()
 	})
 
+	// Helper to invoke queryFn with proper context
+	const invokeQueryFn = async () => {
+		const options = formTemplatesQueryOptions()
+		return options.queryFn!({
+			client: queryClient,
+			queryKey: options.queryKey,
+			signal: new AbortController().signal,
+			meta: undefined
+		})
+	}
+
 	describe('queryKey', () => {
 		it('should have correct query key', () => {
 			const options = formTemplatesQueryOptions()
@@ -51,17 +62,15 @@ describe('formTemplatesQueryOptions', () => {
 				}
 			]
 
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: true, templates: mockTemplates})
-			})
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: true, templates: mockTemplates})
+				})
+			)
 
-			const options = formTemplatesQueryOptions()
-			const result = await options.queryFn({
-				queryKey: options.queryKey,
-				signal: new AbortController().signal,
-				meta: undefined
-			})
+			const result = await invokeQueryFn()
 
 			expect(fetch).toHaveBeenCalledWith('/api/formTemplates')
 			expect(result).toHaveLength(3)
@@ -79,33 +88,29 @@ describe('formTemplatesQueryOptions', () => {
 				}
 			]
 
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: true, templates: mockTemplates})
-			})
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: true, templates: mockTemplates})
+				})
+			)
 
-			const options = formTemplatesQueryOptions()
-			const result = await options.queryFn({
-				queryKey: options.queryKey,
-				signal: new AbortController().signal,
-				meta: undefined
-			})
+			const result = await invokeQueryFn()
 
 			expect(result[0].description).toBeUndefined()
 		})
 
 		it('should return empty array when no templates exist', async () => {
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: true, templates: []})
-			})
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: true, templates: []})
+				})
+			)
 
-			const options = formTemplatesQueryOptions()
-			const result = await options.queryFn({
-				queryKey: options.queryKey,
-				signal: new AbortController().signal,
-				meta: undefined
-			})
+			const result = await invokeQueryFn()
 
 			expect(result).toEqual([])
 		})
@@ -113,71 +118,51 @@ describe('formTemplatesQueryOptions', () => {
 
 	describe('queryFn - error handling', () => {
 		it('should throw error when response is not ok', async () => {
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: false,
-				status: 500
-			})
-
-			const options = formTemplatesQueryOptions()
-
-			await expect(
-				options.queryFn({
-					queryKey: options.queryKey,
-					signal: new AbortController().signal,
-					meta: undefined
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: false,
+					status: 500
 				})
-			).rejects.toThrow('Failed to fetch form templates')
+			)
+
+			await expect(invokeQueryFn()).rejects.toThrow('Failed to fetch form templates')
 		})
 
 		it('should throw error when success is false with custom error', async () => {
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: false, error: 'Templates not available'})
-			})
-
-			const options = formTemplatesQueryOptions()
-
-			await expect(
-				options.queryFn({
-					queryKey: options.queryKey,
-					signal: new AbortController().signal,
-					meta: undefined
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: false, error: 'Templates not available'})
 				})
-			).rejects.toThrow('Templates not available')
+			)
+
+			await expect(invokeQueryFn()).rejects.toThrow('Templates not available')
 		})
 
 		it('should throw default error when success is false with no error message', async () => {
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: false})
-			})
-
-			const options = formTemplatesQueryOptions()
-
-			await expect(
-				options.queryFn({
-					queryKey: options.queryKey,
-					signal: new AbortController().signal,
-					meta: undefined
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: false})
 				})
-			).rejects.toThrow('Failed to load form templates')
+			)
+
+			await expect(invokeQueryFn()).rejects.toThrow('Failed to load form templates')
 		})
 
 		it('should throw error when templates array is missing', async () => {
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: true})
-			})
-
-			const options = formTemplatesQueryOptions()
-
-			await expect(
-				options.queryFn({
-					queryKey: options.queryKey,
-					signal: new AbortController().signal,
-					meta: undefined
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: true})
 				})
-			).rejects.toThrow('Failed to load form templates')
+			)
+
+			await expect(invokeQueryFn()).rejects.toThrow('Failed to load form templates')
 		})
 	})
 })

@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# Validate conventional commit format
+commit_msg_file=$1
+commit_msg=$(cat "$commit_msg_file")
+
+# Pattern: type(scope): description
+pattern="^(feat|fix|docs|style|refactor|test|chore|ci|perf|build)(\(.+\))?: .{1,72}$"
+
+if ! echo "$commit_msg" | head -1 | grep -qE "$pattern"; then
+	echo "Error: Commit message does not follow conventional format."
+	echo ""
+	echo "Expected: type(scope): description"
+	echo "Types: feat, fix, docs, style, refactor, test, chore, ci, perf, build"
+	echo ""
+	echo "Examples:"
+	echo "  feat(auth): add magic link authentication"
+	echo "  fix(guest): resolve check-in validation error"
+	echo "  chore: update dependencies"
+	echo ""
+	echo "Your message: $commit_msg"
+	exit 1
+fi

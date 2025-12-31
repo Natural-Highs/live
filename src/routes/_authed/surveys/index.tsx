@@ -42,7 +42,9 @@ function SurveysListComponent() {
 	const {surveys} = Route.useLoaderData()
 
 	const formatDate = (dateString?: string | Date): string => {
-		if (!dateString) return 'Date TBD'
+		if (!dateString) {
+			return 'Date TBD'
+		}
 		try {
 			const date = typeof dateString === 'string' ? new Date(dateString) : dateString
 			return date.toLocaleDateString('en-US', {
@@ -58,13 +60,17 @@ function SurveysListComponent() {
 	}
 
 	const getTimeUntilAccessible = (accessibleAt?: string | Date): string | null => {
-		if (!accessibleAt) return null
+		if (!accessibleAt) {
+			return null
+		}
 		try {
 			const date = typeof accessibleAt === 'string' ? new Date(accessibleAt) : accessibleAt
 			const now = new Date()
 			const diff = date.getTime() - now.getTime()
 
-			if (diff <= 0) return null
+			if (diff <= 0) {
+				return null
+			}
 
 			const hours = Math.floor(diff / (1000 * 60 * 60))
 			const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))

@@ -13,8 +13,7 @@ export const eventCodeSchema = z
 // User ID pattern
 export const userIdSchema = z.string().min(1)
 
-// Email validation
-export const emailSchema = z.string().email()
+export const emailSchema = z.email().transform(e => e.toLowerCase().trim())
 
 // ISO timestamp validation
 export const isoTimestampSchema = z.string().datetime()

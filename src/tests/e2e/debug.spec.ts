@@ -18,17 +18,14 @@ test('debug: verify auth state with proper hydration', async ({page, context}) =
 	const dashboardLink = page.locator('text=Dashboard')
 	const loginLink = page.locator('text=Login')
 
-	const _hasDashboard = await dashboardLink.count()
-	const _hasLogin = await loginLink.count()
-
-	// Check the debug state
-	const _debugState = await page.evaluate(() => {
+	// Debug: capture state for inspection (test is for debugging auth hydration)
+	void (await dashboardLink.count())
+	void (await loginLink.count())
+	void (await page.evaluate(() => {
 		const win = window as Window & {
 			__AUTH_DEBUG__?: {loading: boolean; user: unknown; admin: boolean}
 		}
 		return win.__AUTH_DEBUG__
-	})
-
-	// Check nav content
-	const _navText = await page.locator('nav').textContent()
+	}))
+	void (await page.locator('nav').textContent())
 })

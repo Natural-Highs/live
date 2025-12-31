@@ -1,6 +1,6 @@
 import {createFileRoute} from '@tanstack/react-router'
 import {z} from 'zod'
-import {adminAuth} from '$lib/firebase/firebase.admin'
+import {adminAuth} from '@/lib/firebase/firebase.admin'
 
 const sessionLoginSchema = z.object({
 	idToken: z.string().min(1, 'ID token is required')

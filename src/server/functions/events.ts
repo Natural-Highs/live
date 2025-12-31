@@ -1,14 +1,16 @@
 import {createServerFn} from '@tanstack/react-start'
+import {FieldValue} from 'firebase-admin/firestore'
 import {requireAdmin, requireAuth} from '@/server/middleware/auth'
 import {isValidEventCodeFormat} from '../../lib/events/event-validation'
 import {db} from '../../lib/firebase/firebase'
 import {
 	activateEventSchema,
+	checkInToEventSchema,
 	getEventByCodeSchema,
 	overrideSurveyTimingSchema
 } from '../schemas/events'
 import type {EventDocument} from '../types/events'
-import {NotFoundError, ValidationError} from './utils/errors'
+import {ConflictError, NotFoundError, TimeWindowError, ValidationError} from './utils/errors'
 
 /**
  * Get event by 4-digit event code
@@ -144,3 +146,103 @@ async function generateUniqueEventCode(): Promise<string> {
 
 	throw new Error('Failed to generate unique event code after 10 attempts')
 }
+
+/**
+ * Check in authenticated user to an event
+ * Validates event code, checks for duplicates, and registers user
+ */
+export const checkInToEvent = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => checkInToEventSchema.parse(d))
+	.handler(async ({data}) => {
+		const user = await requireAuth()
+		const {eventCode} = data
+
+		if (!isValidEventCodeFormat(eventCode)) {
+			throw new ValidationError('Invalid event code format')
+		}
+
+		// Find event by code
+		const eventsRef = db.collection('events')
+		const snapshot = await eventsRef
+			.where('eventCode', '==', eventCode)
+			.where('isActive', '==', true)
+			.limit(1)
+			.get()
+
+		if (snapshot.empty) {
+			throw new NotFoundError('Event not found with this code')
+		}
+
+		const eventDoc = snapshot.docs[0]
+		const eventData = eventDoc.data()
+
+		// Check if user is already registered
+		const existingRegistration = await db
+			.collection('userEvents')
+			.where('userId', '==', user.uid)
+			.where('eventId', '==', eventDoc.id)
+			.limit(1)
+			.get()
+
+		if (!existingRegistration.empty) {
+			throw new ConflictError("You're already checked in for this event")
+		}
+
+		// Also check legacy participants array
+		if (eventData.participants?.includes(user.uid)) {
+			throw new ConflictError("You're already checked in for this event")
+		}
+
+		// Check time window if event has start/end dates
+		const now = new Date()
+		if (eventData.startDate) {
+			const startDate = eventData.startDate.toDate
+				? eventData.startDate.toDate()
+				: new Date(eventData.startDate)
+			// Allow check-in starting 30 minutes before event
+			const checkInStart = new Date(startDate.getTime() - 30 * 60 * 1000)
+			if (now < checkInStart) {
+				throw new TimeWindowError(
+					'This event is not currently accepting check-ins',
+					startDate.toISOString()
+				)
+			}
+		}
+
+		if (eventData.endDate) {
+			const endDate = eventData.endDate.toDate
+				? eventData.endDate.toDate()
+				: new Date(eventData.endDate)
+			// Allow check-in up to 2 hours after event ends
+			const checkInEnd = new Date(endDate.getTime() + 2 * 60 * 60 * 1000)
+			if (now > checkInEnd) {
+				throw new TimeWindowError('This event is no longer accepting check-ins')
+			}
+		}
+
+		// Create userEvent record
+		const registeredAt = new Date()
+		await db.collection('userEvents').add({
+			userId: user.uid,
+			eventId: eventDoc.id,
+			registeredAt,
+			createdAt: registeredAt
+		})
+
+		// Update event participants using atomic arrayUnion
+		await db
+			.collection('events')
+			.doc(eventDoc.id)
+			.update({
+				participants: FieldValue.arrayUnion(user.uid),
+				currentParticipants: FieldValue.increment(1),
+				updatedAt: new Date()
+			})
+
+		return {
+			success: true,
+			eventName: eventData.name || 'Event',
+			eventDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate ?? null,
+			eventLocation: eventData.location || 'Location TBD'
+		}
+	})
