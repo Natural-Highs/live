@@ -47,6 +47,20 @@ import {
 	revokeSessionsOnPasskeyRemoval
 } from './revoke-sessions'
 
+// Type helpers for server function calls (TanStack Start infers undefined without .validator())
+type RevokeMySessionsInput = {data: {reason?: 'passkey_removed' | 'user_request'}}
+type AdminRevokeSessionsInput = {
+	data: {userId: string; reason?: 'admin_action' | 'credential_change'}
+}
+
+const invokeRevokeMySessionsFn = revokeMySessionsFn as unknown as (
+	input: RevokeMySessionsInput
+) => Promise<{success: boolean; message: string}>
+
+const invokeAdminRevokeSessionsFn = adminRevokeSessionsFn as unknown as (
+	input: AdminRevokeSessionsInput
+) => Promise<{success: boolean; message: string; revokedBy: string}>
+
 const mockRevokeRefreshTokens = adminAuth.revokeRefreshTokens as Mock
 const mockGetUser = adminAuth.getUser as Mock
 const mockClearSession = clearSession as Mock
@@ -69,7 +83,7 @@ describe('revoke-sessions', () => {
 			mockClearSession.mockResolvedValue(undefined)
 
 			// Act
-			const result = await revokeMySessionsFn({data: {}})
+			const result = await invokeRevokeMySessionsFn({data: {}})
 
 			// Assert
 			expect(result.success).toBe(true)
@@ -88,7 +102,7 @@ describe('revoke-sessions', () => {
 			mockClearSession.mockResolvedValue(undefined)
 
 			// Act
-			const result = await revokeMySessionsFn({
+			const result = await invokeRevokeMySessionsFn({
 				data: {reason: 'user_request'}
 			})
 
@@ -106,7 +120,7 @@ describe('revoke-sessions', () => {
 			mockClearSession.mockResolvedValue(undefined)
 
 			// Act
-			const result = await revokeMySessionsFn({
+			const result = await invokeRevokeMySessionsFn({
 				data: {reason: 'passkey_removed'}
 			})
 
@@ -119,7 +133,7 @@ describe('revoke-sessions', () => {
 			mockGetSessionData.mockResolvedValue({})
 
 			// Act & Assert
-			await expect(revokeMySessionsFn({data: {}})).rejects.toThrow('Authentication required')
+			await expect(invokeRevokeMySessionsFn({data: {}})).rejects.toThrow('Authentication required')
 		})
 
 		it('should throw on Firebase error', async () => {
@@ -131,7 +145,9 @@ describe('revoke-sessions', () => {
 			mockRevokeRefreshTokens.mockRejectedValue(new Error('Firebase error'))
 
 			// Act & Assert
-			await expect(revokeMySessionsFn({data: {}})).rejects.toThrow('Failed to revoke sessions')
+			await expect(invokeRevokeMySessionsFn({data: {}})).rejects.toThrow(
+				'Failed to revoke sessions'
+			)
 		})
 	})
 
@@ -149,7 +165,7 @@ describe('revoke-sessions', () => {
 			mockRevokeRefreshTokens.mockResolvedValue(undefined)
 
 			// Act
-			const result = await adminRevokeSessionsFn({
+			const result = await invokeAdminRevokeSessionsFn({
 				data: {userId: 'target-user-456'}
 			})
 
@@ -168,9 +184,9 @@ describe('revoke-sessions', () => {
 			})
 
 			// Act & Assert
-			await expect(adminRevokeSessionsFn({data: {userId: 'target-user-456'}})).rejects.toThrow(
-				'Admin privileges required'
-			)
+			await expect(
+				invokeAdminRevokeSessionsFn({data: {userId: 'target-user-456'}})
+			).rejects.toThrow('Admin privileges required')
 		})
 
 		it('should prevent admin from revoking their own sessions', async () => {
@@ -185,7 +201,7 @@ describe('revoke-sessions', () => {
 			})
 
 			// Act & Assert
-			await expect(adminRevokeSessionsFn({data: {userId: 'admin-123'}})).rejects.toThrow(
+			await expect(invokeAdminRevokeSessionsFn({data: {userId: 'admin-123'}})).rejects.toThrow(
 				'Cannot revoke your own sessions'
 			)
 		})
@@ -202,7 +218,7 @@ describe('revoke-sessions', () => {
 			})
 
 			// Act & Assert
-			await expect(adminRevokeSessionsFn({data: {userId: ''}})).rejects.toThrow()
+			await expect(invokeAdminRevokeSessionsFn({data: {userId: ''}})).rejects.toThrow()
 		})
 
 		it('should accept admin_action reason', async () => {
@@ -218,7 +234,7 @@ describe('revoke-sessions', () => {
 			mockRevokeRefreshTokens.mockResolvedValue(undefined)
 
 			// Act
-			const result = await adminRevokeSessionsFn({
+			const result = await invokeAdminRevokeSessionsFn({
 				data: {userId: 'target-user-456', reason: 'admin_action'}
 			})
 
@@ -239,7 +255,7 @@ describe('revoke-sessions', () => {
 			mockRevokeRefreshTokens.mockResolvedValue(undefined)
 
 			// Act
-			const result = await adminRevokeSessionsFn({
+			const result = await invokeAdminRevokeSessionsFn({
 				data: {userId: 'target-user-456', reason: 'credential_change'}
 			})
 

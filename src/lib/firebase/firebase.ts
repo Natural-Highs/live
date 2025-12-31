@@ -51,11 +51,6 @@ if (admin.apps.length === 0) {
 			credential: admin.credential.cert(serviceAccount),
 			storageBucket
 		})
-
-		admin.firestore().settings({
-			host: 'localhost:8080',
-			ssl: false
-		})
 	}
 
 	if (process.env.MODE === 'development') {
@@ -65,4 +60,21 @@ if (admin.apps.length === 0) {
 
 export const db = admin.firestore()
 export const auth = admin.auth()
-export const bucket = admin.storage().bucket()
+
+// Lazy bucket initialization to avoid errors when storage bucket isn't configured
+// (e.g., when only using Firestore/Auth emulators without Storage emulator)
+let _bucket: ReturnType<typeof admin.storage.prototype.bucket> | undefined
+export const getBucket = () => {
+	if (!_bucket) {
+		_bucket = admin.storage().bucket()
+	}
+	return _bucket
+}
+
+// Deprecated: Use getBucket() instead. Kept for backwards compatibility
+// but wrapped in a getter to make it lazy
+export const bucket = new Proxy({} as ReturnType<typeof admin.storage.prototype.bucket>, {
+	get(_, prop) {
+		return getBucket()[prop as keyof ReturnType<typeof admin.storage.prototype.bucket>]
+	}
+})

@@ -1,4 +1,5 @@
 import {createServerFn} from '@tanstack/react-start'
+import {requireAdmin} from '@/server/middleware/auth'
 import {auth, db} from '../../lib/firebase/firebase'
 import {buildCustomClaims} from '../../lib/utils/custom-claims'
 import {
@@ -7,7 +8,6 @@ import {
 	getUserByEmailSchema,
 	setAdminClaimSchema
 } from '../schemas/admin'
-import {requireAdmin} from './utils/auth'
 import {NotFoundError} from './utils/errors'
 
 /**

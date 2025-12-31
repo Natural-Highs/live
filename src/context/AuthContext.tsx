@@ -2,13 +2,13 @@ import {useRouterState} from '@tanstack/react-router'
 import {getIdTokenResult, onAuthStateChanged, type User} from 'firebase/auth'
 import type React from 'react'
 import {createContext, type ReactNode, useContext, useEffect, useRef, useState} from 'react'
-import type {SessionAuthContext} from '@/routes/__root'
-import {auth} from '$lib/firebase/firebase.app'
+import {auth} from '@/lib/firebase/firebase.app'
 import {
 	checkGracePeriodSync,
 	type GracePeriodState,
 	recordValidAuth
-} from '$lib/session/grace-period'
+} from '@/lib/session/grace-period'
+import type {SessionAuthContext} from '@/routes/__root'
 import type {AuthContextUserData} from './types/authContext'
 
 interface AuthContextType {
@@ -108,7 +108,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
 
 	// Grace period check effect - runs when auth service availability changes
 	useEffect(() => {
-		if (!mounted) return
+		if (!mounted) {
+			return
+		}
 
 		const gracePeriodState = checkGracePeriodSync(authServiceAvailable)
 		setAuthState(prev => ({
@@ -119,7 +121,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
 
 	// Second effect: handle auth (only runs after mounted)
 	useEffect(() => {
-		if (!mounted) return
+		if (!mounted) {
+			return
+		}
 
 		// SSR-safe: Skip auth subscription if auth is not initialized
 		if (!auth) {

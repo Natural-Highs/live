@@ -89,24 +89,6 @@ async function mockTemplatesApi(page: import('@playwright/test').Page) {
 	})
 }
 
-/**
- * Helper to mock event activation API
- */
-async function _mockEventActivation(page: import('@playwright/test').Page, code = '5678') {
-	await page.route('**/api/events/*/activate', route => {
-		route.fulfill({
-			status: 200,
-			contentType: 'application/json',
-			body: JSON.stringify({
-				success: true,
-				code,
-				activatedAt: new Date().toISOString(),
-				surveyAccessibleAt: new Date(Date.now() + 7200000).toISOString()
-			})
-		})
-	})
-}
-
 test.describe('Admin Event Management', () => {
 	test.describe('AC3: Admin Event Creation', () => {
 		test('should display admin events page for admin users', async ({page, adminUser}) => {

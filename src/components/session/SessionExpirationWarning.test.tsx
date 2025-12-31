@@ -7,7 +7,15 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {SessionExpirationWarning} from './SessionExpirationWarning'
 
 // Mock the useRouterAuth hook
-const mockRouterAuth = {
+const mockRouterAuth: {
+	user: null
+	isAuthenticated: boolean
+	hasConsent: boolean
+	isAdmin: boolean
+	hasPasskey: boolean
+	isSessionExpiring: boolean
+	sessionExpiresAt: string | null
+} = {
 	user: null,
 	isAuthenticated: false,
 	hasConsent: false,

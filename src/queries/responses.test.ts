@@ -22,6 +22,17 @@ describe('responsesQueryOptions', () => {
 		queryClient.clear()
 	})
 
+	// Helper to invoke queryFn with proper context
+	const invokeQueryFn = async (filters?: ResponseFilters) => {
+		const options = responsesQueryOptions(filters)
+		return options.queryFn!({
+			client: queryClient,
+			queryKey: options.queryKey,
+			signal: new AbortController().signal,
+			meta: undefined
+		})
+	}
+
 	describe('queryKey', () => {
 		it('should have correct query key without filters', () => {
 			const options = responsesQueryOptions()
@@ -60,17 +71,15 @@ describe('responsesQueryOptions', () => {
 				}
 			]
 
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: true, responses: mockResponses})
-			})
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: true, responses: mockResponses})
+				})
+			)
 
-			const options = responsesQueryOptions()
-			const result = await options.queryFn({
-				queryKey: options.queryKey,
-				signal: new AbortController().signal,
-				meta: undefined
-			})
+			const result = await invokeQueryFn()
 
 			expect(fetch).toHaveBeenCalledWith('/api/admin/responses')
 			expect(result).toHaveLength(1)
@@ -78,41 +87,37 @@ describe('responsesQueryOptions', () => {
 		})
 
 		it('should include eventId filter in URL', async () => {
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: true, responses: []})
-			})
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: true, responses: []})
+				})
+			)
 
 			const filters: ResponseFilters = {eventId: 'event-123'}
-			const options = responsesQueryOptions(filters)
-			await options.queryFn({
-				queryKey: options.queryKey,
-				signal: new AbortController().signal,
-				meta: undefined
-			})
+			await invokeQueryFn(filters)
 
 			expect(fetch).toHaveBeenCalledWith('/api/admin/responses?eventId=event-123')
 		})
 
 		it('should include all filters in URL', async () => {
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: true, responses: []})
-			})
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: true, responses: []})
+				})
+			)
 
 			const filters: ResponseFilters = {
 				eventId: 'event-1',
 				startDate: '2025-01-01',
 				endDate: '2025-12-31'
 			}
-			const options = responsesQueryOptions(filters)
-			await options.queryFn({
-				queryKey: options.queryKey,
-				signal: new AbortController().signal,
-				meta: undefined
-			})
+			await invokeQueryFn(filters)
 
-			const calledUrl = (fetch as ReturnType<typeof vi.fn>).mock.calls[0][0] as string
+			const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string
 			expect(calledUrl).toContain('eventId=event-1')
 			expect(calledUrl).toContain('startDate=2025-01-01')
 			expect(calledUrl).toContain('endDate=2025-12-31')
@@ -133,17 +138,15 @@ describe('responsesQueryOptions', () => {
 				}
 			]
 
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: true, responses: mockResponses})
-			})
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: true, responses: mockResponses})
+				})
+			)
 
-			const options = responsesQueryOptions()
-			const result = await options.queryFn({
-				queryKey: options.queryKey,
-				signal: new AbortController().signal,
-				meta: undefined
-			})
+			const result = await invokeQueryFn()
 
 			expect(result[0].createdAt).toEqual(mockDate)
 		})
@@ -163,17 +166,15 @@ describe('responsesQueryOptions', () => {
 				}
 			]
 
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: true, responses: mockResponses})
-			})
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: true, responses: mockResponses})
+				})
+			)
 
-			const options = responsesQueryOptions()
-			const result = await options.queryFn({
-				queryKey: options.queryKey,
-				signal: new AbortController().signal,
-				meta: undefined
-			})
+			const result = await invokeQueryFn()
 
 			expect(result[0].createdAt).toBeInstanceOf(Date)
 		})
@@ -192,17 +193,15 @@ describe('responsesQueryOptions', () => {
 				}
 			]
 
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: true, responses: mockResponses})
-			})
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: true, responses: mockResponses})
+				})
+			)
 
-			const options = responsesQueryOptions()
-			const result = await options.queryFn({
-				queryKey: options.queryKey,
-				signal: new AbortController().signal,
-				meta: undefined
-			})
+			const result = await invokeQueryFn()
 
 			expect(result[0].user).toBeNull()
 			expect(result[0].survey).toBeNull()
@@ -211,71 +210,51 @@ describe('responsesQueryOptions', () => {
 
 	describe('queryFn - error handling', () => {
 		it('should throw error when response is not ok', async () => {
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: false,
-				status: 403
-			})
-
-			const options = responsesQueryOptions()
-
-			await expect(
-				options.queryFn({
-					queryKey: options.queryKey,
-					signal: new AbortController().signal,
-					meta: undefined
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: false,
+					status: 403
 				})
-			).rejects.toThrow('Failed to fetch responses')
+			)
+
+			await expect(invokeQueryFn()).rejects.toThrow('Failed to fetch responses')
 		})
 
 		it('should throw error when success is false with custom error', async () => {
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: false, error: 'Unauthorized access'})
-			})
-
-			const options = responsesQueryOptions()
-
-			await expect(
-				options.queryFn({
-					queryKey: options.queryKey,
-					signal: new AbortController().signal,
-					meta: undefined
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: false, error: 'Unauthorized access'})
 				})
-			).rejects.toThrow('Unauthorized access')
+			)
+
+			await expect(invokeQueryFn()).rejects.toThrow('Unauthorized access')
 		})
 
 		it('should throw default error when success is false with no error message', async () => {
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: false})
-			})
-
-			const options = responsesQueryOptions()
-
-			await expect(
-				options.queryFn({
-					queryKey: options.queryKey,
-					signal: new AbortController().signal,
-					meta: undefined
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: false})
 				})
-			).rejects.toThrow('Failed to load responses')
+			)
+
+			await expect(invokeQueryFn()).rejects.toThrow('Failed to load responses')
 		})
 
 		it('should throw error when responses array is missing', async () => {
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: true})
-			})
-
-			const options = responsesQueryOptions()
-
-			await expect(
-				options.queryFn({
-					queryKey: options.queryKey,
-					signal: new AbortController().signal,
-					meta: undefined
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: true})
 				})
-			).rejects.toThrow('Failed to load responses')
+			)
+
+			await expect(invokeQueryFn()).rejects.toThrow('Failed to load responses')
 		})
 	})
 })

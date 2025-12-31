@@ -7,7 +7,12 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {GracePeriodBanner} from './GracePeriodBanner'
 
 // Mock the useAuth hook
-const mockGracePeriod = {
+const mockGracePeriod: {
+	isInGracePeriod: boolean
+	gracePeriodEndsAt: Date | null
+	authServiceAvailable: boolean
+	minutesRemaining: number
+} = {
 	isInGracePeriod: false,
 	gracePeriodEndsAt: null,
 	authServiceAvailable: true,

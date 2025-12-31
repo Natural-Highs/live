@@ -41,13 +41,17 @@ export function SurveyCreatorComponent({surveyJson, onSave, onCancel}: SurveyCre
 		let isMounted = true
 
 		const initCreator = async () => {
-			if (!creatorRef.current || surveyCreatorRef.current) return
+			if (!creatorRef.current || surveyCreatorRef.current) {
+				return
+			}
 
 			try {
 				// Dynamic import to avoid blocking initial page load
 				const {SurveyCreatorModel} = await import('survey-creator-core')
 
-				if (!(isMounted && creatorRef.current)) return
+				if (!(isMounted && creatorRef.current)) {
+					return
+				}
 
 				const options = {
 					showLogicTab: true,

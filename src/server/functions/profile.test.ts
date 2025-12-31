@@ -76,9 +76,10 @@ import {NotFoundError, ValidationError} from './utils/errors'
 const mockRequireAuth = requireAuth as Mock
 const mockGetSessionData = getSessionData as Mock
 const mockUpdateSession = updateSession as Mock
-const mockGetUser = (adminAuth as {getUser: Mock}).getUser
-const mockSetCustomUserClaims = (adminAuth as {setCustomUserClaims: Mock}).setCustomUserClaims
-const mockAdminDbCollection = (adminDb as {collection: Mock}).collection
+const mockGetUser = (adminAuth as unknown as {getUser: Mock}).getUser
+const mockSetCustomUserClaims = (adminAuth as unknown as {setCustomUserClaims: Mock})
+	.setCustomUserClaims
+const mockAdminDbCollection = (adminDb as unknown as {collection: Mock}).collection
 
 // Import after mocking
 import {

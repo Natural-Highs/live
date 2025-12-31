@@ -65,16 +65,28 @@ export interface DemographicHistoryRecord {
  * Handles arrays, nulls, and primitives.
  */
 function valuesChanged(oldVal: unknown, newVal: unknown): boolean {
-	if (oldVal === newVal) return false
-	if (oldVal === null && newVal === null) return false
-	if (oldVal === undefined && newVal === undefined) return false
-	if (oldVal === '' && (newVal === null || newVal === undefined)) return false
-	if ((oldVal === null || oldVal === undefined) && newVal === '') return false
+	if (oldVal === newVal) {
+		return false
+	}
+	if (oldVal === null && newVal === null) {
+		return false
+	}
+	if (oldVal === undefined && newVal === undefined) {
+		return false
+	}
+	if (oldVal === '' && (newVal === null || newVal === undefined)) {
+		return false
+	}
+	if ((oldVal === null || oldVal === undefined) && newVal === '') {
+		return false
+	}
 
 	// Handle array comparisons (note: if one value is array and other is null/undefined,
 	// falls through to line 79 which correctly returns true - intentional for mixed array/primitive)
 	if (Array.isArray(oldVal) && Array.isArray(newVal)) {
-		if (oldVal.length !== newVal.length) return true
+		if (oldVal.length !== newVal.length) {
+			return true
+		}
 		return !oldVal.every((v, i) => v === newVal[i])
 	}
 

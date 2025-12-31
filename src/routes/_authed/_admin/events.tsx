@@ -152,7 +152,9 @@ function EventsPage() {
 
 	const handleUpdateEventType = async (e: React.FormEvent) => {
 		e.preventDefault()
-		if (!selectedEventType) return
+		if (!selectedEventType) {
+			return
+		}
 
 		setError('')
 
@@ -187,7 +189,9 @@ function EventsPage() {
 	}
 
 	const handleDeleteEventType = async () => {
-		if (!selectedEventType) return
+		if (!selectedEventType) {
+			return
+		}
 
 		setError('')
 
@@ -215,7 +219,9 @@ function EventsPage() {
 	}
 
 	const handleActivateEvent = async () => {
-		if (!selectedEvent) return
+		if (!selectedEvent) {
+			return
+		}
 
 		setError('')
 
@@ -310,13 +316,17 @@ function EventsPage() {
 	}, [])
 
 	const formatDate = useCallback((date: Date | string | null | undefined): string => {
-		if (!date) return 'N/A'
+		if (!date) {
+			return 'N/A'
+		}
 		const d = typeof date === 'string' ? new Date(date) : date
 		return d.toLocaleDateString()
 	}, [])
 
 	const formatDateTime = (date: Date | string | null | undefined): string => {
-		if (!date) return 'N/A'
+		if (!date) {
+			return 'N/A'
+		}
 		const d = typeof date === 'string' ? new Date(date) : date
 		return d.toLocaleString()
 	}

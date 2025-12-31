@@ -22,6 +22,17 @@ describe('eventTypesQueryOptions', () => {
 		queryClient.clear()
 	})
 
+	// Helper to invoke queryFn with proper context
+	const invokeQueryFn = async () => {
+		const options = eventTypesQueryOptions()
+		return options.queryFn!({
+			client: queryClient,
+			queryKey: options.queryKey,
+			signal: new AbortController().signal,
+			meta: undefined
+		})
+	}
+
 	describe('queryKey', () => {
 		it('should have correct query key', () => {
 			const options = eventTypesQueryOptions()
@@ -48,17 +59,15 @@ describe('eventTypesQueryOptions', () => {
 				}
 			]
 
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: true, eventTypes: mockEventTypes})
-			})
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: true, eventTypes: mockEventTypes})
+				})
+			)
 
-			const options = eventTypesQueryOptions()
-			const result = await options.queryFn({
-				queryKey: options.queryKey,
-				signal: new AbortController().signal,
-				meta: undefined
-			})
+			const result = await invokeQueryFn()
 
 			expect(fetch).toHaveBeenCalledWith('/api/eventTypes')
 			expect(result).toHaveLength(2)
@@ -74,34 +83,30 @@ describe('eventTypesQueryOptions', () => {
 				}
 			]
 
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: true, eventTypes: mockEventTypes})
-			})
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: true, eventTypes: mockEventTypes})
+				})
+			)
 
-			const options = eventTypesQueryOptions()
-			const result = await options.queryFn({
-				queryKey: options.queryKey,
-				signal: new AbortController().signal,
-				meta: undefined
-			})
+			const result = await invokeQueryFn()
 
 			expect(result[0].defaultConsentFormTemplateId).toBeUndefined()
 			expect(result[0].defaultDemographicsFormTemplateId).toBeUndefined()
 		})
 
 		it('should return empty array when no event types exist', async () => {
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: true, eventTypes: []})
-			})
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: true, eventTypes: []})
+				})
+			)
 
-			const options = eventTypesQueryOptions()
-			const result = await options.queryFn({
-				queryKey: options.queryKey,
-				signal: new AbortController().signal,
-				meta: undefined
-			})
+			const result = await invokeQueryFn()
 
 			expect(result).toEqual([])
 		})
@@ -109,71 +114,51 @@ describe('eventTypesQueryOptions', () => {
 
 	describe('queryFn - error handling', () => {
 		it('should throw error when response is not ok', async () => {
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: false,
-				status: 404
-			})
-
-			const options = eventTypesQueryOptions()
-
-			await expect(
-				options.queryFn({
-					queryKey: options.queryKey,
-					signal: new AbortController().signal,
-					meta: undefined
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: false,
+					status: 404
 				})
-			).rejects.toThrow('Failed to fetch event types')
+			)
+
+			await expect(invokeQueryFn()).rejects.toThrow('Failed to fetch event types')
 		})
 
 		it('should throw error when success is false with custom error', async () => {
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: false, error: 'Event types not configured'})
-			})
-
-			const options = eventTypesQueryOptions()
-
-			await expect(
-				options.queryFn({
-					queryKey: options.queryKey,
-					signal: new AbortController().signal,
-					meta: undefined
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: false, error: 'Event types not configured'})
 				})
-			).rejects.toThrow('Event types not configured')
+			)
+
+			await expect(invokeQueryFn()).rejects.toThrow('Event types not configured')
 		})
 
 		it('should throw default error when success is false with no error message', async () => {
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: false})
-			})
-
-			const options = eventTypesQueryOptions()
-
-			await expect(
-				options.queryFn({
-					queryKey: options.queryKey,
-					signal: new AbortController().signal,
-					meta: undefined
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: false})
 				})
-			).rejects.toThrow('Failed to load event types')
+			)
+
+			await expect(invokeQueryFn()).rejects.toThrow('Failed to load event types')
 		})
 
 		it('should throw error when eventTypes array is missing', async () => {
-			global.fetch = vi.fn().mockResolvedValue({
-				ok: true,
-				json: () => Promise.resolve({success: true})
-			})
-
-			const options = eventTypesQueryOptions()
-
-			await expect(
-				options.queryFn({
-					queryKey: options.queryKey,
-					signal: new AbortController().signal,
-					meta: undefined
+			vi.stubGlobal(
+				'fetch',
+				vi.fn().mockResolvedValue({
+					ok: true,
+					json: () => Promise.resolve({success: true})
 				})
-			).rejects.toThrow('Failed to load event types')
+			)
+
+			await expect(invokeQueryFn()).rejects.toThrow('Failed to load event types')
 		})
 	})
 })

@@ -43,12 +43,7 @@ vi.mock('@/lib/firebase/firebase.admin', () => ({
 
 import type {Mock} from 'vitest'
 import {adminAuth} from '@/lib/firebase/firebase.admin'
-import {
-	clearSession,
-	getSessionData,
-	updateSession,
-	validateSessionEnvironment
-} from '@/lib/session'
+import {clearSession, getSessionData, validateSessionEnvironment} from '@/lib/session'
 import {AuthenticationError} from '../functions/utils/errors'
 
 // Cast mocks
@@ -56,7 +51,6 @@ const mockGetSessionData = getSessionData as Mock
 const mockValidateSessionEnvironment = validateSessionEnvironment as Mock
 const mockGetUser = adminAuth.getUser as Mock
 const mockClearSession = clearSession as Mock
-const _mockUpdateSession = updateSession as Mock
 
 // Import after mocking
 import {
