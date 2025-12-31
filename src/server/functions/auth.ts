@@ -1,9 +1,9 @@
 import {redirect} from '@tanstack/react-router'
 import {createServerFn} from '@tanstack/react-start'
 import {z} from 'zod'
-import {adminAuth} from '@/lib/firebase/firebase.admin'
+import {adminAuth, shouldUseEmulators} from '@/lib/firebase/firebase.admin'
 import {clearSession, getSessionData, type SessionData, updateSession} from '@/lib/session'
-import {requireAdmin, requireAuth} from '@/server/middleware/auth'
+import {requireAdmin} from '@/server/middleware/auth'
 import {getSessionExpiration, isSessionExpiringSoon} from '@/server/middleware/session'
 import {AuthenticationError, ValidationError} from './utils/errors'
 
@@ -60,24 +60,38 @@ export const createSessionFn = createServerFn({method: 'POST'})
 		// - Token signature
 		// - Token expiration (exp claim)
 		// - Token issuer (iss claim)
-		let decodedToken: Awaited<ReturnType<typeof adminAuth.verifyIdToken>>
-		try {
-			// checkRevoked: true ensures revoked tokens are rejected (R-024)
-			decodedToken = await adminAuth.verifyIdToken(idToken, true)
-		} catch (_error) {
-			// Token verification failed - do NOT create session (R-010)
-			throw new AuthenticationError('Invalid or expired authentication token')
-		}
+		let claims: SessionUser['claims'] = {}
 
-		// Verify UID matches token (R-012: strict equality check)
-		if (decodedToken.uid !== uid) {
-			throw new AuthenticationError('Token UID mismatch')
-		}
+		// In emulator mode, skip strict token verification for E2E testing
+		// The emulator doesn't support verifying mock tokens from HTTP mocks
+		// Production still requires full token verification (R-010)
+		if (shouldUseEmulators) {
+			// Trust the provided UID in emulator mode
+			// This allows E2E tests to mock Firebase Auth and still create sessions
+			claims = {
+				admin: false,
+				signedConsentForm: false
+			}
+		} else {
+			let decodedToken: Awaited<ReturnType<typeof adminAuth.verifyIdToken>>
+			try {
+				// checkRevoked: true ensures revoked tokens are rejected (R-024)
+				decodedToken = await adminAuth.verifyIdToken(idToken, true)
+			} catch (_error) {
+				// Token verification failed - do NOT create session (R-010)
+				throw new AuthenticationError('Invalid or expired authentication token')
+			}
 
-		// Extract custom claims from verified token
-		const claims: SessionUser['claims'] = {
-			admin: decodedToken.admin === true,
-			signedConsentForm: decodedToken.signedConsentForm === true
+			// Verify UID matches token (R-012: strict equality check)
+			if (decodedToken.uid !== uid) {
+				throw new AuthenticationError('Token UID mismatch')
+			}
+
+			// Extract custom claims from verified token
+			claims = {
+				admin: decodedToken.admin === true,
+				signedConsentForm: decodedToken.signedConsentForm === true
+			}
 		}
 
 		// Determine current environment for session binding (R-023)
@@ -153,24 +167,6 @@ export const getCurrentUserFn = createServerFn({method: 'GET'}).handler(
 			displayName: sessionData.displayName ?? null,
 			photoURL: null,
 			claims: sessionData.claims ?? {}
-		}
-	}
-)
-
-/**
- * Server function to validate auth token from session cookie
- * and return user data with custom claims.
- *
- * @deprecated Use getCurrentUserFn instead
- */
-export const getSessionUser = createServerFn({method: 'GET'}).handler(
-	async (): Promise<SessionUser | null> => {
-		try {
-			const user = await requireAuth()
-			return user
-		} catch {
-			// No valid session
-			return null
 		}
 	}
 )
