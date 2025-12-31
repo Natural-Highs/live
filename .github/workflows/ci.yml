@@ -3,16 +3,8 @@ name: CI
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.vscode/**'
   pull_request:
     branches: [main]
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.vscode/**'
   workflow_dispatch:
 
 permissions:
@@ -36,11 +28,80 @@ env:
 
 jobs:
   # ============================================
+  # Stage 0: Detect Changes
+  # ============================================
+  detect-changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    # Skip for release-please bot PRs (only version bumps)
+    if: github.actor != 'natural-highs-bot[bot]'
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+      code_files: ${{ steps.filter.outputs.code_files }}
+      tests: ${{ steps.filter.outputs.tests }}
+      tests_files: ${{ steps.filter.outputs.tests_files }}
+      config: ${{ steps.filter.outputs.config }}
+      ci: ${{ steps.filter.outputs.ci }}
+      firestore: ${{ steps.filter.outputs.firestore }}
+      any-code: ${{ steps.filter.outputs.code == 'true' || steps.filter.outputs.tests == 'true' || steps.filter.outputs.config == 'true' }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Filter paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          list-files: shell
+          filters: |
+            code:
+              - 'src/**'
+              - '*.ts'
+              - '*.js'
+              - '*.mjs'
+              - '*.cjs'
+            tests:
+              - 'tests/**'
+              - '**/*.test.ts'
+              - '**/*.test.tsx'
+              - '**/*.spec.ts'
+              - 'playwright.config.ts'
+              - 'vitest.config.ts'
+            config:
+              - 'package.json'
+              - 'bun.lock'
+              - 'tsconfig*.json'
+              - 'vite.config.ts'
+              - 'tailwind.config.ts'
+              - 'postcss.config.js'
+            ci:
+              - '.github/workflows/ci.yml'
+              - '.trunk/**'
+              - 'biome.json'
+            firestore:
+              - 'firestore.rules'
+              - 'firebase.json'
+
+      - name: Summarize changes
+        run: |
+          echo "## Changes Detected" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Category | Changed |" >> $GITHUB_STEP_SUMMARY
+          echo "|----------|---------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Code | ${{ steps.filter.outputs.code }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Tests | ${{ steps.filter.outputs.tests }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Config | ${{ steps.filter.outputs.config }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| CI | ${{ steps.filter.outputs.ci }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Firestore | ${{ steps.filter.outputs.firestore }} |" >> $GITHUB_STEP_SUMMARY
+
+  # ============================================
   # Stage 1: Code Quality (Trunk.io)
   # ============================================
   lint:
     name: Code Quality
     runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.any-code == 'true' || needs.detect-changes.outputs.ci == 'true'
     permissions:
       contents: read
       checks: write
@@ -68,6 +129,8 @@ jobs:
   test-unit:
     name: Unit Tests
     runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.any-code == 'true'
     permissions:
       contents: read
       pull-requests: write
@@ -75,29 +138,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - name: Setup environment
+        uses: ./.github/actions/setup-bun
         with:
-          node-version: 22
-
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: ${{ env.BUN_VERSION }}
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            bun-${{ runner.os }}-
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
+          node-version: "22"
 
       - name: Run tests with coverage
         run: bun run test:ci -- --coverage
+        env:
+          CHANGED_FILES: ${{ needs.detect-changes.outputs.code_files }}
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
@@ -193,7 +242,13 @@ jobs:
   test-e2e:
     name: E2E Tests (Shard ${{ matrix.shard }}/4)
     runs-on: ubuntu-latest
-    needs: [lint, test-unit]
+    needs: [detect-changes, lint, test-unit]
+    # Run if code changed AND upstream jobs succeeded or were skipped (due to no changes)
+    if: |
+      always() &&
+      needs.detect-changes.outputs.any-code == 'true' &&
+      (needs.lint.result == 'success' || needs.lint.result == 'skipped') &&
+      (needs.test-unit.result == 'success' || needs.test-unit.result == 'skipped')
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -203,47 +258,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup environment
+        uses: ./.github/actions/setup-bun
         with:
-          bun-version: ${{ env.BUN_VERSION }}
-
-      - name: Setup Java (for Firebase emulators)
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            bun-${{ runner.os }}-
-
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        id: playwright-cache
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-          restore-keys: |
-            playwright-${{ runner.os }}-
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
-
-      - name: Install Playwright browsers
-        if: steps.playwright-cache.outputs.cache-hit != 'true'
-        run: bunx playwright install --with-deps
-
-      - name: Install Playwright system deps only
-        if: steps.playwright-cache.outputs.cache-hit == 'true'
-        run: bunx playwright install-deps
+          java-version: "21"
+          install-playwright: "true"
+          install-firebase: "true"
 
       - name: Start Firebase emulators
         run: |
@@ -285,11 +305,12 @@ jobs:
   deploy-test-report:
     name: Deploy Test Report
     runs-on: ubuntu-latest
-    needs: [test-e2e]
-    # Only deploy on main branch OR when tests fail (to debug failures)
+    needs: [detect-changes, test-e2e]
+    # Only deploy if E2E tests ran (not skipped) AND (on main OR tests failed)
     if: |
-      always() && 
+      always() &&
       needs.test-e2e.result != 'cancelled' &&
+      needs.test-e2e.result != 'skipped' &&
       (github.ref == 'refs/heads/main' || needs.test-e2e.result == 'failure')
     permissions:
       contents: read
@@ -344,8 +365,12 @@ jobs:
   burn-in:
     name: Flaky Test Detection
     runs-on: ubuntu-latest
-    needs: [test-e2e]
-    if: github.event_name == 'pull_request'
+    needs: [detect-changes, test-e2e]
+    # Run on PRs when tests changed AND E2E passed
+    if: |
+      github.event_name == 'pull_request' &&
+      needs.detect-changes.outputs.tests == 'true' &&
+      needs.test-e2e.result == 'success'
     timeout-minutes: 45
     steps:
       - name: Checkout code
@@ -353,37 +378,12 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup environment
+        uses: ./.github/actions/setup-bun
         with:
-          bun-version: ${{ env.BUN_VERSION }}
-
-      - name: Setup Java (for Firebase emulators)
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: 21
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: bun-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-
-      - name: Cache Playwright browsers
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('bun.lock') }}
-
-      - name: Install dependencies
-        run: bun install --frozen-lockfile
-
-      - name: Install Firebase CLI
-        run: npm install -g firebase-tools
-
-      - name: Install Playwright system deps
-        run: bunx playwright install-deps
+          java-version: "21"
+          install-playwright: "true"
+          install-firebase: "true"
 
       - name: Start Firebase emulators
         run: |
@@ -398,26 +398,26 @@ jobs:
           done
           sleep 2
 
-      - name: Detect changed test files
-        id: changed-tests
+      - name: Run burn-in on changed tests
         run: |
-          CHANGED_SPECS=$(git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -E '\.(spec|test)\.(ts|js)$' || echo "")
-          echo "specs=${CHANGED_SPECS}" >> $GITHUB_OUTPUT
-          if [ -n "$CHANGED_SPECS" ]; then
-            echo "## Changed Test Files" >> $GITHUB_STEP_SUMMARY
-            echo "$CHANGED_SPECS" | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY
+          # Use tests_files from detect-changes instead of git diff
+          CHANGED_SPECS="${{ needs.detect-changes.outputs.tests_files }}"
+          if [ -z "$CHANGED_SPECS" ]; then
+            echo "No test files in change detection, skipping burn-in"
+            echo "## Burn-In Skipped" >> $GITHUB_STEP_SUMMARY
+            echo "No test files detected in changes" >> $GITHUB_STEP_SUMMARY
+            exit 0
           fi
 
-      - name: Run burn-in loop (5 iterations)
-        if: steps.changed-tests.outputs.specs != ''
-        run: |
+          echo "## Changed Test Files" >> $GITHUB_STEP_SUMMARY
+          echo "$CHANGED_SPECS" | tr ' ' '\n' | sed 's/^/- /' >> $GITHUB_STEP_SUMMARY
+
           echo "Running burn-in: 5 iterations on changed specs"
-          SPECS="${{ steps.changed-tests.outputs.specs }}"
           for i in {1..5}; do
             echo "=========================================="
             echo "Burn-in iteration $i/5"
             echo "=========================================="
-            bun run test:e2e:ci -- $SPECS || {
+            bun run test:e2e:ci -- $CHANGED_SPECS || {
               echo "Burn-in failed on iteration $i"
               exit 1
             }
@@ -425,13 +425,6 @@ jobs:
           echo "All 5 burn-in iterations passed"
           echo "## Burn-In Result" >> $GITHUB_STEP_SUMMARY
           echo "All 5 iterations passed - tests are stable" >> $GITHUB_STEP_SUMMARY
-
-      - name: Skip burn-in (no test changes)
-        if: steps.changed-tests.outputs.specs == ''
-        run: |
-          echo "No test files changed, skipping burn-in"
-          echo "## Burn-In Skipped" >> $GITHUB_STEP_SUMMARY
-          echo "No test files changed in this PR" >> $GITHUB_STEP_SUMMARY
 
       - name: Upload burn-in artifacts on failure
         if: failure()
@@ -449,8 +442,13 @@ jobs:
   deploy-firestore-rules:
     name: Deploy Firestore Rules
     runs-on: ubuntu-latest
-    needs: [lint, test-unit, test-e2e]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [detect-changes, lint, test-unit, test-e2e]
+    # Deploy only on main push when firestore rules changed AND tests passed/skipped
+    if: |
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'push' &&
+      needs.detect-changes.outputs.firestore == 'true' &&
+      (needs.test-e2e.result == 'success' || needs.test-e2e.result == 'skipped')
     environment: prd
     permissions:
       contents: read
@@ -487,3 +485,51 @@ jobs:
           done
 
           rm /tmp/sa.json
+
+  # ============================================
+  # Stage 6: CI Summary
+  # ============================================
+  summary:
+    name: CI Summary
+    runs-on: ubuntu-latest
+    needs: [detect-changes, lint, test-unit, test-e2e, deploy-test-report, burn-in, deploy-firestore-rules]
+    if: always()
+    steps:
+      - name: Generate summary
+        run: |
+          echo "## CI Pipeline Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+
+          # Helper function to format status
+          format_status() {
+            case "$1" in
+              success) echo "✅ Passed" ;;
+              failure) echo "❌ Failed" ;;
+              skipped) echo "⏭️ Skipped" ;;
+              cancelled) echo "🚫 Cancelled" ;;
+              *) echo "❓ $1" ;;
+            esac
+          }
+
+          echo "| Detect Changes | $(format_status '${{ needs.detect-changes.result }}') |" >> $GITHUB_STEP_SUMMARY
+          echo "| Code Quality | $(format_status '${{ needs.lint.result }}') |" >> $GITHUB_STEP_SUMMARY
+          echo "| Unit Tests | $(format_status '${{ needs.test-unit.result }}') |" >> $GITHUB_STEP_SUMMARY
+          echo "| E2E Tests | $(format_status '${{ needs.test-e2e.result }}') |" >> $GITHUB_STEP_SUMMARY
+          echo "| Test Report | $(format_status '${{ needs.deploy-test-report.result }}') |" >> $GITHUB_STEP_SUMMARY
+          echo "| Flaky Detection | $(format_status '${{ needs.burn-in.result }}') |" >> $GITHUB_STEP_SUMMARY
+          echo "| Firestore Deploy | $(format_status '${{ needs.deploy-firestore-rules.result }}') |" >> $GITHUB_STEP_SUMMARY
+
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Overall status
+          if [[ "${{ needs.lint.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-unit.result }}" == "failure" ]] || \
+             [[ "${{ needs.test-e2e.result }}" == "failure" ]]; then
+            echo "### ❌ Pipeline Failed" >> $GITHUB_STEP_SUMMARY
+          elif [[ "${{ needs.detect-changes.result }}" == "skipped" ]]; then
+            echo "### ⏭️ Pipeline Skipped (release-please PR)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ✅ Pipeline Passed" >> $GITHUB_STEP_SUMMARY
+          fi
