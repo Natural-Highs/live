@@ -72,9 +72,7 @@ function initializeAdmin(): void {
 	}
 
 	const storageBucket =
-		process.env.FIREBASE_STORAGE_BUCKET || serviceAccount.projectId
-			? `${serviceAccount.projectId}.appspot.com`
-			: 'sveltekit-fullstack-c259e.appspot.com'
+		process.env.FIREBASE_STORAGE_BUCKET || `${serviceAccount.projectId}.appspot.com`
 
 	admin.initializeApp({
 		credential: admin.credential.cert(serviceAccount),

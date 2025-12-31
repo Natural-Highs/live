@@ -4,11 +4,11 @@ import {QrCode} from 'lucide-react'
 import {lazy, Suspense, useEffect, useRef, useState} from 'react'
 import {SuccessConfirmation} from '@/components/features/SuccessConfirmation'
 import {Button} from '@/components/ui/button'
-import Greencard from '@/components/ui/GreenCard'
+import GreenCard from '@/components/ui/GreenCard'
 import {InputOTP, InputOTPGroup, InputOTPSlot} from '@/components/ui/input-otp'
 import {PageContainer} from '@/components/ui/page-container'
 import {Spinner} from '@/components/ui/spinner'
-import Titlecard from '@/components/ui/TitleCard'
+import TitleCard from '@/components/ui/TitleCard'
 import {WebsiteLogo} from '@/components/ui/website-logo'
 import {createDefaultAdapter, type QRScannerAdapter} from '@/lib/events/qr-scanner-adapter'
 import {useCameraAvailability} from '@/lib/events/use-camera-availability'
@@ -227,7 +227,7 @@ export function DashboardComponent() {
 
 	const formatDate = (dateString?: string): string => {
 		if (!dateString) {
-			return 'TODO: Date TBD'
+			return 'Date not set'
 		}
 		try {
 			const date = new Date(dateString)
@@ -263,11 +263,11 @@ export function DashboardComponent() {
 			</div>
 
 			{/* Check In Section */}
-			<Titlecard>
+			<TitleCard>
 				<h1>Check In</h1>
-			</Titlecard>
+			</TitleCard>
 
-			<Greencard>
+			<GreenCard>
 				{error && (
 					<div
 						className='mb-3 rounded-lg border border-red-400 bg-red-100 px-4 py-2 text-center text-red-700 text-sm'
@@ -340,7 +340,7 @@ export function DashboardComponent() {
 						)}
 					</div>
 				</div>
-			</Greencard>
+			</GreenCard>
 
 			{/* QR Scanner Overlay (lazy loaded) */}
 			{showScanner && qrAdapter && (
