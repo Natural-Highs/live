@@ -5,7 +5,8 @@
 	"private": true,
 	"version": "0.0.1",
 	"scripts": {
-		"dev": "doppler run -c dev -- vite",
+		"dev": "bash scripts/dev.sh",
+		"dev:cloud": "doppler run -c dev -- vite",
 		"dev:bare": "vite",
 		"build": "vite build",
 		"build:dev": "doppler run -c dev -- vite build",
@@ -14,6 +15,7 @@
 		"start": "doppler run -c dev -- bunx netlify dev",
 		"start:bare": "bunx netlify dev",
 		"emulators": "firebase emulators:start",
+		"seed:test-data": "FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 bun run scripts/seed-test-data.ts",
 		"test": "vitest",
 		"test:ui": "vitest --ui",
 		"test:unit": "vitest src/lib src/server",
@@ -98,6 +100,7 @@
 		"@vitest/coverage-v8": "4.0.16",
 		"@vitest/ui": "4.0.16",
 		"bun-types": "1.3.4",
+		"concurrently": "9.2.1",
 		"happy-dom": "20.0.11",
 		"husky": "9.1.7",
 		"iron-webcrypto": "2.0.0",
@@ -110,7 +113,8 @@
 		"vite": "7.3.0",
 		"vite-plugin-pwa": "1.2.0",
 		"vite-tsconfig-paths": "5.1.4",
-		"vitest": "4.0.16"
+		"vitest": "4.0.16",
+		"wait-on": "9.0.3"
 	},
 	"msw": {
 		"workerDirectory": [

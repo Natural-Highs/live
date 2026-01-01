@@ -27,9 +27,12 @@ vite.config.d.ts
 .trunk/plugins/
 .trunk/tools/
 
-# Firebase emulator logs
+# Firebase emulator logs and data
 firebase-debug.log
 firestore-debug.log
+ui-debug.log
+.firebase/
+firebase-export*/
 
 # Husky internals
 .husky/_

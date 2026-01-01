@@ -25,6 +25,8 @@ const emulatorEnv = {
 	USE_EMULATORS: 'true',
 	// Firestore emulator host (used by src/tests/fixtures/firestore.fixture.ts)
 	FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080',
+	// Auth emulator host (used by firebase.admin.ts for user creation)
+	FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
 	// Session secret for server-side session validation
 	// Must match SESSION_SECRET_TEST used in session.fixture.ts
 	SESSION_SECRET: SESSION_SECRET_TEST
@@ -68,8 +70,8 @@ export default defineConfig({
 		video: 'on-first-retry'
 	},
 	webServer: {
-		// Always use dev:bare with emulator env vars for E2E tests
-		// This ensures consistent behavior between local and CI
+		// Use dev:bare with emulator env vars for E2E tests
+		// Emulators must be started separately if testing auth flows
 		command: 'bun run dev:bare',
 		env: emulatorEnv,
 		reuseExistingServer: !isCI,

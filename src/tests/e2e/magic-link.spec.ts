@@ -458,7 +458,7 @@ test.describe('Magic Link Authentication @smoke', () => {
 	})
 })
 
-test.describe('Cross-Device Guest Conversion (Story 3-2)', () => {
+test.describe('Cross-Device Guest Conversion', () => {
 	let testEventId: string | null = null
 	let testGuestId: string | null = null
 	const testEmail = 'convert-test@example.com'

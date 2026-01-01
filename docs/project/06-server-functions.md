@@ -344,23 +344,75 @@ export const Route = createFileRoute('/_authed/profile')({
 | `updateUserClaims` | Modify user claims |
 | `forceLogoutUser` | Revoke user sessions |
 
+## Testing Server Functions
+
+Server functions are tested against Firebase emulators for accurate behavior.
+
+### Unit Testing Pattern
+
+```typescript
+// src/server/functions/example.test.ts
+import {exampleFn} from './example'
+
+vi.mock('@/lib/firebase/firebase.admin', () => ({
+  adminDb: vi.fn().mockReturnValue({
+    collection: vi.fn().mockReturnValue({
+      doc: vi.fn().mockReturnValue({
+        get: vi.fn().mockResolvedValue({exists: true, data: () => mockData})
+      })
+    })
+  })
+}))
+
+describe('exampleFn', () => {
+  it('returns data for valid input', async () => {
+    const result = await exampleFn({data: {id: 'test-id'}})
+    expect(result).toEqual(mockData)
+  })
+})
+```
+
+### E2E Testing with Fixtures
+
+```typescript
+// src/tests/e2e/example.spec.ts
+import {createTestEvent} from '../fixtures/firestore.fixture'
+
+test.beforeEach(async () => {
+  await createTestEvent({
+    id: 'test-event',
+    name: 'Test Event',
+    eventCode: '1234',
+    isActive: true
+  })
+})
+
+test('displays event details', async ({page}) => {
+  await page.goto('/events/test-event')
+  await expect(page.getByText('Test Event')).toBeVisible()
+})
+```
+
 ## Best Practices
 
 ### Always Validate Input
 
+Use `.inputValidator()` for type-safe input:
+
 ```typescript
-// WRONG
+// WRONG - Manual validation in handler
 export const bad = createServerFn({method: 'POST'})
-  .handler(async ({data}) => {
-    // data is unknown, not validated
-    await db.doc(data.id).update(data)
+  .handler(async ({data}: {data: unknown}) => {
+    const validated = schema.parse(data)  // Returns typed value, but handler param stays untyped
+    await db.doc(validated.id).update(validated)
   })
 
-// CORRECT
+// CORRECT - Use inputValidator for type inference
 export const good = createServerFn({method: 'POST'})
+  .inputValidator((d: unknown) => schema.parse(d))
   .handler(async ({data}) => {
-    const validated = schema.parse(data)
-    await db.doc(validated.id).update(validated)
+    // data is fully typed from schema - better IDE support and autocomplete
+    await db.doc(data.id).update(data)
   })
 ```
 

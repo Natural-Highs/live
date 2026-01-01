@@ -29,7 +29,7 @@ export const upgradeGuestSchema = z.object({
 })
 
 /**
- * Schema for getting guest event count (Story 3-2: Guest-to-User Conversion)
+ * Schema for getting guest event count
  * Used to determine messaging variant in GuestConversionPrompt
  */
 export const getGuestEventCountSchema = z.object({
@@ -37,7 +37,7 @@ export const getGuestEventCountSchema = z.object({
 })
 
 /**
- * Schema for converting guest to user (Story 3-2: Guest-to-User Conversion)
+ * Schema for converting guest to user
  * Called after magic link/passkey verification completes
  */
 export const convertGuestToUserSchema = z.object({
@@ -68,3 +68,41 @@ export const completeGuestConversionSchema = z.object({
 	email: emailSchema,
 	userId: z.string().min(1, 'User ID is required')
 })
+
+/**
+ * Schema for updating guest email
+ * Admin-only operation to add email to guest record
+ */
+export const updateGuestEmailSchema = z
+	.object({
+		guestId: z.string().min(1, 'Guest ID is required'),
+		email: emailSchema
+	})
+	.strict()
+
+export type UpdateGuestEmailInput = z.infer<typeof updateGuestEmailSchema>
+
+/**
+ * Schema for listing guests for an event
+ * Admin-only query for live check-in list
+ */
+export const listGuestsForEventSchema = z
+	.object({
+		eventId: z.string().min(1, 'Event ID is required')
+	})
+	.strict()
+
+export type ListGuestsForEventInput = z.infer<typeof listGuestsForEventSchema>
+
+/**
+ * Schema for linking guest to existing user
+ * Admin-only operation when email is already associated with a user
+ */
+export const linkGuestToUserSchema = z
+	.object({
+		guestId: z.string().min(1, 'Guest ID is required'),
+		targetUserId: z.string().min(1, 'Target user ID is required')
+	})
+	.strict()
+
+export type LinkGuestToUserInput = z.infer<typeof linkGuestToUserSchema>

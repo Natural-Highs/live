@@ -29,6 +29,11 @@ vi.mock('@/server/functions/events', () => ({
 	checkInToEvent: vi.fn()
 }))
 
+// Mock guests server function to prevent Firebase Admin import
+vi.mock('@/server/functions/guests', () => ({
+	listGuestsForEvent: vi.fn()
+}))
+
 // Import the mock for manipulation in tests
 import {checkInToEvent} from '@/server/functions/events'
 

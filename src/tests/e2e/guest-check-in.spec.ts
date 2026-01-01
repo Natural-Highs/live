@@ -483,7 +483,7 @@ test.describe('Guest Check-in Flow', () => {
 		})
 	})
 
-	test.describe('Guest Conversion Prompt (Story 3-2)', () => {
+	test.describe('Guest Conversion Prompt', () => {
 		test('should show conversion prompt after dismissing success overlay', async ({page}) => {
 			await page.goto('/guest')
 			await page.waitForLoadState('networkidle')

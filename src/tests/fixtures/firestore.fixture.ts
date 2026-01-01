@@ -268,8 +268,11 @@ export async function clearFirestoreEmulator(): Promise<void> {
 		)
 
 		if (!response.ok && response.status !== 404) {
+			console.warn(`[Fixture] clearFirestoreEmulator returned ${response.status}`)
 		}
-	} catch (_error) {}
+	} catch (error) {
+		console.warn('[Fixture] Could not clear Firestore emulator:', error)
+	}
 }
 
 /**
@@ -289,6 +292,42 @@ export async function isFirestoreEmulatorAvailable(): Promise<boolean> {
 	} catch {
 		return false
 	}
+}
+
+/**
+ * Wait for Firestore emulator to become available with retry logic.
+ *
+ * @param options - Retry options
+ * @param options.maxRetries - Maximum number of retry attempts (default: 10)
+ * @param options.retryDelayMs - Delay between retries in milliseconds (default: 500)
+ * @returns true if emulator is available, false if max retries exceeded
+ *
+ * @example
+ * ```typescript
+ * const available = await waitForFirestoreEmulator()
+ * if (!available) {
+ *   throw new Error('Firestore emulator not available')
+ * }
+ * ```
+ */
+export async function waitForFirestoreEmulator(
+	options: {maxRetries?: number; retryDelayMs?: number} = {}
+): Promise<boolean> {
+	const maxRetries = options.maxRetries ?? 10
+	const retryDelayMs = options.retryDelayMs ?? 500
+
+	for (let attempt = 1; attempt <= maxRetries; attempt++) {
+		const available = await isFirestoreEmulatorAvailable()
+		if (available) {
+			return true
+		}
+
+		if (attempt < maxRetries) {
+			await new Promise(resolve => setTimeout(resolve, retryDelayMs))
+		}
+	}
+
+	return false
 }
 
 /**
@@ -352,4 +391,353 @@ export async function createTestUser(
  */
 export async function deleteTestUser(uid: string): Promise<void> {
 	await deleteTestUserDocument(uid)
+}
+
+// =============================================================================
+// Event and Guest Fixtures
+// =============================================================================
+
+/**
+ * Test event document data structure.
+ * Matches the fields expected by event server functions.
+ */
+export interface TestEventDocument {
+	id: string
+	name: string
+	eventCode: string
+	eventTypeId?: string
+	eventDate?: Date
+	isActive?: boolean
+	activatedAt?: Date
+	collectAdditionalDemographics?: boolean
+	createdAt?: Date
+	updatedAt?: Date
+}
+
+/**
+ * Test guest document data structure.
+ * Matches the fields expected by guest server functions.
+ */
+export interface TestGuestDocument {
+	id?: string
+	firstName: string
+	lastName: string
+	email?: string | null
+	phone?: string | null
+	eventId: string
+	consentSignedAt?: Date
+	consentSignature?: string
+	createdAt?: Date
+	updatedAt?: Date
+}
+
+/**
+ * Test guest event (check-in) document data structure.
+ * Links guest to event with registration timestamp.
+ */
+export interface TestGuestEventDocument {
+	id?: string
+	guestId: string
+	eventId: string
+	registeredAt?: Date
+	createdAt?: Date
+}
+
+/**
+ * Create an event document in the Firestore emulator.
+ *
+ * @param event - Event document data
+ *
+ * @example
+ * ```typescript
+ * await createTestEvent({
+ *   id: 'event-1',
+ *   name: 'Test Event',
+ *   eventCode: '1234',
+ *   isActive: true
+ * })
+ * ```
+ */
+export async function createTestEvent(event: TestEventDocument): Promise<void> {
+	const db = getTestDb()
+	const now = new Date()
+
+	const eventDoc = {
+		name: event.name,
+		eventCode: event.eventCode,
+		eventTypeId: event.eventTypeId ?? 'default-type',
+		eventDate: event.eventDate ?? now,
+		isActive: event.isActive ?? false,
+		activatedAt: event.activatedAt,
+		collectAdditionalDemographics: event.collectAdditionalDemographics ?? false,
+		createdAt: event.createdAt ?? now,
+		updatedAt: event.updatedAt ?? now
+	}
+
+	await db.collection('events').doc(event.id).set(eventDoc)
+}
+
+/**
+ * Create a guest document in the Firestore emulator.
+ * Also creates a guestEvent record linking guest to their event.
+ *
+ * @param guest - Guest document data
+ * @returns The guest ID (generated if not provided)
+ *
+ * @example
+ * ```typescript
+ * const guestId = await createTestGuest({
+ *   firstName: 'John',
+ *   lastName: 'Doe',
+ *   eventId: 'event-1',
+ *   email: null
+ * })
+ * ```
+ */
+export async function createTestGuest(guest: TestGuestDocument): Promise<string> {
+	const db = getTestDb()
+	const now = new Date()
+	const guestId = guest.id ?? `guest-${Date.now()}-${Math.random().toString(36).slice(2)}`
+
+	const guestDoc = {
+		isGuest: true,
+		firstName: guest.firstName,
+		lastName: guest.lastName,
+		email: guest.email ?? null,
+		phone: guest.phone ?? null,
+		eventId: guest.eventId,
+		consentSignedAt: guest.consentSignedAt ?? now,
+		consentSignature: guest.consentSignature ?? 'Test Signature',
+		createdAt: guest.createdAt ?? now,
+		updatedAt: guest.updatedAt ?? now
+	}
+
+	await db.collection('guests').doc(guestId).set(guestDoc)
+
+	// Also create guestEvent record for the check-in
+	await db.collection('guestEvents').add({
+		guestId,
+		eventId: guest.eventId,
+		registeredAt: now,
+		createdAt: now
+	})
+
+	return guestId
+}
+
+/**
+ * Delete an event document from the Firestore emulator.
+ *
+ * @param eventId - Event ID to delete
+ */
+export async function deleteTestEvent(eventId: string): Promise<void> {
+	const db = getTestDb()
+	await db.collection('events').doc(eventId).delete()
+}
+
+/**
+ * Delete a guest document and associated guestEvents from the Firestore emulator.
+ *
+ * @param guestId - Guest ID to delete
+ */
+export async function deleteTestGuest(guestId: string): Promise<void> {
+	const db = getTestDb()
+
+	// Delete associated guestEvents
+	const guestEventsSnapshot = await db
+		.collection('guestEvents')
+		.where('guestId', '==', guestId)
+		.get()
+
+	for (const doc of guestEventsSnapshot.docs) {
+		await doc.ref.delete()
+	}
+
+	// Delete guest document
+	await db.collection('guests').doc(guestId).delete()
+}
+
+/**
+ * Delete all events from the Firestore emulator.
+ * Useful for test cleanup.
+ */
+export async function deleteAllTestEvents(): Promise<void> {
+	const db = getTestDb()
+	const eventsSnapshot = await db.collection('events').listDocuments()
+
+	for (const doc of eventsSnapshot) {
+		await doc.delete()
+	}
+}
+
+/**
+ * Delete all guests and guestEvents from the Firestore emulator.
+ * Useful for test cleanup.
+ */
+export async function deleteAllTestGuests(): Promise<void> {
+	const db = getTestDb()
+
+	// Delete all guestEvents
+	const guestEventsSnapshot = await db.collection('guestEvents').listDocuments()
+	for (const doc of guestEventsSnapshot) {
+		await doc.delete()
+	}
+
+	// Delete all guests
+	const guestsSnapshot = await db.collection('guests').listDocuments()
+	for (const doc of guestsSnapshot) {
+		await doc.delete()
+	}
+}
+
+// =============================================================================
+// Scenario Seeding
+// =============================================================================
+
+/**
+ * Available test scenarios for declarative seeding.
+ */
+export type TestScenario = 'admin-with-guests' | 'user-with-history' | 'empty-event'
+
+/**
+ * Seed a declarative test scenario.
+ *
+ * Provides pre-configured data sets for common testing needs.
+ * Clears existing data first to ensure idempotency.
+ *
+ * Available scenarios:
+ * - `admin-with-guests`: 1 active event with 3 guest check-ins
+ * - `user-with-history`: Regular user with past event attendance
+ * - `empty-event`: Active event with no check-ins
+ *
+ * @param scenario - Name of the scenario to seed
+ *
+ * @example
+ * ```typescript
+ * test.beforeEach(async () => {
+ *   await seedTestScenario('admin-with-guests')
+ * })
+ * ```
+ */
+export async function seedTestScenario(scenario: TestScenario): Promise<void> {
+	await clearFirestoreEmulator()
+
+	const db = getTestDb()
+	const now = new Date()
+
+	switch (scenario) {
+		case 'admin-with-guests': {
+			await db.collection('events').doc('event-morning-yoga').set({
+				name: 'Morning Yoga Session',
+				eventCode: '1234',
+				eventTypeId: 'yoga',
+				eventDate: now,
+				isActive: true,
+				activatedAt: now,
+				collectAdditionalDemographics: false,
+				createdAt: now,
+				updatedAt: now
+			})
+
+			const guests = [
+				{id: 'guest-derek', firstName: 'Derek', lastName: 'Chen', email: 'derek@example.com'},
+				{id: 'guest-maya', firstName: 'Maya', lastName: 'Garcia', email: null},
+				{id: 'guest-jordan', firstName: 'Jordan', lastName: 'Smith', email: 'jordan@example.com'}
+			]
+
+			for (const guest of guests) {
+				await db
+					.collection('guests')
+					.doc(guest.id)
+					.set({
+						isGuest: true,
+						firstName: guest.firstName,
+						lastName: guest.lastName,
+						email: guest.email,
+						phone: null,
+						eventId: 'event-morning-yoga',
+						consentSignedAt: now,
+						consentSignature: `${guest.firstName} ${guest.lastName}`,
+						createdAt: now,
+						updatedAt: now
+					})
+
+				await db.collection('guestEvents').add({
+					guestId: guest.id,
+					eventId: 'event-morning-yoga',
+					registeredAt: now,
+					createdAt: now
+				})
+			}
+			break
+		}
+
+		case 'user-with-history': {
+			const lastWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+			const lastMonth = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+
+			await db.collection('users').doc('user-regular-1').set({
+				email: 'user@example.com',
+				displayName: 'Test User',
+				dateOfBirth: '1995-06-15',
+				isMinor: false,
+				profileComplete: true,
+				profileVersion: 1,
+				pronouns: 'they/them',
+				gender: 'non-binary',
+				createdAt: lastMonth,
+				updatedAt: now
+			})
+
+			await db.collection('events').doc('event-past-workshop').set({
+				name: 'Mindfulness Workshop',
+				eventCode: '5678',
+				eventTypeId: 'workshop',
+				eventDate: lastWeek,
+				isActive: false,
+				createdAt: lastMonth,
+				updatedAt: lastWeek
+			})
+
+			await db.collection('events').doc('event-past-retreat').set({
+				name: 'Weekend Retreat',
+				eventCode: '9012',
+				eventTypeId: 'retreat',
+				eventDate: lastMonth,
+				isActive: false,
+				createdAt: lastMonth,
+				updatedAt: lastMonth
+			})
+
+			await db.collection('userEvents').add({
+				userId: 'user-regular-1',
+				eventId: 'event-past-workshop',
+				registeredAt: lastWeek,
+				createdAt: lastWeek
+			})
+
+			await db.collection('userEvents').add({
+				userId: 'user-regular-1',
+				eventId: 'event-past-retreat',
+				registeredAt: lastMonth,
+				createdAt: lastMonth
+			})
+			break
+		}
+
+		case 'empty-event': {
+			await db.collection('events').doc('event-empty').set({
+				name: 'New Community Event',
+				eventCode: '9999',
+				eventTypeId: 'community',
+				eventDate: now,
+				isActive: true,
+				activatedAt: now,
+				collectAdditionalDemographics: true,
+				createdAt: now,
+				updatedAt: now
+			})
+			break
+		}
+	}
 }
