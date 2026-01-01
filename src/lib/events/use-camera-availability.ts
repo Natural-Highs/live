@@ -34,6 +34,8 @@ export function useCameraAvailability(): CameraAvailability {
 
 	useEffect(() => {
 		let cancelled = false
+		let permissionStatus: PermissionStatus | null = null
+		let permissionHandler: (() => void) | null = null
 
 		async function checkCamera() {
 			// Check if mediaDevices API exists (requires HTTPS in production)
@@ -62,12 +64,16 @@ export function useCameraAvailability(): CameraAvailability {
 						if (!cancelled) {
 							setPermissionState(result.state as CameraPermissionState)
 
-							// Listen for permission changes
-							result.addEventListener('change', () => {
+							// Store references for cleanup
+							permissionStatus = result
+							permissionHandler = () => {
 								if (!cancelled) {
 									setPermissionState(result.state as CameraPermissionState)
 								}
-							})
+							}
+
+							// Listen for permission changes
+							result.addEventListener('change', permissionHandler)
 						}
 					} catch {
 						// Permissions API not supported for camera on this browser
@@ -94,6 +100,10 @@ export function useCameraAvailability(): CameraAvailability {
 
 		return () => {
 			cancelled = true
+			// Clean up permission listener to prevent memory leak
+			if (permissionStatus && permissionHandler) {
+				permissionStatus.removeEventListener('change', permissionHandler)
+			}
 		}
 	}, [])
 

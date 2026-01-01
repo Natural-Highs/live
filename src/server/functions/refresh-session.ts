@@ -7,8 +7,8 @@
  */
 
 import {createServerFn} from '@tanstack/react-start'
-import {requireAuth} from '../middleware/auth'
-import {refreshSessionTimestamp} from '../middleware/session'
+import {requireAuth} from '@/server/middleware/auth'
+import {refreshSessionTimestamp} from '@/server/middleware/session'
 
 /**
  * Explicitly refresh the current session.

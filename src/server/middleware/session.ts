@@ -10,11 +10,11 @@
  */
 
 import {adminDb} from '@/lib/firebase/firebase.admin'
+import type {SessionData} from '@/lib/session'
 import {
 	getSessionData,
 	PASSKEY_SESSION_MAX_AGE,
 	SESSION_MAX_AGE,
-	type SessionData,
 	updateSession,
 	validateSessionEnvironment
 } from '@/lib/session'
@@ -58,6 +58,10 @@ interface RevocationCacheEntry {
 
 const revocationCache = new Map<string, RevocationCacheEntry>()
 const REVOCATION_CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
+/** Time-based cleanup tracking for deterministic cache maintenance */
+let lastCleanupTime = 0
+const CLEANUP_INTERVAL = 5 * 60 * 1000 // 5 minutes
 
 /**
  * Get cache key for revocation check.
@@ -117,8 +121,10 @@ export async function checkSessionRevoked(
 		revocationCache.delete(cacheKey)
 	}
 
-	// Periodically clean expired cache entries (every 100th call)
-	if (Math.random() < 0.01) {
+	// Deterministic time-based cleanup instead of probabilistic
+	const now = Date.now()
+	if (now - lastCleanupTime > CLEANUP_INTERVAL) {
+		lastCleanupTime = now
 		cleanRevocationCache()
 	}
 
@@ -142,7 +148,13 @@ export async function checkSessionRevoked(
 		})
 
 		return isRevoked
-	} catch (_error) {
+	} catch (error) {
+		// Log error with structured context for observability
+		console.error('[session-middleware] Revocation check failed:', {
+			userId,
+			sessionCreatedAt,
+			error: error instanceof Error ? error.message : String(error)
+		})
 		// On error, don't cache - return false (fail open for availability)
 		return false
 	}
@@ -167,15 +179,26 @@ export async function createSessionRevocation(
 	reason: SessionRevocationEvent['reason'],
 	metadata?: SessionRevocationEvent['metadata']
 ): Promise<void> {
-	await adminDb.collection('sessionRevocations').add({
-		userId,
-		revokedAt: new Date(),
-		reason,
-		...(metadata && {metadata})
-	})
+	try {
+		await adminDb.collection('sessionRevocations').add({
+			userId,
+			revokedAt: new Date(),
+			reason,
+			...(metadata && {metadata})
+		})
 
-	// Clear cache entries for this user to ensure revocation takes effect immediately
-	clearRevocationCacheForUser(userId)
+		// Clear cache entries for this user to ensure revocation takes effect immediately
+		// Only clear after successful write
+		clearRevocationCacheForUser(userId)
+	} catch (error) {
+		// Log error with context for debugging
+		console.error('[session-middleware] Failed to create session revocation:', {
+			userId,
+			reason,
+			error: error instanceof Error ? error.message : String(error)
+		})
+		throw error
+	}
 }
 
 /**
