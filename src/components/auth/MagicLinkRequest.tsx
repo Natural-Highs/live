@@ -63,6 +63,12 @@ export function MagicLinkRequest({onSuccess, onError}: MagicLinkRequestProps) {
 			return
 		}
 
+		// Defensive email domain extraction
+		const getEmailDomain = (email: string | undefined): string => {
+			const parts = String(email || '').split('@')
+			return parts.length > 1 ? parts[1] : ''
+		}
+
 		try {
 			const appUrl =
 				typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000'
@@ -82,7 +88,7 @@ export function MagicLinkRequest({onSuccess, onError}: MagicLinkRequestProps) {
 			await sendSignInLinkToEmail(auth, values.email, actionCodeSettings)
 
 			// Log success for server-side monitoring (non-blocking, no PII)
-			const emailDomain = values.email.split('@')[1]
+			const emailDomain = getEmailDomain(values.email)
 			void (logMagicLinkAttemptFn as unknown as LogMagicLinkAttemptFnType)({
 				data: {success: true, emailDomain}
 			}).catch(() => {
@@ -92,7 +98,7 @@ export function MagicLinkRequest({onSuccess, onError}: MagicLinkRequestProps) {
 			onSuccess(values.email)
 		} catch (error) {
 			// Log failure for server-side monitoring (non-blocking, no PII)
-			const emailDomain = values.email.split('@')[1]
+			const emailDomain = getEmailDomain(values.email)
 			const errorCode =
 				error && typeof error === 'object' && 'code' in error
 					? String((error as {code: unknown}).code)

@@ -116,6 +116,8 @@ export const devLoginFn = createServerFn({method: 'POST'})
  * Check if dev auth is available.
  * Used by the UI to conditionally show dev auth options.
  */
-export const isDevAuthAvailableFn = createServerFn({method: 'GET'}).handler(async () => {
-	return {available: isDevAuthAllowed()}
-})
+export const isDevAuthAvailableFn = createServerFn({method: 'GET'})
+	.inputValidator(() => z.undefined())
+	.handler(async () => {
+		return {available: isDevAuthAllowed()}
+	})

@@ -21,6 +21,15 @@ export const Route = createFileRoute('/dev/auth')({
 	component: DevAuthPage
 })
 
+/** Valid redirect paths for dev auth */
+type ValidRedirectPath = '/' | '/dashboard' | '/admin' | '/check-in'
+
+/** Type guard to validate redirect path */
+function isValidRedirectPath(path: string): path is ValidRedirectPath {
+	const allowedPaths: ValidRedirectPath[] = ['/', '/dashboard', '/admin', '/check-in']
+	return allowedPaths.includes(path as ValidRedirectPath)
+}
+
 function DevAuthPage() {
 	const navigate = useNavigate()
 	const [loading, setLoading] = useState<string | null>(null)
@@ -33,12 +42,9 @@ function DevAuthPage() {
 		try {
 			const result = await devLoginFn({data: {role}})
 			if (result.success && result.redirectTo) {
-				// Validate redirectTo is a safe internal path
-				const allowedPaths = ['/', '/dashboard', '/admin', '/check-in']
-				const isValidPath = allowedPaths.some(path => result.redirectTo === path)
-
-				if (isValidPath) {
-					navigate({to: result.redirectTo as '/'})
+				// Use type guard for safe navigation
+				if (isValidRedirectPath(result.redirectTo)) {
+					navigate({to: result.redirectTo})
 				} else {
 					// Fallback to safe default
 					navigate({to: '/'})

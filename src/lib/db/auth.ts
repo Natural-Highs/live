@@ -1,4 +1,3 @@
-// import { auth, db } from '@/lib/firebase/firebase'; // Adjust the import path as needed
 import {adminAuth, adminDb} from '@/lib/firebase/firebase.admin'
 
 /**

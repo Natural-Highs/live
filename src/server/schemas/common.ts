@@ -13,10 +13,12 @@ export const eventCodeSchema = z
 // User ID pattern
 export const userIdSchema = z.string().min(1)
 
-export const emailSchema = z.email().transform(e => e.toLowerCase().trim())
+export const emailSchema = z
+	.email({message: 'Invalid email address'})
+	.transform(e => e.trim().toLowerCase())
 
 // ISO timestamp validation
-export const isoTimestampSchema = z.string().datetime()
+export const isoTimestampSchema = z.iso.datetime()
 
 // Pagination schema
 export const paginationSchema = z.object({

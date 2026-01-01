@@ -1,6 +1,6 @@
 // Firestore Timestamp-like object interface
 interface FirestoreTimestamp {
-	toDate: () => Date
+	toDate(): Date
 }
 
 // Stub types for migration - will be properly defined in server functions task
