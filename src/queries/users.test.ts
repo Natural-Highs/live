@@ -20,6 +20,7 @@ describe('usersQueryOptions', () => {
 
 	afterEach(() => {
 		queryClient.clear()
+		vi.unstubAllGlobals()
 	})
 
 	// Helper to invoke queryFn with proper context
