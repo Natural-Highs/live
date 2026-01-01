@@ -91,6 +91,7 @@ if [ "$SKIP_E2E" = false ]; then
   echo ""
 
   # Move Firebase emulator logs to .build
+  mkdir -p .build/
   mv -f firebase-debug.log firestore-debug.log .build/ 2>/dev/null || true
 
   # Optional burn-in

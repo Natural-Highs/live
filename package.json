@@ -124,7 +124,7 @@
 	"lint-staged": {
 		"*.{ts,tsx}": [
 			"biome check --write --unsafe",
-			"bash -c 'tsc -b --noEmit 2>&1 || true'"
+			"bash -c 'tsc -b --noEmit 2>&1'"
 		],
 		"*.{json,md,css}": [
 			"biome format --write"
