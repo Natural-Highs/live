@@ -1,6 +1,5 @@
 import {createFileRoute} from '@tanstack/react-router'
-import {useCallback, useEffect, useState} from 'react'
-import {SurveyCreatorComponent} from '@/components/forms/SurveyCreator'
+import {lazy, Suspense, useCallback, useEffect, useState} from 'react'
 import {Button} from '@/components/ui/button'
 import {Card, CardContent} from '@/components/ui/card'
 import {Input} from '@/components/ui/input'
@@ -8,6 +7,11 @@ import {Label} from '@/components/ui/label'
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select'
 import {Spinner} from '@/components/ui/spinner'
 import {Tabs, TabsList, TabsTrigger} from '@/components/ui/tabs'
+
+// Lazy-load the heavy SurveyCreator component (~500KB survey-core dependency)
+const SurveyCreatorComponent = lazy(() =>
+	import('@/components/forms/SurveyCreator').then(mod => ({default: mod.SurveyCreatorComponent}))
+)
 
 type FormTemplateType = 'consent' | 'demographics' | 'survey'
 
@@ -476,10 +480,18 @@ function TemplatesComponent() {
 							<div className='mb-4 space-y-2'>
 								<Label>Form Builder</Label>
 								<div className='rounded-lg border border-border bg-background p-4'>
-									<SurveyCreatorComponent
-										onSave={handleSurveyJsonSave}
-										surveyJson={editingSurveyJson}
-									/>
+									<Suspense
+										fallback={
+											<div className='flex items-center justify-center p-8'>
+												<Spinner size='lg' />
+											</div>
+										}
+									>
+										<SurveyCreatorComponent
+											onSave={handleSurveyJsonSave}
+											surveyJson={editingSurveyJson}
+										/>
+									</Suspense>
 								</div>
 							</div>
 							<div className='flex justify-end gap-2'>
