@@ -9,38 +9,46 @@ import {z} from 'zod'
 /**
  * Schema for passkey registration verification request.
  */
-export const verifyPasskeyRegistrationSchema = z.object({
-	id: z.string().min(1),
-	rawId: z.string().min(1),
-	response: z.object({
-		clientDataJSON: z.string().min(1),
-		attestationObject: z.string().min(1),
-		transports: z.array(z.string()).optional(),
-		publicKeyAlgorithm: z.number().optional(),
-		publicKey: z.string().optional(),
-		authenticatorData: z.string().optional()
-	}),
-	authenticatorAttachment: z.enum(['platform', 'cross-platform']).optional(),
-	clientExtensionResults: z.record(z.string(), z.unknown()).optional(),
-	type: z.literal('public-key')
-})
+export const verifyPasskeyRegistrationSchema = z
+	.object({
+		id: z.string().min(1, 'Credential ID is required'),
+		rawId: z.string().min(1, 'Raw credential ID is required'),
+		response: z
+			.object({
+				clientDataJSON: z.string().min(1, 'Client data JSON is required'),
+				attestationObject: z.string().min(1, 'Attestation object is required'),
+				transports: z.array(z.string()).optional(),
+				publicKeyAlgorithm: z.number().optional(),
+				publicKey: z.string().optional(),
+				authenticatorData: z.string().optional()
+			})
+			.strict(),
+		authenticatorAttachment: z.enum(['platform', 'cross-platform']).optional(),
+		clientExtensionResults: z.record(z.string(), z.unknown()).optional(),
+		type: z.literal('public-key')
+	})
+	.strict()
 
 /**
  * Schema for passkey authentication verification request.
  */
-export const verifyPasskeyAuthenticationSchema = z.object({
-	id: z.string().min(1),
-	rawId: z.string().min(1),
-	response: z.object({
-		clientDataJSON: z.string().min(1),
-		authenticatorData: z.string().min(1),
-		signature: z.string().min(1),
-		userHandle: z.string().optional()
-	}),
-	authenticatorAttachment: z.enum(['platform', 'cross-platform']).optional(),
-	clientExtensionResults: z.record(z.string(), z.unknown()).optional(),
-	type: z.literal('public-key')
-})
+export const verifyPasskeyAuthenticationSchema = z
+	.object({
+		id: z.string().min(1, 'Credential ID is required'),
+		rawId: z.string().min(1, 'Raw credential ID is required'),
+		response: z
+			.object({
+				clientDataJSON: z.string().min(1, 'Client data JSON is required'),
+				authenticatorData: z.string().min(1, 'Authenticator data is required'),
+				signature: z.string().min(1, 'Signature is required'),
+				userHandle: z.string().optional()
+			})
+			.strict(),
+		authenticatorAttachment: z.enum(['platform', 'cross-platform']).optional(),
+		clientExtensionResults: z.record(z.string(), z.unknown()).optional(),
+		type: z.literal('public-key')
+	})
+	.strict()
 
 /**
  * Schema for generating registration options request.
