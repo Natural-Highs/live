@@ -26,6 +26,8 @@
 		"test:ci": "vitest run",
 		"test:e2e:ci": "playwright test",
 		"test:e2e:report": "playwright show-report .build/playwright-report",
+		"test:integration": "playwright test --project=integration",
+		"test:integration:ci": "playwright test --project=integration",
 		"check": "biome check src --write --unsafe",
 		"check:ci": "biome check src",
 		"lint:tsc": "tsc -b",
