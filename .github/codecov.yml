@@ -5,6 +5,9 @@ codecov:
   require_ci_to_pass: true
   notify:
     wait_for_ci: true
+  # Skip coverage on release-please PRs (no code changes)
+  ignore_branches:
+    - "release-please--*"
 
 coverage:
   precision: 2
