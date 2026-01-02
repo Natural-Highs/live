@@ -34,6 +34,16 @@ describe('sentry server', () => {
 		vi.unstubAllEnvs()
 	})
 
+	/**
+	 * Helper to clear emulator env vars that would block Sentry init.
+	 * CI sets VITE_USE_EMULATORS=true and FIRESTORE_EMULATOR_HOST,
+	 * which must be cleared for tests expecting initialization.
+	 */
+	function clearEmulatorEnvVars() {
+		vi.stubEnv('VITE_USE_EMULATORS', '')
+		vi.stubEnv('FIRESTORE_EMULATOR_HOST', '')
+	}
+
 	describe('initSentryServer', () => {
 		it('should return false when SENTRY_DSN is not set', async () => {
 			// Don't set SENTRY_DSN
@@ -67,6 +77,7 @@ describe('sentry server', () => {
 		})
 
 		it('should initialize Sentry when SENTRY_DSN is set', async () => {
+			clearEmulatorEnvVars()
 			vi.stubEnv('SENTRY_DSN', 'https://test@sentry.io/123')
 			vi.stubEnv('NODE_ENV', 'production')
 
@@ -84,6 +95,7 @@ describe('sentry server', () => {
 		})
 
 		it('should use NODE_ENV as environment', async () => {
+			clearEmulatorEnvVars()
 			vi.stubEnv('SENTRY_DSN', 'https://test@sentry.io/123')
 			vi.stubEnv('NODE_ENV', 'staging')
 
@@ -98,9 +110,10 @@ describe('sentry server', () => {
 		})
 
 		it('should default to development when NODE_ENV is not set', async () => {
+			clearEmulatorEnvVars()
 			vi.stubEnv('SENTRY_DSN', 'https://test@sentry.io/123')
-			// Explicitly unset NODE_ENV to test fallback
-			process.env.NODE_ENV = undefined
+			// Stub NODE_ENV to empty string to test fallback (delete doesn't work in vitest)
+			vi.stubEnv('NODE_ENV', '')
 
 			const {initSentryServer} = await resetModule()
 			initSentryServer()
@@ -113,6 +126,7 @@ describe('sentry server', () => {
 		})
 
 		it('should only initialize once (subsequent calls return true)', async () => {
+			clearEmulatorEnvVars()
 			vi.stubEnv('SENTRY_DSN', 'https://test@sentry.io/123')
 
 			const {initSentryServer} = await resetModule()
@@ -129,6 +143,7 @@ describe('sentry server', () => {
 
 	describe('withSentry', () => {
 		it('should catch and report exceptions then re-throw', async () => {
+			clearEmulatorEnvVars()
 			vi.stubEnv('SENTRY_DSN', 'https://test@sentry.io/123')
 
 			const {initSentryServer, withSentry} = await resetModule()
@@ -143,6 +158,7 @@ describe('sentry server', () => {
 		})
 
 		it('should pass through successful results unchanged', async () => {
+			clearEmulatorEnvVars()
 			vi.stubEnv('SENTRY_DSN', 'https://test@sentry.io/123')
 
 			const {initSentryServer, withSentry} = await resetModule()
@@ -172,6 +188,7 @@ describe('sentry server', () => {
 		})
 
 		it('should not capture non-Error exceptions', async () => {
+			clearEmulatorEnvVars()
 			vi.stubEnv('SENTRY_DSN', 'https://test@sentry.io/123')
 
 			const {initSentryServer, withSentry} = await resetModule()
@@ -197,6 +214,7 @@ describe('sentry server', () => {
 		})
 
 		it('should capture errors when Sentry is initialized', async () => {
+			clearEmulatorEnvVars()
 			vi.stubEnv('SENTRY_DSN', 'https://test@sentry.io/123')
 
 			const {initSentryServer, captureServerError} = await resetModule()
@@ -209,6 +227,7 @@ describe('sentry server', () => {
 		})
 
 		it('should capture errors with context when provided', async () => {
+			clearEmulatorEnvVars()
 			vi.stubEnv('SENTRY_DSN', 'https://test@sentry.io/123')
 
 			const {initSentryServer, captureServerError} = await resetModule()
@@ -232,6 +251,7 @@ describe('sentry server', () => {
 		})
 
 		it('should return true after successful initialization', async () => {
+			clearEmulatorEnvVars()
 			vi.stubEnv('SENTRY_DSN', 'https://test@sentry.io/123')
 
 			const {initSentryServer, isSentryServerInitialized} = await resetModule()
@@ -254,6 +274,7 @@ describe('sentry server', () => {
 		})
 
 		it('should call Sentry.flush when initialized', async () => {
+			clearEmulatorEnvVars()
 			vi.stubEnv('SENTRY_DSN', 'https://test@sentry.io/123')
 
 			const {initSentryServer, flushSentry} = await resetModule()
@@ -266,6 +287,7 @@ describe('sentry server', () => {
 		})
 
 		it('should accept custom timeout', async () => {
+			clearEmulatorEnvVars()
 			vi.stubEnv('SENTRY_DSN', 'https://test@sentry.io/123')
 
 			const {initSentryServer, flushSentry} = await resetModule()

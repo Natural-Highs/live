@@ -38,7 +38,7 @@ coverage:
 
 bundle_analysis:
   status: informational
-  warning_threshold: "5%"   # Warn if bundle grows by more than 5%
+  warning_threshold: 5%   # Warn if bundle grows by more than 5%
 
 comment:
   layout: header,diff,flags,components,tree,footer
