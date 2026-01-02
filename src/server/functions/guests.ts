@@ -1,7 +1,7 @@
 import {createServerFn} from '@tanstack/react-start'
 import type {WriteBatch} from 'firebase-admin/firestore'
 import {FieldValue} from 'firebase-admin/firestore'
-import {requireAuth} from '@/server/middleware/auth'
+import {requireAdmin, requireAuth} from '@/server/middleware/auth'
 import {auth, db} from '../../lib/firebase/firebase'
 import {
 	completeGuestConversionSchema,
@@ -9,29 +9,47 @@ import {
 	createPendingConversionSchema,
 	getGuestEventCountSchema,
 	getPendingConversionSchema,
+	linkGuestToUserSchema,
+	listGuestsForEventSchema,
 	registerGuestSchema,
+	updateGuestEmailSchema,
 	upgradeGuestSchema,
 	validateGuestCodeSchema
 } from '../schemas/guests'
 import {ConflictError, NotFoundError, ValidationError} from './utils/errors'
 
 /**
+ * Migration options for performGuestMigration
+ */
+interface GuestMigrationOptions {
+	/** Create new user doc from guest data (default: true) */
+	createUserDoc?: boolean
+	/** Delete pending conversion doc after migration */
+	deletePendingConversion?: string
+	/** Require target user to exist (for linking to existing user) */
+	requireUserExists?: boolean
+}
+
+/**
  * Internal: Perform the actual guest-to-user migration
- * Extracted to eliminate code duplication between convertGuestToUser and completeGuestConversion
+ * Extracted to eliminate code duplication between convertGuestToUser, completeGuestConversion, and linkGuestToUser
  *
  * Handles:
  * - Pre-flight validation (guest exists, not already converted)
+ * - Optional user existence check (when linking to existing user)
  * - Querying all guestEvents
  * - Chunked batches for >500 events (Firestore batch limit)
- * - Atomic migration: user doc, userEvents, guest update
+ * - Atomic migration: optional user doc, userEvents, guest update
  *
- * @internal - Not exported as server function, called by convertGuestToUser and completeGuestConversion
+ * @internal - Not exported as server function
  */
 async function performGuestMigration(
 	guestId: string,
 	userId: string,
-	options?: {deletePendingConversion?: string}
+	options: GuestMigrationOptions = {}
 ): Promise<{userId: string; migratedEventCount: number}> {
+	const {createUserDoc = true, deletePendingConversion, requireUserExists = false} = options
+
 	// Pre-flight validation - guest exists
 	const guestDoc = await db.collection('guests').doc(guestId).get()
 	if (!guestDoc.exists) {
@@ -45,6 +63,14 @@ async function performGuestMigration(
 		throw new ConflictError('Guest has already been converted to a user account')
 	}
 
+	// Pre-flight validation - target user exists (when linking to existing user)
+	if (requireUserExists) {
+		const userDoc = await db.collection('users').doc(userId).get()
+		if (!userDoc.exists) {
+			throw new NotFoundError('User not found')
+		}
+	}
+
 	// Query all guestEvents for this guest
 	const guestEventsSnapshot = await db
 		.collection('guestEvents')
@@ -56,9 +82,9 @@ async function performGuestMigration(
 
 	// Firestore batch limit is 500 operations
 	// Each event creates 1 userEvent write
-	// Plus: 1 user doc + 1 guest update + optional pending deletion = 2-3 fixed ops
+	// Plus: optional user doc + 1 guest update + optional pending deletion
 	const BATCH_LIMIT = 500
-	const fixedOpsCount = options?.deletePendingConversion ? 3 : 2
+	const fixedOpsCount = (createUserDoc ? 1 : 0) + 1 + (deletePendingConversion ? 1 : 0)
 	const eventsPerBatch = BATCH_LIMIT - fixedOpsCount
 
 	if (totalEvents > eventsPerBatch) {
@@ -74,7 +100,7 @@ async function performGuestMigration(
 		isFirstBatch: boolean,
 		isLastBatch: boolean
 	) => {
-		if (isFirstBatch) {
+		if (isFirstBatch && createUserDoc) {
 			const userRef = db.collection('users').doc(userId)
 			batch.set(userRef, {
 				firstName: guestData.firstName,
@@ -109,8 +135,8 @@ async function performGuestMigration(
 			})
 
 			// Delete pending conversion if specified
-			if (options?.deletePendingConversion) {
-				const pendingRef = db.collection('pendingConversions').doc(options.deletePendingConversion)
+			if (deletePendingConversion) {
+				const pendingRef = db.collection('pendingConversions').doc(deletePendingConversion)
 				batch.delete(pendingRef)
 			}
 		}
@@ -383,7 +409,7 @@ export const getGuestEventCount = createServerFn({method: 'GET'})
 	)
 
 /**
- * Convert guest to full user account (Story 3-2: Guest-to-User Conversion)
+ * Convert guest to full user account
  * Called after magic link/passkey verification completes
  *
  * ADR-1: Copy & Reference - preserves audit trail, guest marked with convertedToUserId
@@ -415,7 +441,7 @@ export const convertGuestToUser = createServerFn({method: 'POST'})
 				throw new ValidationError('Cannot convert guest to a different user account')
 			}
 
-			const result = await performGuestMigration(guestId, userId)
+			const result = await performGuestMigration(guestId, userId, {createUserDoc: true})
 
 			return {
 				success: true,
@@ -549,6 +575,206 @@ export const completeGuestConversion = createServerFn({method: 'POST'})
 
 			const result = await performGuestMigration(guestId, userId, {
 				deletePendingConversion: email
+			})
+
+			return {
+				success: true,
+				...result
+			}
+		}
+	)
+
+/**
+ * List guests for a specific event
+ * Admin-only endpoint for viewing live check-in list
+ */
+export const listGuestsForEvent = createServerFn({method: 'GET'})
+	.inputValidator((d: unknown) => {
+		const result = listGuestsForEventSchema.safeParse(d)
+		if (!result.success) {
+			throw new ValidationError(result.error.issues[0]?.message ?? 'Invalid input')
+		}
+		return result.data
+	})
+	.handler(
+		async ({
+			data
+		}): Promise<{
+			guests: Array<{
+				id: string
+				firstName: string
+				lastName: string
+				email: string | null
+				checkInTime: string | null
+			}>
+		}> => {
+			await requireAdmin()
+
+			const {eventId} = data
+
+			// Query guestEvents for this event to get check-in times
+			const guestEventsSnapshot = await db
+				.collection('guestEvents')
+				.where('eventId', '==', eventId)
+				.get()
+
+			if (guestEventsSnapshot.empty) {
+				return {guests: []}
+			}
+
+			// Batch fetch all guest documents to avoid N+1 queries
+			const guestRefs = guestEventsSnapshot.docs.map(doc =>
+				db.collection('guests').doc(doc.data().guestId)
+			)
+			const guestDocs = await db.getAll(...guestRefs)
+
+			// Build lookup map for guest data
+			const guestMap = new Map(
+				guestDocs.filter(doc => doc.exists).map(doc => [doc.id, doc.data()!])
+			)
+
+			// Map guestEvents to response using the lookup map
+			const guests = guestEventsSnapshot.docs
+				.map(guestEventDoc => {
+					const guestEventData = guestEventDoc.data()
+					const guestData = guestMap.get(guestEventData.guestId)
+
+					if (!guestData) {
+						return null
+					}
+
+					const registeredAt =
+						guestEventData.registeredAt?.toDate?.()?.toISOString() ??
+						guestEventData.registeredAt ??
+						guestEventData.createdAt?.toDate?.()?.toISOString() ??
+						guestEventData.createdAt ??
+						null
+
+					return {
+						id: guestEventData.guestId,
+						firstName: guestData.firstName,
+						lastName: guestData.lastName,
+						email: guestData.email ?? null,
+						checkInTime: registeredAt
+					}
+				})
+				.filter((g): g is NonNullable<typeof g> => g !== null)
+
+			return {guests}
+		}
+	)
+
+/**
+ * Update guest email
+ * Admin-only endpoint to add email to a guest record
+ *
+ * Returns duplicate info if email exists in users or guests collection,
+ * otherwise updates the guest record with the new email.
+ */
+export const updateGuestEmail = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => {
+		const result = updateGuestEmailSchema.safeParse(d)
+		if (!result.success) {
+			throw new ValidationError(result.error.issues[0]?.message ?? 'Invalid input')
+		}
+		return result.data
+	})
+	.handler(
+		async ({
+			data
+		}): Promise<
+			| {success: true; guestId: string; email: string}
+			| {found: true; existingType: 'user' | 'guest'; existingId: string}
+		> => {
+			await requireAdmin()
+
+			const {guestId, email} = data
+
+			// Pre-flight: verify guest exists
+			const guestDoc = await db.collection('guests').doc(guestId).get()
+			if (!guestDoc.exists) {
+				throw new NotFoundError('Guest not found')
+			}
+
+			const guestData = guestDoc.data()!
+
+			// Pre-flight: check if already converted
+			if (guestData.convertedToUserId) {
+				throw new ConflictError('Guest has already been converted to a user account')
+			}
+
+			// Check for duplicate email in users collection
+			const usersSnapshot = await db.collection('users').where('email', '==', email).limit(1).get()
+
+			if (!usersSnapshot.empty) {
+				const existingUser = usersSnapshot.docs[0]!
+				return {
+					found: true,
+					existingType: 'user',
+					existingId: existingUser.id
+				}
+			}
+
+			// Check for duplicate email in guests collection (excluding current guest)
+			const guestsSnapshot = await db
+				.collection('guests')
+				.where('email', '==', email)
+				.limit(2)
+				.get()
+
+			const otherGuestWithEmail = guestsSnapshot.docs.find(doc => doc.id !== guestId)
+			if (otherGuestWithEmail) {
+				return {
+					found: true,
+					existingType: 'guest',
+					existingId: otherGuestWithEmail.id
+				}
+			}
+
+			// No duplicates - update guest with email
+			await db.collection('guests').doc(guestId).update({
+				email,
+				updatedAt: FieldValue.serverTimestamp()
+			})
+
+			return {
+				success: true,
+				guestId,
+				email
+			}
+		}
+	)
+
+/**
+ * Link guest to existing user
+ * Admin-only endpoint for linking a guest record to an existing user
+ *
+ * Used when admin tries to add an email that already belongs to a user.
+ * Migrates all guest events to the existing user without creating a new user doc.
+ */
+export const linkGuestToUser = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => {
+		const result = linkGuestToUserSchema.safeParse(d)
+		if (!result.success) {
+			throw new ValidationError(result.error.issues[0]?.message ?? 'Invalid input')
+		}
+		return result.data
+	})
+	.handler(
+		async ({
+			data
+		}): Promise<{
+			success: true
+			userId: string
+			migratedEventCount: number
+		}> => {
+			await requireAdmin()
+
+			const {guestId, targetUserId} = data
+
+			const result = await performGuestMigration(guestId, targetUserId, {
+				createUserDoc: false,
+				requireUserExists: true
 			})
 
 			return {

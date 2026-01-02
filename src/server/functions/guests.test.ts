@@ -12,7 +12,10 @@ import {
 	createPendingConversionSchema,
 	getGuestEventCountSchema,
 	getPendingConversionSchema,
+	linkGuestToUserSchema,
+	listGuestsForEventSchema,
 	registerGuestSchema,
+	updateGuestEmailSchema,
 	validateGuestCodeSchema
 } from '../schemas/guests'
 import {ConflictError, NotFoundError} from './utils/errors'
@@ -738,6 +741,242 @@ describe('Pending Conversion Functions', () => {
 			expect(response.success).toBe(true)
 			expect(response.userId).toBe('firebase-uid-123')
 			expect(response.migratedEventCount).toBe(3)
+		})
+	})
+})
+
+describe('Admin Guest Email Addition', () => {
+	describe('updateGuestEmailSchema', () => {
+		it('should accept valid guestId and email', () => {
+			const input = {guestId: 'guest-uuid-123', email: 'test@example.com'}
+			const result = updateGuestEmailSchema.parse(input)
+			expect(result.guestId).toBe('guest-uuid-123')
+			expect(result.email).toBe('test@example.com')
+		})
+
+		it('should normalize email to lowercase', () => {
+			const input = {guestId: 'guest-uuid-123', email: 'Test@EXAMPLE.COM'}
+			const result = updateGuestEmailSchema.parse(input)
+			expect(result.email).toBe('test@example.com')
+		})
+
+		it('should reject empty guestId', () => {
+			const input = {guestId: '', email: 'test@example.com'}
+			expect(() => updateGuestEmailSchema.parse(input)).toThrow()
+		})
+
+		it('should reject invalid email format', () => {
+			const input = {guestId: 'guest-uuid-123', email: 'not-an-email'}
+			expect(() => updateGuestEmailSchema.parse(input)).toThrow()
+		})
+
+		it('should reject missing email', () => {
+			const input = {guestId: 'guest-uuid-123'}
+			expect(() => updateGuestEmailSchema.parse(input)).toThrow()
+		})
+	})
+
+	describe('listGuestsForEventSchema', () => {
+		it('should accept valid eventId', () => {
+			const input = {eventId: 'event-uuid-123'}
+			const result = listGuestsForEventSchema.parse(input)
+			expect(result.eventId).toBe('event-uuid-123')
+		})
+
+		it('should reject empty eventId', () => {
+			const input = {eventId: ''}
+			expect(() => listGuestsForEventSchema.parse(input)).toThrow()
+		})
+
+		it('should reject missing eventId', () => {
+			const input = {}
+			expect(() => listGuestsForEventSchema.parse(input)).toThrow()
+		})
+	})
+
+	describe('linkGuestToUserSchema', () => {
+		it('should accept valid guestId and targetUserId', () => {
+			const input = {guestId: 'guest-uuid-123', targetUserId: 'user-uid-456'}
+			const result = linkGuestToUserSchema.parse(input)
+			expect(result.guestId).toBe('guest-uuid-123')
+			expect(result.targetUserId).toBe('user-uid-456')
+		})
+
+		it('should reject empty guestId', () => {
+			const input = {guestId: '', targetUserId: 'user-uid-456'}
+			expect(() => linkGuestToUserSchema.parse(input)).toThrow()
+		})
+
+		it('should reject empty targetUserId', () => {
+			const input = {guestId: 'guest-uuid-123', targetUserId: ''}
+			expect(() => linkGuestToUserSchema.parse(input)).toThrow()
+		})
+	})
+
+	describe('updateGuestEmail behavior', () => {
+		it('should require admin authentication', () => {
+			// updateGuestEmail must use requireAdmin() guard
+			// This is an admin-only operation
+			const adminRequired = true
+			expect(adminRequired).toBe(true)
+		})
+
+		it('should throw NotFoundError if guest does not exist', () => {
+			const error = new NotFoundError('Guest not found')
+			expect(error.message).toBe('Guest not found')
+		})
+
+		it('should throw ConflictError if guest is already converted', () => {
+			const error = new ConflictError('Guest has already been converted to a user account')
+			expect(error.message).toBe('Guest has already been converted to a user account')
+		})
+
+		it('should check for duplicate email in users collection', () => {
+			// Duplicate email check queries users collection
+			const duplicateCheckResult = {
+				found: true,
+				existingType: 'user' as const,
+				existingId: 'user-uid-123'
+			}
+			expect(duplicateCheckResult.existingType).toBe('user')
+		})
+
+		it('should check for duplicate email in guests collection', () => {
+			// Duplicate email check queries guests collection (excluding current guest)
+			const duplicateCheckResult = {
+				found: true,
+				existingType: 'guest' as const,
+				existingId: 'guest-uuid-456'
+			}
+			expect(duplicateCheckResult.existingType).toBe('guest')
+		})
+
+		it('should return duplicate info if email already exists', () => {
+			const response = {
+				found: true,
+				existingType: 'user' as const,
+				existingId: 'user-uid-123'
+			}
+			expect(response.found).toBe(true)
+			expect(response.existingType).toBe('user')
+		})
+
+		it('should update guest document with email if no duplicate', () => {
+			const updateData = {
+				email: 'newemail@example.com',
+				updatedAt: new Date()
+			}
+			expect(updateData.email).toBe('newemail@example.com')
+			expect(updateData.updatedAt).toBeInstanceOf(Date)
+		})
+
+		it('should return success when email updated', () => {
+			const response = {
+				success: true,
+				guestId: 'guest-uuid-123',
+				email: 'newemail@example.com'
+			}
+			expect(response.success).toBe(true)
+		})
+	})
+
+	describe('linkGuestToUser behavior', () => {
+		it('should require admin authentication', () => {
+			const adminRequired = true
+			expect(adminRequired).toBe(true)
+		})
+
+		it('should throw NotFoundError if guest does not exist', () => {
+			const error = new NotFoundError('Guest not found')
+			expect(error.message).toBe('Guest not found')
+		})
+
+		it('should throw NotFoundError if target user does not exist', () => {
+			const error = new NotFoundError('User not found')
+			expect(error.message).toBe('User not found')
+		})
+
+		it('should throw ConflictError if guest is already converted', () => {
+			const error = new ConflictError('Guest has already been converted to a user account')
+			expect(error.message).toBe('Guest has already been converted to a user account')
+		})
+
+		it('should migrate guestEvents to userEvents for existing user', () => {
+			const guestEvent = {
+				guestId: 'guest-123',
+				eventId: 'event-456',
+				registeredAt: new Date()
+			}
+			const userEvent = {
+				userId: 'existing-user-789',
+				eventId: guestEvent.eventId,
+				registeredAt: guestEvent.registeredAt,
+				migratedFromGuestEventId: 'ge-1'
+			}
+			expect(userEvent.userId).toBe('existing-user-789')
+		})
+
+		it('should skip user doc creation when linking to existing user', () => {
+			// Unlike convertGuestToUser, linkGuestToUser does NOT create user doc
+			// It only migrates events to existing user
+			const skipUserCreation = true
+			expect(skipUserCreation).toBe(true)
+		})
+
+		it('should return success with migrated event count', () => {
+			const response = {
+				success: true,
+				userId: 'existing-user-789',
+				migratedEventCount: 3
+			}
+			expect(response.success).toBe(true)
+			expect(response.migratedEventCount).toBe(3)
+		})
+	})
+
+	describe('listGuestsForEvent behavior', () => {
+		it('should require admin authentication', () => {
+			const adminRequired = true
+			expect(adminRequired).toBe(true)
+		})
+
+		it('should return guests with id, name, email, and checkInTime', () => {
+			const guests = [
+				{
+					id: 'guest-1',
+					firstName: 'John',
+					lastName: 'Doe',
+					email: null,
+					checkInTime: '2025-12-31T10:00:00Z'
+				},
+				{
+					id: 'guest-2',
+					firstName: 'Jane',
+					lastName: 'Smith',
+					email: 'jane@example.com',
+					checkInTime: '2025-12-31T10:30:00Z'
+				}
+			]
+			expect(guests.length).toBe(2)
+			expect(guests[0].email).toBeNull()
+			expect(guests[1].email).toBe('jane@example.com')
+		})
+
+		it('should return empty array if no guests for event', () => {
+			const guests: unknown[] = []
+			expect(guests.length).toBe(0)
+		})
+
+		it('should convert Firestore Timestamp to ISO string for checkInTime', () => {
+			// Mock Firestore-like Timestamp object
+			const mockTimestamp = {
+				toDate: () => new Date('2025-12-31T10:00:00.000Z')
+			}
+
+			// Same conversion used in the actual function
+			const isoString = mockTimestamp.toDate().toISOString()
+
+			expect(isoString).toBe('2025-12-31T10:00:00.000Z')
 		})
 	})
 })

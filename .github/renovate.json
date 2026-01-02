@@ -42,7 +42,12 @@
 		},
 		{
 			"description": "Group shadcn/ui related",
-			"matchPackagePatterns": ["^@radix-ui/", "^class-variance-authority", "^clsx", "^tailwind-merge"],
+			"matchPackagePatterns": [
+				"^@radix-ui/",
+				"^class-variance-authority",
+				"^clsx",
+				"^tailwind-merge"
+			],
 			"groupName": "shadcn/ui dependencies"
 		},
 		{

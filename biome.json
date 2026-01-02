@@ -110,7 +110,13 @@
 			}
 		},
 		{
-			"includes": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/*.spec.tsx", "src/tests/**/*"],
+			"includes": [
+				"**/*.test.ts",
+				"**/*.test.tsx",
+				"**/*.spec.ts",
+				"**/*.spec.tsx",
+				"src/tests/**/*"
+			],
 			"linter": {
 				"rules": {
 					"suspicious": {
@@ -121,8 +127,8 @@
 		},
 		{
 			"includes": ["public/**", "_*/**", ".build/**"],
-			"formatter": {"enabled": false},
-			"linter": {"enabled": false}
+			"formatter": { "enabled": false },
+			"linter": { "enabled": false }
 		}
 	]
 }

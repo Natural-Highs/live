@@ -1,4 +1,6 @@
 #!/usr/bin/env bun
+declare const Bun: {write: (path: string, content: string) => Promise<number>}
+
 const sourcePath = process.argv[2]
 if (!sourcePath) {
 	process.exit(1)

@@ -440,3 +440,73 @@ await createTestUserDocument(
   }
 )
 ```
+
+## Event and Guest Fixtures
+
+For testing event management and guest check-in flows:
+
+### Creating Events
+
+```typescript
+import {createTestEvent, deleteTestEvent} from '../fixtures/firestore.fixture'
+
+await createTestEvent({
+  id: 'test-event',
+  name: 'Morning Yoga',
+  eventCode: '1234',
+  isActive: true
+})
+```
+
+### Creating Guests
+
+```typescript
+import {createTestGuest, deleteTestGuest} from '../fixtures/firestore.fixture'
+
+const guestId = await createTestGuest({
+  firstName: 'Derek',
+  lastName: 'Jeter',
+  eventId: 'test-event',
+  email: 'derek@example.com'
+})
+```
+
+### Event/Guest Fixture API
+
+| Function | Description |
+|----------|-------------|
+| `createTestEvent(event)` | Create event document |
+| `deleteTestEvent(eventId)` | Delete event |
+| `createTestGuest(guest)` | Create guest + guestEvent record |
+| `deleteTestGuest(guestId)` | Delete guest and guestEvents |
+| `deleteAllTestEvents()` | Clear all events |
+| `deleteAllTestGuests()` | Clear all guests and guestEvents |
+
+## Scenario Seeding
+
+For quickly setting up complete test scenarios:
+
+```typescript
+import {seedTestScenario} from '../fixtures/firestore.fixture'
+
+test.beforeEach(async () => {
+  await seedTestScenario('admin-with-guests')
+})
+```
+
+### Available Scenarios
+
+| Scenario | Contents |
+|----------|----------|
+| `admin-with-guests` | 1 active event, 3 guest check-ins |
+| `user-with-history` | 1 user, 2 past events, attendance records |
+| `empty-event` | 1 active event with no check-ins |
+
+### CLI Seeding
+
+For manual testing, use the seed script:
+
+```bash
+bun run seed:test-data              # Seed all scenarios
+bun run seed:test-data admin-with-guests  # Seed specific scenario
+```

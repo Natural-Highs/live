@@ -6,6 +6,10 @@
 
 | Command | Purpose |
 |---------|---------|
+| `bun run dev` | Start emulators + dev server |
+| `bun run dev:cloud` | Dev with real Firebase (Doppler) |
+| `bun run emulators` | Start Firebase emulators only |
+| `bun run seed:test-data` | Seed test scenarios |
 | `bun run test` | Unit tests (watch mode) |
 | `bun run test:ci` | Unit tests (single run) |
 | `bun run test:e2e` | E2E tests (UI mode) |
@@ -145,12 +149,99 @@ export class LoginPage {
 
 Use `mergeTests()` from `@playwright/test` to compose fixtures.
 
-## Firebase Emulators
+## Emulator-First Testing
 
-E2E tests run against local emulators. Start with `bun run emulators`:
+All local development and testing uses Firebase emulators by default. This ensures tests run against real Firebase behavior without mocking.
+
+### Starting Development
+
+```bash
+# Single command starts emulators + dev server
+bun run dev
+
+# Or manually in separate terminals:
+bun run emulators        # Terminal 1: Start emulators
+bun run dev:cloud        # Terminal 2: Dev with real Firebase (when needed)
+```
+
+### Emulator Ports
+
 - Auth: `localhost:9099`
 - Firestore: `localhost:8080`
 - UI: `localhost:4000`
+
+### Seeding Test Data
+
+```bash
+# Seed all scenarios
+bun run seed:test-data
+
+# Seed specific scenario
+bun run seed:test-data admin-with-guests
+```
+
+Available scenarios:
+- `admin-with-guests` - Active event with 3 guest check-ins
+- `user-with-history` - Registered user with past event attendance
+- `empty-event` - Active event with no check-ins
+
+### Dev Auth Bypass
+
+Navigate to `/dev/auth` during local development for quick role-based login:
+- **Admin** - Full admin access
+- **User** - Standard user dashboard
+- **Guest** - Guest check-in flow
+
+Note: This route returns 404 in production.
+
+## Anti-Patterns
+
+### DO NOT create REST wrappers for mocking
+
+```typescript
+// BAD: REST wrapper for mocking
+// src/routes/api/guests.ts
+export const handler = async (req) => {
+  const result = await listGuestsForEvent({data: {eventId: req.query.eventId}})
+  return new Response(JSON.stringify(result))
+}
+
+// Then in tests:
+await page.route('/api/guests*', async route => {
+  await route.fulfill({json: mockData})
+})
+```
+
+This pattern:
+- Breaks type-safety by adding an unnecessary HTTP layer
+- Creates maintenance burden (two code paths)
+- Diverges from real production behavior
+
+### DO use emulator fixtures
+
+```typescript
+// GOOD: Direct server function with emulator fixtures
+import {createTestEvent, createTestGuest} from '../fixtures/firestore.fixture'
+
+test.beforeEach(async () => {
+  await createTestEvent({
+    id: 'test-event',
+    name: 'Test Event',
+    eventCode: '1234',
+    isActive: true
+  })
+  await createTestGuest({
+    firstName: 'Derek',
+    lastName: 'Jeter',
+    eventId: 'test-event'
+  })
+})
+
+test('displays guest list', async ({page}) => {
+  await page.goto('/admin/guests')
+  await expect(page.getByText('Derek Jeter')).toBeVisible()
+})
+```
 
 ## Coverage
 

@@ -55,7 +55,6 @@ export function ConsentForm({
 					</div>
 				) : (
 					<div className='prose text-foreground'>
-						<p>TODO: Add consent form text here</p>
 						<p>By checking the box below, you consent to participate in this research study.</p>
 					</div>
 				)}
