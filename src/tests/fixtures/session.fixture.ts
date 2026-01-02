@@ -246,6 +246,14 @@ export async function unsealTestSessionCookie(sealedValue: string): Promise<Sess
 	const unsealed = await Iron.unseal(sealedValue, SESSION_SECRET_TEST, IRON_OPTIONS)
 	// h3 wraps data in {id, createdAt, data} structure
 	const h3Session = unsealed as H3Session
+	if (
+		!h3Session ||
+		typeof h3Session.id !== 'string' ||
+		typeof h3Session.createdAt !== 'number' ||
+		!h3Session.data
+	) {
+		throw new Error('Invalid session structure after unseal - check test fixture setup')
+	}
 	return h3Session.data
 }
 

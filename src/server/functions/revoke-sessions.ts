@@ -65,7 +65,16 @@ export const revokeMySessionsFn = createServerFn({method: 'POST'}).handler(
 				success: true,
 				message: 'All sessions have been revoked. Please sign in again.'
 			}
-		} catch (_error) {
+		} catch (error) {
+			console.error('[revoke-sessions] revokeMySessionsFn failed:', {
+				userId: user.uid,
+				reason,
+				error: error instanceof Error ? error.message : String(error)
+			})
+			// Rethrow known error types unchanged
+			if (error instanceof AuthenticationError || error instanceof ValidationError) {
+				throw error
+			}
 			throw new AuthenticationError('Failed to revoke sessions')
 		}
 	}
@@ -110,7 +119,17 @@ export const adminRevokeSessionsFn = createServerFn({method: 'POST'}).handler(
 				message: `All sessions for user ${userId} have been revoked.`,
 				revokedBy: admin.uid
 			}
-		} catch (_error) {
+		} catch (error) {
+			// Rethrow known error types unchanged
+			if (error instanceof AuthenticationError || error instanceof ValidationError) {
+				throw error
+			}
+			console.error('[revoke-sessions] adminRevokeSessionsFn failed:', {
+				targetUserId: userId,
+				adminId: admin.uid,
+				reason,
+				error: error instanceof Error ? error.message : String(error)
+			})
 			throw new AuthenticationError('Failed to revoke user sessions')
 		}
 	}
@@ -139,7 +158,15 @@ export const revokeSessionsOnPasskeyRemoval = createServerFn({method: 'POST'}).h
 			success: true,
 			message: 'Sessions revoked due to passkey removal.'
 		}
-	} catch (_error) {
+	} catch (error) {
+		// Rethrow known error types unchanged
+		if (error instanceof AuthenticationError || error instanceof ValidationError) {
+			throw error
+		}
+		console.error('[revoke-sessions] revokeSessionsOnPasskeyRemoval failed:', {
+			userId: user.uid,
+			error: error instanceof Error ? error.message : String(error)
+		})
 		throw new AuthenticationError('Failed to revoke sessions')
 	}
 })

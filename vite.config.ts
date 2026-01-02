@@ -1,5 +1,4 @@
 /// <reference types="vitest/config" />
-import path from 'node:path'
 import netlify from '@netlify/vite-plugin-tanstack-start'
 import tailwindcss from '@tailwindcss/vite'
 import {tanstackStart} from '@tanstack/react-start/plugin/vite'
@@ -18,12 +17,6 @@ export default defineConfig(({mode}) => {
 		},
 		server: {
 			port: 3000
-		},
-		resolve: {
-			alias: {
-				'@': path.resolve(__dirname, './src'),
-				$lib: path.resolve(__dirname, './src/lib')
-			}
 		},
 		plugins: [
 			tsConfigPaths(),

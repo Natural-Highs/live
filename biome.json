@@ -48,6 +48,9 @@
 		"enabled": true,
 		"rules": {
 			"recommended": true,
+			"nursery": {
+				"noDeprecatedImports": "warn"
+			},
 			"complexity": {
 				"noUselessTypeConstraint": "error",
 				"useLiteralKeys": "error",

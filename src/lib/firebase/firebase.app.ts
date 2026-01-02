@@ -49,7 +49,11 @@ if (isClient) {
 			connectFirestoreEmulator(db, 'localhost', 8080)
 			connectAuthEmulator(auth, 'http://localhost:9099')
 			emulatorsConnected = true
-		} catch (_error) {}
+		} catch (error) {
+			if (import.meta.env.DEV) {
+				console.warn('Firebase emulator connection failed:', error)
+			}
+		}
 	}
 }
 

@@ -72,10 +72,18 @@ describe('session middleware', () => {
 		})
 
 		it('should return false when session is exactly 30 days old', () => {
-			const exactDate = new Date()
-			exactDate.setDate(exactDate.getDate() - 30)
-			// At exactly 30 days, should not trigger refresh yet
-			expect(shouldRefreshSession(exactDate.toISOString())).toBe(false)
+			// Use fake timers to avoid race condition with milliseconds elapsed
+			vi.useFakeTimers()
+			try {
+				const now = new Date('2024-06-15T12:00:00.000Z')
+				vi.setSystemTime(now)
+
+				const exactDate = new Date('2024-05-16T12:00:00.000Z') // Exactly 30 days before
+				// At exactly 30 days, should not trigger refresh yet (uses > not >=)
+				expect(shouldRefreshSession(exactDate.toISOString())).toBe(false)
+			} finally {
+				vi.useRealTimers()
+			}
 		})
 	})
 

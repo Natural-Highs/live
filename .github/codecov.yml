@@ -32,14 +32,6 @@ coverage:
         threshold: 5%
         only_pulls: true
 
-parsers:
-  gcov:
-    branch_detection:
-      conditional: true
-      loop: true
-      macro: false
-      method: false
-
 comment:
   layout: header,diff,flags,components,tree,footer
   behavior: default

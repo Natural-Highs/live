@@ -34,9 +34,15 @@ export function SessionExpirationWarning({className}: SessionExpirationWarningPr
 	}
 
 	const expirationDate = new Date(sessionExpiresAt)
-	const daysRemaining = Math.ceil((expirationDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+	const msRemaining = expirationDate.getTime() - Date.now()
 
-	const label = daysRemaining < 1 ? 'Expires today' : `${daysRemaining}d left`
+	// Don't render for already-expired sessions
+	if (msRemaining <= 0) {
+		return null
+	}
+
+	const daysRemaining = Math.floor(msRemaining / (1000 * 60 * 60 * 24))
+	const label = daysRemaining === 0 ? 'Expires today' : `${daysRemaining}d left`
 
 	return (
 		<Badge

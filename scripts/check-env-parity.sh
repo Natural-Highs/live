@@ -30,14 +30,14 @@ for var in "${REQUIRED_VARS[@]}"; do
   if [ "$var" == "SESSION_SECRET" ]; then
     len=${#SESSION_SECRET}
     if [ "$len" -lt 32 ]; then
-      echo "ERROR: SESSION_SECRET must be at least 32 characters (current: $len)"
+      echo "ERROR: SESSION_SECRET must be at least 32 characters"
       exit 1
     fi
   fi
 done
 
 echo "Environment parity check passed"
-echo "  SESSION_SECRET: set (${#SESSION_SECRET} characters)"
+echo "  SESSION_SECRET: set"
 
 # Optional: Check for emulator mode
 if [ -n "$VITE_USE_EMULATORS" ]; then

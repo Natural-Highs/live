@@ -21,8 +21,8 @@
  * ```
  */
 
-export type {GuestCheckInRequest, TestEvent, TestEventType} from './events.factory'
 // Event factories
+export type {GuestCheckInRequest, TestEvent, TestEventType} from '@/tests/factories/events.factory'
 export {
 	createActiveEvent,
 	createEvent,
@@ -32,14 +32,14 @@ export {
 	createGuestCheckInRequest,
 	generateEventCode,
 	TEST_CODES
-} from './events.factory'
+} from '@/tests/factories/events.factory'
+// Survey factories
 export type {
 	TestQuestionResponse,
 	TestSurveyQuestion,
 	TestSurveyResponse,
 	TestSurveyTemplate
-} from './surveys.factory'
-// Survey factories
+} from '@/tests/factories/surveys.factory'
 export {
 	createConsentTemplate,
 	createDemographicsTemplate,
@@ -49,15 +49,15 @@ export {
 	createSurveyResponses,
 	createSurveyTemplate,
 	TEST_TEMPLATES
-} from './surveys.factory'
+} from '@/tests/factories/surveys.factory'
+// User factories
 export type {
 	AuthenticatedTestUser,
 	FirebaseAuthError,
 	MagicLinkRequest,
 	TestUser,
 	TokenClaims
-} from './user.factory'
-// User factories
+} from '@/tests/factories/user.factory'
 export {
 	createAdminUser,
 	createAuthenticatedUser,
@@ -67,4 +67,4 @@ export {
 	createUser,
 	createUsers,
 	FIREBASE_AUTH_ERRORS
-} from './user.factory'
+} from '@/tests/factories/user.factory'

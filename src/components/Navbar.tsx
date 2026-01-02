@@ -6,7 +6,11 @@ import {useAuth} from '../context/AuthContext'
 import {SessionExpirationWarning} from './session/SessionExpirationWarning'
 
 const Navbar: React.FC = () => {
-	const {user, admin} = useAuth()
+	const {user, admin, loading} = useAuth()
+	// During loading, render as if logged out to prevent layout shift
+	// Once loaded, correct state will render
+	const effectiveUser = loading ? null : user
+	const effectiveAdmin = loading ? false : admin
 
 	return (
 		<nav className='flex items-center justify-between bg-muted px-4 py-2'>
@@ -18,10 +22,12 @@ const Navbar: React.FC = () => {
 				</Link>
 			</div>
 			<div className='flex items-center gap-2'>
-				{user ? (
+				{loading ? (
+					<div className='h-9 w-16 animate-pulse rounded bg-muted-foreground/20' />
+				) : effectiveUser ? (
 					<>
 						<SessionExpirationWarning />
-						{admin && (
+						{effectiveAdmin && (
 							<Link to='/admin-dashboard'>
 								<Button variant='ghost'>Admin</Button>
 							</Link>
