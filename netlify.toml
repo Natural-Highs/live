@@ -1,6 +1,6 @@
 [build]
   command = "bun run build"
-  publish = "dist/client"
+  publish = ".build/output/client"
 
 [dev]
   # dev:bare runs vite without Doppler secrets injection
