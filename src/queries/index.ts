@@ -7,4 +7,10 @@ export {
 } from './formTemplates.js'
 export {type GuestForEvent, guestsForEventQueryOptions} from './guests.js'
 export {type ResponseFilters, responsesQueryOptions} from './responses.js'
-export {type User, usersQueryOptions} from './users.js'
+export {
+	accountActivityQueryOptions,
+	attendanceHistoryQueryOptions,
+	type User,
+	type UserEvent,
+	usersQueryOptions
+} from './users.js'

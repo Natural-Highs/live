@@ -12,7 +12,7 @@ vi.mock('@/server/functions/guests', () => ({
 }))
 
 // Import after mock for stable reference
-import {updateGuestEmail} from '@/server/functions/guests'
+import {linkGuestToUser, updateGuestEmail} from '@/server/functions/guests'
 
 describe('AddEmailModal', () => {
 	let queryClient: QueryClient
@@ -161,6 +161,65 @@ describe('AddEmailModal', () => {
 				expect(screen.getByTestId('duplicate-user-warning')).toBeInTheDocument()
 			})
 			expect(screen.getByTestId('link-user-button')).toBeInTheDocument()
+		})
+
+		it('calls linkGuestToUser when link button is clicked', async () => {
+			vi.mocked(updateGuestEmail).mockResolvedValue({
+				found: true,
+				existingType: 'user',
+				existingId: 'user-123'
+			})
+			vi.mocked(linkGuestToUser).mockResolvedValue({
+				success: true,
+				userId: 'user-123',
+				migratedEventCount: 0
+			})
+			const mockOnSuccess = vi.fn()
+
+			renderComponent({onSuccess: mockOnSuccess})
+			const emailInput = screen.getByTestId('email-input')
+			await user.type(emailInput, 'existing@example.com')
+			const submitButton = screen.getByTestId('submit-email-button')
+			await user.click(submitButton)
+
+			await waitFor(() => {
+				expect(screen.getByTestId('link-user-button')).toBeInTheDocument()
+			})
+
+			const linkButton = screen.getByTestId('link-user-button')
+			await user.click(linkButton)
+
+			await waitFor(() => {
+				expect(linkGuestToUser).toHaveBeenCalledWith({
+					data: {guestId: 'guest-1', targetUserId: 'user-123'}
+				})
+			})
+		})
+
+		it('shows error when linkGuestToUser fails', async () => {
+			vi.mocked(updateGuestEmail).mockResolvedValue({
+				found: true,
+				existingType: 'user',
+				existingId: 'user-123'
+			})
+			vi.mocked(linkGuestToUser).mockRejectedValue(new Error('Link failed'))
+
+			renderComponent()
+			const emailInput = screen.getByTestId('email-input')
+			await user.type(emailInput, 'existing@example.com')
+			const submitButton = screen.getByTestId('submit-email-button')
+			await user.click(submitButton)
+
+			await waitFor(() => {
+				expect(screen.getByTestId('link-user-button')).toBeInTheDocument()
+			})
+
+			const linkButton = screen.getByTestId('link-user-button')
+			await user.click(linkButton)
+
+			await waitFor(() => {
+				expect(screen.getByTestId('email-error')).toBeInTheDocument()
+			})
 		})
 
 		it('shows warning when duplicate guest is found', async () => {

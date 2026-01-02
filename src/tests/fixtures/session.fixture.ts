@@ -315,7 +315,8 @@ export async function injectAuthenticatedUser(
 		dateOfBirth: userDocData?.dateOfBirth ?? '1990-01-15',
 		isMinor,
 		profileComplete: claims.profileComplete ?? true,
-		profileVersion: 1
+		profileVersion: 1,
+		signedConsentForm: claims.signedConsentForm ?? true
 	}
 
 	if (!isMinor && userDocData) {

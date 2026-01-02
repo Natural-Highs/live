@@ -1,4 +1,6 @@
 import {queryOptions} from '@tanstack/react-query'
+import {getAccountActivity, getUserEvents} from '@/server/functions/users'
+import type {AccountActivityItem} from '@/server/schemas/users'
 
 export interface User {
 	id: string
@@ -9,6 +11,20 @@ export interface User {
 	admin?: boolean
 	signedConsentForm?: boolean
 	[key: string]: unknown
+}
+
+/**
+ * User event from getUserEvents server function
+ */
+export interface UserEvent {
+	id: string
+	name?: string
+	startDate?: string
+	endDate?: string
+	location?: string
+	wasGuest?: boolean
+	createdAt?: string
+	updatedAt?: string
 }
 
 interface ApiResponse {
@@ -40,5 +56,31 @@ export const usersQueryOptions = () =>
 			}))
 
 			return processedUsers
+		}
+	})
+
+/**
+ * Query options for user's attendance history
+ * Uses getUserEvents server function which includes migrated guest events
+ */
+export const attendanceHistoryQueryOptions = () =>
+	queryOptions({
+		queryKey: ['users', 'attendance-history'] as const,
+		queryFn: async () => {
+			const events = await getUserEvents()
+			return events as UserEvent[]
+		}
+	})
+
+/**
+ * Query options for user's account activity
+ * Returns recent check-ins and consent signatures
+ */
+export const accountActivityQueryOptions = () =>
+	queryOptions({
+		queryKey: ['users', 'account-activity'] as const,
+		queryFn: async () => {
+			const activities = await getAccountActivity()
+			return activities as AccountActivityItem[]
 		}
 	})

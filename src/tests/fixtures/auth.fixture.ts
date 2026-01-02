@@ -127,8 +127,11 @@ function getTestAdminAuth(): AdminAuth {
 /**
  * Create a user in the Firebase Auth emulator.
  *
+ * Handles parallel test execution by checking both UID and email.
+ * If a user with the same email already exists, returns that user's UID.
+ *
  * @param user - User data to create
- * @returns The created user's UID
+ * @returns The created user's UID (may differ from input if email already exists)
  */
 export async function createTestAuthUser(user: {
 	uid: string
@@ -138,23 +141,43 @@ export async function createTestAuthUser(user: {
 }): Promise<string> {
 	const auth = getTestAdminAuth()
 
+	// Check if user exists by UID
 	try {
 		const existingUser = await auth.getUser(user.uid).catch(() => null)
 		if (existingUser) {
 			return existingUser.uid
 		}
 	} catch {
-		// User doesn't exist, continue to create
+		// User doesn't exist by UID, continue
 	}
 
-	const userRecord = await auth.createUser({
-		uid: user.uid,
-		email: user.email,
-		displayName: user.displayName,
-		password: user.password ?? 'testPassword123!'
-	})
+	// Check if user exists by email (for parallel test execution)
+	try {
+		const existingByEmail = await auth.getUserByEmail(user.email).catch(() => null)
+		if (existingByEmail) {
+			return existingByEmail.uid
+		}
+	} catch {
+		// User doesn't exist by email, continue
+	}
 
-	return userRecord.uid
+	// Create new user
+	try {
+		const userRecord = await auth.createUser({
+			uid: user.uid,
+			email: user.email,
+			displayName: user.displayName,
+			password: user.password ?? 'testPassword123!'
+		})
+		return userRecord.uid
+	} catch (error) {
+		// Handle race condition: another worker created the user
+		if (error instanceof Error && error.message.includes('already in use')) {
+			const existingByEmail = await auth.getUserByEmail(user.email)
+			return existingByEmail.uid
+		}
+		throw error
+	}
 }
 
 /**

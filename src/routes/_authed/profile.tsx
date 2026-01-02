@@ -2,15 +2,18 @@ import {createFileRoute, useNavigate, useRouter} from '@tanstack/react-router'
 import type React from 'react'
 import {useEffect, useState} from 'react'
 import {PasskeySetup} from '@/components/auth/PasskeySetup'
+import {AccountActivity} from '@/components/features/AccountActivity'
+import {AttendanceHistory} from '@/components/features/AttendanceHistory'
 import {Alert, Input, Label} from '@/components/ui'
 import {Button} from '@/components/ui/button'
 import {Card, CardContent} from '@/components/ui/card'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
+import type {UserEvent} from '@/queries/users'
 import {checkInToEvent} from '@/server/functions/events'
 import {getProfileFn} from '@/server/functions/profile'
-import {getUserEvents} from '@/server/functions/users'
+import {getAccountActivity, getUserEvents} from '@/server/functions/users'
 
 interface UserProfile {
 	id: string
@@ -24,23 +27,14 @@ interface UserProfile {
 	[key: string]: string | Date | undefined
 }
 
-interface UserEvent {
-	id: string
-	name?: string
-	startDate?: string
-	endDate?: string
-	code?: string
-	isActive?: boolean
-	wasGuest?: boolean // True if event was attended as guest before account conversion
-	createdAt?: string
-	updatedAt?: string
-	[key: string]: string | boolean | undefined
-}
-
 export const Route = createFileRoute('/_authed/profile')({
 	loader: async () => {
 		try {
-			const [profileData, eventsData] = await Promise.all([getProfileFn(), getUserEvents()])
+			const [profileData, eventsData, activityData] = await Promise.all([
+				getProfileFn(),
+				getUserEvents(),
+				getAccountActivity()
+			])
 			const profile = profileData
 				? {
 						id: profileData.uid,
@@ -51,13 +45,15 @@ export const Route = createFileRoute('/_authed/profile')({
 				: null
 			return {
 				profile: profile as UserProfile | null,
-				userEvents: eventsData as UserEvent[]
+				userEvents: eventsData as UserEvent[],
+				accountActivity: activityData
 			}
 		} catch (error) {
 			console.error('Profile loader error:', error)
 			return {
 				profile: null,
-				userEvents: []
+				userEvents: [],
+				accountActivity: []
 			}
 		}
 	},
@@ -65,10 +61,9 @@ export const Route = createFileRoute('/_authed/profile')({
 })
 
 function ProfileComponent() {
-	const {profile, userEvents: initialUserEvents} = Route.useLoaderData()
+	const {profile, userEvents, accountActivity} = Route.useLoaderData()
 	const navigate = useNavigate()
 	const router = useRouter()
-	const [userEvents] = useState<UserEvent[]>(initialUserEvents)
 	const [eventCode, setEventCode] = useState('')
 	const [submittingCode, setSubmittingCode] = useState(false)
 	const [error, setError] = useState('')
@@ -258,51 +253,16 @@ function ProfileComponent() {
 						</form>
 					</FormContainer>
 
-					{/* Registered Events */}
-					<div>
-						<h2 className='mb-4 font-semibold text-2xl text-foreground'>Registered Events</h2>
-						{userEvents.length === 0 ? (
-							<Card data-testid='card-container'>
-								<CardContent className='pt-6'>
-									<p className='text-foreground opacity-70'>
-										No events registered yet. Join an event using a code above.
-									</p>
-								</CardContent>
-							</Card>
-						) : (
-							<div className='grid grid-cols-1 gap-4 md:grid-cols-2'>
-								{userEvents.map(userEvent => (
-									<Card data-testid='card-container' key={userEvent.id}>
-										<CardContent className='pt-6'>
-											<h3 className='font-semibold text-lg text-foreground'>
-												{userEvent.name || `Event ${userEvent.code || userEvent.id}`}
-											</h3>
-											<p className='text-sm opacity-70'>Date: {formatDate(userEvent.startDate)}</p>
-											{userEvent.code && (
-												<p className='text-sm opacity-70'>Code: {userEvent.code}</p>
-											)}
-											{userEvent.createdAt && (
-												<p className='text-sm opacity-70'>
-													Added: {formatDate(userEvent.createdAt)}
-												</p>
-											)}
-											<div className='mt-4 flex justify-end'>
-												<Button
-													data-testid='button-primary'
-													onClick={() => {
-														navigate({to: '/surveys'})
-													}}
-													size='sm'
-													type='button'
-												>
-													View Details
-												</Button>
-											</div>
-										</CardContent>
-									</Card>
-								))}
-							</div>
-						)}
+					{/* Attendance History (AC1, AC2) */}
+					<div data-testid='attendance-history-section'>
+						<h2 className='mb-4 font-semibold text-2xl text-foreground'>Attendance History</h2>
+						<AttendanceHistory events={userEvents} />
+					</div>
+
+					{/* Account Activity (AC3) */}
+					<div data-testid='account-activity-section'>
+						<h2 className='mb-4 font-semibold text-2xl text-foreground'>Account Activity</h2>
+						<AccountActivity activities={accountActivity} />
 					</div>
 
 					{/* Surveys Link */}
