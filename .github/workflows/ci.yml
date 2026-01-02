@@ -118,9 +118,9 @@ jobs:
             trunk-${{ runner.os }}-
 
       - name: Trunk Check
-        uses: trunk-io/trunk-action@v1
+        uses: trunk-io/trunk-action@v1.2.4
         with:
-          post-annotations: true
+          post-annotations: false
           arguments: --ci
 
   # ============================================

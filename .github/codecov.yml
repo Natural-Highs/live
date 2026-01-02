@@ -34,6 +34,7 @@ coverage:
         target: 70%
         threshold: 5%
         only_pulls: true
+        informational: true
 
 comment:
   layout: header,diff,flags,components,tree,footer
