@@ -1,5 +1,30 @@
 # Changelog
 
+## [0.0.2](https://github.com/Natural-Highs/live/compare/v0.0.1...v0.0.2) (2026-01-02)
+
+
+### Features
+
+* emulator-first test infrastructure and admin guest email ([#89](https://github.com/Natural-Highs/live/issues/89)) ([312575a](https://github.com/Natural-Highs/live/commit/312575aab8dfe61f267c25124bc53ec63ff5ad5d))
+* **guest:** guest-to-user conversion ([#88](https://github.com/Natural-Highs/live/issues/88)) ([64f850e](https://github.com/Natural-Highs/live/commit/64f850e9eee42dbf53996785fbf5f9b7c6c6cfa3))
+* **profile:** attendance history and account activity ([#91](https://github.com/Natural-Highs/live/issues/91)) ([4d8d128](https://github.com/Natural-Highs/live/commit/4d8d1283d9e4bb7d7278c9d8c10f9db85f0dcdf4))
+
+
+### Bug Fixes
+
+* **ci:** resolve trunk check and codecov failures ([1b09e78](https://github.com/Natural-Highs/live/commit/1b09e782f01250562e4400d744363d10ab020fd2))
+* correct netlify build output ([ebdfe65](https://github.com/Natural-Highs/live/commit/ebdfe65d4c8b4587a5a0f12292eb97ee378d38d7))
+
+
+### Documentation
+
+* clean up changelog footer ([1941697](https://github.com/Natural-Highs/live/commit/194169764a16b8aef5e278e97d874f025cda4803))
+
+
+### CI
+
+* optimize pipeline with path-based filtering ([#45](https://github.com/Natural-Highs/live/issues/45)) ([415c58e](https://github.com/Natural-Highs/live/commit/415c58e7d8b442e6442b7be15bbc0f75e365cf2a))
+
 ## [0.0.1](https://github.com/Natural-Highs/live/compare/v0.0.0...v0.0.1) (2025-12-30)
 
 
