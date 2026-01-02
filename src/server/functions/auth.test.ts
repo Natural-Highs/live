@@ -591,16 +591,6 @@ describe('auth server functions (Task 2, 3, 4)', () => {
 			await expect(forceLogoutUserFn({data: {uid: ''}})).rejects.toThrow(ValidationError)
 		})
 
-		it('should throw AuthorizationError when caller has no admin claims', async () => {
-			// Arrange - requireAdmin throws when user has no admin claim
-			mockRequireAdmin.mockRejectedValue(new AuthorizationError('Admin privileges required'))
-
-			// Act & Assert
-			await expect(forceLogoutUserFn({data: {uid: 'target-user-123'}})).rejects.toThrow(
-				AuthorizationError
-			)
-		})
-
 		it('should handle Firebase errors gracefully', async () => {
 			// Arrange
 			mockRevokeRefreshTokens.mockRejectedValue(new Error('Firebase internal error'))

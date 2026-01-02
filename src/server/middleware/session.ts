@@ -59,9 +59,11 @@ interface RevocationCacheEntry {
 const revocationCache = new Map<string, RevocationCacheEntry>()
 const REVOCATION_CACHE_TTL = 5 * 60 * 1000 // 5 minutes
 
-/** Time-based cleanup tracking for deterministic cache maintenance */
-let lastCleanupTime = 0
-const CLEANUP_INTERVAL = 5 * 60 * 1000 // 5 minutes
+/**
+ * Probabilistic cleanup probability (1% chance per request).
+ * Serverless-safe: no module-level mutable state that depends on timing.
+ */
+const CLEANUP_PROBABILITY = 0.01
 
 /**
  * Get cache key for revocation check.
@@ -121,10 +123,8 @@ export async function checkSessionRevoked(
 		revocationCache.delete(cacheKey)
 	}
 
-	// Deterministic time-based cleanup instead of probabilistic
-	const now = Date.now()
-	if (now - lastCleanupTime > CLEANUP_INTERVAL) {
-		lastCleanupTime = now
+	// Probabilistic cleanup - serverless-safe (no timing-dependent module state)
+	if (Math.random() < CLEANUP_PROBABILITY) {
 		cleanRevocationCache()
 	}
 

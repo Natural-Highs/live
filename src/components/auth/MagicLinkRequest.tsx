@@ -18,6 +18,12 @@ const emailSchema = z.object({
 
 type EmailFormValues = z.infer<typeof emailSchema>
 
+/** Extract domain from email address */
+function getEmailDomain(email: string): string {
+	const parts = String(email || '').split('@')
+	return parts.length > 1 ? parts[1] : ''
+}
+
 /**
  * Type wrapper for logMagicLinkAttemptFn.
  * Workaround for TanStack Start v1.142.5 type inference limitation.
@@ -61,12 +67,6 @@ export function MagicLinkRequest({onSuccess, onError}: MagicLinkRequestProps) {
 			onError?.(errorMessage)
 			setIsLoading(false)
 			return
-		}
-
-		// Defensive email domain extraction
-		const getEmailDomain = (email: string | undefined): string => {
-			const parts = String(email || '').split('@')
-			return parts.length > 1 ? parts[1] : ''
 		}
 
 		try {

@@ -65,7 +65,10 @@ describe('SessionExpirationWarning', () => {
 	it('should display days remaining', () => {
 		mockRouterAuth.isAuthenticated = true
 		mockRouterAuth.isSessionExpiring = true
-		mockRouterAuth.sessionExpiresAt = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString() // 5 days
+		// 5 full days + 1 hour to ensure Math.floor gives exactly 5
+		mockRouterAuth.sessionExpiresAt = new Date(
+			Date.now() + 5 * 24 * 60 * 60 * 1000 + 60 * 60 * 1000
+		).toISOString()
 
 		render(<SessionExpirationWarning />)
 
@@ -75,18 +78,30 @@ describe('SessionExpirationWarning', () => {
 	it('should display "Expires today" when less than 1 day remaining', () => {
 		mockRouterAuth.isAuthenticated = true
 		mockRouterAuth.isSessionExpiring = true
-		// Session expired 10 minutes ago - Math.ceil(negative value) = 0
-		mockRouterAuth.sessionExpiresAt = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+		// Session expires in 10 minutes (less than 24h)
+		mockRouterAuth.sessionExpiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString()
 
 		render(<SessionExpirationWarning />)
 
 		expect(screen.getByText('Expires today')).toBeInTheDocument()
 	})
 
-	it('should display "1d left" when exactly 1 day remaining', () => {
+	it('should not render when session has already expired', () => {
 		mockRouterAuth.isAuthenticated = true
 		mockRouterAuth.isSessionExpiring = true
-		mockRouterAuth.sessionExpiresAt = new Date(Date.now() + 23 * 60 * 60 * 1000).toISOString() // 23 hours
+		// Session expired 10 minutes ago
+		mockRouterAuth.sessionExpiresAt = new Date(Date.now() - 10 * 60 * 1000).toISOString()
+
+		render(<SessionExpirationWarning />)
+
+		expect(screen.queryByTestId('session-expiration-warning')).not.toBeInTheDocument()
+	})
+
+	it('should display "1d left" when between 1 and 2 days remaining', () => {
+		mockRouterAuth.isAuthenticated = true
+		mockRouterAuth.isSessionExpiring = true
+		// 25 hours = 1 full day + 1 hour, Math.floor gives 1
+		mockRouterAuth.sessionExpiresAt = new Date(Date.now() + 25 * 60 * 60 * 1000).toISOString()
 
 		render(<SessionExpirationWarning />)
 

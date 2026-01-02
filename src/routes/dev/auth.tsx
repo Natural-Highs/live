@@ -21,13 +21,13 @@ export const Route = createFileRoute('/dev/auth')({
 	component: DevAuthPage
 })
 
-/** Valid redirect paths for dev auth */
-type ValidRedirectPath = '/' | '/dashboard' | '/admin' | '/check-in'
+/** Valid redirect paths for dev auth - single source of truth */
+const VALID_REDIRECT_PATHS = ['/', '/dashboard', '/admin-dashboard', '/guest'] as const
+type ValidRedirectPath = (typeof VALID_REDIRECT_PATHS)[number]
 
 /** Type guard to validate redirect path */
 function isValidRedirectPath(path: string): path is ValidRedirectPath {
-	const allowedPaths: ValidRedirectPath[] = ['/', '/dashboard', '/admin', '/check-in']
-	return allowedPaths.includes(path as ValidRedirectPath)
+	return (VALID_REDIRECT_PATHS as readonly string[]).includes(path)
 }
 
 function DevAuthPage() {

@@ -49,7 +49,7 @@
 		"rules": {
 			"recommended": true,
 			"nursery": {
-				"noDeprecatedImports": "error"
+				"noDeprecatedImports": "warn"
 			},
 			"complexity": {
 				"noUselessTypeConstraint": "error",

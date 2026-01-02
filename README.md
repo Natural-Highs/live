@@ -1,5 +1,3 @@
-# Natural Highs Web App
-
 ![TanStack](https://img.shields.io/badge/TanStack-000000?style=for-the-badge&logo=reactquery&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite-000000?style=for-the-badge&logo=vite&logoColor=white)
 ![shadcn/ui](https://img.shields.io/badge/shadcn%2Fui-000000?style=for-the-badge&logo=shadcnui&logoColor=white)
