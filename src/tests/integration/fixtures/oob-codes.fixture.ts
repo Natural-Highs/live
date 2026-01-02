@@ -186,11 +186,11 @@ async function clearAllOobCodes(): Promise<void> {
  * - Auto-cleanup in beforeEach to prevent cross-test contamination
  */
 export const test = base.extend<OobCodeFixtures>({
-	getMagicLinkCode: async (_, use) => {
+	getMagicLinkCode: async ({}, use) => {
 		await use(getMagicLinkCodeWithPolling)
 	},
 
-	getOobCodesForEmail: async (_, use) => {
+	getOobCodesForEmail: async ({}, use) => {
 		const getForEmail = async (email: string): Promise<OobCode[]> => {
 			const codes = await fetchAllOobCodes()
 			return filterCodesByEmail(codes, email)
@@ -198,7 +198,7 @@ export const test = base.extend<OobCodeFixtures>({
 		await use(getForEmail)
 	},
 
-	clearOobCodes: async (_, use) => {
+	clearOobCodes: async ({}, use) => {
 		// Clear before test to handle previous test crashes
 		await clearAllOobCodes()
 

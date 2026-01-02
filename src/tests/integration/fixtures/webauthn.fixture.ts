@@ -184,11 +184,11 @@ export const test = base.extend<WebAuthnFixtures>({
 		await cleanupVirtualAuthenticator(authData.client, authData.authenticatorId)
 	},
 
-	createVirtualAuthenticator: async (_, use) => {
+	createVirtualAuthenticator: async ({}, use) => {
 		await use(setupVirtualAuthenticator)
 	},
 
-	removeVirtualAuthenticator: async (_, use) => {
+	removeVirtualAuthenticator: async ({}, use) => {
 		await use(cleanupVirtualAuthenticator)
 	}
 })

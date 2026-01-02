@@ -192,7 +192,7 @@ export const test = base.extend<IntegrationFixtures>({
 
 	firestoreEmulatorHost: FIRESTORE_EMULATOR_HOST,
 
-	verifyEmulators: async (_, use) => {
+	verifyEmulators: async ({}, use) => {
 		const verify = async (): Promise<EmulatorHealthResult> => {
 			const [authAvailable, firestoreAvailable] = await Promise.all([
 				isAuthEmulatorAvailable(),
@@ -227,15 +227,15 @@ export const test = base.extend<IntegrationFixtures>({
 		await use(verify)
 	},
 
-	clearFirestoreData: async (_, use) => {
+	clearFirestoreData: async ({}, use) => {
 		await use(clearFirestoreEmulator)
 	},
 
-	clearAuthUsers: async (_, use) => {
+	clearAuthUsers: async ({}, use) => {
 		await use(clearAuthEmulator)
 	},
 
-	clearAllTestData: async (_, use) => {
+	clearAllTestData: async ({}, use) => {
 		const clearAll = async (): Promise<void> => {
 			await Promise.all([clearFirestoreEmulator(), clearAuthEmulator()])
 		}
