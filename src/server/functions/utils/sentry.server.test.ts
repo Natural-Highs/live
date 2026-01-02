@@ -46,6 +46,8 @@ describe('sentry server', () => {
 
 	describe('initSentryServer', () => {
 		it('should return false when SENTRY_DSN is not set', async () => {
+			// Clear emulator vars to test DSN check specifically (not emulator check)
+			clearEmulatorEnvVars()
 			// Don't set SENTRY_DSN
 			const {initSentryServer} = await resetModule()
 			const result = initSentryServer()
