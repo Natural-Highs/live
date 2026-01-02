@@ -360,6 +360,61 @@ jobs:
           echo "[${{ steps.netlify.outputs.deploy-url }}](${{ steps.netlify.outputs.deploy-url }})" >> $GITHUB_STEP_SUMMARY
 
   # ============================================
+  # Stage 3c: Integration Tests (Real Emulators)
+  # ============================================
+  test-integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [detect-changes, lint, test-unit]
+    # Run if code changed AND upstream jobs succeeded or were skipped
+    if: |
+      always() &&
+      needs.detect-changes.outputs.any-code == 'true' &&
+      (needs.lint.result == 'success' || needs.lint.result == 'skipped') &&
+      (needs.test-unit.result == 'success' || needs.test-unit.result == 'skipped')
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-bun
+        with:
+          java-version: "21"
+          install-playwright: "true"
+          install-firebase: "true"
+
+      - name: Start Firebase emulators
+        run: |
+          firebase emulators:start --only auth,firestore --project demo-natural-highs &
+          for i in {1..30}; do
+            if curl -s http://localhost:9099 > /dev/null 2>&1 && curl -s http://localhost:8080 > /dev/null 2>&1; then
+              echo "All emulators ready"
+              break
+            fi
+            echo "Waiting for emulators... ($i/30)"
+            sleep 1
+          done
+          sleep 2
+
+      - name: Run integration tests
+        run: bun run test:integration:ci
+        env:
+          CI: true
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: |
+            .build/playwright-report/
+            .build/test-results/
+          retention-days: 7
+
+  # ============================================
   # Stage 4: Burn-In (Flaky Detection) - PRs Only
   # ============================================
   burn-in:
@@ -492,7 +547,7 @@ jobs:
   summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [detect-changes, lint, test-unit, test-e2e, deploy-test-report, burn-in, deploy-firestore-rules]
+    needs: [detect-changes, lint, test-unit, test-e2e, test-integration, deploy-test-report, burn-in, deploy-firestore-rules]
     if: always()
     steps:
       - name: Generate summary
@@ -517,6 +572,7 @@ jobs:
           echo "| Code Quality | $(format_status '${{ needs.lint.result }}') |" >> $GITHUB_STEP_SUMMARY
           echo "| Unit Tests | $(format_status '${{ needs.test-unit.result }}') |" >> $GITHUB_STEP_SUMMARY
           echo "| E2E Tests | $(format_status '${{ needs.test-e2e.result }}') |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests | $(format_status '${{ needs.test-integration.result }}') |" >> $GITHUB_STEP_SUMMARY
           echo "| Test Report | $(format_status '${{ needs.deploy-test-report.result }}') |" >> $GITHUB_STEP_SUMMARY
           echo "| Flaky Detection | $(format_status '${{ needs.burn-in.result }}') |" >> $GITHUB_STEP_SUMMARY
           echo "| Firestore Deploy | $(format_status '${{ needs.deploy-firestore-rules.result }}') |" >> $GITHUB_STEP_SUMMARY
