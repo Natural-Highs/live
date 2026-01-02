@@ -123,7 +123,8 @@ describe('useCameraAvailability', () => {
 			value: {
 				query: vi.fn().mockResolvedValue({
 					state: 'granted',
-					addEventListener: vi.fn()
+					addEventListener: vi.fn(),
+					removeEventListener: vi.fn()
 				})
 			},
 			configurable: true
