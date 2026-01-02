@@ -1,6 +1,6 @@
 # Natural Highs
 
-[![Netlify Status](https://api.netlify.com/api/v1/badges/SITE_ID/deploy-status)](https://app.netlify.com/sites/natural-highs/deploys)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/249379ce-fd70-454b-9988-b45769ebcb8c/deploy-status)](https://app.netlify.com/sites/naturalhighs/deploys)
 [![Tests](https://github.com/Natural-Highs/live/actions/workflows/pr-checks.yml/badge.svg)](https://github.com/Natural-Highs/live/actions/workflows/pr-checks.yml)
 [![codecov](https://codecov.io/gh/Natural-Highs/live/branch/main/graph/badge.svg)](https://codecov.io/gh/Natural-Highs/live)
 
