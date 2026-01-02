@@ -12,8 +12,8 @@ import {Button} from '@/components/ui/button'
 import GreenCard from '@/components/ui/GreenCard'
 import {PageContainer} from '@/components/ui/page-container'
 import TitleCard from '@/components/ui/TitleCard'
+import {useAuth} from '@/context/AuthContext'
 import {auth} from '@/lib/firebase/firebase.app'
-import {useAuth} from '../context/AuthContext'
 
 const loginSchema = z.object({
 	email: z.string().email('Invalid email address'),
@@ -105,6 +105,8 @@ function AuthenticationComponent() {
 			if (sessionResponse.ok) {
 				// Invalidate router to re-run beforeLoad hooks with new session
 				await router.invalidate()
+				// Explicitly navigate after invalidation completes
+				navigate({to: '/dashboard'})
 			} else {
 				const data = await sessionResponse.json()
 				setAuthError(data.error || 'Failed to create session')
@@ -228,10 +230,10 @@ function AuthenticationComponent() {
 					<GreenCard className='flex max-w-full! flex-col'>
 						{/* Passkey sign-in option for returning users */}
 						<PasskeySignIn
-							onSuccess={() => {
+							onSuccess={async () => {
 								// Invalidate router to re-run beforeLoad hooks with new session
-								router.invalidate()
-								// Explicitly navigate
+								await router.invalidate()
+								// Explicitly navigate after invalidation completes
 								navigate({to: '/dashboard'})
 							}}
 							onError={setAuthError}

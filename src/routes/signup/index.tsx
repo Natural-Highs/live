@@ -1,4 +1,4 @@
-import {createFileRoute, useNavigate} from '@tanstack/react-router'
+import {createFileRoute, redirect, useNavigate} from '@tanstack/react-router'
 import {createUserWithEmailAndPassword} from 'firebase/auth'
 import {useState} from 'react'
 import {SignUpForm} from '@/components/forms/SignUpForm'
@@ -8,6 +8,11 @@ import {auth} from '@/lib/firebase/firebase.app'
 import type {SignupAccountData} from '@/lib/schemas/signup'
 
 export const Route = createFileRoute('/signup/')({
+	beforeLoad: async ({context}) => {
+		if (context.auth.isAuthenticated) {
+			throw redirect({to: '/dashboard'})
+		}
+	},
 	component: SignUpComponent
 })
 
@@ -53,7 +58,6 @@ function SignUpComponent() {
 				formData.password
 			)
 
-			// Get ID token and create session
 			const idToken = await userCredential.user.getIdToken()
 
 			const sessionResponse = await fetch('/api/auth/sessionLogin', {
