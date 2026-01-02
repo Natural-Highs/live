@@ -15,7 +15,7 @@
  * - admin.fixture.ts extends auth with admin claims via injectAdminSessionCookie()
  */
 
-import {test as authTest, createMockUser} from './auth.fixture'
+import {test as authTest, createMockUser, createTestAuthUser, setUserClaims} from './auth.fixture'
 import {clearSessionCookie, injectAdminSessionCookie, type TestUser} from './session.fixture'
 
 // Types for admin fixtures
@@ -47,37 +47,56 @@ interface AdminFixtures {
 export const test = authTest.extend<AdminFixtures>({
 	adminUser: async ({context}, use) => {
 		const mockUser = createMockUser({
-			email: 'admin@naturalhighs.org',
+			email: 'admin@test.local',
 			displayName: 'Admin User'
 		})
 
-		// Convert MockUser to TestUser format for session injection
-		const testUser: TestUser = {
+		// Create Firebase Auth user in emulator with admin claims
+		// Required because requireAdmin() verifies claims against Firebase Auth
+		// Note: actualUid may differ from mockUser.uid if email already exists (parallel tests)
+		const actualUid = await createTestAuthUser({
 			uid: mockUser.uid,
+			email: mockUser.email,
+			displayName: mockUser.displayName
+		})
+		await setUserClaims(actualUid, {admin: true, signedConsentForm: true})
+
+		// Use actualUid for session to match Firebase Auth
+		const testUser: TestUser = {
+			uid: actualUid,
 			email: mockUser.email,
 			displayName: mockUser.displayName
 		}
 
 		// Inject admin session cookie with {admin: true, signedConsentForm: true}
-		// This replaces localStorage testAuthState injection
 		await injectAdminSessionCookie(context, testUser)
 
-		await use(mockUser)
+		// Return mockUser with actualUid for consistency
+		const returnUser: MockUser = {...mockUser, uid: actualUid}
+		await use(returnUser)
 
-		// Cleanup: Clear session cookie
+		// Cleanup: Clear session cookie (don't delete auth user - may be shared)
 		await clearSessionCookie(context)
 	},
 
 	setupAdminAuth: async ({context}, use) => {
 		const setupAuth = async (): Promise<MockUser> => {
 			const mockUser = createMockUser({
-				email: 'admin@naturalhighs.org',
+				email: 'admin@test.local',
 				displayName: 'Admin User'
 			})
 
-			// Convert MockUser to TestUser format for session injection
-			const testUser: TestUser = {
+			// Create Firebase Auth user in emulator with admin claims
+			const actualUid = await createTestAuthUser({
 				uid: mockUser.uid,
+				email: mockUser.email,
+				displayName: mockUser.displayName
+			})
+			await setUserClaims(actualUid, {admin: true, signedConsentForm: true})
+
+			// Use actualUid for session to match Firebase Auth
+			const testUser: TestUser = {
+				uid: actualUid,
 				email: mockUser.email,
 				displayName: mockUser.displayName
 			}
@@ -85,7 +104,7 @@ export const test = authTest.extend<AdminFixtures>({
 			// Inject admin session cookie
 			await injectAdminSessionCookie(context, testUser)
 
-			return mockUser
+			return {...mockUser, uid: actualUid}
 		}
 
 		await use(setupAuth)

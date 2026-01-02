@@ -97,6 +97,8 @@ export interface TestUserDocument {
 	isMinor?: boolean
 	profileComplete?: boolean
 	profileVersion?: number
+	signedConsentForm?: boolean
+	consentSignedAt?: Date
 	createdAt?: Date
 	updatedAt?: Date
 	// Demographics for adults (stored on main doc)
@@ -166,8 +168,14 @@ export async function createTestUserDocument(
 		isMinor,
 		profileComplete: user.profileComplete ?? true,
 		profileVersion: user.profileVersion ?? 1,
+		signedConsentForm: user.signedConsentForm ?? true,
 		createdAt: user.createdAt ?? now,
 		updatedAt: user.updatedAt ?? now
+	}
+
+	// Add consentSignedAt if signedConsentForm is true
+	if (user.signedConsentForm !== false) {
+		userDoc.consentSignedAt = user.consentSignedAt ?? now
 	}
 
 	// For adults, demographics go on the main document
@@ -468,7 +476,7 @@ export async function createTestEvent(event: TestEventDocument): Promise<void> {
 		eventTypeId: event.eventTypeId ?? 'default-type',
 		eventDate: event.eventDate ?? now,
 		isActive: event.isActive ?? false,
-		activatedAt: event.activatedAt,
+		activatedAt: event.activatedAt ?? null,
 		collectAdditionalDemographics: event.collectAdditionalDemographics ?? false,
 		createdAt: event.createdAt ?? now,
 		updatedAt: event.updatedAt ?? now
