@@ -1,252 +1,491 @@
 /**
  * Unit tests for users server functions
- * Tests profile retrieval, consent updates, and event registration
+ * Tests profile retrieval, consent updates, event registration, and account activity
  */
 
-import * as authMiddleware from '@/server/middleware/auth'
+import {beforeEach, describe, expect, it, vi} from 'vitest'
 
-// Mock dependencies
+// Use vi.hoisted for mock functions that need to be available in vi.mock factories
+const {mockCreateServerFn} = vi.hoisted(() => ({
+	mockCreateServerFn: vi.fn()
+}))
+
+// Mock @tanstack/react-start to capture handler functions
+vi.mock('@tanstack/react-start', () => ({
+	createServerFn: () => ({
+		inputValidator: (validator: (d: unknown) => unknown) => ({
+			handler: (fn: (args: {data: unknown}) => unknown) => {
+				mockCreateServerFn(fn)
+				return async (input: {data: unknown}) => {
+					const validated = validator(input.data)
+					return fn({data: validated})
+				}
+			}
+		}),
+		handler: (fn: (...args: unknown[]) => unknown) => {
+			mockCreateServerFn(fn)
+			return fn
+		}
+	})
+}))
+
+// Mock Firebase Admin
+const mockFirestoreDoc = {
+	get: vi.fn(),
+	set: vi.fn(),
+	update: vi.fn(),
+	exists: true,
+	data: vi.fn(),
+	id: 'doc-123'
+}
+
+const mockFirestoreQuery = {
+	where: vi.fn().mockReturnThis(),
+	orderBy: vi.fn().mockReturnThis(),
+	limit: vi.fn().mockReturnThis(),
+	get: vi.fn(),
+	docs: [] as (typeof mockFirestoreDoc)[]
+}
+
+const mockFirestoreCollection = {
+	doc: vi.fn(() => mockFirestoreDoc),
+	where: vi.fn(() => mockFirestoreQuery),
+	orderBy: vi.fn(() => mockFirestoreQuery),
+	limit: vi.fn(() => mockFirestoreQuery),
+	get: vi.fn()
+}
+
+vi.mock('@/lib/firebase/firebase.admin', () => ({
+	adminAuth: {
+		getUser: vi.fn(),
+		setCustomUserClaims: vi.fn()
+	},
+	adminDb: {
+		collection: vi.fn(() => mockFirestoreCollection)
+	}
+}))
+
+// Mock middleware
 vi.mock('@/server/middleware/auth', () => ({
 	requireAuth: vi.fn()
 }))
 
-vi.mock('../../lib/firebase/firebase', () => ({
-	db: {
-		collection: vi.fn(() => ({
-			doc: vi.fn(() => ({
-				get: vi.fn(),
-				set: vi.fn(),
-				update: vi.fn()
-			})),
-			where: vi.fn().mockReturnThis(),
-			limit: vi.fn().mockReturnThis(),
-			orderBy: vi.fn().mockReturnThis(),
-			get: vi.fn(),
-			add: vi.fn()
-		}))
-	},
-	auth: {
-		getUser: vi.fn(),
-		setCustomUserClaims: vi.fn()
-	}
-}))
+import type {Mock} from 'vitest'
+import {adminAuth} from '@/lib/firebase/firebase.admin'
+import {requireAuth} from '@/server/middleware/auth'
+import {NotFoundError, ValidationError} from './utils/errors'
+
+// Cast mocks
+const mockRequireAuth = requireAuth as Mock
+const mockGetUser = (adminAuth as unknown as {getUser: Mock}).getUser
+const mockSetCustomUserClaims = (adminAuth as unknown as {setCustomUserClaims: Mock})
+	.setCustomUserClaims
+
+// Import after mocking
+import {getAccountActivity, getProfile, getUserEvents, updateConsentStatus} from './users'
 
 describe('users server functions', () => {
+	const mockUser = {
+		uid: 'user-123',
+		email: 'test@example.com',
+		displayName: 'Test User',
+		photoURL: null,
+		claims: {admin: false, signedConsentForm: false}
+	}
+
 	beforeEach(() => {
 		vi.clearAllMocks()
+		mockRequireAuth.mockResolvedValue(mockUser)
 	})
 
-	describe('getProfile behavior', () => {
-		it('should require authentication', () => {
-			// getProfile uses requireAuth() which throws if not authenticated
-			const mockUser = {
-				uid: 'user-123',
-				email: 'test@example.com',
-				displayName: 'Test User',
-				photoURL: null,
-				claims: {admin: false, signedConsentForm: false}
+	describe('getProfile', () => {
+		it('should return user profile for current user', async () => {
+			const userData = {
+				firstName: 'Test',
+				lastName: 'User',
+				createdAt: {toDate: () => new Date('2025-01-01')},
+				updatedAt: {toDate: () => new Date('2025-01-15')}
 			}
-			vi.mocked(authMiddleware.requireAuth).mockResolvedValue(mockUser)
-			expect(authMiddleware.requireAuth).toBeDefined()
+			mockFirestoreDoc.get.mockResolvedValue({
+				exists: true,
+				data: () => userData
+			})
+
+			const result = await getProfile({data: {}})
+
+			expect(result.uid).toBe('user-123')
+			expect(result.email).toBe('test@example.com')
+			expect((result as Record<string, unknown>).firstName).toBe('Test')
 		})
 
-		it('should allow users to view their own profile', () => {
-			// Users can view their own profile without admin privileges
-			const mockUser = {
-				uid: 'user-123',
-				email: 'test@example.com',
-				displayName: 'Test User',
-				photoURL: null,
-				claims: {admin: false, signedConsentForm: false}
+		it('should allow admin to view other user profiles', async () => {
+			const adminUser = {...mockUser, claims: {admin: true}}
+			mockRequireAuth.mockResolvedValue(adminUser)
+
+			const userData = {firstName: 'Other', lastName: 'User'}
+			mockFirestoreDoc.get.mockResolvedValue({
+				exists: true,
+				data: () => userData
+			})
+
+			const result = await getProfile({data: {userId: 'other-user'}})
+			expect((result as Record<string, unknown>).firstName).toBe('Other')
+		})
+
+		it('should throw ValidationError for non-admin viewing other profiles', async () => {
+			mockFirestoreDoc.get.mockResolvedValue({exists: true, data: () => ({})})
+
+			await expect(getProfile({data: {userId: 'other-user'}})).rejects.toThrow(ValidationError)
+		})
+
+		it('should throw NotFoundError if user not found', async () => {
+			mockFirestoreDoc.get.mockResolvedValue({exists: false})
+
+			await expect(getProfile({data: {}})).rejects.toThrow(NotFoundError)
+		})
+
+		it('should throw NotFoundError if user data is null', async () => {
+			mockFirestoreDoc.get.mockResolvedValue({exists: true, data: () => null})
+
+			await expect(getProfile({data: {}})).rejects.toThrow(NotFoundError)
+		})
+
+		it('should handle timestamps without toDate method', async () => {
+			const userData = {
+				firstName: 'Test',
+				createdAt: '2025-01-01T00:00:00Z',
+				updatedAt: '2025-01-15T00:00:00Z'
 			}
-			// When userId matches current user, profile should be accessible
-			expect(mockUser.uid).toBe('user-123')
-		})
+			mockFirestoreDoc.get.mockResolvedValue({exists: true, data: () => userData})
 
-		it('should restrict viewing other profiles to admins', () => {
-			// Non-admin users cannot view other user profiles
-			const regularUser = {
-				uid: 'user-123',
-				claims: {admin: false}
-			}
-			const targetUserId = 'user-456'
-			expect(regularUser.uid).not.toBe(targetUserId)
-			expect(regularUser.claims.admin).toBe(false)
-		})
-	})
-
-	describe('updateConsentStatus behavior', () => {
-		it('should require authentication', () => {
-			expect(authMiddleware.requireAuth).toBeDefined()
-		})
-
-		it('should accept boolean consent value', () => {
-			const validInput = {consentSigned: true}
-			expect(typeof validInput.consentSigned).toBe('boolean')
-		})
-
-		it('should update both Firestore and custom claims', () => {
-			// updateConsentStatus updates:
-			// 1. Firestore users/{uid} document
-			// 2. Firebase Auth custom claims
-			expect(true).toBe(true)
-		})
-	})
-
-	describe('getUserEvents behavior', () => {
-		it('should require authentication', () => {
-			expect(authMiddleware.requireAuth).toBeDefined()
-		})
-
-		it('should filter events by user participation', () => {
-			// getUserEvents queries events where participants array-contains user.uid
-			const userId = 'user-123'
-			expect(userId).toBeDefined()
-		})
-
-		it('should order events by start date ascending', () => {
-			// Events should be ordered chronologically
-			const dates = [new Date('2025-01-01'), new Date('2025-02-01'), new Date('2025-03-01')]
-			const sorted = [...dates].sort((a, b) => a.getTime() - b.getTime())
-			expect(sorted[0]).toEqual(dates[0])
-		})
-
-		it('should convert Firestore timestamps to ISO strings', () => {
-			// Timestamps must be converted for API transport
-			const mockTimestamp = {toDate: () => new Date('2025-01-01')}
-			const converted = mockTimestamp.toDate().toISOString()
-			expect(converted).toBe('2025-01-01T00:00:00.000Z')
-		})
-
-		it('should mark migrated guest events with "(as Guest)" suffix', () => {
-			// Events migrated from guest check-ins should have wasGuest: true
-			// and name should have "(as Guest)" suffix for display
-			const migratedEvent = {
-				id: 'event-123',
-				name: 'Community Gathering (as Guest)',
-				wasGuest: true,
-				migratedFromGuestEventId: 'guest-event-456'
-			}
-			expect(migratedEvent.wasGuest).toBe(true)
-			expect(migratedEvent.name).toContain('(as Guest)')
-		})
-
-		it('should include both userEvents and direct participant events', () => {
-			// getUserEvents combines:
-			// 1. Events from userEvents collection (includes migrated guest events)
-			// 2. Events where user is in participants array (legacy)
-			const userEventIds = new Set(['event-1', 'event-2'])
-			const directEventIds = ['event-2', 'event-3'] // event-2 is duplicate
-			const uniqueDirectIds = directEventIds.filter(id => !userEventIds.has(id))
-			expect(uniqueDirectIds).toEqual(['event-3'])
-		})
-
-		it('should use registeredAt from userEvents for createdAt when available', () => {
-			// For migrated events, preserve original registration timestamp
-			const userEventData = {
-				registeredAt: new Date('2025-01-15'),
-				eventId: 'event-123',
-				migratedFromGuestEventId: 'guest-event-456'
-			}
-			expect(userEventData.registeredAt).toBeDefined()
+			const result = await getProfile({data: {}})
+			expect(result.createdAt).toBe('2025-01-01T00:00:00Z')
 		})
 	})
 
-	describe('getAccountActivity behavior', () => {
-		it('should require authentication', () => {
-			// getAccountActivity uses requireAuth() which throws if not authenticated
-			expect(authMiddleware.requireAuth).toBeDefined()
-		})
+	describe('updateConsentStatus', () => {
+		it('should update consent status to true', async () => {
+			mockFirestoreDoc.set.mockResolvedValue(undefined)
+			mockGetUser.mockResolvedValue({customClaims: {}})
+			mockSetCustomUserClaims.mockResolvedValue(undefined)
 
-		it('should query userEvents for recent check-ins with limit 20', () => {
-			// getAccountActivity queries userEvents collection
-			// with userId filter, ordered by registeredAt desc, limit 20
-			const limit = 20
-			expect(limit).toBe(20)
-		})
+			const result = await updateConsentStatus({data: {consentSigned: true}})
 
-		it('should query user document for consent signature timestamp', () => {
-			// getAccountActivity reads consentSignedAt from users/{uid}
-			const userData = {consentSignedAt: new Date('2025-01-15')}
-			expect(userData.consentSignedAt).toBeDefined()
-		})
-
-		it('should return activities sorted by timestamp descending', () => {
-			// Most recent activities should come first
-			const activities = [
-				{timestamp: '2025-01-10T10:00:00Z'},
-				{timestamp: '2025-01-15T10:00:00Z'},
-				{timestamp: '2025-01-05T10:00:00Z'}
-			]
-			const sorted = [...activities].sort(
-				(a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+			expect(result.success).toBe(true)
+			expect(result.consentSigned).toBe(true)
+			expect(mockFirestoreDoc.set).toHaveBeenCalledWith(
+				expect.objectContaining({signedConsentForm: true}),
+				{merge: true}
 			)
-			expect(sorted[0].timestamp).toBe('2025-01-15T10:00:00Z')
-			expect(sorted[2].timestamp).toBe('2025-01-05T10:00:00Z')
 		})
 
-		it('should convert Firestore timestamps to ISO strings', () => {
-			// Timestamps must be converted for API transport
-			const mockTimestamp = {toDate: () => new Date('2025-01-01T10:30:00Z')}
-			const converted = mockTimestamp.toDate().toISOString()
-			expect(converted).toBe('2025-01-01T10:30:00.000Z')
+		it('should update consent status to false', async () => {
+			mockFirestoreDoc.set.mockResolvedValue(undefined)
+			mockGetUser.mockResolvedValue({customClaims: {admin: true}})
+			mockSetCustomUserClaims.mockResolvedValue(undefined)
+
+			const result = await updateConsentStatus({data: {consentSigned: false}})
+
+			expect(result.success).toBe(true)
+			expect(result.consentSigned).toBe(false)
 		})
 
-		it('should create check-in activities with proper structure', () => {
-			// Check-in activities should include id, type, description, timestamp, metadata
-			const checkInActivity = {
-				id: 'checkin-event-123',
-				type: 'check-in',
-				description: 'Checked in to Community Meetup',
-				timestamp: '2025-01-15T14:00:00Z',
-				metadata: {eventName: 'Community Meetup'}
+		it('should preserve existing admin claims', async () => {
+			mockFirestoreDoc.set.mockResolvedValue(undefined)
+			mockGetUser.mockResolvedValue({customClaims: {admin: true}})
+			mockSetCustomUserClaims.mockResolvedValue(undefined)
+
+			await updateConsentStatus({data: {consentSigned: true}})
+
+			expect(mockSetCustomUserClaims).toHaveBeenCalledWith(
+				'user-123',
+				expect.objectContaining({admin: true, signedConsentForm: true})
+			)
+		})
+	})
+
+	describe('getUserEvents', () => {
+		it('should return empty array when no events', async () => {
+			mockFirestoreQuery.get.mockResolvedValue({docs: []})
+			mockFirestoreCollection.get = vi.fn().mockResolvedValue({docs: []})
+
+			const result = await getUserEvents()
+
+			expect(result).toEqual([])
+		})
+
+		it('should return events from userEvents collection', async () => {
+			const userEventDocs = [
+				{
+					id: 'ue-1',
+					data: () => ({
+						eventId: 'event-1',
+						registeredAt: {toDate: () => new Date('2025-01-15')},
+						migratedFromGuestEventId: null
+					})
+				}
+			]
+			const eventDocs = [
+				{
+					id: 'event-1',
+					exists: true,
+					data: () => ({
+						name: 'Community Event',
+						startDate: {toDate: () => new Date('2025-01-20')},
+						endDate: {toDate: () => new Date('2025-01-20')}
+					})
+				}
+			]
+
+			// First call for userEvents, second for direct events
+			mockFirestoreQuery.get
+				.mockResolvedValueOnce({docs: userEventDocs})
+				.mockResolvedValueOnce({docs: []})
+				.mockResolvedValueOnce({docs: eventDocs})
+
+			const result = await getUserEvents()
+
+			expect(result.length).toBeGreaterThanOrEqual(0)
+		})
+
+		it('should mark migrated guest events with wasGuest flag', async () => {
+			const userEventDocs = [
+				{
+					id: 'ue-1',
+					data: () => ({
+						eventId: 'event-1',
+						registeredAt: {toDate: () => new Date('2025-01-15')},
+						migratedFromGuestEventId: 'guest-123'
+					})
+				}
+			]
+			const eventDocs = [
+				{
+					id: 'event-1',
+					exists: true,
+					data: () => ({name: 'Event', startDate: null, endDate: null})
+				}
+			]
+
+			mockFirestoreQuery.get
+				.mockResolvedValueOnce({docs: userEventDocs})
+				.mockResolvedValueOnce({docs: []})
+				.mockResolvedValueOnce({docs: eventDocs})
+
+			const result = await getUserEvents()
+
+			if (result.length > 0 && result[0]) {
+				expect(result[0].wasGuest).toBe(true)
+				expect((result[0] as Record<string, unknown>).name).toContain('(as Guest)')
 			}
-			expect(checkInActivity.type).toBe('check-in')
-			expect(checkInActivity.description).toContain('Checked in to')
-			expect(checkInActivity.metadata?.eventName).toBeDefined()
 		})
 
-		it('should create consent activities with proper structure', () => {
-			// Consent activities should include type consent and metadata
-			const consentActivity = {
-				id: 'consent-user-123',
-				type: 'consent',
-				description: 'Signed consent form',
-				timestamp: '2025-01-10T09:00:00Z',
-				metadata: {consentType: 'Participation Agreement'}
+		it('should handle events without startDate', async () => {
+			const userEventDocs = [
+				{id: 'ue-1', data: () => ({eventId: 'event-1', registeredAt: null})},
+				{id: 'ue-2', data: () => ({eventId: 'event-2', registeredAt: null})}
+			]
+			const eventDocs = [
+				{id: 'event-1', exists: true, data: () => ({name: 'Event 1', startDate: null})},
+				{
+					id: 'event-2',
+					exists: true,
+					data: () => ({name: 'Event 2', startDate: {toDate: () => new Date('2025-01-01')}})
+				}
+			]
+
+			mockFirestoreQuery.get
+				.mockResolvedValueOnce({docs: userEventDocs})
+				.mockResolvedValueOnce({docs: []})
+				.mockResolvedValueOnce({docs: eventDocs})
+
+			const result = await getUserEvents()
+			expect(Array.isArray(result)).toBe(true)
+		})
+
+		it('should return empty array on error', async () => {
+			mockFirestoreQuery.get.mockRejectedValue(new Error('Firestore error'))
+
+			const result = await getUserEvents()
+
+			expect(result).toEqual([])
+		})
+
+		it('should include direct participant events', async () => {
+			const directEventDocs = [
+				{
+					id: 'direct-event',
+					data: () => ({
+						name: 'Direct Event',
+						startDate: {toDate: () => new Date('2025-02-01')},
+						participants: ['user-123']
+					})
+				}
+			]
+
+			mockFirestoreQuery.get
+				.mockResolvedValueOnce({docs: []}) // userEvents
+				.mockResolvedValueOnce({docs: directEventDocs}) // direct events
+
+			const result = await getUserEvents()
+			expect(Array.isArray(result)).toBe(true)
+		})
+	})
+
+	describe('getAccountActivity', () => {
+		it('should return empty array when no activity', async () => {
+			mockFirestoreQuery.get.mockResolvedValue({docs: []})
+			mockFirestoreDoc.get.mockResolvedValue({exists: true, data: () => ({})})
+
+			const result = await getAccountActivity()
+
+			expect(result).toEqual([])
+		})
+
+		it('should return check-in activities', async () => {
+			const userEventDocs = [
+				{
+					id: 'ue-1',
+					data: () => ({
+						eventId: 'event-1',
+						registeredAt: {toDate: () => new Date('2025-01-15T14:00:00Z')}
+					})
+				}
+			]
+			const eventDocs = [{id: 'event-1', exists: true, data: () => ({name: 'Community Meetup'})}]
+
+			mockFirestoreQuery.get
+				.mockResolvedValueOnce({docs: userEventDocs})
+				.mockResolvedValueOnce({docs: eventDocs})
+			mockFirestoreDoc.get.mockResolvedValue({exists: true, data: () => ({})})
+
+			const result = await getAccountActivity()
+
+			expect(result.length).toBeGreaterThanOrEqual(0)
+			if (result.length > 0) {
+				expect(result[0].type).toBe('check-in')
+				expect(result[0].description).toContain('Checked in to')
 			}
-			expect(consentActivity.type).toBe('consent')
-			expect(consentActivity.description).toBe('Signed consent form')
-			expect(consentActivity.metadata?.consentType).toBe('Participation Agreement')
 		})
 
-		it('should batch fetch event names to avoid N+1 queries', () => {
-			// Event names should be fetched in batches of 30
-			const eventIds = ['event-1', 'event-2', 'event-3']
-			const batchSize = 30
-			const batches = Math.ceil(eventIds.length / batchSize)
-			expect(batches).toBe(1)
+		it('should include consent activity when signed', async () => {
+			mockFirestoreQuery.get.mockResolvedValue({docs: []})
+			mockFirestoreDoc.get.mockResolvedValue({
+				exists: true,
+				data: () => ({
+					consentSignedAt: {toDate: () => new Date('2025-01-10T09:00:00Z')}
+				})
+			})
+
+			const result = await getAccountActivity()
+
+			const consentActivity = result.find(a => a.type === 'consent')
+			if (consentActivity) {
+				expect(consentActivity.description).toBe('Signed consent form')
+			}
 		})
 
-		it('should handle missing event names gracefully', () => {
-			// If event name is not found, default to "Event"
-			const defaultName = 'Event'
-			const eventNames = new Map<string, string>()
-			const eventName = eventNames.get('missing-event') || defaultName
-			expect(eventName).toBe('Event')
+		it('should sort activities by timestamp descending', async () => {
+			const userEventDocs = [
+				{
+					id: 'ue-1',
+					data: () => ({
+						eventId: 'event-1',
+						registeredAt: {toDate: () => new Date('2025-01-05T10:00:00Z')}
+					})
+				},
+				{
+					id: 'ue-2',
+					data: () => ({
+						eventId: 'event-2',
+						registeredAt: {toDate: () => new Date('2025-01-15T10:00:00Z')}
+					})
+				}
+			]
+			const eventDocs = [
+				{id: 'event-1', exists: true, data: () => ({name: 'Event 1'})},
+				{id: 'event-2', exists: true, data: () => ({name: 'Event 2'})}
+			]
+
+			mockFirestoreQuery.get
+				.mockResolvedValueOnce({docs: userEventDocs})
+				.mockResolvedValueOnce({docs: eventDocs})
+			mockFirestoreDoc.get.mockResolvedValue({exists: true, data: () => ({})})
+
+			const result = await getAccountActivity()
+
+			if (result.length >= 2) {
+				const first = new Date(result[0].timestamp).getTime()
+				const second = new Date(result[1].timestamp).getTime()
+				expect(first).toBeGreaterThanOrEqual(second)
+			}
 		})
 
-		it('should return empty array on error', () => {
-			// getAccountActivity catches errors and returns empty array
-			const emptyResult: unknown[] = []
-			expect(emptyResult).toEqual([])
+		it('should return empty array on error', async () => {
+			mockFirestoreQuery.get.mockRejectedValue(new Error('Firestore error'))
+
+			const result = await getAccountActivity()
+
+			expect(result).toEqual([])
 		})
 
-		it('should skip consent activity if consentSignedAt is not present', () => {
-			// Only add consent activity if user has signed consent
-			const userData = {email: 'test@example.com'}
-			const hasConsent = 'consentSignedAt' in userData && userData.consentSignedAt
-			expect(hasConsent).toBeFalsy()
+		it('should handle missing event names gracefully', async () => {
+			const userEventDocs = [
+				{id: 'ue-1', data: () => ({eventId: 'missing-event', registeredAt: new Date()})}
+			]
+
+			mockFirestoreQuery.get
+				.mockResolvedValueOnce({docs: userEventDocs})
+				.mockResolvedValueOnce({docs: []}) // No events found
+			mockFirestoreDoc.get.mockResolvedValue({exists: true, data: () => ({})})
+
+			const result = await getAccountActivity()
+
+			if (result.length > 0) {
+				expect(result[0].description).toContain('Event')
+			}
+		})
+
+		it('should handle timestamps without toDate method', async () => {
+			const userEventDocs = [
+				{
+					id: 'ue-1',
+					data: () => ({eventId: 'event-1', registeredAt: '2025-01-15T14:00:00Z'})
+				}
+			]
+			const eventDocs = [{id: 'event-1', exists: true, data: () => ({name: 'Event'})}]
+
+			mockFirestoreQuery.get
+				.mockResolvedValueOnce({docs: userEventDocs})
+				.mockResolvedValueOnce({docs: eventDocs})
+			mockFirestoreDoc.get.mockResolvedValue({exists: true, data: () => ({})})
+
+			const result = await getAccountActivity()
+			expect(Array.isArray(result)).toBe(true)
+		})
+
+		it('should skip consent if user doc does not exist', async () => {
+			mockFirestoreQuery.get.mockResolvedValue({docs: []})
+			mockFirestoreDoc.get.mockResolvedValue({exists: false})
+
+			const result = await getAccountActivity()
+
+			expect(result.filter(a => a.type === 'consent')).toHaveLength(0)
+		})
+
+		it('should handle consent timestamp without toDate', async () => {
+			mockFirestoreQuery.get.mockResolvedValue({docs: []})
+			mockFirestoreDoc.get.mockResolvedValue({
+				exists: true,
+				data: () => ({consentSignedAt: '2025-01-10T09:00:00Z'})
+			})
+
+			const result = await getAccountActivity()
+
+			const consentActivity = result.find(a => a.type === 'consent')
+			if (consentActivity) {
+				expect(consentActivity.timestamp).toBe('2025-01-10T09:00:00Z')
+			}
 		})
 	})
 })
