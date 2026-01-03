@@ -403,6 +403,7 @@ jobs:
           CI: true
           FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
           FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+          SESSION_SECRET: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
       - name: Upload integration test results
         uses: actions/upload-artifact@v4
