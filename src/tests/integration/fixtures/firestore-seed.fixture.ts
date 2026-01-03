@@ -236,32 +236,26 @@ async function createEventType(eventType: TestEventType): Promise<void> {
  * - Admin claim management
  */
 export const test = base.extend<FirestoreSeedFixtures>({
-	// biome-ignore lint/correctness/noEmptyPattern: Playwright fixtures require empty destructuring
 	seedTestUser: async ({}, use) => {
 		await use(createTestUserDocument)
 	},
 
-	// biome-ignore lint/correctness/noEmptyPattern: Playwright fixtures require empty destructuring
 	seedTestEvent: async ({}, use) => {
 		await use(createTestEvent)
 	},
 
-	// biome-ignore lint/correctness/noEmptyPattern: Playwright fixtures require empty destructuring
 	seedTestGuest: async ({}, use) => {
 		await use(createTestGuest)
 	},
 
-	// biome-ignore lint/correctness/noEmptyPattern: Playwright fixtures require empty destructuring
 	seedConsentTemplate: async ({}, use) => {
 		await use(createFormTemplate)
 	},
 
-	// biome-ignore lint/correctness/noEmptyPattern: Playwright fixtures require empty destructuring
 	seedEventType: async ({}, use) => {
 		await use(createEventType)
 	},
 
-	// biome-ignore lint/correctness/noEmptyPattern: Playwright fixtures require empty destructuring
 	setAdminClaim: async ({}, use) => {
 		const setAdmin = async (uid: string) => {
 			await setUserClaims(uid, {admin: true, signedConsentForm: true})
@@ -269,7 +263,6 @@ export const test = base.extend<FirestoreSeedFixtures>({
 		await use(setAdmin)
 	},
 
-	// biome-ignore lint/correctness/noEmptyPattern: Playwright fixtures require empty destructuring
 	setConsentSignedClaim: async ({}, use) => {
 		const setConsent = async (uid: string) => {
 			await setUserClaims(uid, {signedConsentForm: true})
@@ -277,7 +270,6 @@ export const test = base.extend<FirestoreSeedFixtures>({
 		await use(setConsent)
 	},
 
-	// biome-ignore lint/correctness/noEmptyPattern: Playwright fixtures require empty destructuring
 	clearTestData: async ({}, use) => {
 		const clear = async () => {
 			await Promise.all([clearFirestoreEmulator(), deleteAllTestEvents(), deleteAllTestGuests()])
@@ -289,22 +281,18 @@ export const test = base.extend<FirestoreSeedFixtures>({
 		await clear()
 	},
 
-	// biome-ignore lint/correctness/noEmptyPattern: Playwright fixtures require empty destructuring
 	seedScenario: async ({}, use) => {
 		await use(seedTestScenario)
 	},
 
-	// biome-ignore lint/correctness/noEmptyPattern: Playwright fixtures require empty destructuring
 	deleteUser: async ({}, use) => {
 		await use(deleteTestUserDocument)
 	},
 
-	// biome-ignore lint/correctness/noEmptyPattern: Playwright fixtures require empty destructuring
 	deleteEvent: async ({}, use) => {
 		await use(deleteTestEvent)
 	},
 
-	// biome-ignore lint/correctness/noEmptyPattern: Playwright fixtures require empty destructuring
 	deleteGuest: async ({}, use) => {
 		await use(deleteTestGuest)
 	}

@@ -164,12 +164,10 @@ const test = base.extend<{
 	verifyEmulators: () => Promise<{auth: boolean; firestore: boolean}>
 	clearAllTestData: () => Promise<void>
 }>({
-	// biome-ignore lint/correctness/noEmptyPattern: Playwright requires object destructuring
 	getMagicLinkCode: async ({}, use) => {
 		await use(getMagicLinkCodeWithPolling)
 	},
 
-	// biome-ignore lint/correctness/noEmptyPattern: Playwright requires object destructuring
 	clearOobCodes: async ({}, use) => {
 		// Clear before test
 		await clearAllOobCodes()
@@ -178,7 +176,6 @@ const test = base.extend<{
 		await clearAllOobCodes()
 	},
 
-	// biome-ignore lint/correctness/noEmptyPattern: Playwright requires object destructuring
 	verifyEmulators: async ({}, use) => {
 		const verify = async () => {
 			const [auth, firestore] = await Promise.all([
@@ -190,7 +187,6 @@ const test = base.extend<{
 		await use(verify)
 	},
 
-	// biome-ignore lint/correctness/noEmptyPattern: Playwright requires object destructuring
 	clearAllTestData: async ({}, use) => {
 		const clearAll = async () => {
 			await Promise.all([clearAllOobCodes(), clearFirestoreData()])
@@ -340,7 +336,6 @@ test.describe('Integration Bridge - Fixture Compatibility Gate', () => {
 		 * This test is skipped - the emulator connectivity is validated above.
 		 * For Task 2, we'll create proper Firestore seeding fixtures using Admin SDK.
 		 */
-		// biome-ignore lint/correctness/noEmptyPattern: Playwright requires object destructuring
 		test.skip('should seed and retrieve test data from Firestore emulator', async ({}) => {
 			// This test requires Admin SDK access or security rule bypass
 			// Deferred to Task 2 implementation
