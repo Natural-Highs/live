@@ -323,12 +323,13 @@ jobs:
           path: all-reports
           merge-multiple: true
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
       - name: Merge reports
         run: |
-          # Install playwright to use merge-reports
-          npm install -g playwright
-          # Merge all shard reports into one
-          npx playwright merge-reports --reporter=html all-reports -o merged-report || {
+          # Merge all shard reports into one (bunx auto-installs playwright)
+          bunx playwright merge-reports --reporter=html all-reports -o merged-report || {
             echo "Merge failed, using raw reports"
             mkdir -p merged-report
             cp -r all-reports/* merged-report/ 2>/dev/null || true
@@ -512,8 +513,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
       - name: Install Firebase CLI
-        run: npm install -g firebase-tools
+        run: bun add -g firebase-tools
 
       - name: Deploy Firestore Rules
         env:

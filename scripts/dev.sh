@@ -8,7 +8,7 @@ set -e
 
 # Check required dependencies
 command -v concurrently >/dev/null 2>&1 || { echo "Error: concurrently not installed. Run: bun install"; exit 1; }
-command -v firebase >/dev/null 2>&1 || { echo "Error: firebase-tools not installed. Run: npm install -g firebase-tools"; exit 1; }
+command -v firebase >/dev/null 2>&1 || { echo "Error: firebase-tools not installed. Run: bun add -g firebase-tools"; exit 1; }
 
 # Cleanup on exit/interrupt
 cleanup() {

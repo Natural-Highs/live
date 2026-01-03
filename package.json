@@ -20,7 +20,7 @@
 		"test:ui": "vitest --ui",
 		"test:unit": "vitest src/lib src/server",
 		"test:component": "vitest src/components",
-		"test:coverage": "vitest run --coverage && npx open-cli .build/coverage/index.html",
+		"test:coverage": "vitest run --coverage && bunx open-cli .build/coverage/index.html",
 		"test:create": "bun scripts/create-test.ts",
 		"test:e2e": "playwright test --ui",
 		"test:ci": "vitest run",
