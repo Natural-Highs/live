@@ -59,10 +59,8 @@ test.describe('Session Integration - AC4', () => {
 		// WHEN: User completes sign-in
 		await page.goto(magicLink)
 
-		// Wait for successful sign-in
-		await expect(
-			page.getByTestId('magic-link-success').or(page.getByText(/welcome|dashboard/i))
-		).toBeVisible({timeout: 15000})
+		// Wait for successful sign-in (use first() to handle multiple matches)
+		await expect(page.getByTestId('magic-link-success')).toBeVisible({timeout: 15000})
 
 		// THEN: Session cookie should be created
 		const cookies = await page.context().cookies()
@@ -90,9 +88,7 @@ test.describe('Session Integration - AC4', () => {
 		}, TEST_EMAIL)
 
 		await page.goto(magicLink)
-		await expect(
-			page.getByTestId('magic-link-success').or(page.getByText(/welcome|dashboard/i))
-		).toBeVisible({timeout: 15000})
+		await expect(page.getByTestId('magic-link-success')).toBeVisible({timeout: 15000})
 
 		// WHEN: We check session cookie properties
 		const cookies = await page.context().cookies()
@@ -124,9 +120,7 @@ test.describe('Session Integration - AC4', () => {
 		}, TEST_EMAIL)
 
 		await page.goto(magicLink)
-		await expect(
-			page.getByTestId('magic-link-success').or(page.getByText(/welcome|dashboard/i))
-		).toBeVisible({timeout: 15000})
+		await expect(page.getByTestId('magic-link-success')).toBeVisible({timeout: 15000})
 
 		// THEN: Session cookie should have proper security attributes
 		const cookies = await page.context().cookies()
@@ -181,9 +175,7 @@ test.describe('Session Integration - AC4', () => {
 		}, TEST_EMAIL)
 
 		await page.goto(magicLink)
-		await expect(
-			page.getByTestId('magic-link-success').or(page.getByText(/welcome|dashboard/i))
-		).toBeVisible({timeout: 15000})
+		await expect(page.getByTestId('magic-link-success')).toBeVisible({timeout: 15000})
 
 		// Wait for redirect to dashboard after successful auth
 		await page.waitForURL(/\/dashboard/i, {timeout: 10000})
@@ -244,9 +236,7 @@ test.describe('Session Persistence', () => {
 		}, TEST_EMAIL)
 
 		await page.goto(magicLink)
-		await expect(
-			page.getByTestId('magic-link-success').or(page.getByText(/welcome|dashboard/i))
-		).toBeVisible({timeout: 15000})
+		await expect(page.getByTestId('magic-link-success')).toBeVisible({timeout: 15000})
 
 		// Get session cookie value
 		const initialCookies = await page.context().cookies()
@@ -282,9 +272,7 @@ test.describe('Session Persistence', () => {
 		}, TEST_EMAIL)
 
 		await page.goto(magicLink)
-		await expect(
-			page.getByTestId('magic-link-success').or(page.getByText(/welcome|dashboard/i))
-		).toBeVisible({timeout: 15000})
+		await expect(page.getByTestId('magic-link-success')).toBeVisible({timeout: 15000})
 
 		// Verify session exists
 		let cookies = await page.context().cookies()

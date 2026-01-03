@@ -15,6 +15,13 @@
  */
 
 import {test as base} from '@playwright/test'
+import {SESSION_SECRET_TEST} from '../../../../playwright.config'
+
+// Set SESSION_SECRET in test process if not already set
+// This is needed because playwright.config.ts only passes it to webServer.env
+if (!process.env.SESSION_SECRET) {
+	process.env.SESSION_SECRET = SESSION_SECRET_TEST
+}
 
 /**
  * Emulator configuration from environment variables.

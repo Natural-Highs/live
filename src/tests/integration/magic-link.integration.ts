@@ -90,11 +90,8 @@ test.describe('Magic Link Integration - AC2', () => {
 		// Navigate to the magic link
 		await page.goto(magicLink)
 
-		// THEN: Sign-in should succeed
-		// The magic-link route shows success or redirects to dashboard
-		await expect(
-			page.getByTestId('magic-link-success').or(page.getByText(/welcome|dashboard/i))
-		).toBeVisible({timeout: 15000})
+		// THEN: Sign-in should succeed (use testid only to avoid strict mode)
+		await expect(page.getByTestId('magic-link-success')).toBeVisible({timeout: 15000})
 	})
 
 	test('should handle cross-device sign-in (no localStorage email)', async ({
@@ -130,9 +127,7 @@ test.describe('Magic Link Integration - AC2', () => {
 		await page.getByTestId('cross-device-continue-button').click()
 
 		// THEN: Sign-in should complete
-		await expect(
-			page.getByTestId('magic-link-success').or(page.getByText(/welcome|dashboard/i))
-		).toBeVisible({timeout: 15000})
+		await expect(page.getByTestId('magic-link-success')).toBeVisible({timeout: 15000})
 	})
 
 	test('should show error for invalid/expired magic link', async ({page}) => {
@@ -179,9 +174,7 @@ test.describe('Magic Link Integration - AC2', () => {
 		await page.goto(magicLink)
 
 		// Wait for sign-in success
-		await expect(
-			page.getByTestId('magic-link-success').or(page.getByText(/welcome|dashboard/i))
-		).toBeVisible({timeout: 15000})
+		await expect(page.getByTestId('magic-link-success')).toBeVisible({timeout: 15000})
 
 		// THEN: Session cookie should be set
 		const cookies = await page.context().cookies()
