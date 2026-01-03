@@ -11,6 +11,8 @@ import {
 } from '@tanstack/react-router'
 import {TanStackRouterDevtools} from '@tanstack/react-router-devtools'
 import type {ReactNode} from 'react'
+import {useEffect} from 'react'
+import {initSentry, SentryErrorBoundary, setSentryUser} from '@/lib/sentry'
 import {getSessionForRoutesFn, type SessionUser} from '@/server/functions/auth'
 import Layout from '../components/Layout'
 import {AuthProvider} from '../context/AuthContext'
@@ -111,13 +113,64 @@ function RootDocument({children}: {children: ReactNode}) {
 	)
 }
 
+function ErrorFallback({error}: {error: unknown}) {
+	const isDev = import.meta.env.DEV
+	const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
+	// In production, show a generic message to avoid exposing sensitive details
+	const displayMessage = isDev
+		? errorMessage
+		: 'An unexpected error occurred. Please try again later.'
+
+	return (
+		<div className='flex min-h-screen flex-col items-center justify-center bg-bgGreen px-4'>
+			<h1 className='mb-4 font-bold text-4xl text-gray-800'>Something went wrong</h1>
+			<p className='mb-6 text-gray-600'>{displayMessage}</p>
+			<button
+				type='button'
+				onClick={() => window.location.reload()}
+				className='rounded-lg bg-green-600 px-6 py-3 font-medium text-white transition-colors hover:bg-green-700'
+			>
+				Reload Page
+			</button>
+		</div>
+	)
+}
+
+/**
+ * Syncs the authenticated user to Sentry for error attribution.
+ * Also handles client-side Sentry initialization to avoid SSR issues.
+ * Must be rendered inside RouterContext to access auth state.
+ */
+function SentryUserSync() {
+	const {auth} = Route.useRouteContext()
+
+	// Initialize Sentry client-side only (avoid SSR execution)
+	useEffect(() => {
+		initSentry()
+	}, [])
+
+	// Update user context when auth state changes
+	useEffect(() => {
+		if (auth.user) {
+			setSentryUser({id: auth.user.uid, email: auth.user.email ?? undefined})
+		} else {
+			setSentryUser(null)
+		}
+	}, [auth.user?.uid, auth.user?.email, auth.user])
+
+	return null
+}
+
 function RootComponent() {
 	return (
 		<RootDocument>
 			<QueryClientProvider client={queryClient}>
 				<AuthProvider>
+					<SentryUserSync />
 					<Layout>
-						<Outlet />
+						<SentryErrorBoundary fallback={({error}) => <ErrorFallback error={error} />}>
+							<Outlet />
+						</SentryErrorBoundary>
 					</Layout>
 				</AuthProvider>
 				<ReactQueryDevtools />

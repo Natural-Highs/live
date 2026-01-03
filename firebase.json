@@ -15,6 +15,7 @@
 		},
 		"websocket": {
 			"port": 9151
-		}
+		},
+		"singleProjectMode": false
 	}
 }

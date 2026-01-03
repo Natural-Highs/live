@@ -1,5 +1,7 @@
 /// <reference types="vitest/config" />
+import {codecovVitePlugin} from '@codecov/vite-plugin'
 import netlify from '@netlify/vite-plugin-tanstack-start'
+import {sentryVitePlugin} from '@sentry/vite-plugin'
 import tailwindcss from '@tailwindcss/vite'
 import {tanstackStart} from '@tanstack/react-start/plugin/vite'
 import viteReact from '@vitejs/plugin-react'
@@ -10,10 +12,14 @@ import tsConfigPaths from 'vite-tsconfig-paths'
 export default defineConfig(({mode}) => {
 	// Vite sets mode='test' when invoked by vitest
 	const isTest = mode === 'test'
+	// Enable Sentry only for production builds with auth token available
+	const enableSentry = mode === 'production' && !!process.env.SENTRY_AUTH_TOKEN
 
 	return {
 		build: {
-			outDir: '.build/output'
+			outDir: '.build/output',
+			// Generate source maps for Sentry (hidden = not served to browsers)
+			sourcemap: enableSentry ? 'hidden' : false
 		},
 		server: {
 			port: 3000
@@ -92,6 +98,32 @@ export default defineConfig(({mode}) => {
 								type: 'module',
 								resolveTempFolder: () => '.build/dev-dist'
 							}
+						})
+					]
+				: []),
+			// Sentry plugin for source map upload (must be after Netlify plugin)
+			...(enableSentry
+				? [
+						sentryVitePlugin({
+							org: process.env.SENTRY_ORG,
+							project: process.env.SENTRY_PROJECT,
+							authToken: process.env.SENTRY_AUTH_TOKEN,
+							sourcemaps: {
+								assets: './.build/output/**',
+								filesToDeleteAfterUpload: './.build/output/**/*.map'
+							},
+							telemetry: false
+						})
+					]
+				: []),
+			// Codecov bundle analysis (uploads during CI builds)
+			...(process.env.CODECOV_TOKEN
+				? [
+						codecovVitePlugin({
+							enableBundleAnalysis: true,
+							bundleName: 'natural-highs',
+							uploadToken: process.env.CODECOV_TOKEN,
+							telemetry: false
 						})
 					]
 				: [])

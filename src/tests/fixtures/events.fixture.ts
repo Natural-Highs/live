@@ -148,7 +148,6 @@ export function buildEventActivationResponse(code: string): object {
  * Playwright fixture for event-related test helpers
  */
 export const test = base.extend<EventFixtures>({
-	// biome-ignore lint/correctness/noEmptyPattern: Playwright fixtures require empty destructuring for fixtures without dependencies
 	mockActiveEvent: async ({}, use) => {
 		const event = createMockEvent({
 			code: '1234',

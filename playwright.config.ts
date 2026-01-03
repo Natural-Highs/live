@@ -43,6 +43,21 @@ export default defineConfig({
 		{
 			name: 'Mobile Chrome',
 			use: {...devices['Pixel 5']}
+		},
+		// Integration tests - real emulators, no mocking
+		// Requires: bun run emulators (in separate terminal)
+		{
+			name: 'integration',
+			testDir: './src/tests/integration',
+			testMatch: '**/*.integration.ts',
+			use: {
+				...devices['Desktop Chrome'],
+				browserName: 'chromium' // Required for CDP WebAuthn
+			},
+			// Sequential execution prevents emulator state conflicts
+			fullyParallel: false,
+			// Single worker for emulator isolation
+			workers: 1
 		}
 	],
 	// CI: Use multiple reporters for GitHub Actions integration
