@@ -14,25 +14,10 @@
  * that simulates platform authenticators (Touch ID, Face ID, Windows Hello).
  */
 
-import {type CDPSession, expect, type Page, type Route, test} from '@playwright/test'
+import type {CDPSession, Page} from '@playwright/test'
+import {expect, test} from '../fixtures'
+import {mockServerFunctionError} from '../fixtures/network.fixture'
 import {injectSessionCookie} from '../fixtures/session.fixture'
-
-/**
- * Helper to mock TanStack Start server functions to return errors.
- * Server functions use /_serverFn/:serverFnId URLs.
- * We intercept calls and return HTTP errors that trigger client-side error handling.
- */
-async function mockServerFunctionError(page: Page, errorMessage: string): Promise<void> {
-	await page.route('**/_serverFn/*', async (route: Route) => {
-		// Return a 500 error - this triggers the component's error handling
-		// without needing Seroval serialization
-		await route.fulfill({
-			status: 500,
-			contentType: 'text/plain',
-			body: errorMessage
-		})
-	})
-}
 
 /**
  * Helper to set up WebAuthn virtual authenticator via CDP
@@ -332,102 +317,6 @@ test.describe('Passkey UI Integration', () => {
 	})
 })
 
-test.describe
-	.skip('Passkey Registration Full Flow', () => {
-		test('should complete full passkey registration flow from profile', async ({page, context}) => {
-			// GIVEN: Authenticated user on profile page with virtual authenticator
-			await injectSessionCookie(context, testUser, {signedConsentForm: true, profileComplete: true})
-			const {client, authenticatorId} = await setupVirtualAuthenticator(page)
-
-			try {
-				// Mock API responses
-				await page.route('**/api/users/profile', route =>
-					route.fulfill({
-						status: 200,
-						contentType: 'application/json',
-						body: JSON.stringify({
-							success: true,
-							data: {id: testUser.uid, email: testUser.email}
-						})
-					})
-				)
-
-				await page.route('**/api/users/events', route =>
-					route.fulfill({
-						status: 200,
-						contentType: 'application/json',
-						body: JSON.stringify({success: true, events: []})
-					})
-				)
-
-				// Mock passkey API calls for registration flow
-				await page.route('**/getPasskeyRegistrationOptions*', route =>
-					route.fulfill({
-						status: 200,
-						contentType: 'application/json',
-						body: JSON.stringify({
-							success: true,
-							options: {
-								challenge: btoa('test-registration-challenge'),
-								rp: {name: 'Natural Highs', id: 'localhost'},
-								user: {
-									id: btoa(testUser.uid),
-									name: testUser.email,
-									displayName: testUser.displayName
-								},
-								pubKeyCredParams: [{type: 'public-key', alg: -7}],
-								timeout: 60000,
-								attestation: 'none',
-								authenticatorSelection: {
-									authenticatorAttachment: 'platform',
-									residentKey: 'preferred',
-									userVerification: 'required'
-								}
-							}
-						})
-					})
-				)
-
-				await page.route('**/verifyPasskeyRegistration*', route =>
-					route.fulfill({
-						status: 200,
-						contentType: 'application/json',
-						body: JSON.stringify({
-							success: true,
-							credentialId: 'test-credential-id'
-						})
-					})
-				)
-
-				await page.route('**/getPasskeys*', route =>
-					route.fulfill({
-						status: 200,
-						contentType: 'application/json',
-						body: JSON.stringify({
-							success: true,
-							passkeys: []
-						})
-					})
-				)
-
-				// Navigate to profile page
-				await page.goto('/profile')
-
-				// WHEN: User clicks Set Up Passkey button
-				await expect(page.getByRole('button', {name: /set up passkey/i})).toBeVisible()
-				await page.getByRole('button', {name: /set up passkey/i}).click()
-
-				// THEN: Should show setting up state
-				await expect(page.getByText(/setting up/i)).toBeVisible()
-
-				// AND: Should eventually show success (note: actual WebAuthn ceremony happens via virtual authenticator)
-				// In this mocked scenario, the flow completes when verifyPasskeyRegistration returns success
-			} finally {
-				await removeVirtualAuthenticator(client, authenticatorId)
-			}
-		})
-	})
-
 test.describe('Passkey Sign-In Full Flow', () => {
 	test('should redirect to dashboard after successful passkey sign-in', async ({page}) => {
 		// GIVEN: Virtual authenticator is set up
@@ -572,21 +461,17 @@ test.describe('Passkey Network Error Handling', () => {
  */
 
 /**
- * Test Limitations Note:
+ * Testing Strategy Note (Post-Story 0-7):
  *
- * Current E2E tests use mocked API responses for server functions. This provides:
- * ✓ Fast test execution
- * ✓ Reliable virtual authenticator behavior
- * ✓ UI flow verification
+ * E2E tests now follow the two-tier testing pattern:
+ * ✓ Server functions hit Firebase emulators directly (no success path mocks)
+ * ✓ Session injection via injectSessionCookie (acceptable per Playwright best practices)
+ * ✓ Virtual authenticator via CDP for WebAuthn testing
  *
- * However, this approach does NOT test:
- * ✗ Actual server function logic
- * ✗ Real Firestore security rules
- * ✗ WebAuthn verification correctness
- * ✗ Session upgrade to 180 days
+ * Retained mocks (error simulation only):
+ * - mockServerFunctionError() for network failures and server errors
+ * - These test UI error handling, not server logic
  *
- * Future Enhancement:
- * - Run E2E tests against Firebase emulators with real server functions
- * - Add integration test suite that exercises full stack
- * - Verify actual Firestore writes and session cookie changes
+ * Real auth testing is handled in the integration test layer.
+ * See: src/tests/e2e/README.md for mock policy documentation.
  */

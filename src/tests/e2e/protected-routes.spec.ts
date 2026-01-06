@@ -11,7 +11,7 @@
  * Covers: Protected route architecture with layout-based auth
  */
 
-import {test as base, expect} from '@playwright/test'
+import {expect, test as base} from '../fixtures'
 import {createMockUser} from '../fixtures/auth.fixture'
 import {
 	clearSessionCookie,
@@ -55,6 +55,7 @@ const test = base.extend<{
 			} else {
 				await injectSessionCookie(context, testUser, {
 					signedConsentForm: consent,
+					profileComplete: true, // Required to avoid /profile-setup redirect
 					admin: false
 				})
 			}
@@ -119,24 +120,14 @@ test.describe('Authenticated User Without Consent', () => {
 	test('allows access to /consent page', async ({page, setupAuthenticated}) => {
 		await setupAuthenticated({consent: false, admin: false})
 
-		// Mock consent form API
-		await page.route('**/api/forms/consent', route => {
-			route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				body: JSON.stringify({
-					success: true,
-					template: {id: 'test', name: 'Test Consent', questions: []}
-				})
-			})
-		})
-
+		// Server function hits emulator directly - no mock needed
 		const response = await page.goto('/consent')
 		expect(response?.status()).toBeLessThan(500)
 
 		// Should stay on consent page
 		await expect(page).toHaveURL(/\/consent/)
-		await expect(page.getByRole('heading', {name: /Consent Form/i})).toBeVisible()
+		// Use exact match to avoid matching "Test Consent Form" h2
+		await expect(page.getByRole('heading', {name: 'Consent Form', exact: true})).toBeVisible()
 	})
 })
 
@@ -144,15 +135,7 @@ test.describe('Authenticated User With Consent', () => {
 	test('allows access to /dashboard', async ({page, setupAuthenticated}) => {
 		await setupAuthenticated({consent: true, admin: false})
 
-		// Mock dashboard API
-		await page.route('**/api/users/profile', route => {
-			route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				body: JSON.stringify({success: true, data: {id: 'test', email: 'user@test.com'}})
-			})
-		})
-
+		// Server function hits emulator directly - no mock needed
 		const response = await page.goto('/dashboard')
 		expect(response?.status()).toBeLessThan(500)
 
@@ -186,18 +169,7 @@ test.describe('Admin User Access', () => {
 	test('allows admin access to /admin-dashboard', async ({page, setupAuthenticated}) => {
 		await setupAuthenticated({consent: true, admin: true})
 
-		// Mock admin stats API
-		await page.route('**/api/admin/stats', route => {
-			route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				body: JSON.stringify({
-					success: true,
-					stats: {totalUsers: 10, totalEvents: 5, totalResponses: 20, activeEvents: 2}
-				})
-			})
-		})
-
+		// Server function hits emulator directly - no mock needed
 		const response = await page.goto('/admin-dashboard')
 		expect(response?.status()).toBeLessThan(500)
 
@@ -208,29 +180,7 @@ test.describe('Admin User Access', () => {
 	test('allows admin access to /events', async ({page, setupAuthenticated}) => {
 		await setupAuthenticated({consent: true, admin: true})
 
-		// Mock events API
-		await page.route('**/api/events', route => {
-			route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				body: JSON.stringify({success: true, events: []})
-			})
-		})
-		await page.route('**/api/eventTypes', route => {
-			route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				body: JSON.stringify({success: true, eventTypes: []})
-			})
-		})
-		await page.route('**/api/formTemplates', route => {
-			route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				body: JSON.stringify({success: true, templates: []})
-			})
-		})
-
+		// Server functions hit emulator directly - no mocks needed
 		const response = await page.goto('/events')
 		expect(response?.status()).toBeLessThan(500)
 
@@ -271,25 +221,7 @@ test.describe('Public Routes', () => {
 	test('allows access to /guest without auth', async ({page, setupUnauthenticated}) => {
 		await setupUnauthenticated()
 
-		// Mock consent form and events APIs
-		await page.route('**/api/forms/consent', route => {
-			route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				body: JSON.stringify({
-					success: true,
-					template: {id: 'test', name: 'Consent', questions: []}
-				})
-			})
-		})
-		await page.route('**/api/events', route => {
-			route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				body: JSON.stringify({success: true, events: []})
-			})
-		})
-
+		// Server functions hit emulator directly - no mocks needed
 		const response = await page.goto('/guest')
 		expect(response?.status()).toBeLessThan(500)
 	})

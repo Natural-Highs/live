@@ -13,13 +13,14 @@
  * - Use data-testid selectors for stability
  */
 
-import {expect, test} from '@playwright/test'
 import {getApps, initializeApp} from 'firebase-admin/app'
 import {getFirestore} from 'firebase-admin/firestore'
+import {expect, test} from '../fixtures'
 import {clearAuthenticatedUser, injectAuthenticatedUser} from '../fixtures/session.fixture'
+import {TEST_CODES} from '../factories/events.factory'
 
 const EMULATOR_PROJECT_ID = 'demo-natural-highs'
-const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8080'
+const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
 
 // Test user IDs
 const TEST_USER_WITH_HISTORY = {
@@ -77,7 +78,7 @@ async function seedUserWithHistory(uid: string) {
 	// Create events
 	await db.collection('events').doc('event-workshop').set({
 		name: 'Mindfulness Workshop',
-		eventCode: '1234',
+		eventCode: TEST_CODES.VALID,
 		startDate: lastWeek,
 		location: 'Community Center',
 		isActive: false,

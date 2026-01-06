@@ -8,136 +8,23 @@
  * - Navigation between signup steps
  *
  * Test Strategy:
- * - Mock API endpoints for auth and profile operations
+ * - Use session cookie injection for authenticated state (acceptable per AC2)
+ * - Server functions hit Firebase emulators directly (no API mocks needed)
  * - Use data-testid selectors for stability
- * - Test form validation behavior
+ * - Error simulation mocks for network failure testing only
  */
 
-import {expect, test} from '@playwright/test'
+import {expect, test} from '../fixtures'
+import {mockServerFunctionError} from '../fixtures/network.fixture'
+import {injectSessionCookie} from '../fixtures/session.fixture'
 
 /**
- * Helper to mock auth registration API
+ * Test user data for session injection
  */
-async function mockAuthRegistration(page: import('@playwright/test').Page, success: boolean) {
-	await page.route('**/api/auth/register', route => {
-		if (success) {
-			route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				body: JSON.stringify({
-					success: true,
-					userId: 'new-user-123'
-				})
-			})
-		} else {
-			route.fulfill({
-				status: 400,
-				contentType: 'application/json',
-				body: JSON.stringify({
-					success: false,
-					error: 'Email already in use'
-				})
-			})
-		}
-	})
-}
-
-/**
- * Helper to mock session login API
- */
-async function mockSessionLogin(page: import('@playwright/test').Page) {
-	await page.route('**/api/auth/sessionLogin', route => {
-		if (route.request().method() === 'POST') {
-			route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				body: JSON.stringify({success: true})
-			})
-		} else {
-			route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				body: JSON.stringify({token: true})
-			})
-		}
-	})
-}
-
-/**
- * Helper to mock profile update API
- */
-async function mockProfileUpdate(page: import('@playwright/test').Page, success: boolean) {
-	await page.route('**/api/users/profile', route => {
-		if (route.request().method() === 'POST') {
-			if (success) {
-				route.fulfill({
-					status: 200,
-					contentType: 'application/json',
-					body: JSON.stringify({
-						success: true,
-						data: {
-							id: 'user-123',
-							firstName: 'John',
-							lastName: 'Doe',
-							dateOfBirth: '1990-01-15'
-						}
-					})
-				})
-			} else {
-				route.fulfill({
-					status: 400,
-					contentType: 'application/json',
-					body: JSON.stringify({
-						success: false,
-						error: 'Failed to update profile'
-					})
-				})
-			}
-		} else {
-			route.continue()
-		}
-	})
-}
-
-/**
- * Helper to mock auth session state
- */
-async function mockAuthSession(
-	page: import('@playwright/test').Page,
-	context: import('@playwright/test').BrowserContext,
-	isAuthenticated: boolean
-) {
-	await page.route('**/api/auth/session', route => {
-		if (isAuthenticated) {
-			route.fulfill({
-				status: 200,
-				contentType: 'application/json',
-				body: JSON.stringify({
-					user: {
-						uid: 'user-123',
-						email: 'test@example.com',
-						displayName: 'Test User'
-					},
-					claims: {
-						signedConsentForm: false,
-						admin: false
-					}
-				})
-			})
-		} else {
-			route.fulfill({
-				status: 401,
-				contentType: 'application/json',
-				body: JSON.stringify({error: 'Unauthorized'})
-			})
-		}
-	})
-
-	if (isAuthenticated) {
-		await context.addInitScript(() => {
-			window.localStorage.setItem('authState', 'authenticated')
-		})
-	}
+const testUser = {
+	uid: 'test-profile-user-123',
+	email: 'test@example.com',
+	displayName: 'Test User'
 }
 
 test.describe('Profile Creation Flow', () => {
@@ -195,8 +82,8 @@ test.describe('Profile Creation Flow', () => {
 
 		test('should display about-you page with profile fields', async ({page, context}) => {
 			// GIVEN: User is authenticated (navigating to about-you page)
-			await mockAuthSession(page, context, true)
-			await mockSessionLogin(page)
+			// Session injection acceptable per AC2 (session state reuse)
+			await injectSessionCookie(context, testUser, {signedConsentForm: false})
 
 			// WHEN: User navigates to about-you page
 			await page.goto('/signup/about-you?email=test@example.com&username=testuser')
@@ -212,9 +99,7 @@ test.describe('Profile Creation Flow', () => {
 
 		test('should fill about-you form and submit', async ({page, context}) => {
 			// GIVEN: User is on about-you page
-			await mockAuthSession(page, context, true)
-			await mockSessionLogin(page)
-			await mockProfileUpdate(page, true)
+			await injectSessionCookie(context, testUser, {signedConsentForm: false})
 
 			await page.goto('/signup/about-you?email=test@example.com&username=testuser')
 
@@ -233,8 +118,7 @@ test.describe('Profile Creation Flow', () => {
 
 		test('should navigate back from about-you page', async ({page, context}) => {
 			// GIVEN: User is on about-you page
-			await mockAuthSession(page, context, true)
-			await mockSessionLogin(page)
+			await injectSessionCookie(context, testUser, {signedConsentForm: false})
 
 			await page.goto('/signup/about-you?email=test@example.com&username=testuser')
 			await expect(page.getByTestId('about-you-form')).toBeVisible()
@@ -248,13 +132,12 @@ test.describe('Profile Creation Flow', () => {
 
 		test('should submit profile and navigate to consent', async ({page, context}) => {
 			// GIVEN: User is on about-you page
-			await mockAuthSession(page, context, true)
-			await mockSessionLogin(page)
-			await mockProfileUpdate(page, true)
+			await injectSessionCookie(context, testUser, {signedConsentForm: false})
 
 			await page.goto('/signup/about-you?email=test@example.com&username=testuser')
 
 			// WHEN: User fills in profile and submits
+			// Server function hits Firestore emulator directly (no mock needed)
 			await page.getByTestId('about-you-firstname-input').fill('John')
 			await page.getByTestId('about-you-lastname-input').fill('Doe')
 			await page.getByTestId('about-you-dob-input').fill('1990-01-15')
@@ -267,11 +150,11 @@ test.describe('Profile Creation Flow', () => {
 
 	test.describe('AC6: Error Handling Paths', () => {
 		test('should show error when registration fails', async ({page}) => {
-			// GIVEN: Mock registration failure
-			await mockAuthRegistration(page, false)
-			await mockSessionLogin(page)
-
+			// Navigate first, then set up error simulation mock
 			await page.goto('/signup')
+
+			// Set up error simulation mock (acceptable per AC2)
+			await mockServerFunctionError(page, 'Email already in use')
 
 			// WHEN: User tries to submit signup form
 			await page.getByTestId('signup-username-input').fill('testuser')
@@ -285,12 +168,13 @@ test.describe('Profile Creation Flow', () => {
 		})
 
 		test('should show error when profile update fails', async ({page, context}) => {
-			// GIVEN: Mock profile update failure
-			await mockAuthSession(page, context, true)
-			await mockSessionLogin(page)
-			await mockProfileUpdate(page, false)
+			// GIVEN: User is authenticated
+			await injectSessionCookie(context, testUser, {signedConsentForm: false})
 
 			await page.goto('/signup/about-you?email=test@example.com&username=testuser')
+
+			// Set up error simulation mock after page load
+			await mockServerFunctionError(page, 'Failed to update profile')
 
 			// WHEN: User submits profile form
 			await page.getByTestId('about-you-firstname-input').fill('John')
@@ -302,10 +186,9 @@ test.describe('Profile Creation Flow', () => {
 			await expect(page.getByTestId('about-you-error')).toBeVisible()
 		})
 
-		test('should redirect to signup if no auth on about-you page', async ({page, context}) => {
+		test('should redirect to signup if no auth on about-you page', async ({page}) => {
 			// GIVEN: User is not authenticated and no email in URL
-			await mockAuthSession(page, context, false)
-			await mockSessionLogin(page)
+			// No session cookie injected (unauthenticated state)
 
 			// WHEN: User navigates to about-you page without auth
 			await page.goto('/signup/about-you')
@@ -315,12 +198,13 @@ test.describe('Profile Creation Flow', () => {
 		})
 
 		test('should handle network failure on signup gracefully', async ({page}) => {
-			// GIVEN: Mock network failure
-			await page.route('**/api/auth/register', route => {
+			// Navigate first
+			await page.goto('/signup')
+
+			// Set up network failure mock (error simulation - acceptable)
+			await page.route('**/_serverFn/*', route => {
 				route.abort('failed')
 			})
-
-			await page.goto('/signup')
 
 			// WHEN: User tries to submit signup form with network failure
 			await page.getByTestId('signup-username-input').fill('testuser')
@@ -334,18 +218,15 @@ test.describe('Profile Creation Flow', () => {
 		})
 
 		test('should handle network failure on profile update gracefully', async ({page, context}) => {
-			// GIVEN: Mock network failure
-			await mockAuthSession(page, context, true)
-			await mockSessionLogin(page)
-			await page.route('**/api/users/profile', route => {
-				if (route.request().method() === 'POST') {
-					route.abort('failed')
-				} else {
-					route.continue()
-				}
-			})
+			// GIVEN: User is authenticated
+			await injectSessionCookie(context, testUser, {signedConsentForm: false})
 
 			await page.goto('/signup/about-you?email=test@example.com&username=testuser')
+
+			// Set up network failure mock after page load (error simulation - acceptable)
+			await page.route('**/_serverFn/*', route => {
+				route.abort('failed')
+			})
 
 			// WHEN: User submits profile with network failure
 			await page.getByTestId('about-you-firstname-input').fill('John')
@@ -374,8 +255,7 @@ test.describe('Profile Creation Flow', () => {
 
 		test('should validate date of birth on about-you page', async ({page, context}) => {
 			// GIVEN: User is on about-you page
-			await mockAuthSession(page, context, true)
-			await mockSessionLogin(page)
+			await injectSessionCookie(context, testUser, {signedConsentForm: false})
 
 			await page.goto('/signup/about-you?email=test@example.com&username=testuser')
 
