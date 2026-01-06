@@ -5,7 +5,7 @@
  * Connects to Firebase Auth and Firestore emulators with health checks.
  *
  * Key patterns:
- * - Health check BOTH Auth (127.0.0.1:9099) AND Firestore (127.0.0.1:8080)
+ * - Health check BOTH Auth (127.0.0.1:9099) AND Firestore (127.0.0.1:8180)
  * - Read connection from environment variables
  * - Cleanup in beforeEach (handles crashed previous run) AND afterEach
  * - Verify SESSION_SECRET is set
@@ -27,7 +27,7 @@ if (!process.env.SESSION_SECRET) {
  * Emulator configuration from environment variables.
  */
 const AUTH_EMULATOR_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST ?? '127.0.0.1:9099'
-const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8080'
+const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
 const PROJECT_ID = process.env.VITE_PROJECT_ID ?? 'demo-natural-highs'
 
 /** Default timeout for emulator health checks (ms). */
@@ -59,7 +59,7 @@ export interface IntegrationFixtures {
 	authEmulatorHost: string
 
 	/**
-	 * Firestore emulator host (e.g., '127.0.0.1:8080').
+	 * Firestore emulator host (e.g., '127.0.0.1:8180').
 	 */
 	firestoreEmulatorHost: string
 

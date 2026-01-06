@@ -14,6 +14,8 @@
  * @see src/tests/fixtures/firestore.fixture.ts - Base implementation
  */
 
+import {type App, getApps, initializeApp} from 'firebase-admin/app'
+import {type Firestore, getFirestore} from 'firebase-admin/firestore'
 import {test as base} from '@playwright/test'
 
 export {setUserClaims} from '../../fixtures/auth.fixture'
@@ -70,8 +72,69 @@ import {
 /**
  * Emulator configuration
  */
-const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8080'
-const PROJECT_ID = process.env.VITE_PROJECT_ID ?? 'demo-natural-highs'
+const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
+const EMULATOR_PROJECT_ID = 'demo-natural-highs'
+
+/**
+ * Lazy-initialized Firebase app for seeding.
+ */
+let seedApp: App | null = null
+let seedDb: Firestore | null = null
+
+/**
+ * Get or create the Firebase Admin app for seeding.
+ */
+function getSeedApp(): App {
+	if (seedApp) {
+		return seedApp
+	}
+
+	// Set emulator environment before initializing
+	process.env.FIRESTORE_EMULATOR_HOST = FIRESTORE_EMULATOR_HOST
+
+	// Check if an app already exists to avoid duplicate initialization
+	const existingApps = getApps()
+	const existingApp = existingApps.find(app => app.name === 'seed-app')
+
+	if (existingApp) {
+		seedApp = existingApp
+		return seedApp
+	}
+
+	seedApp = initializeApp(
+		{
+			projectId: EMULATOR_PROJECT_ID
+		},
+		'seed-app'
+	)
+
+	return seedApp
+}
+
+/**
+ * Get Firestore instance for seeding.
+ */
+function getSeedDb(): Firestore {
+	if (seedDb) {
+		return seedDb
+	}
+
+	const app = getSeedApp()
+	seedDb = getFirestore(app)
+
+	return seedDb
+}
+
+/**
+ * Form template question structure.
+ */
+export interface TestFormQuestion {
+	id: string
+	text: string
+	type: 'boolean' | 'text' | 'number' | 'select' | 'multiselect'
+	required?: boolean
+	options?: string[]
+}
 
 /**
  * Form template document structure.
@@ -80,9 +143,11 @@ const PROJECT_ID = process.env.VITE_PROJECT_ID ?? 'demo-natural-highs'
 export interface TestFormTemplate {
 	id: string
 	name: string
+	type?: 'consent' | 'demographics' | 'survey'
 	version: number
 	content: string
 	isActive?: boolean
+	questions?: TestFormQuestion[]
 	createdAt?: Date
 	updatedAt?: Date
 }
@@ -97,6 +162,9 @@ export interface TestEventType {
 	description?: string
 	color?: string
 	isActive?: boolean
+	defaultConsentFormTemplateId?: string
+	defaultDemographicsFormTemplateId?: string
+	defaultSurveyTemplateId?: string
 	createdAt?: Date
 	updatedAt?: Date
 }
@@ -173,58 +241,63 @@ export interface FirestoreSeedFixtures {
 
 /**
  * Create a form template document in the Firestore emulator.
+ * Uses Firebase Admin SDK to bypass security rules.
  */
 async function createFormTemplate(template: TestFormTemplate): Promise<void> {
+	const db = getSeedDb()
 	const now = new Date()
-	const url = `http://${FIRESTORE_EMULATOR_HOST}/v1/projects/${PROJECT_ID}/databases/(default)/documents/formTemplates/${template.id}`
 
-	const response = await fetch(url, {
-		method: 'PATCH',
-		headers: {'Content-Type': 'application/json'},
-		body: JSON.stringify({
-			fields: {
-				name: {stringValue: template.name},
-				version: {integerValue: String(template.version)},
-				content: {stringValue: template.content},
-				isActive: {booleanValue: template.isActive ?? true},
-				createdAt: {timestampValue: (template.createdAt ?? now).toISOString()},
-				updatedAt: {timestampValue: (template.updatedAt ?? now).toISOString()}
-			}
-		})
-	})
-
-	if (!response.ok) {
-		const body = await response.text()
-		throw new Error(`Failed to create form template ${template.id}: ${response.status} - ${body}`)
+	const templateDoc: Record<string, unknown> = {
+		name: template.name,
+		version: template.version,
+		content: template.content,
+		isActive: template.isActive ?? true,
+		createdAt: template.createdAt ?? now,
+		updatedAt: template.updatedAt ?? now
 	}
+
+	// Add type if provided
+	if (template.type) {
+		templateDoc.type = template.type
+	}
+
+	// Add questions if provided
+	if (template.questions) {
+		templateDoc.questions = template.questions
+	}
+
+	await db.collection('formTemplates').doc(template.id).set(templateDoc)
 }
 
 /**
  * Create an event type document in the Firestore emulator.
+ * Uses Firebase Admin SDK to bypass security rules.
  */
 async function createEventType(eventType: TestEventType): Promise<void> {
+	const db = getSeedDb()
 	const now = new Date()
-	const url = `http://${FIRESTORE_EMULATOR_HOST}/v1/projects/${PROJECT_ID}/databases/(default)/documents/eventTypes/${eventType.id}`
 
-	const response = await fetch(url, {
-		method: 'PATCH',
-		headers: {'Content-Type': 'application/json'},
-		body: JSON.stringify({
-			fields: {
-				name: {stringValue: eventType.name},
-				description: {stringValue: eventType.description ?? ''},
-				color: {stringValue: eventType.color ?? '#6366f1'},
-				isActive: {booleanValue: eventType.isActive ?? true},
-				createdAt: {timestampValue: (eventType.createdAt ?? now).toISOString()},
-				updatedAt: {timestampValue: (eventType.updatedAt ?? now).toISOString()}
-			}
-		})
-	})
-
-	if (!response.ok) {
-		const body = await response.text()
-		throw new Error(`Failed to create event type ${eventType.id}: ${response.status} - ${body}`)
+	const eventTypeDoc: Record<string, unknown> = {
+		name: eventType.name,
+		description: eventType.description ?? '',
+		color: eventType.color ?? '#6366f1',
+		isActive: eventType.isActive ?? true,
+		createdAt: eventType.createdAt ?? now,
+		updatedAt: eventType.updatedAt ?? now
 	}
+
+	// Add optional template IDs if provided
+	if (eventType.defaultConsentFormTemplateId) {
+		eventTypeDoc.defaultConsentFormTemplateId = eventType.defaultConsentFormTemplateId
+	}
+	if (eventType.defaultDemographicsFormTemplateId) {
+		eventTypeDoc.defaultDemographicsFormTemplateId = eventType.defaultDemographicsFormTemplateId
+	}
+	if (eventType.defaultSurveyTemplateId) {
+		eventTypeDoc.defaultSurveyTemplateId = eventType.defaultSurveyTemplateId
+	}
+
+	await db.collection('eventTypes').doc(eventType.id).set(eventTypeDoc)
 }
 
 /**
@@ -299,3 +372,6 @@ export const test = base.extend<FirestoreSeedFixtures>({
 })
 
 export {expect} from '@playwright/test'
+
+// Direct exports for use in tests without fixtures
+export {createFormTemplate, createEventType}

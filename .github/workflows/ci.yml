@@ -267,14 +267,31 @@ jobs:
 
       - name: Start Firebase emulators
         run: |
+          # Start emulators in background
           firebase emulators:start --only auth,firestore --project demo-natural-highs &
-          for i in {1..30}; do
-            if curl -s http://localhost:9099 > /dev/null 2>&1; then
-              echo "Auth emulator ready"
+          EMULATOR_PID=$!
+          
+          # Extended timeout for CI stability
+          MAX_WAIT=90
+          RETRY_DELAY=2
+          
+          echo "Waiting for emulators (timeout: ${MAX_WAIT}s)..."
+          for i in $(seq 1 $MAX_WAIT); do
+            AUTH_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9099 2>/dev/null || echo "000")
+            FS_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8180 2>/dev/null || echo "000")
+            
+            if [[ "$AUTH_OK" != "000" ]] && [[ "$FS_OK" != "000" ]]; then
+              echo "All emulators ready after ${i}s (Auth: $AUTH_OK, Firestore: $FS_OK)"
               break
             fi
-            echo "Waiting for emulators... ($i/30)"
-            sleep 1
+            
+            if [ $i -eq $MAX_WAIT ]; then
+              echo "ERROR: Emulators failed to start within ${MAX_WAIT}s"
+              exit 1
+            fi
+            
+            echo "Waiting... ($i/${MAX_WAIT}s) Auth: $AUTH_OK, Firestore: $FS_OK"
+            sleep $RETRY_DELAY
           done
           sleep 2
 
@@ -282,6 +299,7 @@ jobs:
         run: bun run test:e2e:ci -- --shard=${{ matrix.shard }}/4
         env:
           CI: true
+          CI_EMULATOR_TIMEOUT: "60000"
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
@@ -387,14 +405,31 @@ jobs:
 
       - name: Start Firebase emulators
         run: |
+          # Start emulators in background
           firebase emulators:start --only auth,firestore --project demo-natural-highs &
-          for i in {1..30}; do
-            if curl -s http://localhost:9099 > /dev/null 2>&1 && curl -s http://localhost:8080 > /dev/null 2>&1; then
-              echo "All emulators ready"
+          EMULATOR_PID=$!
+          
+          # Extended timeout for CI stability
+          MAX_WAIT=90
+          RETRY_DELAY=2
+          
+          echo "Waiting for emulators (timeout: ${MAX_WAIT}s)..."
+          for i in $(seq 1 $MAX_WAIT); do
+            AUTH_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9099 2>/dev/null || echo "000")
+            FS_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8180 2>/dev/null || echo "000")
+            
+            if [[ "$AUTH_OK" != "000" ]] && [[ "$FS_OK" != "000" ]]; then
+              echo "All emulators ready after ${i}s (Auth: $AUTH_OK, Firestore: $FS_OK)"
               break
             fi
-            echo "Waiting for emulators... ($i/30)"
-            sleep 1
+            
+            if [ $i -eq $MAX_WAIT ]; then
+              echo "ERROR: Emulators failed to start within ${MAX_WAIT}s"
+              exit 1
+            fi
+            
+            echo "Waiting... ($i/${MAX_WAIT}s) Auth: $AUTH_OK, Firestore: $FS_OK"
+            sleep $RETRY_DELAY
           done
           sleep 2
 
@@ -402,7 +437,8 @@ jobs:
         run: bun run test:integration:ci
         env:
           CI: true
-          FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+          CI_EMULATOR_TIMEOUT: "60000"
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:8180
           FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
           SESSION_SECRET: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
 
@@ -444,14 +480,31 @@ jobs:
 
       - name: Start Firebase emulators
         run: |
+          # Start emulators in background
           firebase emulators:start --only auth,firestore --project demo-natural-highs &
-          for i in {1..30}; do
-            if curl -s http://localhost:9099 > /dev/null 2>&1; then
-              echo "Auth emulator ready"
+          EMULATOR_PID=$!
+
+          # Extended timeout for CI stability
+          MAX_WAIT=90
+          RETRY_DELAY=2
+
+          echo "Waiting for emulators (timeout: ${MAX_WAIT}s)..."
+          for i in $(seq 1 $MAX_WAIT); do
+            AUTH_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9099 2>/dev/null || echo "000")
+            FS_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8180 2>/dev/null || echo "000")
+
+            if [[ "$AUTH_OK" != "000" ]] && [[ "$FS_OK" != "000" ]]; then
+              echo "All emulators ready after ${i}s (Auth: $AUTH_OK, Firestore: $FS_OK)"
               break
             fi
-            echo "Waiting for emulators... ($i/30)"
-            sleep 1
+
+            if [ $i -eq $MAX_WAIT ]; then
+              echo "ERROR: Emulators failed to start within ${MAX_WAIT}s"
+              exit 1
+            fi
+
+            echo "Waiting... ($i/${MAX_WAIT}s) Auth: $AUTH_OK, Firestore: $FS_OK"
+            sleep $RETRY_DELAY
           done
           sleep 2
 
@@ -482,6 +535,9 @@ jobs:
           echo "All 5 burn-in iterations passed"
           echo "## Burn-In Result" >> $GITHUB_STEP_SUMMARY
           echo "All 5 iterations passed - tests are stable" >> $GITHUB_STEP_SUMMARY
+        env:
+          CI: true
+          CI_EMULATOR_TIMEOUT: "60000"
 
       - name: Upload burn-in artifacts on failure
         if: failure()

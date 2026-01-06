@@ -7,14 +7,27 @@ This directory contains Playwright test fixtures for E2E testing with session-ba
 The fixture architecture follows a layered pattern:
 
 ```text
-session.fixture.ts   <- Foundation: Cookie encryption/injection
+session.fixture.ts        <- Foundation: Cookie encryption/injection
        ↑
-firestore.fixture.ts <- Firestore document seeding
+firestore.fixture.ts      <- Firestore document seeding
        ↑
-auth.fixture.ts      <- Regular user authentication
+test-isolation.fixture.ts <- workerInfo.workerIndex-based data isolation
        ↑
-admin.fixture.ts     <- Admin user authentication (extends auth)
+firebase-reset.fixture.ts <- Auto-cleanup with isolation support
+       ↑
+auth.fixture.ts           <- Regular user authentication
+       ↑
+admin.fixture.ts          <- Admin user authentication (extends auth)
 ```
+
+### Infrastructure Fixtures
+
+| File | Purpose |
+|------|---------|
+| `test-isolation.fixture.ts` | Provides `workerPrefix`, `isolatedDocId`, `isolatedPath` for parallel worker isolation |
+| `firebase-reset.fixture.ts` | Auto-cleanup fixture with isolated data support |
+| `emulator-health.fixture.ts` | Emulator health check with exponential backoff |
+| `retry-firestore.fixture.ts` | Retry wrapper for transient connection errors |
 
 ## Session-Based Authentication
 

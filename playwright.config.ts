@@ -13,6 +13,7 @@ export const SESSION_SECRET_TEST =
 	'test-session-secret-32-characters-minimum-length-for-iron-webcrypto'
 
 // Firebase emulator config - same values used in CI
+// Firestore emulator port 8180 - avoids Windows port conflicts with svchost.exe on 8080
 const emulatorEnv = {
 	VITE_APIKEY: 'demo-test-key',
 	VITE_AUTH_DOMAIN: 'localhost',
@@ -21,20 +22,17 @@ const emulatorEnv = {
 	VITE_MESSAGING_SENDER_ID: '000000000000',
 	VITE_APP_ID: 'demo-app-id',
 	VITE_USE_EMULATORS: 'true',
-	// Server-side emulator flag (used by firebase.admin.ts)
 	USE_EMULATORS: 'true',
-	// Firestore emulator host (used by src/tests/fixtures/firestore.fixture.ts)
-	FIRESTORE_EMULATOR_HOST: '127.0.0.1:8080',
-	// Auth emulator host (used by firebase.admin.ts for user creation)
+	FIRESTORE_EMULATOR_HOST: process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8180',
 	FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
-	// Session secret for server-side session validation
-	// Must match SESSION_SECRET_TEST used in session.fixture.ts
 	SESSION_SECRET: SESSION_SECRET_TEST
 }
 
 export default defineConfig({
 	forbidOnly: isCI,
 	fullyParallel: true,
+	// Global setup: Wait for emulators before any tests run (Story 0-8 AC3)
+	globalSetup: './playwright.global-setup.ts',
 	projects: [
 		{
 			name: 'chromium',
@@ -93,7 +91,8 @@ export default defineConfig({
 		url: 'http://localhost:3000',
 		timeout: 120_000
 	},
-	// CI: Use 50% of available cores for parallel execution
+	// CI: Use 2 workers per shard for parallel execution (Story 0-8 AC5)
+	// String '50%' on 2-core ubuntu evaluates to 1; explicit 2 doubles parallelism
 	// Local: Use all available cores
-	workers: isCI ? '50%' : undefined
+	workers: isCI ? 2 : undefined
 })

@@ -115,21 +115,20 @@ export async function triggerQrScan(page: Page, code: string) {
 }
 
 /**
- * Sets up a mock for failed check-in API calls.
+ * Sets up environment for failed check-in API calls.
  * Used to trigger the QR option to appear (progressive disclosure).
  *
- * @param page - Playwright page instance
+ * Server function now hits Firestore emulator directly.
+ * With no event seeded, check-in will naturally fail with NotFoundError.
+ *
+ * This function is now a no-op - kept for API compatibility with existing tests.
+ * The failed check-in behavior comes from the server function hitting the
+ * emulator with no matching event data.
+ *
+ * @param page - Playwright page instance (unused, kept for API compatibility)
  */
-export async function setupFailedCheckInMock(page: Page) {
-	await page.route('**/api/users/eventCode', route => {
-		if (route.request().method() === 'POST') {
-			route.fulfill({
-				status: 404,
-				contentType: 'application/json',
-				body: JSON.stringify({success: false, error: 'Event not found'})
-			})
-		} else {
-			route.continue()
-		}
-	})
+export async function setupFailedCheckInMock(_page: Page) {
+	// No-op: Server function naturally fails when no event is seeded
+	// The checkInToEvent server function throws NotFoundError when
+	// no event matches the code in Firestore emulator
 }

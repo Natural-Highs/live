@@ -185,7 +185,7 @@ bun run test:integration
 ### Integration Test Fixtures
 
 1. **Firebase Fixture** (`firebase.fixture.ts`):
-   - Health checks Auth (9099) and Firestore (8080) emulators
+   - Health checks Auth (9099) and Firestore (8180) emulators
    - Auto-cleans data before/after each test
    - Verifies SESSION_SECRET is set
 
@@ -245,7 +245,7 @@ bun run dev:cloud        # Terminal 2: Dev with real Firebase (when needed)
 ### Emulator Ports
 
 - Auth: `localhost:9099`
-- Firestore: `localhost:8080`
+- Firestore: `localhost:8180`
 - UI: `localhost:4000`
 
 ### Seeding Test Data
@@ -319,6 +319,67 @@ test('displays guest list', async ({page}) => {
   await page.goto('/admin/guests')
   await expect(page.getByText('Derek Jeter')).toBeVisible()
 })
+```
+
+## Infrastructure Stability (Story 0-8)
+
+### Parallel Worker Data Isolation
+
+E2E tests use `workerInfo.workerIndex` with worker-scoped fixtures for data isolation:
+
+```typescript
+import {test, expect} from '../fixtures'
+
+test('creates isolated data', async ({page, workerPrefix}) => {
+  const userId = `${workerPrefix}__user-1`     // "w0__user-1" or "w1__user-1"
+  const eventId = `${workerPrefix}__event-1`   // "w0__event-1"
+})
+```
+
+Worker-scoped fixtures run cleanup once per worker (not per test), following Playwright's recommended pattern. Tests within a worker run sequentially, so no intra-worker collision is possible.
+
+**Why not per-test isolation?** Per-test cleanup causes excessive REST calls to the emulator (~25x more than worker-scoped), leading to ECONNRESET errors under load.
+
+### Emulator Health Check
+
+Global setup in `playwright.global-setup.ts` verifies emulators before tests:
+- Auth emulator: `127.0.0.1:9099`
+- Firestore emulator: `127.0.0.1:8180`
+- Timeout: 60s (configurable via `CI_EMULATOR_TIMEOUT`)
+- Exponential backoff: 100ms → 5s cap
+
+### Retry Logic for Transient Failures
+
+Retryable seed functions handle ECONNRESET errors:
+
+```typescript
+import {createTestUserWithRetry, createTestEventWithRetry} from '../fixtures'
+
+// 3 retries with 100ms/200ms/400ms exponential backoff
+await createTestEventWithRetry({id: 'event-1', ...})
+await createTestUserWithRetry('user-1', {...})
+```
+
+Retryable errors: `ECONNRESET`, `ETIMEDOUT`, `ECONNREFUSED`, `socket hang up`, `fetch failed`
+
+### CI Configuration
+
+| Setting | Value | Rationale |
+|---------|-------|-----------|
+| Workers per shard | 2 | Balanced parallelism vs emulator load |
+| Shards | 4 | Separate emulator instances per runner |
+| Emulator timeout | 90s | Cold start allowance in CI |
+| Flakiness threshold | <2% | Validated via burn-in testing |
+| Target time | <4 min/shard | With 2 workers enabled |
+
+### Burn-In Testing
+
+```bash
+# Run 10 iterations to validate stability
+./scripts/burn-in.sh 10
+
+# Results in .build/burn-in-results.json
+# Must pass with <2% flakiness before merge
 ```
 
 ## Coverage
