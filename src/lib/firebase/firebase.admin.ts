@@ -30,18 +30,15 @@ function initializeAdmin(): void {
 
 	// When using emulators, we can initialize without credentials
 	if (shouldUseEmulators) {
-		// Initialize without credentials for emulator usage
-		// The demo-* project ID pattern works without authentication
+		// Set emulator hosts before initialization (use ??= to let external config win)
+		// Use 127.0.0.1 instead of localhost to avoid IPv6 resolution issues on Windows
+		process.env.FIRESTORE_EMULATOR_HOST ??= '127.0.0.1:8180'
+		process.env.FIREBASE_AUTH_EMULATOR_HOST ??= '127.0.0.1:9099'
+
 		admin.initializeApp({
-			projectId: 'demo-natural-highs'
+			projectId: process.env.VITE_PROJECT_ID || 'demo-natural-highs'
 		})
 
-		admin.firestore().settings({
-			host: 'localhost:8080',
-			ssl: false
-		})
-
-		process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099'
 		initialized = true
 		return
 	}
@@ -82,10 +79,8 @@ function initializeAdmin(): void {
 	initialized = true
 }
 
-// Set Auth emulator host early if emulators are enabled
-if (shouldUseEmulators) {
-	process.env.FIREBASE_AUTH_EMULATOR_HOST = 'localhost:9099'
-}
+// Note: Emulator hosts are set inside initializeAdmin() on first access.
+// Do NOT set them here - let external config (playwright, dev.sh) take precedence.
 
 // Lazy getters that initialize on first access
 export const adminDb = {
@@ -119,6 +114,10 @@ export const adminAuth = {
 	setCustomUserClaims(uid: string, customUserClaims: Record<string, unknown> | null) {
 		initializeAdmin()
 		return admin.auth().setCustomUserClaims(uid, customUserClaims)
+	},
+	updateUser(uid: string, properties: admin.auth.UpdateRequest) {
+		initializeAdmin()
+		return admin.auth().updateUser(uid, properties)
 	}
 } as admin.auth.Auth
 
@@ -166,6 +165,3 @@ export async function testAdminFunctions() {
 	} catch {}
 }
 
-if (shouldUseEmulators) {
-	testAdminFunctions()
-}

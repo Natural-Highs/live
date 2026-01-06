@@ -64,32 +64,6 @@ describe('events server functions', () => {
 		})
 	})
 
-	describe('activateEvent behavior', () => {
-		it('should require admin privileges', () => {
-			// activateEvent uses requireAdmin() guard
-			// This is validated by the mock
-			expect(true).toBe(true)
-		})
-
-		it('should generate 4-digit event codes', () => {
-			// Event codes should be 4 digits between 1000-9999
-			const minCode = 1000
-			const maxCode = 9999
-			expect(minCode).toBeGreaterThanOrEqual(1000)
-			expect(maxCode).toBeLessThanOrEqual(9999)
-		})
-	})
-
-	describe('overrideSurveyTiming behavior', () => {
-		it('should require admin privileges', () => {
-			// overrideSurveyTiming uses requireAdmin() guard
-			expect(true).toBe(true)
-		})
-
-		it('should support pre and post survey types', () => {
-			const validTypes = ['pre', 'post']
-			expect(validTypes).toContain('pre')
-			expect(validTypes).toContain('post')
-		})
-	})
+	// Note: activateEvent and overrideSurveyTiming are now in admin.ts
+	// See admin.test.ts for their test coverage
 })

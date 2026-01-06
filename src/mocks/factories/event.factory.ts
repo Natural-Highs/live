@@ -1,23 +1,14 @@
 /**
- * Event Factory for MSW Unit Tests
+ * Event Factory for Unit Tests
  *
- * Provides mock event data for unit tests using MSW.
+ * Provides mock event data for unit tests.
  *
  * @example
  * ```typescript
- * import {server} from '@/mocks/server'
- * import {http, HttpResponse} from 'msw'
- * import {createMockEvent, createEventsResponse} from '@/mocks/factories'
+ * import {createMockEvent, createMockEventList} from '@/mocks/factories'
  *
- * beforeEach(() => {
- *   server.use(
- *     http.get('/api/events', () =>
- *       HttpResponse.json(createEventsResponse([
- *         createMockEvent({name: 'Custom Event'})
- *       ]))
- *     )
- *   )
- * })
+ * const event = createMockEvent({name: 'Test Event'})
+ * const events = createMockEventList(5)
  * ```
  */
 

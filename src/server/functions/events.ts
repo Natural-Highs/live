@@ -2,15 +2,32 @@ import {createServerFn} from '@tanstack/react-start'
 import {FieldValue} from 'firebase-admin/firestore'
 import {requireAdmin, requireAuth} from '@/server/middleware/auth'
 import {isValidEventCodeFormat} from '../../lib/events/event-validation'
-import {db} from '../../lib/firebase/firebase'
-import {
-	activateEventSchema,
-	checkInToEventSchema,
-	getEventByCodeSchema,
-	overrideSurveyTimingSchema
-} from '../schemas/events'
+import {adminDb} from '@/lib/firebase/firebase.admin'
+import {checkInToEventSchema, getEventByCodeSchema} from '../schemas/events'
 import type {EventDocument} from '../types/events'
 import {ConflictError, NotFoundError, TimeWindowError, ValidationError} from './utils/errors'
+
+/**
+ * Get all event types
+ * Admin only
+ */
+export const getEventTypes = createServerFn({method: 'GET'}).handler(async () => {
+	await requireAdmin()
+
+	const snapshot = await adminDb.collection('eventTypes').orderBy('name', 'asc').get()
+
+	return snapshot.docs.map(doc => {
+		const data = doc.data()
+		return {
+			id: doc.id,
+			name: data.name,
+			defaultConsentFormTemplateId: data.defaultConsentFormTemplateId,
+			defaultDemographicsFormTemplateId: data.defaultDemographicsFormTemplateId,
+			defaultSurveyTemplateId: data.defaultSurveyTemplateId ?? null,
+			createdAt: data.createdAt?.toDate?.()?.toISOString() ?? data.createdAt
+		}
+	})
+})
 
 /**
  * Get event by 4-digit event code
@@ -25,7 +42,7 @@ export const getEventByCode = createServerFn({method: 'GET'})
 			throw new ValidationError('Invalid event code format')
 		}
 
-		const eventsRef = db.collection('events')
+		const eventsRef = adminDb.collection('events')
 		const snapshot = await eventsRef
 			.where('eventCode', '==', code)
 			.where('isActive', '==', true)
@@ -39,13 +56,25 @@ export const getEventByCode = createServerFn({method: 'GET'})
 		const doc = snapshot.docs[0]
 		const eventData = doc.data()
 
+		// Convert all Timestamp fields to ISO strings to avoid seroval serialization errors
 		return {
 			id: doc.id,
-			...eventData,
-			startDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
-			endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
-			createdAt: eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
-			updatedAt: eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
+			name: eventData.name,
+			eventCode: eventData.eventCode,
+			eventTypeId: eventData.eventTypeId,
+			description: eventData.description,
+			location: eventData.location,
+			isActive: eventData.isActive,
+			participants: eventData.participants,
+			currentParticipants: eventData.currentParticipants,
+			collectAdditionalDemographics: eventData.collectAdditionalDemographics,
+			eventDate: eventData.eventDate?.toDate?.()?.toISOString() ?? eventData.eventDate ?? null,
+			startDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate ?? null,
+			endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate ?? null,
+			activatedAt: eventData.activatedAt?.toDate?.()?.toISOString() ?? eventData.activatedAt ?? null,
+			surveyAccessibleAt: eventData.surveyAccessibleAt?.toDate?.()?.toISOString() ?? eventData.surveyAccessibleAt ?? null,
+			createdAt: eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt ?? null,
+			updatedAt: eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt ?? null
 		} as EventDocument
 	})
 
@@ -56,7 +85,7 @@ export const getEventByCode = createServerFn({method: 'GET'})
 export const getEvents = createServerFn({method: 'GET'}).handler(async () => {
 	const user = await requireAuth()
 
-	const eventsRef = db.collection('events')
+	const eventsRef = adminDb.collection('events')
 	let query = eventsRef.orderBy('createdAt', 'desc')
 
 	// If not admin, filter to user's registered events
@@ -68,84 +97,28 @@ export const getEvents = createServerFn({method: 'GET'}).handler(async () => {
 
 	return snapshot.docs.map(doc => {
 		const eventData = doc.data()
+		// Convert all Timestamp fields to ISO strings to avoid seroval serialization errors
 		return {
 			id: doc.id,
-			...eventData,
-			startDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate,
-			endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate,
-			createdAt: eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt,
-			updatedAt: eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt
+			name: eventData.name,
+			eventCode: eventData.eventCode,
+			eventTypeId: eventData.eventTypeId,
+			description: eventData.description,
+			location: eventData.location,
+			isActive: eventData.isActive,
+			participants: eventData.participants,
+			currentParticipants: eventData.currentParticipants,
+			collectAdditionalDemographics: eventData.collectAdditionalDemographics,
+			eventDate: eventData.eventDate?.toDate?.()?.toISOString() ?? eventData.eventDate ?? null,
+			startDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate ?? null,
+			endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate ?? null,
+			activatedAt: eventData.activatedAt?.toDate?.()?.toISOString() ?? eventData.activatedAt ?? null,
+			surveyAccessibleAt: eventData.surveyAccessibleAt?.toDate?.()?.toISOString() ?? eventData.surveyAccessibleAt ?? null,
+			createdAt: eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt ?? null,
+			updatedAt: eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt ?? null
 		} as EventDocument
 	})
 })
-
-/**
- * Activate event and generate 4-digit event code
- * Admin only
- */
-export const activateEvent = createServerFn({method: 'POST'})
-	.inputValidator((d: unknown) => activateEventSchema.parse(d))
-	.handler(async ({data}) => {
-		await requireAdmin()
-
-		const {eventId} = data
-
-		// Generate unique 4-digit event code
-		const eventCode = await generateUniqueEventCode()
-
-		await db.collection('events').doc(eventId).update({
-			isActive: true,
-			eventCode,
-			updatedAt: new Date()
-		})
-
-		return {eventCode}
-	})
-
-/**
- * Override survey timing for an event
- * Admin only
- */
-export const overrideSurveyTiming = createServerFn({method: 'POST'})
-	.inputValidator((d: unknown) => overrideSurveyTimingSchema.parse(d))
-	.handler(async ({data}) => {
-		await requireAdmin()
-
-		const {eventId, surveyType, enabled} = data
-
-		const updateField = surveyType === 'pre' ? 'preSurveyEnabled' : 'postSurveyEnabled'
-
-		await db
-			.collection('events')
-			.doc(eventId)
-			.update({
-				[updateField]: enabled,
-				updatedAt: new Date()
-			})
-
-		return {success: true}
-	})
-
-/**
- * Generate unique 4-digit event code
- * Checks for collisions and retries up to 10 times
- */
-async function generateUniqueEventCode(): Promise<string> {
-	const maxRetries = 10
-
-	for (let i = 0; i < maxRetries; i++) {
-		const code = Math.floor(1000 + Math.random() * 9000).toString()
-
-		// Check if code already exists
-		const snapshot = await db.collection('events').where('eventCode', '==', code).limit(1).get()
-
-		if (snapshot.empty) {
-			return code
-		}
-	}
-
-	throw new Error('Failed to generate unique event code after 10 attempts')
-}
 
 /**
  * Check in authenticated user to an event
@@ -162,7 +135,7 @@ export const checkInToEvent = createServerFn({method: 'POST'})
 		}
 
 		// Find event by code
-		const eventsRef = db.collection('events')
+		const eventsRef = adminDb.collection('events')
 		const snapshot = await eventsRef
 			.where('eventCode', '==', eventCode)
 			.where('isActive', '==', true)
@@ -177,7 +150,7 @@ export const checkInToEvent = createServerFn({method: 'POST'})
 		const eventData = eventDoc.data()
 
 		// Check if user is already registered
-		const existingRegistration = await db
+		const existingRegistration = await adminDb
 			.collection('userEvents')
 			.where('userId', '==', user.uid)
 			.where('eventId', '==', eventDoc.id)
@@ -222,7 +195,7 @@ export const checkInToEvent = createServerFn({method: 'POST'})
 
 		// Create userEvent record
 		const registeredAt = new Date()
-		await db.collection('userEvents').add({
+		await adminDb.collection('userEvents').add({
 			userId: user.uid,
 			eventId: eventDoc.id,
 			registeredAt,
@@ -230,7 +203,7 @@ export const checkInToEvent = createServerFn({method: 'POST'})
 		})
 
 		// Update event participants using atomic arrayUnion
-		await db
+		await adminDb
 			.collection('events')
 			.doc(eventDoc.id)
 			.update({
@@ -239,10 +212,12 @@ export const checkInToEvent = createServerFn({method: 'POST'})
 				updatedAt: new Date()
 			})
 
+		// Prefer eventDate, fall back to startDate for display
+		const displayDate = eventData.eventDate ?? eventData.startDate
 		return {
 			success: true,
 			eventName: eventData.name || 'Event',
-			eventDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate ?? null,
+			eventDate: displayDate?.toDate?.()?.toISOString() ?? displayDate ?? null,
 			eventLocation: eventData.location || 'Location TBD'
 		}
 	})

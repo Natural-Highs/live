@@ -7,6 +7,12 @@ import {Label} from '@/components/ui/label'
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '@/components/ui/select'
 import {Spinner} from '@/components/ui/spinner'
 import {Tabs, TabsList, TabsTrigger} from '@/components/ui/tabs'
+import {
+	createFormTemplate,
+	deleteFormTemplate,
+	getFormTemplates,
+	updateFormTemplate
+} from '@/server/functions/admin'
 
 // Lazy-load the heavy SurveyCreator component (~500KB survey-core dependency)
 const SurveyCreatorComponent = lazy(() =>
@@ -54,23 +60,11 @@ function TemplatesComponent() {
 		setLoading(true)
 		setError('')
 		try {
-			const url =
-				filterType === 'all' ? '/api/formTemplates' : `/api/formTemplates?type=${filterType}`
-			const response = await fetch(url)
-			const data = (await response.json()) as {
-				success: boolean
-				templates?: FormTemplate[]
-				error?: string
-			}
-
-			if (!(response.ok && data.success)) {
-				setError(data.error || 'Failed to load templates')
-				return
-			}
-
-			if (data.templates) {
-				setTemplates(data.templates)
-			}
+			const allTemplates = await getFormTemplates()
+			// Client-side filtering based on filterType
+			const filtered =
+				filterType === 'all' ? allTemplates : allTemplates.filter(t => t.type === filterType)
+			setTemplates(filtered as FormTemplate[])
 		} catch (err) {
 			setError(err instanceof Error ? err.message : 'Failed to load templates')
 		} finally {
@@ -87,25 +81,13 @@ function TemplatesComponent() {
 		setError('')
 
 		try {
-			const response = await fetch('/api/formTemplates', {
-				method: 'POST',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({
+			await createFormTemplate({
+				data: {
 					type: formData.type,
 					name: formData.name,
 					questions: []
-				})
+				}
 			})
-
-			const data = (await response.json()) as {
-				success: boolean
-				error?: string
-			}
-
-			if (!(response.ok && data.success)) {
-				setError(data.error || 'Failed to create template')
-				return
-			}
 
 			setShowCreateModal(false)
 			setFormData({
@@ -129,10 +111,12 @@ function TemplatesComponent() {
 
 		try {
 			const updatePayload: {
-				name: string
+				id: string
+				name?: string
 				questions?: unknown[]
 				surveyJson?: unknown
 			} = {
+				id: selectedTemplate.id,
 				name: formData.name
 			}
 
@@ -142,21 +126,7 @@ function TemplatesComponent() {
 				updatePayload.questions = selectedTemplate.questions ? [...selectedTemplate.questions] : []
 			}
 
-			const response = await fetch(`/api/formTemplates/${selectedTemplate.id}`, {
-				method: 'PATCH',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify(updatePayload)
-			})
-
-			const data = (await response.json()) as {
-				success: boolean
-				error?: string
-			}
-
-			if (!(response.ok && data.success)) {
-				setError(data.error || 'Failed to update template')
-				return
-			}
+			await updateFormTemplate({data: updatePayload})
 
 			setShowEditModal(false)
 			setSelectedTemplate(null)
@@ -184,19 +154,7 @@ function TemplatesComponent() {
 		setError('')
 
 		try {
-			const response = await fetch(`/api/formTemplates/${selectedTemplate.id}`, {
-				method: 'DELETE'
-			})
-
-			const data = (await response.json()) as {
-				success: boolean
-				error?: string
-			}
-
-			if (!(response.ok && data.success)) {
-				setError(data.error || 'Failed to delete template')
-				return
-			}
+			await deleteFormTemplate({data: {id: selectedTemplate.id}})
 
 			setShowDeleteModal(false)
 			setSelectedTemplate(null)

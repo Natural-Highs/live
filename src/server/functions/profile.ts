@@ -15,19 +15,12 @@ import {calculateIsMinor, isValidDateOfBirth} from '@/lib/profile/minor-detectio
 import {getSessionData, updateSession} from '@/lib/session'
 import {requireAuth} from '@/server/middleware/auth'
 import {
+	aboutYouSchema,
 	createProfileSchema,
 	type DemographicsData,
 	demographicsSchema
 } from '@/server/schemas/profile'
 import {NotFoundError, ValidationError} from './utils/errors'
-
-/**
- * Get Firestore admin instance.
- * Uses the lazy-initialized adminDb.
- */
-function getDb() {
-	return adminDb
-}
 
 /**
  * Create minimal profile for new user.
@@ -67,8 +60,7 @@ export const createProfileFn = createServerFn({method: 'POST'})
 
 		const isMinor = calculateIsMinor(dateOfBirth)
 
-		const db = getDb()
-		const userRef = db.collection('users').doc(user.uid)
+		const userRef = adminDb.collection('users').doc(user.uid)
 
 		await userRef.set(
 			{
@@ -138,8 +130,7 @@ export const getProfileFn = createServerFn({method: 'GET'}).handler(
 	} | null> => {
 		const user = await requireAuth()
 
-		const db = getDb()
-		const userDoc = await db.collection('users').doc(user.uid).get()
+		const userDoc = await adminDb.collection('users').doc(user.uid).get()
 		const userData = userDoc.data()
 
 		if (!userData) {
@@ -181,9 +172,7 @@ export const updateDemographicsFn = createServerFn({method: 'POST'})
 	.handler(async ({data}): Promise<{success: true}> => {
 		const user = await requireAuth()
 
-		const db = getDb()
-
-		const userDoc = await db.collection('users').doc(user.uid).get()
+		const userDoc = await adminDb.collection('users').doc(user.uid).get()
 		const userData = userDoc.data()
 
 		if (!userData) {
@@ -203,7 +192,7 @@ export const updateDemographicsFn = createServerFn({method: 'POST'})
 		}
 
 		if (isMinor) {
-			await db
+			await adminDb
 				.collection('users')
 				.doc(user.uid)
 				.collection('private')
@@ -211,7 +200,7 @@ export const updateDemographicsFn = createServerFn({method: 'POST'})
 				.set(demographicsData, {merge: true})
 		} else {
 			// Store in main user document for adults
-			await db.collection('users').doc(user.uid).update(demographicsData)
+			await adminDb.collection('users').doc(user.uid).update(demographicsData)
 		}
 
 		return {success: true}
@@ -236,8 +225,7 @@ export const getDemographicsFn = createServerFn({method: 'GET'}).handler(
 	async (): Promise<{demographics: DemographicsData; isMinor: boolean}> => {
 		const user = await requireAuth()
 
-		const db = getDb()
-		const userDoc = await db.collection('users').doc(user.uid).get()
+		const userDoc = await adminDb.collection('users').doc(user.uid).get()
 		const userData = userDoc.data()
 
 		if (!userData) {
@@ -248,7 +236,7 @@ export const getDemographicsFn = createServerFn({method: 'GET'}).handler(
 		let demographics: DemographicsData = {}
 
 		if (isMinor) {
-			const privateDoc = await db
+			const privateDoc = await adminDb
 				.collection('users')
 				.doc(user.uid)
 				.collection('private')
@@ -304,8 +292,7 @@ export const checkProfileCompleteFn = createServerFn({method: 'GET'}).handler(
 		}
 
 		// Fallback: check Firestore
-		const db = getDb()
-		const userDoc = await db.collection('users').doc(sessionData.userId).get()
+		const userDoc = await adminDb.collection('users').doc(sessionData.userId).get()
 		const userData = userDoc.data()
 
 		if (!userData) {
@@ -318,3 +305,96 @@ export const checkProfileCompleteFn = createServerFn({method: 'GET'}).handler(
 		}
 	}
 )
+
+/**
+ * Save About You profile data during signup flow.
+ *
+ * Stores first name, last name, DOB, phone, and emergency contact info.
+ * Creates displayName from firstName + lastName.
+ * Sets profileComplete to true and calculates isMinor.
+ *
+ * @param data - AboutYouData with firstName, lastName, dateOfBirth, etc.
+ * @returns Success status
+ */
+export const saveAboutYouFn = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => {
+		const result = aboutYouSchema.safeParse(d)
+		if (!result.success) {
+			throw new ValidationError(result.error.issues[0]?.message ?? 'Invalid input')
+		}
+		return result.data
+	})
+	.handler(async ({data}): Promise<{success: true}> => {
+		const user = await requireAuth()
+
+		const {
+			firstName,
+			lastName,
+			dateOfBirth,
+			phone,
+			emergencyContactName,
+			emergencyContactPhone,
+			emergencyContactRelationship
+		} = data
+
+		if (!isValidDateOfBirth(dateOfBirth)) {
+			throw new ValidationError('Please enter a valid date of birth')
+		}
+
+		const isMinor = calculateIsMinor(dateOfBirth)
+		const displayName = `${firstName} ${lastName}`.trim()
+
+		const userRef = adminDb.collection('users').doc(user.uid)
+
+		await userRef.set(
+			{
+				uid: user.uid,
+				email: user.email,
+				firstName,
+				lastName,
+				displayName,
+				dateOfBirth,
+				phone: phone || null,
+				emergencyContactName: emergencyContactName || null,
+				emergencyContactPhone: emergencyContactPhone || null,
+				emergencyContactRelationship: emergencyContactRelationship || null,
+				isMinor,
+				profileComplete: true,
+				createdAt: serverTimestamp(),
+				updatedAt: serverTimestamp()
+			},
+			{merge: true}
+		)
+
+		// Update Firebase custom claims
+		const userRecord = await adminAuth.getUser(user.uid)
+		const currentClaims = (userRecord.customClaims as Record<string, unknown>) || {}
+		await adminAuth.setCustomUserClaims(user.uid, {
+			...currentClaims,
+			profileComplete: true,
+			isMinor
+		})
+
+		// Update session with new profile state
+		const sessionData = await getSessionData()
+		if (sessionData.userId) {
+			const newSessionData = {
+				...sessionData,
+				displayName,
+				claims: {
+					...sessionData.claims,
+					profileComplete: true,
+					isMinor
+				}
+			}
+			try {
+				await updateSession(newSessionData)
+			} catch {
+				throw new Error(
+					'Profile saved but session update failed. Please refresh the page to continue.'
+				)
+			}
+		}
+
+		return {success: true}
+	})

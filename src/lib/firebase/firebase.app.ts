@@ -43,11 +43,11 @@ if (isClient) {
 	db = getFirestore(app)
 	auth = getAuth(app)
 
-	// Connect to emulators when explicitly enabled via VITE_USE_EMULATORS
 	if (shouldUseEmulators && !emulatorsConnected) {
 		try {
-			connectFirestoreEmulator(db, 'localhost', 8080)
-			connectAuthEmulator(auth, 'http://localhost:9099')
+			const firestorePort = parseInt(import.meta.env.VITE_FIRESTORE_PORT || '8180', 10)
+			connectFirestoreEmulator(db, '127.0.0.1', firestorePort)
+			connectAuthEmulator(auth, 'http://127.0.0.1:9099')
 			emulatorsConnected = true
 		} catch (error) {
 			if (import.meta.env.DEV) {

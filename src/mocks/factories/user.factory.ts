@@ -1,24 +1,14 @@
 /**
- * User Factory for MSW Unit Tests
+ * User Factory for Unit Tests
  *
- * Provides mock user and profile data for unit tests using MSW.
+ * Provides mock user and profile data for unit tests.
  *
  * @example
  * ```typescript
- * import {server} from '@/mocks/server'
- * import {http, HttpResponse} from 'msw'
- * import {createMockUser, createProfileResponse} from '@/mocks/factories'
+ * import {createMockUser, createMockUserClaims} from '@/mocks/factories'
  *
- * beforeEach(() => {
- *   server.use(
- *     http.get('/api/profile', () =>
- *       HttpResponse.json(createProfileResponse(createMockUser({
- *         displayName: 'Test User',
- *         email: 'test@example.com'
- *       })))
- *     )
- *   )
- * })
+ * const user = createMockUser({displayName: 'Test User'})
+ * const claims = createMockUserClaims({admin: true})
  * ```
  */
 

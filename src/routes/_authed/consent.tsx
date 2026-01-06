@@ -1,4 +1,4 @@
-import {createFileRoute, useNavigate} from '@tanstack/react-router'
+import {createFileRoute, redirect, useNavigate} from '@tanstack/react-router'
 import {useState} from 'react'
 import {ConsentForm} from '@/components/forms/ConsentForm'
 import {Alert} from '@/components/ui'
@@ -7,35 +7,20 @@ import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
 import {auth} from '@/lib/firebase/firebase.app'
 import type {ConsentFormData} from '@/lib/schemas/consent'
-
-interface ConsentFormTemplate {
-	id: string
-	name: string
-	questions?: readonly {
-		id?: string
-		text?: string
-		type?: string
-		required?: boolean
-	}[]
-}
+import {getConsentFormTemplate} from '@/server/functions/forms'
+import {updateConsentStatus} from '@/server/functions/users'
 
 export const Route = createFileRoute('/_authed/consent')({
+	beforeLoad: async ({context}) => {
+		// If user has already signed consent, redirect to dashboard
+		if (context.auth.hasConsent) {
+			throw redirect({to: '/dashboard'})
+		}
+	},
 	loader: async () => {
-		// Fetch consent form template
-		const response = await fetch('/api/forms/consent')
-		const data = (await response.json()) as {
-			success: boolean
-			template?: ConsentFormTemplate
-			error?: string
-		}
-
-		if (!(response.ok && data.success)) {
-			throw new Error(data.error || 'Failed to load consent form')
-		}
-
-		return {
-			template: data.template || null
-		}
+		// Fetch consent form template via server function
+		const template = await getConsentFormTemplate()
+		return {template}
 	},
 	component: ConsentComponent
 })
@@ -51,22 +36,8 @@ function ConsentComponent() {
 		setSubmitting(true)
 
 		try {
-			const response = await fetch('/api/forms/consent', {
-				method: 'POST',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({})
-			})
-
-			const responseData = (await response.json()) as {
-				success: boolean
-				error?: string
-			}
-
-			if (!(response.ok && responseData.success)) {
-				setError(responseData.error || 'Failed to submit consent form')
-				setSubmitting(false)
-				return
-			}
+			// Update consent status via server function
+			await updateConsentStatus({data: {consentSigned: true}})
 
 			// Refresh auth token to get updated custom claims (signedConsentForm)
 			const currentUser = auth?.currentUser

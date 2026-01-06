@@ -1,14 +1,67 @@
 import {createServerFn} from '@tanstack/react-start'
 import {requireAdmin} from '@/server/middleware/auth'
-import {auth, db} from '../../lib/firebase/firebase'
+import {adminAuth, adminDb} from '@/lib/firebase/firebase.admin'
 import {buildCustomClaims} from '../../lib/utils/custom-claims'
 import {
+	activateEventSchema,
+	createEventSchema,
+	createEventTypeSchema,
+	createFormTemplateSchema,
+	deleteEventTypeSchema,
+	deleteFormTemplateSchema,
 	exportDataSchema,
 	getResponsesSchema,
 	getUserByEmailSchema,
-	setAdminClaimSchema
+	overrideSurveyTimingSchema,
+	setAdminClaimSchema,
+	updateEventTypeSchema,
+	updateFormTemplateSchema
 } from '../schemas/admin'
 import {NotFoundError} from './utils/errors'
+
+/**
+ * Get all form templates
+ * Admin only
+ */
+export const getFormTemplates = createServerFn({method: 'GET'}).handler(async () => {
+	await requireAdmin()
+
+	const snapshot = await adminDb.collection('formTemplates').orderBy('name', 'asc').get()
+
+	return snapshot.docs.map(doc => {
+		const data = doc.data()
+		return {
+			id: doc.id,
+			type: data.type as 'consent' | 'demographics' | 'survey',
+			name: data.name,
+			description: data.description,
+			createdAt: data.createdAt?.toDate?.()?.toISOString() ?? data.createdAt
+		}
+	})
+})
+
+/**
+ * Get all users with pagination
+ * Admin only
+ */
+export const getUsers = createServerFn({method: 'GET'}).handler(async () => {
+	await requireAdmin()
+
+	const snapshot = await adminDb.collection('users').orderBy('createdAt', 'desc').limit(100).get()
+
+	return snapshot.docs.map(doc => {
+		const data = doc.data()
+		return {
+			id: doc.id,
+			email: data.email,
+			firstName: data.firstName,
+			lastName: data.lastName,
+			admin: data.admin ?? false,
+			signedConsentForm: data.signedConsentForm ?? false,
+			createdAt: data.createdAt?.toDate?.()?.toISOString() ?? data.createdAt
+		}
+	})
+})
 
 /**
  * Export survey response data
@@ -22,7 +75,7 @@ export const exportData = createServerFn({method: 'GET'}).handler(
 		const {eventId, format, surveyType} = validated
 
 		// Query responses
-		let query = db.collection('responses').orderBy('submittedAt', 'desc')
+		let query = adminDb.collection('responses').orderBy('submittedAt', 'desc')
 
 		if (eventId) {
 			query = query.where('eventId', '==', eventId)
@@ -71,7 +124,7 @@ export const setAdminClaim = createServerFn({method: 'POST'}).handler(
 		const {userId, isAdmin} = validated
 
 		// Get current user record
-		const userRecord = await auth.getUser(userId)
+		const userRecord = await adminAuth.getUser(userId)
 
 		// Build new claims
 		const currentClaims = userRecord.customClaims || {}
@@ -81,7 +134,7 @@ export const setAdminClaim = createServerFn({method: 'POST'}).handler(
 		})
 
 		// Set custom claims
-		await auth.setCustomUserClaims(userId, newClaims)
+		await adminAuth.setCustomUserClaims(userId, newClaims)
 
 		return {success: true, claims: newClaims}
 	}
@@ -91,14 +144,14 @@ export const setAdminClaim = createServerFn({method: 'POST'}).handler(
  * Get survey responses with filtering
  * Admin only
  */
-export const getResponses = createServerFn({method: 'GET'}).handler(
-	async ({data}: {data: unknown}) => {
+export const getResponses = createServerFn({method: 'GET'})
+	.inputValidator((d: unknown) => getResponsesSchema.parse(d))
+	.handler(async ({data}) => {
 		await requireAdmin()
 
-		const validated = getResponsesSchema.parse(data)
-		const {eventId, userId, surveyType, limit, offset} = validated
+		const {eventId, userId, surveyType, limit, offset} = data
 
-		let query = db.collection('responses').orderBy('submittedAt', 'desc')
+		let query = adminDb.collection('responses').orderBy('submittedAt', 'desc')
 
 		if (eventId) {
 			query = query.where('eventId', '==', eventId)
@@ -132,8 +185,7 @@ export const getResponses = createServerFn({method: 'GET'}).handler(
 			count: responses.length,
 			hasMore: responses.length === limit
 		}
-	}
-)
+	})
 
 /**
  * Get user by email address
@@ -147,7 +199,7 @@ export const getUserByEmail = createServerFn({method: 'GET'}).handler(
 		const {email} = validated
 
 		try {
-			const userRecord = await auth.getUserByEmail(email)
+			const userRecord = await adminAuth.getUserByEmail(email)
 
 			return {
 				uid: userRecord.uid,
@@ -167,6 +219,221 @@ export const getUserByEmail = createServerFn({method: 'GET'}).handler(
 		}
 	}
 )
+
+/**
+ * Get admin dashboard statistics
+ * Admin only
+ */
+export const getAdminStats = createServerFn({method: 'GET'}).handler(async () => {
+	await requireAdmin()
+
+	// Get counts for dashboard
+	const [usersSnapshot, eventsSnapshot, responsesSnapshot] = await Promise.all([
+		adminDb.collection('users').count().get(),
+		adminDb.collection('events').count().get(),
+		adminDb.collection('responses').count().get()
+	])
+
+	// Get active events count
+	const activeEventsSnapshot = await adminDb
+		.collection('events')
+		.where('isActive', '==', true)
+		.count()
+		.get()
+
+	return {
+		totalUsers: usersSnapshot.data().count,
+		totalEvents: eventsSnapshot.data().count,
+		totalResponses: responsesSnapshot.data().count,
+		activeEvents: activeEventsSnapshot.data().count
+	}
+})
+
+/**
+ * Create a new event
+ * Admin only
+ */
+export const createEvent = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => createEventSchema.parse(d))
+	.handler(async ({data}) => {
+		await requireAdmin()
+
+		// Generate event code (4 alphanumeric characters)
+		const eventCode = Math.random().toString(36).substring(2, 6).toUpperCase()
+
+		const docRef = await adminDb.collection('events').add({
+			...data,
+			eventCode,
+			isActive: false,
+			participants: [],
+			createdAt: new Date(),
+			updatedAt: new Date()
+		})
+
+		return {
+			id: docRef.id,
+			eventCode
+		}
+	})
+
+/**
+ * Create a new event type
+ * Admin only
+ */
+export const createEventType = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => createEventTypeSchema.parse(d))
+	.handler(async ({data}) => {
+		await requireAdmin()
+
+		const docRef = await adminDb.collection('eventTypes').add({
+			...data,
+			createdAt: new Date(),
+			updatedAt: new Date()
+		})
+
+		return {id: docRef.id}
+	})
+
+/**
+ * Update an event type
+ * Admin only
+ */
+export const updateEventType = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => updateEventTypeSchema.parse(d))
+	.handler(async ({data}) => {
+		await requireAdmin()
+
+		const {id, ...updateData} = data
+
+		await adminDb
+			.collection('eventTypes')
+			.doc(id)
+			.update({
+				...updateData,
+				updatedAt: new Date()
+			})
+
+		return {success: true}
+	})
+
+/**
+ * Delete an event type
+ * Admin only
+ */
+export const deleteEventType = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => deleteEventTypeSchema.parse(d))
+	.handler(async ({data}) => {
+		await requireAdmin()
+
+		await adminDb.collection('eventTypes').doc(data.id).delete()
+
+		return {success: true}
+	})
+
+/**
+ * Create a new form template
+ * Admin only
+ */
+export const createFormTemplate = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => createFormTemplateSchema.parse(d))
+	.handler(async ({data}) => {
+		await requireAdmin()
+
+		const docRef = await adminDb.collection('formTemplates').add({
+			...data,
+			isActive: false,
+			createdAt: new Date(),
+			updatedAt: new Date()
+		})
+
+		return {id: docRef.id}
+	})
+
+/**
+ * Update a form template
+ * Admin only
+ */
+export const updateFormTemplate = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => updateFormTemplateSchema.parse(d))
+	.handler(async ({data}) => {
+		await requireAdmin()
+
+		const {id, ...updateData} = data
+
+		await adminDb
+			.collection('formTemplates')
+			.doc(id)
+			.update({
+				...updateData,
+				updatedAt: new Date()
+			})
+
+		return {success: true}
+	})
+
+/**
+ * Delete a form template
+ * Admin only
+ */
+export const deleteFormTemplate = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => deleteFormTemplateSchema.parse(d))
+	.handler(async ({data}) => {
+		await requireAdmin()
+
+		await adminDb.collection('formTemplates').doc(data.id).delete()
+
+		return {success: true}
+	})
+
+/**
+ * Activate an event (generate event code)
+ * Admin only
+ */
+export const activateEvent = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => activateEventSchema.parse(d))
+	.handler(async ({data}) => {
+		await requireAdmin()
+
+		// Generate event code (4 alphanumeric characters)
+		const eventCode = Math.random().toString(36).substring(2, 6).toUpperCase()
+		const now = new Date()
+
+		await adminDb.collection('events').doc(data.eventId).update({
+			isActive: true,
+			code: eventCode,
+			activatedAt: now,
+			updatedAt: now
+		})
+
+		return {
+			success: true,
+			code: eventCode,
+			activatedAt: now.toISOString()
+		}
+	})
+
+/**
+ * Override survey timing for an event (make surveys accessible immediately)
+ * Admin only
+ */
+export const overrideSurveyTiming = createServerFn({method: 'POST'})
+	.inputValidator((d: unknown) => overrideSurveyTimingSchema.parse(d))
+	.handler(async ({data}) => {
+		await requireAdmin()
+
+		const now = new Date()
+
+		await adminDb.collection('events').doc(data.eventId).update({
+			surveyAccessibleOverride: true,
+			surveyAccessibleAt: now,
+			updatedAt: now
+		})
+
+		return {
+			success: true,
+			surveyAccessibleAt: now.toISOString()
+		}
+	})
 
 /**
  * Convert array of objects to CSV format

@@ -14,6 +14,7 @@ import {PageContainer} from '@/components/ui/page-container'
 import TitleCard from '@/components/ui/TitleCard'
 import {useAuth} from '@/context/AuthContext'
 import {auth} from '@/lib/firebase/firebase.app'
+import {createSessionFn} from '@/server/functions/auth'
 
 const loginSchema = z.object({
 	email: z.string().email('Invalid email address'),
@@ -96,21 +97,19 @@ function AuthenticationComponent() {
 
 			const idToken = await userCredential.user.getIdToken()
 
-			const sessionResponse = await fetch('/api/auth/sessionLogin', {
-				method: 'POST',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({idToken})
+			await createSessionFn({
+				data: {
+					uid: userCredential.user.uid,
+					email: userCredential.user.email,
+					displayName: userCredential.user.displayName,
+					idToken
+				}
 			})
 
-			if (sessionResponse.ok) {
-				// Invalidate router to re-run beforeLoad hooks with new session
-				await router.invalidate()
-				// Explicitly navigate after invalidation completes
-				navigate({to: '/dashboard'})
-			} else {
-				const data = await sessionResponse.json()
-				setAuthError(data.error || 'Failed to create session')
-			}
+			// Invalidate router to re-run beforeLoad hooks with new session
+			await router.invalidate()
+			// Explicitly navigate after invalidation completes
+			navigate({to: '/dashboard'})
 		} catch (error: unknown) {
 			if (error instanceof Error) {
 				if (error.message.includes('auth/invalid-credential')) {
@@ -133,24 +132,7 @@ function AuthenticationComponent() {
 			return
 		}
 		try {
-			const registerResponse = await fetch('/api/auth/register', {
-				method: 'POST',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({
-					username: values.username,
-					email: values.email,
-					password: values.password,
-					confirmPassword: values.confirmPassword
-				})
-			})
-
-			const registerData = await registerResponse.json()
-
-			if (!registerResponse.ok) {
-				setAuthError(registerData.error || 'Registration failed')
-				return
-			}
-
+			// Create Firebase user directly - validation is done client-side by signupSchema
 			const userCredential = await createUserWithEmailAndPassword(
 				auth,
 				values.email,
@@ -159,18 +141,16 @@ function AuthenticationComponent() {
 
 			const idToken = await userCredential.user.getIdToken()
 
-			const sessionResponse = await fetch('/api/auth/sessionLogin', {
-				method: 'POST',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({idToken})
+			await createSessionFn({
+				data: {
+					uid: userCredential.user.uid,
+					email: userCredential.user.email,
+					displayName: userCredential.user.displayName,
+					idToken
+				}
 			})
 
-			if (sessionResponse.ok) {
-				navigate({to: '/signup/about-you'})
-			} else {
-				const data = await sessionResponse.json()
-				setAuthError(data.error || 'Failed to create session')
-			}
+			navigate({to: '/signup/about-you'})
 		} catch (error: unknown) {
 			if (error instanceof Error) {
 				if (error.message.includes('auth/email-already-in-use')) {

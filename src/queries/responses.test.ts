@@ -1,10 +1,20 @@
 /**
  * Unit tests for responses query options
- * Tests success cases, error handling, filtering, and timestamp conversion
+ * Tests query key structure and server function integration
  */
 
 import {QueryClient} from '@tanstack/react-query'
+import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {type ResponseFilters, responsesQueryOptions} from './responses'
+
+// Mock the server function
+vi.mock('@/server/functions/admin', () => ({
+	getResponses: vi.fn()
+}))
+
+import {getResponses} from '@/server/functions/admin'
+
+const mockGetResponses = vi.mocked(getResponses)
 
 describe('responsesQueryOptions', () => {
 	let queryClient: QueryClient
@@ -57,7 +67,7 @@ describe('responsesQueryOptions', () => {
 	})
 
 	describe('queryFn - success cases', () => {
-		it('should fetch responses without filters', async () => {
+		it('should call getResponses server function and return responses', async () => {
 			const mockResponses = [
 				{
 					id: 'response-1',
@@ -65,118 +75,43 @@ describe('responsesQueryOptions', () => {
 					surveyId: 'survey-1',
 					isComplete: true,
 					createdAt: '2025-01-01T00:00:00.000Z',
+					submittedAt: '2025-01-01T00:00:00.000Z',
 					user: {id: 'user-1', email: 'test@example.com'},
 					survey: {id: 'survey-1', name: 'Post Event'},
 					questionResponses: []
 				}
 			]
 
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: true, responses: mockResponses})
-				})
-			)
+			mockGetResponses.mockResolvedValue({
+				responses: mockResponses,
+				count: 1,
+				hasMore: false
+			})
 
 			const result = await invokeQueryFn()
 
-			expect(fetch).toHaveBeenCalledWith('/api/admin/responses')
+			expect(getResponses).toHaveBeenCalled()
 			expect(result).toHaveLength(1)
 			expect(result[0].isComplete).toBe(true)
 		})
 
-		it('should include eventId filter in URL', async () => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: true, responses: []})
-				})
-			)
+		it('should pass eventId filter to server function', async () => {
+			mockGetResponses.mockResolvedValue({
+				responses: [],
+				count: 0,
+				hasMore: false
+			})
 
 			const filters: ResponseFilters = {eventId: 'event-123'}
 			await invokeQueryFn(filters)
 
-			expect(fetch).toHaveBeenCalledWith('/api/admin/responses?eventId=event-123')
-		})
-
-		it('should include all filters in URL', async () => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: true, responses: []})
-				})
-			)
-
-			const filters: ResponseFilters = {
-				eventId: 'event-1',
-				startDate: '2025-01-01',
-				endDate: '2025-12-31'
-			}
-			await invokeQueryFn(filters)
-
-			const calledUrl = vi.mocked(fetch).mock.calls[0][0] as string
-			expect(calledUrl).toContain('eventId=event-1')
-			expect(calledUrl).toContain('startDate=2025-01-01')
-			expect(calledUrl).toContain('endDate=2025-12-31')
-		})
-
-		it('should convert Firestore timestamp objects to Date', async () => {
-			const mockDate = new Date('2025-01-01T00:00:00.000Z')
-			const mockResponses = [
-				{
-					id: 'response-1',
-					userId: 'user-1',
-					surveyId: 'survey-1',
-					isComplete: true,
-					createdAt: {toDate: () => mockDate},
-					user: null,
-					survey: null,
-					questionResponses: []
+			expect(getResponses).toHaveBeenCalledWith({
+				data: {
+					eventId: 'event-123',
+					limit: 100,
+					offset: 0
 				}
-			]
-
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: true, responses: mockResponses})
-				})
-			)
-
-			const result = await invokeQueryFn()
-
-			expect(result[0].createdAt).toEqual(mockDate)
-		})
-
-		it('should convert string timestamps to Date', async () => {
-			const dateStr = '2025-01-01T00:00:00.000Z'
-			const mockResponses = [
-				{
-					id: 'response-1',
-					userId: 'user-1',
-					surveyId: 'survey-1',
-					isComplete: true,
-					createdAt: dateStr,
-					user: null,
-					survey: null,
-					questionResponses: []
-				}
-			]
-
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: true, responses: mockResponses})
-				})
-			)
-
-			const result = await invokeQueryFn()
-
-			expect(result[0].createdAt).toBeInstanceOf(Date)
+			})
 		})
 
 		it('should handle responses with null user and survey', async () => {
@@ -187,74 +122,49 @@ describe('responsesQueryOptions', () => {
 					surveyId: 'survey-1',
 					isComplete: false,
 					createdAt: '2025-01-01T00:00:00.000Z',
+					submittedAt: '2025-01-01T00:00:00.000Z',
 					user: null,
 					survey: null,
 					questionResponses: []
 				}
 			]
 
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: true, responses: mockResponses})
-				})
-			)
+			mockGetResponses.mockResolvedValue({
+				responses: mockResponses,
+				count: 1,
+				hasMore: false
+			})
 
 			const result = await invokeQueryFn()
 
 			expect(result[0].user).toBeNull()
 			expect(result[0].survey).toBeNull()
 		})
+
+		it('should return empty array when no responses exist', async () => {
+			mockGetResponses.mockResolvedValue({
+				responses: [],
+				count: 0,
+				hasMore: false
+			})
+
+			const result = await invokeQueryFn()
+
+			expect(result).toEqual([])
+		})
 	})
 
 	describe('queryFn - error handling', () => {
-		it('should throw error when response is not ok', async () => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: false,
-					status: 403
-				})
-			)
+		it('should propagate errors from server function', async () => {
+			mockGetResponses.mockRejectedValue(new Error('Admin access required'))
 
-			await expect(invokeQueryFn()).rejects.toThrow('Failed to fetch responses')
+			await expect(invokeQueryFn()).rejects.toThrow('Admin access required')
 		})
 
-		it('should throw error when success is false with custom error', async () => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: false, error: 'Unauthorized access'})
-				})
-			)
+		it('should propagate authorization errors', async () => {
+			mockGetResponses.mockRejectedValue(new Error('Unauthorized'))
 
-			await expect(invokeQueryFn()).rejects.toThrow('Unauthorized access')
-		})
-
-		it('should throw default error when success is false with no error message', async () => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: false})
-				})
-			)
-
-			await expect(invokeQueryFn()).rejects.toThrow('Failed to load responses')
-		})
-
-		it('should throw error when responses array is missing', async () => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: true})
-				})
-			)
-
-			await expect(invokeQueryFn()).rejects.toThrow('Failed to load responses')
+			await expect(invokeQueryFn()).rejects.toThrow('Unauthorized')
 		})
 	})
 })

@@ -6,6 +6,7 @@ import {Alert} from '@/components/ui'
 import {PageContainer} from '@/components/ui/page-container'
 import {auth} from '@/lib/firebase/firebase.app'
 import type {SignupAccountData} from '@/lib/schemas/signup'
+import {createSessionFn} from '@/server/functions/auth'
 
 export const Route = createFileRoute('/signup/')({
 	beforeLoad: async ({context}) => {
@@ -32,26 +33,7 @@ function SignUpComponent() {
 		}
 
 		try {
-			const registerResponse = await fetch('/api/auth/register', {
-				method: 'POST',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({
-					username: formData.username,
-					email: formData.email,
-					password: formData.password,
-					confirmPassword: formData.confirmPassword
-				})
-			})
-
-			const registerData = await registerResponse.json()
-
-			if (!registerResponse.ok) {
-				setError(registerData.error || 'Registration failed')
-				setLoading(false)
-				return
-			}
-
-			// Create Firebase Auth user (client-side)
+			// Create Firebase Auth user directly - validation is done client-side by SignUpForm
 			const userCredential = await createUserWithEmailAndPassword(
 				auth,
 				formData.email,
@@ -60,21 +42,20 @@ function SignUpComponent() {
 
 			const idToken = await userCredential.user.getIdToken()
 
-			const sessionResponse = await fetch('/api/auth/sessionLogin', {
-				method: 'POST',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({idToken})
+			await createSessionFn({
+				data: {
+					uid: userCredential.user.uid,
+					email: userCredential.user.email,
+					displayName: userCredential.user.displayName,
+					idToken
+				}
 			})
 
-			if (sessionResponse.ok) {
-				// Navigate to about-you page with email and username in search params
-				await navigate({
-					to: '/signup/about-you',
-					search: {email: formData.email, username: formData.username}
-				})
-			} else {
-				setError('Failed to create session')
-			}
+			// Navigate to about-you page with email and username in search params
+			await navigate({
+				to: '/signup/about-you',
+				search: {email: formData.email, username: formData.username}
+			})
 		} catch (error: unknown) {
 			const errorMessage = error instanceof Error ? error.message : 'Registration failed'
 

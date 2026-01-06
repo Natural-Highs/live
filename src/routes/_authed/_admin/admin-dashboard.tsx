@@ -15,6 +15,7 @@ import {Line} from 'react-chartjs-2'
 import {Button} from '@/components/ui/button'
 import {Card, CardContent, CardTitle} from '@/components/ui/card'
 import {Spinner} from '@/components/ui/spinner'
+import {getAdminStats} from '@/server/functions/admin'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend)
 
@@ -44,18 +45,8 @@ function AdminDashboard() {
 			setLoading(true)
 			setError('')
 			try {
-				const response = await fetch('/api/admin/stats')
-				const data = (await response.json()) as {
-					success: boolean
-					stats?: StatsData
-					error?: string
-				}
-
-				if (response.ok && data.success && data.stats) {
-					setStats(data.stats)
-				} else {
-					setError(data.error || 'Failed to load statistics')
-				}
+				const data = await getAdminStats()
+				setStats(data)
 			} catch (err) {
 				setError(err instanceof Error ? err.message : 'Failed to load statistics')
 			} finally {

@@ -1,22 +1,15 @@
 /**
- * MSW Test Data Factories
+ * Test Data Factories
  *
  * Barrel export for all mock data factories.
  * Use these in unit tests to create realistic test data.
  *
  * @example
  * ```typescript
- * import {server} from '@/mocks/server'
- * import {http, HttpResponse} from 'msw'
- * import {createMockEvent, createEventsResponse} from '@/mocks/factories'
+ * import {createMockEvent, createMockUser} from '@/mocks/factories'
  *
- * beforeEach(() => {
- *   server.use(
- *     http.get('/api/events', () =>
- *       HttpResponse.json(createEventsResponse([createMockEvent()]))
- *     )
- *   )
- * })
+ * const event = createMockEvent({name: 'Test Event'})
+ * const user = createMockUser({email: 'test@example.com'})
  * ```
  */
 
