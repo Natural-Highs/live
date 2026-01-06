@@ -18,13 +18,14 @@
  * - Note: InputOTP auto-submits on 4th digit entry
  */
 
-import {expect, test} from '@playwright/test'
+import {expect, test} from '../fixtures'
 import {
 	createFirestoreEvent,
 	deleteFirestoreEvent,
 	deleteGuestsForEvent,
 	getGuestsForEvent
 } from '../fixtures/events.fixture'
+import {TEST_CODES} from '../factories/events.factory'
 
 // Generate unique 4-digit event code for test isolation
 // Uses last 4 digits of timestamp + random offset to ensure uniqueness across parallel tests
@@ -37,7 +38,7 @@ function generateUniqueEventCode(): string {
 
 // Track created event IDs for cleanup
 let testEventId: string | null = null
-let testEventCode: string = '1234' // Will be overwritten per test
+let testEventCode: string = TEST_CODES.VALID // Will be overwritten per test
 
 test.describe('Guest Check-in Flow', () => {
 	// Create test event in Firestore emulator before each test with UNIQUE code

@@ -9,101 +9,27 @@
  *
  * Test Strategy:
  * - Use Playwright's mobile device emulation (Pixel 5)
+ * - Use session cookie injection for authenticated state (acceptable per AC2)
+ * - Server functions hit Firebase emulators directly (no API mocks needed)
  * - Verify page structure and visibility on mobile viewport
  * - Test key user flows on mobile devices
  */
 
-import {devices, expect, test} from '@playwright/test'
+import {devices} from '@playwright/test'
+import {expect, test} from '../fixtures'
+import {injectSessionCookie} from '../fixtures/session.fixture'
+import {TEST_CODES} from '../factories/events.factory'
 
 // Configure mobile viewport for all tests in this file
 test.use({...devices['Pixel 5']})
 
 /**
- * Helper to mock event code validation API
+ * Test user data for session injection
  */
-async function mockEventCodeValidation(page: import('@playwright/test').Page) {
-	await page.route('**/api/guests/validateCode', route => {
-		route.fulfill({
-			status: 200,
-			contentType: 'application/json',
-			body: JSON.stringify({
-				success: true,
-				eventId: 'event-123',
-				eventName: 'Test Event'
-			})
-		})
-	})
-}
-
-/**
- * Helper to mock events API
- */
-async function mockEventsApi(page: import('@playwright/test').Page) {
-	await page.route('**/api/events', route => {
-		route.fulfill({
-			status: 200,
-			contentType: 'application/json',
-			body: JSON.stringify({success: true, events: []})
-		})
-	})
-}
-
-/**
- * Helper to mock consent form API
- */
-async function mockConsentFormApi(page: import('@playwright/test').Page) {
-	await page.route('**/api/forms/consent', route => {
-		route.fulfill({
-			status: 200,
-			contentType: 'application/json',
-			body: JSON.stringify({
-				success: true,
-				template: {
-					id: 'consent-1',
-					name: 'Standard Consent',
-					questions: []
-				}
-			})
-		})
-	})
-}
-
-/**
- * Helper to set up authenticated state
- */
-async function setupAuthenticatedState(
-	page: import('@playwright/test').Page,
-	context: import('@playwright/test').BrowserContext
-) {
-	await page.route('**/api/auth/session', route => {
-		route.fulfill({
-			status: 200,
-			contentType: 'application/json',
-			body: JSON.stringify({
-				user: {
-					uid: 'user-123',
-					email: 'test@example.com',
-					displayName: 'Test User'
-				},
-				claims: {
-					signedConsentForm: true,
-					admin: false
-				}
-			})
-		})
-	})
-
-	await page.route('**/api/auth/sessionLogin', route => {
-		route.fulfill({
-			status: 200,
-			contentType: 'application/json',
-			body: JSON.stringify({token: true})
-		})
-	})
-
-	await context.addInitScript(() => {
-		window.localStorage.setItem('authState', 'authenticated')
-	})
+const testUser = {
+	uid: 'test-mobile-user-123',
+	email: 'test@example.com',
+	displayName: 'Test User'
 }
 
 test.describe('Mobile Viewport Coverage', () => {
@@ -134,18 +60,16 @@ test.describe('Mobile Viewport Coverage', () => {
 			await expect(input).toBeFocused()
 
 			// Type using mobile-friendly interaction
-			await input.fill('1234')
-			await expect(input).toHaveValue('1234')
+			await input.fill(TEST_CODES.VALID)
+			await expect(input).toHaveValue(TEST_CODES.VALID)
 		})
 
 		test('should show choice screen correctly on mobile', async ({page}) => {
-			// GIVEN: Mock valid event code
-			await mockEventCodeValidation(page)
-
+			// Server function validates code against Firestore emulator (no mock needed)
 			await page.goto('/guests/entry')
 
 			// WHEN: User enters valid code
-			await page.getByTestId('guest-entry-code-input').fill('1234')
+			await page.getByTestId('guest-entry-code-input').fill(TEST_CODES.VALID)
 			await page.getByTestId('guest-entry-continue-button').tap()
 
 			// THEN: Choice screen should be visible with both options
@@ -157,10 +81,7 @@ test.describe('Mobile Viewport Coverage', () => {
 
 	test.describe('AC7: Guest Check-in Page Mobile', () => {
 		test('should render guest page correctly on mobile', async ({page}) => {
-			// GIVEN: Mock APIs
-			await mockEventsApi(page)
-			await mockConsentFormApi(page)
-
+			// Server functions hit Firestore emulator directly (no mocks needed)
 			// WHEN: User navigates to guest page
 			await page.goto('/guest')
 
@@ -170,10 +91,7 @@ test.describe('Mobile Viewport Coverage', () => {
 		})
 
 		test('should allow code entry on mobile', async ({page}) => {
-			// GIVEN: Mock APIs
-			await mockEventsApi(page)
-			await mockConsentFormApi(page)
-
+			// Server functions hit Firestore emulator directly (no mocks needed)
 			await page.goto('/guest')
 
 			// WHEN: User enters code on mobile
@@ -222,28 +140,10 @@ test.describe('Mobile Viewport Coverage', () => {
 			page,
 			context
 		}) => {
-			// GIVEN: User is authenticated
-			await setupAuthenticatedState(page, context)
+			// GIVEN: User is authenticated via session injection (acceptable per AC2)
+			await injectSessionCookie(context, testUser, {signedConsentForm: true})
 
-			// Mock additional APIs
-			await page.route('**/api/users/profile', route => {
-				route.fulfill({
-					status: 200,
-					contentType: 'application/json',
-					body: JSON.stringify({
-						success: true,
-						data: {id: 'user-123', email: 'test@example.com'}
-					})
-				})
-			})
-
-			await page.route('**/api/users/events', route => {
-				route.fulfill({
-					status: 200,
-					contentType: 'application/json',
-					body: JSON.stringify({success: true, events: []})
-				})
-			})
+			// Server functions hit Firestore emulator directly (no mocks needed)
 
 			// WHEN: User navigates to dashboard
 			await page.goto('/dashboard')
@@ -254,34 +154,20 @@ test.describe('Mobile Viewport Coverage', () => {
 		})
 
 		test('should allow event code entry on dashboard mobile', async ({page, context}) => {
-			// GIVEN: User is authenticated
-			await setupAuthenticatedState(page, context)
+			// GIVEN: User is authenticated via session injection (acceptable per AC2)
+			await injectSessionCookie(context, testUser, {signedConsentForm: true})
 
-			await page.route('**/api/users/profile', route => {
-				route.fulfill({
-					status: 200,
-					contentType: 'application/json',
-					body: JSON.stringify({success: true, data: {id: 'user-123'}})
-				})
-			})
-
-			await page.route('**/api/users/events', route => {
-				route.fulfill({
-					status: 200,
-					contentType: 'application/json',
-					body: JSON.stringify({success: true, events: []})
-				})
-			})
+			// Server functions hit Firestore emulator directly (no mocks needed)
 
 			await page.goto('/dashboard')
 
 			// WHEN: User enters event code on mobile
 			const input = page.getByTestId('event-code-input')
 			await input.tap()
-			await input.fill('9999')
+			await input.fill(TEST_CODES.EXPIRED)
 
 			// THEN: Code should be entered
-			await expect(input).toHaveValue('9999')
+			await expect(input).toHaveValue(TEST_CODES.EXPIRED)
 		})
 	})
 

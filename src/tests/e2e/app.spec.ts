@@ -1,4 +1,4 @@
-import {expect, test} from '@playwright/test'
+import {expect, test} from '../fixtures'
 
 test('home page redirects unauthenticated users to authentication', async ({page}) => {
 	// Navigate to home page - should redirect to authentication

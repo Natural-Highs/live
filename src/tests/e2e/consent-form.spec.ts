@@ -1,13 +1,14 @@
 /**
  * Consent Form E2E Tests
  *
- * Test Strategy:
+ * Test Strategy (Post Story 0-7):
  * - Use auth fixtures to simulate authenticated user state via session cookies
- * - Mock API endpoints for consent submission
+ * - Server functions hit Firestore emulator directly (no REST API mocks)
+ * - Error simulation mocks target /_serverFn/* paths (acceptable per AC2)
  * - Test form validation and submission
  */
 
-import {test as base, expect} from '@playwright/test'
+import {expect, test as base} from '../fixtures'
 import {clearSessionCookie, injectSessionCookie, type TestUser} from '../fixtures/session.fixture'
 
 // Test user data
@@ -106,15 +107,7 @@ test.describe('Consent Form Flow @smoke', () => {
 			authenticatedWithoutConsent: _
 		}) => {
 			// GIVEN: User is on consent form
-
-			// Mock the consent submission endpoint
-			await page.route('**/api/consent', route => {
-				route.fulfill({
-					status: 200,
-					contentType: 'application/json',
-					body: JSON.stringify({success: true})
-				})
-			})
+			// Server function hits emulator directly - no mock needed
 
 			await page.goto('/consent')
 
@@ -131,14 +124,17 @@ test.describe('Consent Form Flow @smoke', () => {
 			authenticatedWithoutConsent: _
 		}) => {
 			// GIVEN: User is on consent form
-
-			// Mock the consent submission to fail
-			await page.route('**/api/consent', route => {
-				route.fulfill({
-					status: 500,
-					contentType: 'application/json',
-					body: JSON.stringify({error: 'Server error'})
-				})
+			// Mock server function to simulate error (acceptable per AC2)
+			await page.route('**/_serverFn/*', route => {
+				if (route.request().method() === 'POST') {
+					route.fulfill({
+						status: 500,
+						contentType: 'application/json',
+						body: JSON.stringify({error: 'Server error'})
+					})
+				} else {
+					route.continue()
+				}
 			})
 
 			await page.goto('/consent')

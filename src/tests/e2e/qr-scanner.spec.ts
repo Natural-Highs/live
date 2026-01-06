@@ -18,6 +18,11 @@
 import {TEST_CODES} from '../factories/events.factory'
 import {expect, test} from '../fixtures/auth.fixture'
 import {
+	createTestEvent,
+	clearFirestoreEmulator,
+	deleteAllTestEvents
+} from '../fixtures/firestore.fixture'
+import {
 	setupFailedCheckInMock,
 	setupQrTestEnvironment,
 	triggerQrScan,
@@ -355,39 +360,13 @@ test.describe('QR Scanner - Success Flow Integration', () => {
 	}) => {
 		await setupQrTestEnvironment(page)
 
-		let callCount = 0
-		await page.route('**/api/users/eventCode', route => {
-			if (route.request().method() === 'POST') {
-				callCount++
-				if (callCount === 1) {
-					// First call fails to trigger QR option
-					route.fulfill({
-						status: 404,
-						contentType: 'application/json',
-						body: JSON.stringify({success: false, error: 'Event not found'})
-					})
-				} else {
-					// Second call succeeds
-					route.fulfill({
-						status: 200,
-						contentType: 'application/json',
-						body: JSON.stringify({
-							success: true,
-							eventName: 'QR Event',
-							eventDate: '2025-01-15T10:00:00Z',
-							eventLocation: 'Main Hall'
-						})
-					})
-				}
-			} else {
-				route.continue()
-			}
-		})
+		// Clear any existing data
+		await clearFirestoreEmulator()
 
 		await page.goto('/dashboard')
 		await page.waitForLoadState('networkidle')
 
-		// First attempt fails
+		// First attempt fails (no event seeded - server naturally returns NotFoundError)
 		await page.getByTestId('event-code-input').fill(TEST_CODES.INVALID)
 		await expect(page.getByTestId('check-in-error')).toBeVisible()
 
@@ -396,6 +375,15 @@ test.describe('QR Scanner - Success Flow Integration', () => {
 
 		// Wait for input to clear
 		await expect(page.getByTestId('event-code-input')).toHaveValue('')
+
+		// Now seed a valid event
+		await createTestEvent({
+			id: 'qr-test-event',
+			name: 'QR Event',
+			eventCode: TEST_CODES.VALID,
+			isActive: true,
+			eventDate: new Date('2025-01-15T10:00:00Z')
+		})
 
 		// Second attempt succeeds via OTP
 		await page.getByTestId('event-code-input').fill(TEST_CODES.VALID)
@@ -407,44 +395,35 @@ test.describe('QR Scanner - Success Flow Integration', () => {
 
 		// THEN: QR option should be hidden after successful check-in
 		await expect(page.getByTestId('open-qr-scanner')).not.toBeVisible()
+
+		// Cleanup
+		await deleteAllTestEvents()
 	})
 
 	test('should trigger check-in when QR code is scanned', async ({page, authenticatedUser: _}) => {
 		// Setup with auto-scan after scanner opens
 		await setupQrTestEnvironment(page, {simulateQrScan: TEST_CODES.VALID, scanDelayMs: 200})
 
-		// Setup API to return success for the scanned code
-		await page.route('**/api/users/eventCode', route => {
-			if (route.request().method() === 'POST') {
-				const body = route.request().postDataJSON()
-				if (body?.eventCode === TEST_CODES.VALID) {
-					route.fulfill({
-						status: 200,
-						contentType: 'application/json',
-						body: JSON.stringify({
-							success: true,
-							eventName: 'Scanned Event',
-							eventDate: '2025-01-15T10:00:00Z',
-							eventLocation: 'Main Hall'
-						})
-					})
-				} else {
-					route.fulfill({
-						status: 404,
-						contentType: 'application/json',
-						body: JSON.stringify({success: false, error: 'Event not found'})
-					})
-				}
-			} else {
-				route.continue()
-			}
+		// Clear any existing data first
+		await clearFirestoreEmulator()
+
+		// Seed the event that will be scanned
+		await createTestEvent({
+			id: 'qr-scan-event',
+			name: 'Scanned Event',
+			eventCode: TEST_CODES.VALID,
+			isActive: true,
+			eventDate: new Date('2025-01-15T10:00:00Z')
 		})
 
 		await page.goto('/dashboard')
 		await page.waitForLoadState('networkidle')
 
-		// Trigger failed check-in to show QR option
-		await triggerFailedCheckIn(page)
+		// Trigger failed check-in to show QR option (use invalid code - no matching event)
+		await page.getByTestId('event-code-input').fill(TEST_CODES.INVALID)
+		await expect(page.getByTestId('check-in-error')).toBeVisible()
+		await expect(page.getByTestId('qr-option-container')).toBeVisible({timeout: 2000})
+
 		await waitForQrAdapter(page)
 
 		// Open scanner - it will auto-scan the configured code
@@ -453,6 +432,9 @@ test.describe('QR Scanner - Success Flow Integration', () => {
 		// Wait for success confirmation (scanner auto-scans and triggers check-in)
 		await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 3000})
 		await expect(page.getByText('Scanned Event')).toBeVisible()
+
+		// Cleanup
+		await deleteAllTestEvents()
 	})
 })
 
