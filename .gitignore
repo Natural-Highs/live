@@ -33,6 +33,7 @@ firestore-debug.log
 ui-debug.log
 .firebase/
 firebase-export*/
+firebase.local.json
 
 # Husky internals
 .husky/_

@@ -35,7 +35,7 @@
 
 import {test as base, type WorkerInfo} from '@playwright/test'
 import {isFirestoreEmulatorAvailable} from './firestore.fixture'
-import {DEFAULT_COLLECTIONS, getWorkerPrefix, getIsolatedPath} from './test-isolation.fixture'
+import {DEFAULT_COLLECTIONS, getIsolatedPath, getWorkerPrefix} from './test-isolation.fixture'
 
 /**
  * Firebase reset fixture types - test-scoped fixtures
@@ -95,7 +95,7 @@ interface FirebaseResetWorkerFixtures {
 	 * Cleanup happens ONCE per worker (not per test), following Playwright's
 	 * recommended pattern for test data isolation.
 	 */
-	workerCleanup: void
+	workerCleanup: undefined
 }
 
 /**

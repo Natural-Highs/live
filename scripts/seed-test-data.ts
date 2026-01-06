@@ -14,7 +14,7 @@
  *
  * Prerequisites:
  * - Firebase emulators must be running: bun run emulators
- * - Environment: FIRESTORE_EMULATOR_HOST=127.0.0.1:8080
+ * - Environment: FIRESTORE_EMULATOR_HOST=127.0.0.1:8180
  *
  * @example
  * ```bash
@@ -36,7 +36,7 @@ import {getFirestore} from 'firebase-admin/firestore'
 // =============================================================================
 
 const EMULATOR_PROJECT_ID = 'demo-natural-highs'
-const FIRESTORE_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8080'
+const FIRESTORE_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
 const AUTH_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST ?? '127.0.0.1:9099'
 
 // =============================================================================

@@ -1,15 +1,55 @@
 import '@testing-library/jest-dom/vitest'
-import {afterAll, afterEach, beforeAll, beforeEach, vi} from 'vitest'
-import {server} from './mocks/server'
+import {beforeEach, vi} from 'vitest'
+
+// Set SESSION_SECRET for tests that invoke server functions requiring auth
+process.env.SESSION_SECRET = 'test-session-secret-32-characters-minimum-length-for-iron-webcrypto'
 
 // Mock Firebase Admin module globally before any imports
 vi.mock('@/lib/firebase/firebase.admin', () => ({
 	adminDb: {
-		collection: vi.fn()
+		collection: vi.fn(() => ({
+			doc: vi.fn(() => ({
+				get: vi.fn(),
+				set: vi.fn(),
+				update: vi.fn(),
+				delete: vi.fn()
+			})),
+			where: vi.fn(() => ({get: vi.fn()})),
+			orderBy: vi.fn(() => ({get: vi.fn()})),
+			get: vi.fn()
+		}))
 	},
 	adminAuth: {
 		getUserByEmail: vi.fn(),
-		createUser: vi.fn()
+		createUser: vi.fn(),
+		getUser: vi.fn(),
+		setCustomUserClaims: vi.fn(),
+		verifyIdToken: vi.fn()
+	}
+}))
+
+// Mock Firebase initialization (prevents credential requirement)
+vi.mock('@/lib/firebase/firebase', () => ({
+	default: {},
+	db: {
+		collection: vi.fn(() => ({
+			doc: vi.fn(() => ({
+				get: vi.fn(),
+				set: vi.fn(),
+				update: vi.fn(),
+				delete: vi.fn()
+			})),
+			where: vi.fn(() => ({get: vi.fn()})),
+			orderBy: vi.fn(() => ({get: vi.fn()})),
+			get: vi.fn()
+		}))
+	},
+	auth: {
+		getUserByEmail: vi.fn(),
+		createUser: vi.fn(),
+		getUser: vi.fn(),
+		setCustomUserClaims: vi.fn(),
+		verifyIdToken: vi.fn()
 	}
 }))
 
@@ -131,12 +171,6 @@ Object.defineProperty(window, 'matchMedia', {
 		dispatchEvent: vi.fn()
 	}))
 })
-
-// MSW server setup for API mocking - prevents ECONNREFUSED in CI
-// Handlers defined in src/mocks/handlers.ts
-beforeAll(() => server.listen({onUnhandledRequest: 'bypass'}))
-afterEach(() => server.resetHandlers())
-afterAll(() => server.close())
 
 // Reset mocks before each test
 beforeEach(() => {
