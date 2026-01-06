@@ -19,11 +19,6 @@ const SurveyCreatorComponent = lazy(() =>
 	import('@/components/forms/SurveyCreator').then(mod => ({default: mod.SurveyCreatorComponent}))
 )
 
-// Lazy-load the heavy SurveyCreator component (~500KB survey-core dependency)
-const SurveyCreatorComponent = lazy(() =>
-	import('@/components/forms/SurveyCreator').then(mod => ({default: mod.SurveyCreatorComponent}))
-)
-
 type FormTemplateType = 'consent' | 'demographics' | 'survey'
 
 interface FormTemplate {
