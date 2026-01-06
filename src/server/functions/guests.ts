@@ -2,7 +2,7 @@ import {createServerFn} from '@tanstack/react-start'
 import type {WriteBatch} from 'firebase-admin/firestore'
 import {FieldValue} from 'firebase-admin/firestore'
 import {requireAdmin, requireAuth} from '@/server/middleware/auth'
-import {auth, db} from '../../lib/firebase/firebase'
+import {adminAuth, adminDb} from '@/lib/firebase/firebase.admin'
 import {
 	completeGuestConversionSchema,
 	convertGuestToUserSchema,
@@ -51,7 +51,7 @@ async function performGuestMigration(
 	const {createUserDoc = true, deletePendingConversion, requireUserExists = false} = options
 
 	// Pre-flight validation - guest exists
-	const guestDoc = await db.collection('guests').doc(guestId).get()
+	const guestDoc = await adminDb.collection('guests').doc(guestId).get()
 	if (!guestDoc.exists) {
 		throw new NotFoundError('Guest not found')
 	}
@@ -65,14 +65,14 @@ async function performGuestMigration(
 
 	// Pre-flight validation - target user exists (when linking to existing user)
 	if (requireUserExists) {
-		const userDoc = await db.collection('users').doc(userId).get()
+		const userDoc = await adminDb.collection('users').doc(userId).get()
 		if (!userDoc.exists) {
 			throw new NotFoundError('User not found')
 		}
 	}
 
 	// Query all guestEvents for this guest
-	const guestEventsSnapshot = await db
+	const guestEventsSnapshot = await adminDb
 		.collection('guestEvents')
 		.where('guestId', '==', guestId)
 		.get()
@@ -101,7 +101,7 @@ async function performGuestMigration(
 		isLastBatch: boolean
 	) => {
 		if (isFirstBatch && createUserDoc) {
-			const userRef = db.collection('users').doc(userId)
+			const userRef = adminDb.collection('users').doc(userId)
 			batch.set(userRef, {
 				firstName: guestData.firstName,
 				lastName: guestData.lastName,
@@ -116,7 +116,7 @@ async function performGuestMigration(
 
 		for (const guestEventDoc of eventDocs) {
 			const guestEvent = guestEventDoc.data()
-			const userEventRef = db.collection('userEvents').doc()
+			const userEventRef = adminDb.collection('userEvents').doc()
 			batch.set(userEventRef, {
 				userId,
 				eventId: guestEvent.eventId,
@@ -127,7 +127,7 @@ async function performGuestMigration(
 		}
 
 		if (isLastBatch) {
-			const guestRef = db.collection('guests').doc(guestId)
+			const guestRef = adminDb.collection('guests').doc(guestId)
 			batch.update(guestRef, {
 				convertedToUserId: userId,
 				convertedAt: FieldValue.serverTimestamp(),
@@ -136,14 +136,14 @@ async function performGuestMigration(
 
 			// Delete pending conversion if specified
 			if (deletePendingConversion) {
-				const pendingRef = db.collection('pendingConversions').doc(deletePendingConversion)
+				const pendingRef = adminDb.collection('pendingConversions').doc(deletePendingConversion)
 				batch.delete(pendingRef)
 			}
 		}
 	}
 
 	if (totalEvents <= eventsPerBatch) {
-		const batch = db.batch()
+		const batch = adminDb.batch()
 		populateBatch(batch, guestEvents, true, true)
 		await batch.commit()
 	} else {
@@ -153,7 +153,7 @@ async function performGuestMigration(
 			const chunk = guestEvents.slice(i, i + eventsPerBatch)
 			const isFirst = i === 0
 			const isLast = i + eventsPerBatch >= totalEvents
-			const batch = db.batch()
+			const batch = adminDb.batch()
 			populateBatch(batch, chunk, isFirst, isLast)
 			batches.push({batch, isFirst, isLast})
 		}
@@ -196,7 +196,7 @@ export const validateGuestCode = createServerFn({method: 'GET'})
 		}> => {
 			const {eventCode} = data
 
-			const eventsSnapshot = await db
+			const eventsSnapshot = await adminDb
 				.collection('events')
 				.where('eventCode', '==', eventCode)
 				.where('isActive', '==', true)
@@ -247,7 +247,7 @@ export const registerGuest = createServerFn({method: 'POST'})
 			const {eventCode, firstName, lastName, email, phone, consentSignature} = data
 
 			// Validate event code
-			const eventsSnapshot = await db
+			const eventsSnapshot = await adminDb
 				.collection('events')
 				.where('eventCode', '==', eventCode)
 				.where('isActive', '==', true)
@@ -279,10 +279,10 @@ export const registerGuest = createServerFn({method: 'POST'})
 				updatedAt: now
 			}
 
-			await db.collection('guests').doc(guestId).set(guestData)
+			await adminDb.collection('guests').doc(guestId).set(guestData)
 
 			// Register for event - use atomic arrayUnion to prevent race conditions
-			await db
+			await adminDb
 				.collection('events')
 				.doc(eventDoc.id)
 				.update({
@@ -292,7 +292,7 @@ export const registerGuest = createServerFn({method: 'POST'})
 				})
 
 			// Create guest event registration record
-			await db.collection('guestEvents').add({
+			await adminDb.collection('guestEvents').add({
 				guestId,
 				eventId: eventDoc.id,
 				registeredAt: now,
@@ -327,7 +327,7 @@ export const upgradeGuest = createServerFn({method: 'POST'})
 		const {email, password} = data
 
 		// Verify current user is a guest
-		const userDoc = await db.collection('users').doc(user.uid).get()
+		const userDoc = await adminDb.collection('users').doc(user.uid).get()
 
 		if (!userDoc.exists) {
 			throw new NotFoundError('User profile not found')
@@ -344,7 +344,7 @@ export const upgradeGuest = createServerFn({method: 'POST'})
 
 		// Check if email is already in use
 		try {
-			await auth.getUserByEmail(email)
+			await adminAuth.getUserByEmail(email)
 			throw new ConflictError('Email is already in use')
 		} catch (error: unknown) {
 			const authError = error as {code?: string}
@@ -355,14 +355,14 @@ export const upgradeGuest = createServerFn({method: 'POST'})
 		}
 
 		// Update Firebase Auth user
-		await auth.updateUser(user.uid, {
+		await adminAuth.updateUser(user.uid, {
 			email,
 			emailVerified: false,
 			password
 		})
 
 		// Update Firestore document
-		await db.collection('users').doc(user.uid).update({
+		await adminDb.collection('users').doc(user.uid).update({
 			isGuest: false,
 			email,
 			upgradedAt: new Date(),
@@ -397,7 +397,7 @@ export const getGuestEventCount = createServerFn({method: 'GET'})
 			const {guestId} = data
 
 			// Query guestEvents collection for this guest
-			const guestEventsSnapshot = await db
+			const guestEventsSnapshot = await adminDb
 				.collection('guestEvents')
 				.where('guestId', '==', guestId)
 				.get()
@@ -413,7 +413,7 @@ export const getGuestEventCount = createServerFn({method: 'GET'})
  * Called after magic link/passkey verification completes
  *
  * ADR-1: Copy & Reference - preserves audit trail, guest marked with convertedToUserId
- * ADR-2: Batched Write - atomic migration using db.batch()
+ * ADR-2: Batched Write - atomic migration using adminDb.batch()
  *
  * @param guestId - The guest record to convert
  * @param userId - The verified Firebase Auth uid from magic link/passkey
@@ -471,7 +471,7 @@ export const createPendingConversion = createServerFn({method: 'POST'})
 		}> => {
 			const {guestId, email} = data
 
-			const guestDoc = await db.collection('guests').doc(guestId).get()
+			const guestDoc = await adminDb.collection('guests').doc(guestId).get()
 			if (!guestDoc.exists) {
 				throw new NotFoundError('Guest not found')
 			}
@@ -483,7 +483,7 @@ export const createPendingConversion = createServerFn({method: 'POST'})
 
 			const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
-			await db.collection('pendingConversions').doc(email).set({
+			await adminDb.collection('pendingConversions').doc(email).set({
 				guestId,
 				createdAt: FieldValue.serverTimestamp(),
 				expiresAt
@@ -514,7 +514,7 @@ export const getPendingConversion = createServerFn({method: 'GET'})
 		}> => {
 			const {email} = data
 
-			const pendingDoc = await db.collection('pendingConversions').doc(email).get()
+			const pendingDoc = await adminDb.collection('pendingConversions').doc(email).get()
 
 			if (!pendingDoc.exists) {
 				return {found: false}
@@ -524,7 +524,7 @@ export const getPendingConversion = createServerFn({method: 'GET'})
 
 			const expiresAt = pendingData.expiresAt?.toDate?.() ?? pendingData.expiresAt
 			if (expiresAt && new Date(expiresAt) < new Date()) {
-				await db.collection('pendingConversions').doc(email).delete()
+				await adminDb.collection('pendingConversions').doc(email).delete()
 				return {found: false}
 			}
 
@@ -557,7 +557,7 @@ export const completeGuestConversion = createServerFn({method: 'POST'})
 		}> => {
 			const {email, userId} = data
 
-			const pendingDoc = await db.collection('pendingConversions').doc(email).get()
+			const pendingDoc = await adminDb.collection('pendingConversions').doc(email).get()
 
 			if (!pendingDoc.exists) {
 				throw new NotFoundError('No pending conversion found for this email')
@@ -567,7 +567,7 @@ export const completeGuestConversion = createServerFn({method: 'POST'})
 
 			const expiresAt = pendingData.expiresAt?.toDate?.() ?? pendingData.expiresAt
 			if (expiresAt && new Date(expiresAt) < new Date()) {
-				await db.collection('pendingConversions').doc(email).delete()
+				await adminDb.collection('pendingConversions').doc(email).delete()
 				throw new NotFoundError('Pending conversion has expired')
 			}
 
@@ -613,7 +613,7 @@ export const listGuestsForEvent = createServerFn({method: 'GET'})
 			const {eventId} = data
 
 			// Query guestEvents for this event to get check-in times
-			const guestEventsSnapshot = await db
+			const guestEventsSnapshot = await adminDb
 				.collection('guestEvents')
 				.where('eventId', '==', eventId)
 				.get()
@@ -624,9 +624,9 @@ export const listGuestsForEvent = createServerFn({method: 'GET'})
 
 			// Batch fetch all guest documents to avoid N+1 queries
 			const guestRefs = guestEventsSnapshot.docs.map(doc =>
-				db.collection('guests').doc(doc.data().guestId)
+				adminDb.collection('guests').doc(doc.data().guestId)
 			)
-			const guestDocs = await db.getAll(...guestRefs)
+			const guestDocs = await adminDb.getAll(...guestRefs)
 
 			// Build lookup map for guest data
 			const guestMap = new Map(
@@ -691,7 +691,7 @@ export const updateGuestEmail = createServerFn({method: 'POST'})
 			const {guestId, email} = data
 
 			// Pre-flight: verify guest exists
-			const guestDoc = await db.collection('guests').doc(guestId).get()
+			const guestDoc = await adminDb.collection('guests').doc(guestId).get()
 			if (!guestDoc.exists) {
 				throw new NotFoundError('Guest not found')
 			}
@@ -704,7 +704,7 @@ export const updateGuestEmail = createServerFn({method: 'POST'})
 			}
 
 			// Check for duplicate email in users collection
-			const usersSnapshot = await db.collection('users').where('email', '==', email).limit(1).get()
+			const usersSnapshot = await adminDb.collection('users').where('email', '==', email).limit(1).get()
 
 			if (!usersSnapshot.empty) {
 				const existingUser = usersSnapshot.docs[0]!
@@ -716,7 +716,7 @@ export const updateGuestEmail = createServerFn({method: 'POST'})
 			}
 
 			// Check for duplicate email in guests collection (excluding current guest)
-			const guestsSnapshot = await db
+			const guestsSnapshot = await adminDb
 				.collection('guests')
 				.where('email', '==', email)
 				.limit(2)
@@ -732,7 +732,7 @@ export const updateGuestEmail = createServerFn({method: 'POST'})
 			}
 
 			// No duplicates - update guest with email
-			await db.collection('guests').doc(guestId).update({
+			await adminDb.collection('guests').doc(guestId).update({
 				email,
 				updatedAt: FieldValue.serverTimestamp()
 			})

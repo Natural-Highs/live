@@ -1,10 +1,20 @@
 /**
  * Unit tests for formTemplates query options
- * Tests success cases, error handling, and data transformation
+ * Tests query key structure and server function integration
  */
 
 import {QueryClient} from '@tanstack/react-query'
-import {type FormTemplate, formTemplatesQueryOptions} from './formTemplates'
+import {beforeEach, describe, expect, it, vi} from 'vitest'
+import {formTemplatesQueryOptions} from './formTemplates'
+
+// Mock the server function
+vi.mock('@/server/functions/admin', () => ({
+	getFormTemplates: vi.fn()
+}))
+
+import {getFormTemplates} from '@/server/functions/admin'
+
+const mockGetFormTemplates = vi.mocked(getFormTemplates)
 
 describe('formTemplatesQueryOptions', () => {
 	let queryClient: QueryClient
@@ -41,60 +51,46 @@ describe('formTemplatesQueryOptions', () => {
 	})
 
 	describe('queryFn - success cases', () => {
-		it('should fetch and return form templates on success', async () => {
-			const mockTemplates: FormTemplate[] = [
+		it('should call getFormTemplates server function and return templates', async () => {
+			const mockTemplates = [
 				{
 					id: 'template-1',
-					type: 'consent',
+					type: 'consent' as const,
 					name: 'Standard Consent Form',
-					description: 'Default consent form for events'
+					description: 'Default consent form for events',
+					createdAt: '2025-01-01T00:00:00.000Z'
 				},
 				{
 					id: 'template-2',
-					type: 'demographics',
+					type: 'demographics' as const,
 					name: 'Demographics Survey',
-					description: 'Basic demographics collection'
-				},
-				{
-					id: 'template-3',
-					type: 'survey',
-					name: 'Post-Event Survey'
+					description: undefined,
+					createdAt: '2025-01-01T00:00:00.000Z'
 				}
 			]
 
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: true, templates: mockTemplates})
-				})
-			)
+			mockGetFormTemplates.mockResolvedValue(mockTemplates)
 
 			const result = await invokeQueryFn()
 
-			expect(fetch).toHaveBeenCalledWith('/api/formTemplates')
-			expect(result).toHaveLength(3)
+			expect(getFormTemplates).toHaveBeenCalled()
+			expect(result).toHaveLength(2)
 			expect(result[0].type).toBe('consent')
 			expect(result[1].type).toBe('demographics')
-			expect(result[2].type).toBe('survey')
 		})
 
 		it('should handle templates without optional description', async () => {
-			const mockTemplates: FormTemplate[] = [
+			const mockTemplates = [
 				{
 					id: 'template-1',
-					type: 'consent',
-					name: 'Simple Consent'
+					type: 'consent' as const,
+					name: 'Simple Consent',
+					description: undefined,
+					createdAt: '2025-01-01T00:00:00.000Z'
 				}
 			]
 
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: true, templates: mockTemplates})
-				})
-			)
+			mockGetFormTemplates.mockResolvedValue(mockTemplates)
 
 			const result = await invokeQueryFn()
 
@@ -102,13 +98,7 @@ describe('formTemplatesQueryOptions', () => {
 		})
 
 		it('should return empty array when no templates exist', async () => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: true, templates: []})
-				})
-			)
+			mockGetFormTemplates.mockResolvedValue([])
 
 			const result = await invokeQueryFn()
 
@@ -117,52 +107,16 @@ describe('formTemplatesQueryOptions', () => {
 	})
 
 	describe('queryFn - error handling', () => {
-		it('should throw error when response is not ok', async () => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: false,
-					status: 500
-				})
-			)
+		it('should propagate errors from server function', async () => {
+			mockGetFormTemplates.mockRejectedValue(new Error('Admin access required'))
 
-			await expect(invokeQueryFn()).rejects.toThrow('Failed to fetch form templates')
+			await expect(invokeQueryFn()).rejects.toThrow('Admin access required')
 		})
 
-		it('should throw error when success is false with custom error', async () => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: false, error: 'Templates not available'})
-				})
-			)
+		it('should propagate authorization errors', async () => {
+			mockGetFormTemplates.mockRejectedValue(new Error('Unauthorized'))
 
-			await expect(invokeQueryFn()).rejects.toThrow('Templates not available')
-		})
-
-		it('should throw default error when success is false with no error message', async () => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: false})
-				})
-			)
-
-			await expect(invokeQueryFn()).rejects.toThrow('Failed to load form templates')
-		})
-
-		it('should throw error when templates array is missing', async () => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: true})
-				})
-			)
-
-			await expect(invokeQueryFn()).rejects.toThrow('Failed to load form templates')
+			await expect(invokeQueryFn()).rejects.toThrow('Unauthorized')
 		})
 	})
 })

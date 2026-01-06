@@ -19,6 +19,14 @@ import {
 	eventTypesQueryOptions,
 	formTemplatesQueryOptions
 } from '@/queries/index.js'
+import {
+	activateEvent,
+	createEvent,
+	createEventType,
+	deleteEventType,
+	overrideSurveyTiming,
+	updateEventType
+} from '@/server/functions/admin'
 
 export const Route = createFileRoute('/_authed/_admin/events')({
 	loader: async ({context}) => {
@@ -71,10 +79,8 @@ function EventsPage() {
 		setError('')
 
 		try {
-			const response = await fetch('/api/events', {
-				method: 'POST',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({
+			await createEvent({
+				data: {
 					name: eventFormData.name,
 					eventTypeId: eventFormData.eventTypeId,
 					eventDate: eventFormData.eventDate,
@@ -82,18 +88,8 @@ function EventsPage() {
 					demographicsFormTemplateId: eventFormData.demographicsFormTemplateId || undefined,
 					surveyTemplateId: eventFormData.surveyTemplateId || null,
 					collectAdditionalDemographics: eventFormData.collectAdditionalDemographics
-				})
+				}
 			})
-
-			const data = (await response.json()) as {
-				success: boolean
-				error?: string
-			}
-
-			if (!(response.ok && data.success)) {
-				setError(data.error || 'Failed to create event')
-				return
-			}
 
 			setShowCreateEventModal(false)
 			setEventFormData({
@@ -116,26 +112,14 @@ function EventsPage() {
 		setError('')
 
 		try {
-			const response = await fetch('/api/eventTypes', {
-				method: 'POST',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({
+			await createEventType({
+				data: {
 					name: eventTypeFormData.name,
 					defaultConsentFormTemplateId: eventTypeFormData.defaultConsentFormTemplateId,
 					defaultDemographicsFormTemplateId: eventTypeFormData.defaultDemographicsFormTemplateId,
 					defaultSurveyTemplateId: eventTypeFormData.defaultSurveyTemplateId || null
-				})
+				}
 			})
-
-			const data = (await response.json()) as {
-				success: boolean
-				error?: string
-			}
-
-			if (!(response.ok && data.success)) {
-				setError(data.error || 'Failed to create event type')
-				return
-			}
 
 			setShowCreateEventTypeModal(false)
 			setEventTypeFormData({
@@ -159,26 +143,15 @@ function EventsPage() {
 		setError('')
 
 		try {
-			const response = await fetch(`/api/eventTypes/${selectedEventType.id}`, {
-				method: 'PATCH',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({
+			await updateEventType({
+				data: {
+					id: selectedEventType.id,
 					name: eventTypeFormData.name,
 					defaultConsentFormTemplateId: eventTypeFormData.defaultConsentFormTemplateId,
 					defaultDemographicsFormTemplateId: eventTypeFormData.defaultDemographicsFormTemplateId,
 					defaultSurveyTemplateId: eventTypeFormData.defaultSurveyTemplateId || null
-				})
+				}
 			})
-
-			const data = (await response.json()) as {
-				success: boolean
-				error?: string
-			}
-
-			if (!(response.ok && data.success)) {
-				setError(data.error || 'Failed to update event type')
-				return
-			}
 
 			setShowEditEventTypeModal(false)
 			setSelectedEventType(null)
@@ -196,19 +169,7 @@ function EventsPage() {
 		setError('')
 
 		try {
-			const response = await fetch(`/api/eventTypes/${selectedEventType.id}`, {
-				method: 'DELETE'
-			})
-
-			const data = (await response.json()) as {
-				success: boolean
-				error?: string
-			}
-
-			if (!(response.ok && data.success)) {
-				setError(data.error || 'Failed to delete event type')
-				return
-			}
+			await deleteEventType({data: {id: selectedEventType.id}})
 
 			setShowDeleteEventTypeModal(false)
 			setSelectedEventType(null)
@@ -226,22 +187,7 @@ function EventsPage() {
 		setError('')
 
 		try {
-			const response = await fetch(`/api/events/${selectedEvent.id}/activate`, {
-				method: 'POST'
-			})
-
-			const data = (await response.json()) as {
-				success: boolean
-				code?: string
-				activatedAt?: string
-				surveyAccessibleAt?: string
-				error?: string
-			}
-
-			if (!(response.ok && data.success)) {
-				setError(data.error || 'Failed to activate event')
-				return
-			}
+			await activateEvent({data: {eventId: selectedEvent.id}})
 
 			await queryClient.invalidateQueries({queryKey: ['events']})
 		} catch (err) {
@@ -254,19 +200,7 @@ function EventsPage() {
 			setError('')
 
 			try {
-				const response = await fetch(`/api/events/${eventId}/override`, {
-					method: 'POST'
-				})
-
-				const data = (await response.json()) as {
-					success: boolean
-					error?: string
-				}
-
-				if (!(response.ok && data.success)) {
-					setError(data.error || 'Failed to override survey timing')
-					return
-				}
+				await overrideSurveyTiming({data: {eventId}})
 
 				await queryClient.invalidateQueries({queryKey: ['events']})
 			} catch (err) {
@@ -423,7 +357,7 @@ function EventsPage() {
 									size='sm'
 									variant='secondary'
 									data-testid='button-override-survey'
-									onClick={() => handleOverrideSurvey(eventData.id)}
+									onClick={() => eventData.id && handleOverrideSurvey(eventData.id)}
 									type='button'
 								>
 									Make Surveys Accessible

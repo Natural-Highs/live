@@ -1,21 +1,14 @@
 /**
- * Admin Factory for MSW Unit Tests
+ * Admin Factory for Unit Tests
  *
  * Provides mock admin dashboard data, stats, and export data.
  *
  * @example
  * ```typescript
- * import {server} from '@/mocks/server'
- * import {http, HttpResponse} from 'msw'
- * import {createAdminStatsResponse} from '@/mocks/factories'
+ * import {createMockAdminStats, createMockEventType} from '@/mocks/factories'
  *
- * beforeEach(() => {
- *   server.use(
- *     http.get('/api/admin/stats', () =>
- *       HttpResponse.json(createAdminStatsResponse({totalUsers: 150}))
- *     )
- *   )
- * })
+ * const stats = createMockAdminStats({totalUsers: 150})
+ * const eventType = createMockEventType({name: 'Workshop'})
  * ```
  */
 

@@ -192,3 +192,46 @@ export const updateProfileSchema = z
 	)
 
 export type UpdateProfileData = z.infer<typeof updateProfileSchema>
+
+/**
+ * About You schema for signup flow.
+ * Captures first name, last name, DOB, and optional emergency contact info.
+ */
+export const aboutYouSchema = z
+	.object({
+		firstName: z
+			.string()
+			.min(1, {message: 'First name is required'})
+			.max(100, {message: 'First name must be less than 100 characters'})
+			.trim(),
+		lastName: z
+			.string()
+			.min(1, {message: 'Last name is required'})
+			.max(100, {message: 'Last name must be less than 100 characters'})
+			.trim(),
+		phone: z
+			.string()
+			.regex(PHONE_REGEX, {message: 'Invalid phone format'})
+			.optional()
+			.or(z.literal('')),
+		dateOfBirth: dateOfBirthSchema,
+		emergencyContactName: z.string().max(100).optional().or(z.literal('')),
+		emergencyContactPhone: z
+			.string()
+			.regex(PHONE_REGEX, {message: 'Invalid phone format'})
+			.optional()
+			.or(z.literal('')),
+		emergencyContactRelationship: z.string().max(100).optional().or(z.literal(''))
+	})
+	.refine(
+		data => {
+			const dob = new Date(data.dateOfBirth)
+			if (Number.isNaN(dob.getTime())) {
+				return false
+			}
+			return dob < new Date()
+		},
+		{message: 'Date of birth must be in the past', path: ['dateOfBirth']}
+	)
+
+export type AboutYouData = z.infer<typeof aboutYouSchema>

@@ -22,13 +22,6 @@ import {
 import {ConflictError, NotFoundError, ValidationError} from './utils/errors'
 
 /**
- * Get Firestore admin instance.
- */
-function getDb() {
-	return adminDb
-}
-
-/**
  * Type for profile data returned by getFullProfileFn.
  */
 export interface FullProfileData {
@@ -106,8 +99,7 @@ export const getFullProfileFn = createServerFn({method: 'GET'}).handler(
 	async (): Promise<FullProfileData> => {
 		const user = await requireAuth()
 
-		const db = getDb()
-		const userDoc = await db.collection('users').doc(user.uid).get()
+		const userDoc = await adminDb.collection('users').doc(user.uid).get()
 		const userData = userDoc.data()
 
 		if (!userData) {
@@ -118,7 +110,7 @@ export const getFullProfileFn = createServerFn({method: 'GET'}).handler(
 		let demographics: DemographicsData = {}
 
 		if (isMinor) {
-			const privateDoc = await db
+			const privateDoc = await adminDb
 				.collection('users')
 				.doc(user.uid)
 				.collection('private')
@@ -194,9 +186,8 @@ export const updateProfileWithHistoryFn = createServerFn({method: 'POST'})
 			const user = await requireAuth()
 
 			const {data: validated, expectedVersion} = data
-			const db = getDb()
 
-			const userRef = db.collection('users').doc(user.uid)
+			const userRef = adminDb.collection('users').doc(user.uid)
 			const userDoc = await userRef.get()
 			const userData = userDoc.data()
 
@@ -253,7 +244,7 @@ export const updateProfileWithHistoryFn = createServerFn({method: 'POST'})
 				return {success: true, updatedFields: [], newVersion: currentVersion}
 			}
 
-			await db.runTransaction(async transaction => {
+			await adminDb.runTransaction(async transaction => {
 				// Re-check version inside transaction for atomic conflict detection
 				const txDoc = await transaction.get(userRef)
 				const txData = txDoc.data()
@@ -321,9 +312,8 @@ export const updateDemographicsWithHistoryFn = createServerFn({method: 'POST'})
 			const user = await requireAuth()
 
 			const {data: validated, expectedVersion} = data
-			const db = getDb()
 
-			const userRef = db.collection('users').doc(user.uid)
+			const userRef = adminDb.collection('users').doc(user.uid)
 			const userDoc = await userRef.get()
 			const userData = userDoc.data()
 
@@ -407,7 +397,7 @@ export const updateDemographicsWithHistoryFn = createServerFn({method: 'POST'})
 
 			let historyId: string | undefined
 
-			await db.runTransaction(async transaction => {
+			await adminDb.runTransaction(async transaction => {
 				// Re-check version inside transaction for atomic conflict detection
 				const txDoc = await transaction.get(userRef)
 				const txData = txDoc.data()

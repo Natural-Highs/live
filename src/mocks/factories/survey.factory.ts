@@ -1,21 +1,14 @@
 /**
- * Survey Factory for MSW Unit Tests
+ * Survey Factory for Unit Tests
  *
  * Provides mock survey, question, and response data for unit tests.
  *
  * @example
  * ```typescript
- * import {server} from '@/mocks/server'
- * import {http, HttpResponse} from 'msw'
- * import {createMockSurvey, createSurveysResponse} from '@/mocks/factories'
+ * import {createMockSurvey, createMockQuestion} from '@/mocks/factories'
  *
- * beforeEach(() => {
- *   server.use(
- *     http.get('/api/surveys/*', () =>
- *       HttpResponse.json(createSurveysResponse([createMockSurvey()]))
- *     )
- *   )
- * })
+ * const survey = createMockSurvey({title: 'Test Survey'})
+ * const question = createMockQuestion({type: 'scale'})
  * ```
  */
 

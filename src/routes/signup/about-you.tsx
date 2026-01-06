@@ -7,6 +7,7 @@ import GreenCard from '@/components/ui/GreenCard'
 import {PageContainer} from '@/components/ui/page-container'
 import TitleCard from '@/components/ui/TitleCard'
 import type {AboutYouData} from '@/lib/schemas/signup'
+import {saveAboutYouFn} from '@/server/functions/profile'
 import {useAuth} from '../../context/AuthContext'
 
 // Define search params schema
@@ -40,27 +41,17 @@ function SignUpAboutYouComponent() {
 		setLoading(true)
 
 		try {
-			const response = await fetch('/api/users/profile', {
-				method: 'POST',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({
+			await saveAboutYouFn({
+				data: {
 					firstName: formData.firstName,
 					lastName: formData.lastName,
-					phone: formData.phone || undefined,
+					phone: formData.phone || '',
 					dateOfBirth: formData.dateOfBirth,
-					emergencyContactName: formData.emergencyContactName || undefined,
-					emergencyContactPhone: formData.emergencyContactPhone || undefined,
-					emergencyContactRelationship: formData.emergencyContactRelationship || undefined
-				})
+					emergencyContactName: formData.emergencyContactName || '',
+					emergencyContactPhone: formData.emergencyContactPhone || '',
+					emergencyContactRelationship: formData.emergencyContactRelationship || ''
+				}
 			})
-
-			const data = await response.json()
-
-			if (!response.ok) {
-				setError(data.error || 'Failed to update profile')
-				setLoading(false)
-				return
-			}
 
 			// Navigate to consent form or demographics next
 			navigate({to: '/consent', replace: true})

@@ -36,6 +36,7 @@ interface ConfirmationData {
 	eventDate: string
 	eventLocation: string
 	userName: string
+	isReturningUser: boolean
 }
 
 // Error message mapping for server function errors
@@ -168,12 +169,14 @@ export function DashboardComponent() {
 			const result = await checkInToEvent({data: {eventCode: code}})
 
 			// Show success confirmation overlay with event details
+			// Authenticated users on dashboard are always "returning" (have completed profile)
 			const firstName = auth.user?.displayName?.split(' ')[0] || 'Friend'
 			setConfirmationData({
 				eventName: result.eventName,
 				eventDate: result.eventDate || new Date().toISOString(),
 				eventLocation: result.eventLocation,
-				userName: firstName
+				userName: firstName,
+				isReturningUser: true
 			})
 			// Invalidate events query to refresh the list
 			await queryClient.invalidateQueries({queryKey: EVENTS_QUERY_KEY})
@@ -250,6 +253,7 @@ export function DashboardComponent() {
 					eventDate={confirmationData.eventDate}
 					eventLocation={confirmationData.eventLocation}
 					userName={confirmationData.userName}
+					isReturningUser={confirmationData.isReturningUser}
 					onDismiss={handleDismissConfirmation}
 				/>
 			)}

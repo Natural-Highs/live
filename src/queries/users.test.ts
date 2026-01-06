@@ -1,23 +1,32 @@
 /**
  * Unit tests for users query options
- * Tests success cases, error handling, and timestamp conversion
+ * Tests query key structure and server function integration
  */
 
 import {QueryClient} from '@tanstack/react-query'
+import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {
 	accountActivityQueryOptions,
 	attendanceHistoryQueryOptions,
-	type User,
 	usersQueryOptions
 } from './users'
 
 // Mock the server functions
+vi.mock('@/server/functions/admin', () => ({
+	getUsers: vi.fn()
+}))
+
 vi.mock('@/server/functions/users', () => ({
 	getUserEvents: vi.fn(),
 	getAccountActivity: vi.fn()
 }))
 
+import {getUsers} from '@/server/functions/admin'
 import {getAccountActivity, getUserEvents} from '@/server/functions/users'
+
+const mockGetUsers = vi.mocked(getUsers)
+const mockGetUserEvents = vi.mocked(getUserEvents)
+const mockGetAccountActivity = vi.mocked(getAccountActivity)
 
 describe('usersQueryOptions', () => {
 	let queryClient: QueryClient
@@ -33,7 +42,6 @@ describe('usersQueryOptions', () => {
 
 	afterEach(() => {
 		queryClient.clear()
-		vi.unstubAllGlobals()
 	})
 
 	// Helper to invoke queryFn with proper context
@@ -55,127 +63,69 @@ describe('usersQueryOptions', () => {
 	})
 
 	describe('queryFn - success cases', () => {
-		it('should fetch and return users on success', async () => {
-			const mockUsers: User[] = [
+		it('should call getUsers server function and return users', async () => {
+			const mockUsers = [
 				{
 					id: 'user-1',
 					email: 'test@example.com',
 					firstName: 'Test',
 					lastName: 'User',
 					createdAt: '2025-01-01T00:00:00.000Z',
-					admin: false
+					admin: false,
+					signedConsentForm: false
 				}
 			]
 
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: true, users: mockUsers})
-				})
-			)
+			mockGetUsers.mockResolvedValue(mockUsers)
 
 			const result = await invokeQueryFn()
 
-			expect(fetch).toHaveBeenCalledWith('/api/admin/users')
+			expect(getUsers).toHaveBeenCalled()
 			expect(result).toHaveLength(1)
 			expect(result[0].email).toBe('test@example.com')
 		})
 
-		it('should convert Firestore timestamp objects to Date', async () => {
-			const mockDate = new Date('2025-01-01T00:00:00.000Z')
-			const mockUsers: User[] = [
+		it('should handle users with optional fields', async () => {
+			const mockUsers = [
 				{
 					id: 'user-1',
 					email: 'test@example.com',
-					createdAt: {toDate: () => mockDate}
+					firstName: undefined,
+					lastName: undefined,
+					createdAt: '2025-01-01T00:00:00.000Z',
+					admin: false,
+					signedConsentForm: false
 				}
 			]
 
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: true, users: mockUsers})
-				})
-			)
+			mockGetUsers.mockResolvedValue(mockUsers)
 
 			const result = await invokeQueryFn()
 
-			expect(result[0].createdAt).toEqual(mockDate)
+			expect(result[0].firstName).toBeUndefined()
+			expect(result[0].admin).toBe(false)
 		})
 
-		it('should convert string timestamps to Date', async () => {
-			const dateStr = '2025-01-01T00:00:00.000Z'
-			const mockUsers: User[] = [
-				{
-					id: 'user-1',
-					email: 'test@example.com',
-					createdAt: dateStr
-				}
-			]
-
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: true, users: mockUsers})
-				})
-			)
+		it('should return empty array when no users exist', async () => {
+			mockGetUsers.mockResolvedValue([])
 
 			const result = await invokeQueryFn()
 
-			expect(result[0].createdAt).toBeInstanceOf(Date)
+			expect(result).toEqual([])
 		})
 	})
 
 	describe('queryFn - error handling', () => {
-		it('should throw error when response is not ok', async () => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: false,
-					status: 500
-				})
-			)
+		it('should propagate errors from server function', async () => {
+			mockGetUsers.mockRejectedValue(new Error('Admin access required'))
 
-			await expect(invokeQueryFn()).rejects.toThrow('Failed to fetch users')
+			await expect(invokeQueryFn()).rejects.toThrow('Admin access required')
 		})
 
-		it('should throw error when success is false', async () => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: false, error: 'Custom error message'})
-				})
-			)
+		it('should propagate authorization errors', async () => {
+			mockGetUsers.mockRejectedValue(new Error('Unauthorized'))
 
-			await expect(invokeQueryFn()).rejects.toThrow('Custom error message')
-		})
-
-		it('should throw default error when success is false with no error message', async () => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: false})
-				})
-			)
-
-			await expect(invokeQueryFn()).rejects.toThrow('Failed to load users')
-		})
-
-		it('should throw error when users array is missing', async () => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: true})
-				})
-			)
-
-			await expect(invokeQueryFn()).rejects.toThrow('Failed to load users')
+			await expect(invokeQueryFn()).rejects.toThrow('Unauthorized')
 		})
 	})
 })
@@ -229,7 +179,7 @@ describe('attendanceHistoryQueryOptions', () => {
 					wasGuest: true
 				}
 			]
-			vi.mocked(getUserEvents).mockResolvedValue(
+			mockGetUserEvents.mockResolvedValue(
 				mockEvents as unknown as Awaited<ReturnType<typeof getUserEvents>>
 			)
 
@@ -243,7 +193,7 @@ describe('attendanceHistoryQueryOptions', () => {
 			const mockEvents = [
 				{id: 'event-1', name: 'Event (as Guest)', wasGuest: true, startDate: '2025-12-10T10:00:00Z'}
 			]
-			vi.mocked(getUserEvents).mockResolvedValue(
+			mockGetUserEvents.mockResolvedValue(
 				mockEvents as unknown as Awaited<ReturnType<typeof getUserEvents>>
 			)
 
@@ -253,7 +203,7 @@ describe('attendanceHistoryQueryOptions', () => {
 		})
 
 		it('should return empty array when no events', async () => {
-			vi.mocked(getUserEvents).mockResolvedValue([])
+			mockGetUserEvents.mockResolvedValue([])
 
 			const result = await invokeQueryFn()
 
@@ -305,7 +255,7 @@ describe('accountActivityQueryOptions', () => {
 					timestamp: '2025-12-20T14:00:00Z'
 				}
 			]
-			vi.mocked(getAccountActivity).mockResolvedValue(mockActivities)
+			mockGetAccountActivity.mockResolvedValue(mockActivities)
 
 			const result = await invokeQueryFn()
 
@@ -328,7 +278,7 @@ describe('accountActivityQueryOptions', () => {
 					timestamp: '2025-12-19T10:00:00Z'
 				}
 			]
-			vi.mocked(getAccountActivity).mockResolvedValue(mockActivities)
+			mockGetAccountActivity.mockResolvedValue(mockActivities)
 
 			const result = await invokeQueryFn()
 
@@ -338,7 +288,7 @@ describe('accountActivityQueryOptions', () => {
 		})
 
 		it('should return empty array when no activities', async () => {
-			vi.mocked(getAccountActivity).mockResolvedValue([])
+			mockGetAccountActivity.mockResolvedValue([])
 
 			const result = await invokeQueryFn()
 
