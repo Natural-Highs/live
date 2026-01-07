@@ -1,5 +1,6 @@
-import {expect, test} from '@playwright/test'
+import {expect, test} from '../fixtures'
 import {createMockUser} from '../fixtures/admin.fixture'
+import {clearFirestoreEmulator} from '../fixtures/firestore.fixture'
 import {injectAdminSessionCookie} from '../fixtures/session.fixture'
 
 test('debug: check modal structure', async ({page, context}) => {
@@ -11,40 +12,9 @@ test('debug: check modal structure', async ({page, context}) => {
 		displayName: adminUser.displayName
 	})
 
-	// Set up mocks
-	await page.route('**/api/events', route => {
-		route.fulfill({
-			status: 200,
-			contentType: 'application/json',
-			body: JSON.stringify({success: true, events: []})
-		})
-	})
-
-	await page.route('**/api/eventTypes', route => {
-		route.fulfill({
-			status: 200,
-			contentType: 'application/json',
-			body: JSON.stringify({
-				success: true,
-				eventTypes: [{id: 'et-1', name: 'Workshop'}]
-			})
-		})
-	})
-
-	await page.route('**/api/formTemplates', route => {
-		route.fulfill({
-			status: 200,
-			contentType: 'application/json',
-			body: JSON.stringify({
-				success: true,
-				templates: [
-					{id: 'consent-1', name: 'Standard Consent', type: 'consent'},
-					{id: 'demo-1', name: 'Standard Demographics', type: 'demographics'},
-					{id: 'survey-1', name: 'Standard Survey', type: 'survey'}
-				]
-			})
-		})
-	})
+	// Clear emulator and seed test data
+	await clearFirestoreEmulator()
+	// Server functions hit emulator directly - no mocks needed
 
 	// Navigate to events page
 	await page.goto('/events')

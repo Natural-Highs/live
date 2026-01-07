@@ -10,7 +10,7 @@
  *   firebase emulators:start --only firestore
  *
  * Run with:
- *   FIRESTORE_EMULATOR_HOST="127.0.0.1:8080" bun run test tests/firestore/firestore.rules.test.ts
+ *   FIRESTORE_EMULATOR_HOST="127.0.0.1:8180" bun run test tests/firestore/firestore.rules.test.ts
  *
  * These tests are skipped in CI unless emulator is available.
  * For local development, start the emulator before running tests.
@@ -51,7 +51,7 @@ describe.skipIf(skipTests)('Firestore Security Rules - NFR9 Minor Privacy Protec
 
 		const parts = EMULATOR_HOST.split(':')
 		const host = parts[0]
-		const port = Number.parseInt(parts[1] || '8080', 10)
+		const port = Number.parseInt(parts[1] || '8180', 10)
 
 		const rules = readFileSync(RULES_PATH, 'utf8')
 

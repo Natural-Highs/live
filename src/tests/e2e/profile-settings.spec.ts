@@ -9,7 +9,7 @@
  *
  * To run these tests:
  * 1. Start Firebase emulators: bun run emulators
- * 2. Run tests: FIRESTORE_EMULATOR_HOST="127.0.0.1:8080" CI=true bunx playwright test profile-settings
+ * 2. Run tests: FIRESTORE_EMULATOR_HOST="127.0.0.1:8180" CI=true bunx playwright test profile-settings
  *
  * NOTE: Tests for navbar visibility (Settings link, Logout button) are
  * skipped because they depend on Firebase Auth client state which isn't
@@ -29,19 +29,22 @@
  * - Use clearAuthenticatedUser in afterEach for test isolation
  * - Test route access and redirects
  * - Skip navbar-dependent tests
+ *
+ * Test Isolation (Story 0-8 AC1):
+ * - Uses workerPrefix fixture for parallel worker data isolation
+ * - Each worker gets unique user IDs to prevent cross-worker collisions
  */
 
-import {expect, test} from '@playwright/test'
-import {deleteTestUserDocument} from '../fixtures/firestore.fixture'
+import {expect, test} from '../fixtures'
 import {clearAuthenticatedUser, injectAuthenticatedUser} from '../fixtures/session.fixture'
 
-// Configure serial mode - these tests share Firestore documents and must not run in parallel
-test.describe.configure({mode: 'serial'})
-
-const TEST_USER = {
-	uid: 'test-user-settings-123',
-	email: 'settings-test@example.com',
-	displayName: 'Maya W.'
+// Helper to generate isolated test user data
+function getIsolatedTestUser(workerPrefix: string) {
+	return {
+		uid: `${workerPrefix}__user-settings`,
+		email: `${workerPrefix}-settings@example.com`,
+		displayName: 'Maya W.'
+	}
 }
 
 const DEFAULT_USER_DOC = {
@@ -70,15 +73,18 @@ test.describe('Profile Settings Navigation', () => {
 	test.describe('Route Access', () => {
 		test.skip(!isEmulatorAvailable, 'Requires Firebase emulators running')
 
-		test.afterEach(async ({context}) => {
-			await clearAuthenticatedUser(context, TEST_USER.uid)
+		test.afterEach(async ({context, workerPrefix}) => {
+			const testUser = getIsolatedTestUser(workerPrefix)
+			await clearAuthenticatedUser(context, testUser.uid)
 		})
 
-		test('should allow authenticated users to access profile settings', async ({page, context}) => {
+		test('should allow authenticated users to access profile settings', async ({page, context, workerPrefix}) => {
+			const testUser = getIsolatedTestUser(workerPrefix)
+			
 			// GIVEN: User is authenticated with complete profile and Firestore doc
 			await injectAuthenticatedUser(
 				context,
-				TEST_USER,
+				testUser,
 				{
 					signedConsentForm: true,
 					profileComplete: true
@@ -99,11 +105,13 @@ test.describe('Profile Settings Navigation', () => {
 test.describe('Profile Settings Form', () => {
 	test.skip(!isEmulatorAvailable, 'Requires Firebase emulators running')
 
-	test.beforeEach(async ({context}) => {
+	test.beforeEach(async ({context, workerPrefix}) => {
+		const testUser = getIsolatedTestUser(workerPrefix)
+		
 		// Create user document + session cookie before each test
 		await injectAuthenticatedUser(
 			context,
-			TEST_USER,
+			testUser,
 			{
 				signedConsentForm: true,
 				profileComplete: true
@@ -112,8 +120,9 @@ test.describe('Profile Settings Form', () => {
 		)
 	})
 
-	test.afterEach(async ({context}) => {
-		await clearAuthenticatedUser(context, TEST_USER.uid)
+	test.afterEach(async ({context, workerPrefix}) => {
+		const testUser = getIsolatedTestUser(workerPrefix)
+		await clearAuthenticatedUser(context, testUser.uid)
 	})
 
 	test.describe('Form Display', () => {
@@ -332,26 +341,22 @@ test.describe('Profile Settings Form', () => {
 test.describe('Minor Privacy Protection (NFR9)', () => {
 	test.skip(!isEmulatorAvailable, 'Requires Firebase emulators running')
 
-	const MINOR_USER = {
-		uid: 'minor-user-settings-123',
-		email: 'minor@example.com',
-		displayName: 'Minor User'
+	// Helper to generate isolated minor user data
+	function getIsolatedMinorUser(workerPrefix: string, suffix = '') {
+		return {
+			uid: `${workerPrefix}__minor-user${suffix}`,
+			email: `${workerPrefix.replace(/_/g, '')}minor${suffix}@example.com`,
+			displayName: `Minor User ${suffix || '1'}`
+		}
 	}
 
-	test.afterEach(async () => {
-		// Clean up any minor user created during tests
-		try {
-			await deleteTestUserDocument(MINOR_USER.uid)
-		} catch {
-			// Ignore if not found
-		}
-	})
+	test('should access profile settings as a minor user', async ({page, context, workerPrefix}) => {
+		const minorUser = getIsolatedMinorUser(workerPrefix)
 
-	test('should access profile settings as a minor user', async ({page, context}) => {
 		// GIVEN: User is authenticated as a minor with Firestore doc
 		await injectAuthenticatedUser(
 			context,
-			MINOR_USER,
+			minorUser,
 			{
 				signedConsentForm: true,
 				profileComplete: true,
@@ -369,15 +374,13 @@ test.describe('Minor Privacy Protection (NFR9)', () => {
 		await expect(page.getByTestId('profile-settings-form')).toBeVisible()
 	})
 
-	test('should allow minor to update demographics', async ({page, context}) => {
+	test('should allow minor to update demographics', async ({page, context, workerPrefix}) => {
+		const minorUser = getIsolatedMinorUser(workerPrefix, '-update')
+
 		// GIVEN: User is authenticated as a minor
 		await injectAuthenticatedUser(
 			context,
-			{
-				uid: 'minor-user-settings-456',
-				email: 'minor2@example.com',
-				displayName: 'Minor User 2'
-			},
+			minorUser,
 			{
 				signedConsentForm: true,
 				profileComplete: true,
@@ -397,20 +400,15 @@ test.describe('Minor Privacy Protection (NFR9)', () => {
 
 		// THEN: Should accept the input
 		await expect(displayNameInput).toHaveValue('Minor Updated')
-
-		// Cleanup
-		await deleteTestUserDocument('minor-user-settings-456')
 	})
 
-	test('should display demographics form sections for minor', async ({page, context}) => {
+	test('should display demographics form sections for minor', async ({page, context, workerPrefix}) => {
+		const minorUser = getIsolatedMinorUser(workerPrefix, '-demo')
+
 		// GIVEN: User is authenticated as a minor
 		await injectAuthenticatedUser(
 			context,
-			{
-				uid: 'minor-user-settings-789',
-				email: 'minor3@example.com',
-				displayName: 'Minor User 3'
-			},
+			minorUser,
 			{
 				signedConsentForm: true,
 				profileComplete: true,
@@ -433,20 +431,15 @@ test.describe('Minor Privacy Protection (NFR9)', () => {
 		await expect(page.getByTestId('profile-displayname-input')).toBeVisible()
 		await expect(page.getByTestId('profile-pronouns-select')).toBeVisible()
 		await expect(page.getByTestId('profile-gender-select')).toBeVisible()
-
-		// Cleanup
-		await deleteTestUserDocument('minor-user-settings-789')
 	})
 
-	test('should allow minor to select pronouns', async ({page, context}) => {
+	test('should allow minor to select pronouns', async ({page, context, workerPrefix}) => {
+		const minorUser = getIsolatedMinorUser(workerPrefix, '-pronouns')
+
 		// GIVEN: User is authenticated as a minor
 		await injectAuthenticatedUser(
 			context,
-			{
-				uid: 'minor-user-pronouns-test',
-				email: 'minor-pronouns@example.com',
-				displayName: 'Minor Pronouns Test'
-			},
+			minorUser,
 			{
 				signedConsentForm: true,
 				profileComplete: true,
@@ -464,9 +457,6 @@ test.describe('Minor Privacy Protection (NFR9)', () => {
 
 		// THEN: Should see pronoun options (demographics accessible to minors)
 		await expect(page.getByRole('option', {name: 'they/them'})).toBeVisible()
-
-		// Cleanup
-		await deleteTestUserDocument('minor-user-pronouns-test')
 	})
 })
 
@@ -490,10 +480,11 @@ test.describe('Minor Privacy Protection (NFR9)', () => {
 test.describe('Concurrent Edit Protection', () => {
 	test.skip(!isEmulatorAvailable, 'Requires Firebase emulators running')
 
-	test.beforeEach(async ({context}) => {
+	test.beforeEach(async ({context, workerPrefix}) => {
+		const testUser = getIsolatedTestUser(workerPrefix)
 		await injectAuthenticatedUser(
 			context,
-			TEST_USER,
+			testUser,
 			{
 				signedConsentForm: true,
 				profileComplete: true
@@ -502,8 +493,9 @@ test.describe('Concurrent Edit Protection', () => {
 		)
 	})
 
-	test.afterEach(async ({context}) => {
-		await clearAuthenticatedUser(context, TEST_USER.uid)
+	test.afterEach(async ({context, workerPrefix}) => {
+		const testUser = getIsolatedTestUser(workerPrefix)
+		await clearAuthenticatedUser(context, testUser.uid)
 	})
 
 	test('should show Save Changes button by default', async ({page}) => {

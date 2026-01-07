@@ -1,4 +1,4 @@
-import {test} from '@playwright/test'
+import {test} from '../fixtures'
 import {injectAdminSessionCookie} from '../fixtures/session.fixture'
 
 test('debug: verify auth state with proper hydration', async ({page, context}) => {

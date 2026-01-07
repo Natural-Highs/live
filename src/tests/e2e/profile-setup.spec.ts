@@ -13,7 +13,7 @@
  * - Test form validation behavior
  */
 
-import {expect, test} from '@playwright/test'
+import {expect, test} from '../fixtures'
 import {injectSessionCookie} from '../fixtures/session.fixture'
 
 const TEST_USER = {

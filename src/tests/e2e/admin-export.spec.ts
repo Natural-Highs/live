@@ -7,59 +7,45 @@
  * - Exporting CSV file
  * - Download completion in measurable time
  *
- * Test Strategy:
+ * Test Strategy (Post Story 0-7):
  * - Use admin fixtures for admin authentication (session cookie injection)
- * - Mock API endpoints for survey responses
+ * - Server functions hit Firestore emulator directly (no REST API mocks)
  * - Use download event capture pattern
  * - Performance timing assertions
+ *
+ * NOTE: The mockSurveyResponsesApi and mockEventsApi helpers were removed
+ * as part of Story 0-7 mock elimination. Server functions now hit the
+ * Firestore emulator directly. Tests should seed data using fixtures.
  */
 
-import {createEvent} from '../factories/events.factory'
-import {createSurveyResponse} from '../factories/surveys.factory'
 import {expect, test} from '../fixtures/admin.fixture'
+import {
+	clearFirestoreEmulator,
+	createTestEvent,
+	deleteAllTestEvents
+} from '../fixtures/firestore.fixture'
 
-/**
- * Helper to mock survey responses API
- * NOTE: API endpoint is /api/admin/responses (not /api/surveys/responses)
- */
-async function mockSurveyResponsesApi(
-	page: import('@playwright/test').Page,
-	responses: ReturnType<typeof createSurveyResponse>[] = []
-) {
-	await page.route('**/api/admin/responses**', route => {
-		route.fulfill({
-			status: 200,
-			contentType: 'application/json',
-			body: JSON.stringify({success: true, responses})
-		})
-	})
-}
-
-/**
- * Helper to mock events API
- */
-async function mockEventsApi(
-	page: import('@playwright/test').Page,
-	events: ReturnType<typeof createEvent>[] = []
-) {
-	await page.route('**/api/events', route => {
-		route.fulfill({
-			status: 200,
-			contentType: 'application/json',
-			body: JSON.stringify({success: true, events})
-		})
-	})
-}
+// NOTE: Dead mock helpers removed - server functions hit emulator directly
+// Tests now rely on Firestore seeding via fixtures
 
 test.describe('Admin Export Flow', () => {
+	// Clean up before each test
+	test.beforeEach(async () => {
+		await clearFirestoreEmulator()
+	})
+
+	// Clean up after each test
+	test.afterEach(async () => {
+		await deleteAllTestEvents()
+	})
+
 	test.describe('AC4: Admin Export Flow', () => {
 		test('should display survey responses page for admin users', async ({
 			page,
 			adminUser: _adminUser
 		}) => {
 			// GIVEN: Admin is authenticated (via adminUser fixture)
-			await mockSurveyResponsesApi(page, [])
-			await mockEventsApi(page, [])
+			// Server functions hit emulator directly - no mock needed
 
 			// WHEN: Admin navigates to survey responses page
 			await page.goto('/survey-responses')
@@ -72,11 +58,9 @@ test.describe('Admin Export Flow', () => {
 
 		test('should display filters for configuring export', async ({page, adminUser: _adminUser}) => {
 			// GIVEN: Admin is authenticated
-			await mockSurveyResponsesApi(page, [])
-			await mockEventsApi(page, [
-				createEvent({id: 'e1', name: 'Peer-mentor Session'}),
-				createEvent({id: 'e2', name: 'Workshop'})
-			])
+			// Seed events in emulator
+			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
+			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
 
 			// WHEN: Admin navigates to survey responses page
 			await page.goto('/survey-responses')
@@ -90,11 +74,9 @@ test.describe('Admin Export Flow', () => {
 
 		test('should configure event filter', async ({page, adminUser: _adminUser}) => {
 			// GIVEN: Admin is on survey responses page with events
-			await mockSurveyResponsesApi(page, [])
-			await mockEventsApi(page, [
-				createEvent({id: 'e1', name: 'Peer-mentor Session'}),
-				createEvent({id: 'e2', name: 'Workshop'})
-			])
+			// Seed events in emulator
+			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
+			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
 
 			await page.goto('/survey-responses')
 
@@ -107,8 +89,9 @@ test.describe('Admin Export Flow', () => {
 
 		test('should configure date filters', async ({page, adminUser: _adminUser}) => {
 			// GIVEN: Admin is on survey responses page
-			await mockSurveyResponsesApi(page, [])
-			await mockEventsApi(page, [])
+			// Seed events in emulator
+			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
+			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
 
 			await page.goto('/survey-responses')
 
@@ -126,8 +109,9 @@ test.describe('Admin Export Flow', () => {
 			adminUser: _adminUser
 		}) => {
 			// GIVEN: Admin has filters set
-			await mockSurveyResponsesApi(page, [])
-			await mockEventsApi(page, [createEvent({id: 'e1', name: 'Peer-mentor Session'})])
+			// Seed events in emulator
+			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
+			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
 
 			await page.goto('/survey-responses')
 
@@ -150,10 +134,10 @@ test.describe('Admin Export Flow', () => {
 			adminUser: _adminUser
 		}) => {
 			// GIVEN: Admin is on page with no survey responses
-			await mockSurveyResponsesApi(page, [])
-			await mockEventsApi(page, [])
+			// Seed events in emulator
+			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
+			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
 
-			// WHEN: Admin navigates to survey responses page
 			await page.goto('/survey-responses')
 
 			// THEN: Export buttons should be disabled
@@ -166,13 +150,10 @@ test.describe('Admin Export Flow', () => {
 			adminUser: _adminUser
 		}) => {
 			// GIVEN: Admin is on page with survey responses
-			await mockSurveyResponsesApi(page, [
-				createSurveyResponse(),
-				createSurveyResponse({id: 'response-2'})
-			])
-			await mockEventsApi(page, [])
+			// Seed events in emulator
+			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
+			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
 
-			// WHEN: Admin navigates to survey responses page
 			await page.goto('/survey-responses')
 
 			// Wait for data to load by checking button state
@@ -185,8 +166,9 @@ test.describe('Admin Export Flow', () => {
 			adminUser: _adminUser
 		}) => {
 			// GIVEN: Admin is on page with survey responses
-			await mockSurveyResponsesApi(page, [createSurveyResponse()])
-			await mockEventsApi(page, [])
+			// Seed events in emulator
+			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
+			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
 
 			await page.goto('/survey-responses')
 
@@ -208,8 +190,9 @@ test.describe('Admin Export Flow', () => {
 			adminUser: _adminUser
 		}) => {
 			// GIVEN: Admin is on page with survey responses
-			await mockSurveyResponsesApi(page, [createSurveyResponse()])
-			await mockEventsApi(page, [])
+			// Seed events in emulator
+			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
+			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
 
 			await page.goto('/survey-responses')
 
@@ -233,11 +216,9 @@ test.describe('Admin Export Flow', () => {
 			adminUser: _adminUser
 		}) => {
 			// GIVEN: Admin is on page with survey responses containing sensitive data
-			await mockSurveyResponsesApi(page, [
-				createSurveyResponse(),
-				createSurveyResponse({id: 'response-2'})
-			])
-			await mockEventsApi(page, [])
+			// Seed events in emulator
+			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
+			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
 
 			// WHEN: Admin navigates to survey responses page
 			await page.goto('/survey-responses')
@@ -262,8 +243,9 @@ test.describe('Admin Export Flow', () => {
 			adminUser: _adminUser
 		}) => {
 			// GIVEN: Admin is on page with survey responses
-			await mockSurveyResponsesApi(page, [createSurveyResponse()])
-			await mockEventsApi(page, [])
+			// Seed events in emulator
+			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
+			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
 
 			await page.goto('/survey-responses')
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
@@ -296,8 +278,9 @@ test.describe('Admin Export Flow', () => {
 			adminUser: _adminUser
 		}) => {
 			// GIVEN: Admin is on page with survey responses
-			await mockSurveyResponsesApi(page, [createSurveyResponse()])
-			await mockEventsApi(page, [])
+			// Seed events in emulator
+			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
+			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
 
 			await page.goto('/survey-responses')
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
@@ -313,12 +296,9 @@ test.describe('Admin Export Flow', () => {
 
 		test('should properly format exported CSV file', async ({page, adminUser: _adminUser}) => {
 			// GIVEN: Admin is on page with survey responses
-			await mockSurveyResponsesApi(page, [
-				createSurveyResponse({id: 'r1'}),
-				createSurveyResponse({id: 'r2'}),
-				createSurveyResponse({id: 'r3'})
-			])
-			await mockEventsApi(page, [])
+			// Seed events in emulator
+			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
+			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
 
 			await page.goto('/survey-responses')
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
@@ -334,11 +314,9 @@ test.describe('Admin Export Flow', () => {
 
 		test('should properly format exported JSON file', async ({page, adminUser: _adminUser}) => {
 			// GIVEN: Admin is on page with survey responses
-			await mockSurveyResponsesApi(page, [
-				createSurveyResponse({id: 'r1'}),
-				createSurveyResponse({id: 'r2'})
-			])
-			await mockEventsApi(page, [])
+			// Seed events in emulator
+			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
+			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
 
 			await page.goto('/survey-responses')
 			await expect(page.getByTestId('export-json-button')).toBeEnabled()
@@ -356,12 +334,9 @@ test.describe('Admin Export Flow', () => {
 	test.describe('AC8: Performance Assertions', () => {
 		test('should complete export within 5 seconds', async ({page, adminUser: _adminUser}) => {
 			// GIVEN: Admin is on page with survey responses
-			await mockSurveyResponsesApi(page, [
-				createSurveyResponse(),
-				createSurveyResponse({id: 'response-2'}),
-				createSurveyResponse({id: 'response-3'})
-			])
-			await mockEventsApi(page, [])
+			// Seed events in emulator
+			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
+			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
 
 			await page.goto('/survey-responses')
 
@@ -381,8 +356,9 @@ test.describe('Admin Export Flow', () => {
 
 		test('should load page within reasonable time', async ({page, adminUser: _adminUser}) => {
 			// GIVEN: Admin is authenticated
-			await mockSurveyResponsesApi(page, [createSurveyResponse()])
-			await mockEventsApi(page, [])
+			// Seed events in emulator
+			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
+			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
 
 			// WHEN: Admin navigates to survey responses page
 			const start = Date.now()
@@ -398,28 +374,33 @@ test.describe('Admin Export Flow', () => {
 	test.describe('Error Handling (AC6)', () => {
 		test('should handle API error gracefully', async ({page, adminUser: _adminUser}) => {
 			// GIVEN: Admin is authenticated
-			// Mock events API to succeed (needed for page load)
-			await mockEventsApi(page, [])
+			// Seed events in emulator
+			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
 
-			// Mock responses API to return error - NOTE: API endpoint is /api/admin/responses
-			// This will be called client-side after SSR hydration
-			await page.route('**/api/admin/responses**', route => {
+			// Navigate first, then set up error simulation mock
+			await page.goto('/survey-responses')
+
+			// Wait for page to load
+			await page.waitForLoadState('networkidle')
+
+			// Set up error simulation mock (acceptable per AC2)
+			// Server functions use /_serverFn/* URLs
+			await page.route('**/_serverFn/*', route => {
 				route.fulfill({
 					status: 500,
-					contentType: 'application/json',
-					body: JSON.stringify({success: false, error: 'Internal server error'})
+					contentType: 'text/plain',
+					body: 'Internal server error'
 				})
 			})
 
-			// WHEN: Admin navigates to survey responses page
-			await page.goto('/survey-responses')
+			// WHEN: Admin triggers a data refresh
+			// Reload to trigger error on server function calls
+			await page.reload()
 
-			// Wait for page to load - check for the page container first
-			// The error may take time to appear due to React Query retry behavior
+			// Wait for page to load - the error may take time to appear
 			await page.waitForLoadState('networkidle')
 
 			// THEN: Error should be displayed (use longer timeout due to React Query retries)
-			// React Query defaults to 3 retries with exponential backoff
 			await expect(page.getByTestId('survey-responses-error')).toBeVisible({timeout: 15000})
 		})
 	})

@@ -17,7 +17,7 @@
  * (firebase-tools#2936), so we use session injection for success paths.
  */
 
-import {expect, test} from '@playwright/test'
+import {expect, test} from '../fixtures'
 import {
 	createFirestoreEvent,
 	createFirestoreGuest,
@@ -27,6 +27,7 @@ import {
 	deletePendingConversion
 } from '../fixtures/events.fixture'
 import {injectSessionCookie} from '../fixtures/session.fixture'
+import {TEST_CODES} from '../factories/events.factory'
 
 /**
  * Helper to build a mock Firebase magic link URL
@@ -466,7 +467,7 @@ test.describe('Cross-Device Guest Conversion', () => {
 	test.beforeEach(async () => {
 		testEventId = await createFirestoreEvent({
 			name: 'Conversion Test Event',
-			eventCode: '9999',
+			eventCode: TEST_CODES.EXPIRED,
 			isActive: true,
 			startDate: new Date(),
 			endDate: new Date(Date.now() + 2 * 60 * 60 * 1000)

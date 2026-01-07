@@ -13,7 +13,7 @@
  * - Both contexts maintain their own session state
  */
 
-import {expect, test} from '@playwright/test'
+import {expect, test} from '../fixtures'
 import {
 	clearSessionCookie,
 	injectAdminSessionCookie,

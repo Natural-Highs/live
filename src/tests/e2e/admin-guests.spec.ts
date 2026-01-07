@@ -10,13 +10,12 @@
  * Test Strategy:
  * - Use admin fixtures for admin authentication (session cookie injection)
  * - Use Firestore emulator fixtures for guest data (emulator-first)
- * - Mock events API temporarily (pending events migration)
+ * - Server functions hit emulator directly (no REST API mocks)
  * - Use data-testid selectors for stability
  *
- * Requires: Firebase emulator running (FIRESTORE_EMULATOR_HOST=127.0.0.1:8080)
+ * Requires: Firebase emulator running (FIRESTORE_EMULATOR_HOST=127.0.0.1:8180)
  */
 
-import type {Page} from '@playwright/test'
 import {expect, test} from '../fixtures/admin.fixture'
 import {
 	clearFirestoreEmulator,
@@ -27,23 +26,13 @@ import {
 	deleteAllTestGuests,
 	deleteTestUser
 } from '../fixtures/firestore.fixture'
+import {TEST_CODES} from '../factories/events.factory'
 
 /**
- * Mock events API for event dropdown
- * Temporary until events endpoint uses server functions
+ * NOTE: mockEventsApi was removed as part of Story 0-7 E2E mock elimination.
+ * The events list now comes from the Firestore emulator via getEvents() server function.
+ * Test events should be seeded with createTestEvent() - the route uses emulator data.
  */
-async function mockEventsApi(
-	page: Page,
-	events: Array<{id: string; name: string; code: string; isActive: boolean}>
-) {
-	await page.route('**/api/events', route => {
-		route.fulfill({
-			status: 200,
-			contentType: 'application/json',
-			body: JSON.stringify({success: true, events})
-		})
-	})
-}
 
 // Clean up emulator data before test suite
 test.beforeAll(async () => {
@@ -66,11 +55,10 @@ test.describe('Admin Guest Management', () => {
 			await createTestEvent({
 				id: 'event-1',
 				name: 'Test Event',
-				eventCode: '1234',
+				eventCode: TEST_CODES.VALID,
 				isActive: true
 			})
-			// Mock events API for dropdown
-			await mockEventsApi(page, [{id: 'event-1', name: 'Test Event', code: '1234', isActive: true}])
+			// Server function hits emulator directly - no mock needed
 
 			await page.goto('/guests')
 
@@ -83,11 +71,10 @@ test.describe('Admin Guest Management', () => {
 			await createTestEvent({
 				id: 'event-1',
 				name: 'Test Event',
-				eventCode: '1234',
+				eventCode: TEST_CODES.VALID,
 				isActive: true
 			})
-			// Mock events API for dropdown
-			await mockEventsApi(page, [{id: 'event-1', name: 'Test Event', code: '1234', isActive: true}])
+			// Server function hits emulator directly - no mock needed
 
 			await page.goto('/guests')
 
@@ -100,7 +87,7 @@ test.describe('Admin Guest Management', () => {
 			await createTestEvent({
 				id: 'event-1',
 				name: 'Test Event',
-				eventCode: '1234',
+				eventCode: TEST_CODES.VALID,
 				isActive: true
 			})
 			await createTestGuest({
@@ -117,8 +104,7 @@ test.describe('Admin Guest Management', () => {
 				email: 'jane@example.com',
 				eventId: 'event-1'
 			})
-			// Mock events API for dropdown
-			await mockEventsApi(page, [{id: 'event-1', name: 'Test Event', code: '1234', isActive: true}])
+			// Server function hits emulator directly - no mock needed
 
 			await page.goto('/guests')
 
@@ -138,7 +124,7 @@ test.describe('Admin Guest Management', () => {
 			await createTestEvent({
 				id: 'event-1',
 				name: 'Test Event',
-				eventCode: '1234',
+				eventCode: TEST_CODES.VALID,
 				isActive: true
 			})
 			await createTestGuest({
@@ -148,8 +134,7 @@ test.describe('Admin Guest Management', () => {
 				email: null,
 				eventId: 'event-1'
 			})
-			// Mock events API for dropdown
-			await mockEventsApi(page, [{id: 'event-1', name: 'Test Event', code: '1234', isActive: true}])
+			// Server function hits emulator directly - no mock needed
 
 			await page.goto('/guests')
 			await page.getByTestId('event-select').selectOption({value: 'event-1'})
@@ -165,7 +150,7 @@ test.describe('Admin Guest Management', () => {
 			await createTestEvent({
 				id: 'event-1',
 				name: 'Test Event',
-				eventCode: '1234',
+				eventCode: TEST_CODES.VALID,
 				isActive: true
 			})
 			await createTestGuest({
@@ -175,8 +160,7 @@ test.describe('Admin Guest Management', () => {
 				email: null,
 				eventId: 'event-1'
 			})
-			// Mock events API for dropdown
-			await mockEventsApi(page, [{id: 'event-1', name: 'Test Event', code: '1234', isActive: true}])
+			// Server function hits emulator directly - no mock needed
 
 			await page.goto('/guests')
 			await page.getByTestId('event-select').selectOption({value: 'event-1'})
@@ -192,7 +176,7 @@ test.describe('Admin Guest Management', () => {
 			await createTestEvent({
 				id: 'event-1',
 				name: 'Test Event',
-				eventCode: '1234',
+				eventCode: TEST_CODES.VALID,
 				isActive: true
 			})
 			await createTestGuest({
@@ -202,8 +186,7 @@ test.describe('Admin Guest Management', () => {
 				email: 'jane@example.com',
 				eventId: 'event-1'
 			})
-			// Mock events API for dropdown
-			await mockEventsApi(page, [{id: 'event-1', name: 'Test Event', code: '1234', isActive: true}])
+			// Server function hits emulator directly - no mock needed
 
 			await page.goto('/guests')
 			await page.getByTestId('event-select').selectOption({value: 'event-1'})
@@ -221,7 +204,7 @@ test.describe('Admin Guest Management', () => {
 			await createTestEvent({
 				id: 'event-1',
 				name: 'Test Event',
-				eventCode: '1234',
+				eventCode: TEST_CODES.VALID,
 				isActive: true
 			})
 			await createTestGuest({
@@ -231,8 +214,7 @@ test.describe('Admin Guest Management', () => {
 				email: null,
 				eventId: 'event-1'
 			})
-			// Mock events API for dropdown
-			await mockEventsApi(page, [{id: 'event-1', name: 'Test Event', code: '1234', isActive: true}])
+			// Server function hits emulator directly - no mock needed
 
 			await page.goto('/guests')
 			await page.getByTestId('event-select').selectOption({value: 'event-1'})
@@ -251,7 +233,7 @@ test.describe('Admin Guest Management', () => {
 			await createTestEvent({
 				id: 'event-1',
 				name: 'Test Event',
-				eventCode: '1234',
+				eventCode: TEST_CODES.VALID,
 				isActive: true
 			})
 			await createTestGuest({
@@ -261,8 +243,7 @@ test.describe('Admin Guest Management', () => {
 				email: null,
 				eventId: 'event-1'
 			})
-			// Mock events API for dropdown
-			await mockEventsApi(page, [{id: 'event-1', name: 'Test Event', code: '1234', isActive: true}])
+			// Server function hits emulator directly - no mock needed
 
 			await page.goto('/guests')
 			await page.getByTestId('event-select').selectOption({value: 'event-1'})
@@ -282,7 +263,7 @@ test.describe('Admin Guest Management', () => {
 			await createTestEvent({
 				id: 'event-1',
 				name: 'Test Event',
-				eventCode: '1234',
+				eventCode: TEST_CODES.VALID,
 				isActive: true
 			})
 			await createTestGuest({
@@ -292,8 +273,7 @@ test.describe('Admin Guest Management', () => {
 				email: null,
 				eventId: 'event-1'
 			})
-			// Mock events API for dropdown
-			await mockEventsApi(page, [{id: 'event-1', name: 'Test Event', code: '1234', isActive: true}])
+			// Server function hits emulator directly - no mock needed
 
 			await page.goto('/guests')
 			await page.getByTestId('event-select').selectOption({value: 'event-1'})
@@ -315,7 +295,7 @@ test.describe('Admin Guest Management', () => {
 			await createTestEvent({
 				id: 'event-1',
 				name: 'Test Event',
-				eventCode: '1234',
+				eventCode: TEST_CODES.VALID,
 				isActive: true
 			})
 			await createTestGuest({
@@ -330,8 +310,7 @@ test.describe('Admin Guest Management', () => {
 				email: 'existing@example.com',
 				displayName: 'Existing User'
 			})
-			// Mock events API for dropdown
-			await mockEventsApi(page, [{id: 'event-1', name: 'Test Event', code: '1234', isActive: true}])
+			// Server function hits emulator directly - no mock needed
 
 			await page.goto('/guests')
 			await page.getByTestId('event-select').selectOption({value: 'event-1'})
@@ -355,7 +334,7 @@ test.describe('Admin Guest Management', () => {
 			await createTestEvent({
 				id: 'event-1',
 				name: 'Test Event',
-				eventCode: '1234',
+				eventCode: TEST_CODES.VALID,
 				isActive: true
 			})
 			// Guest with email that will be detected as duplicate
@@ -374,8 +353,7 @@ test.describe('Admin Guest Management', () => {
 				email: null,
 				eventId: 'event-1'
 			})
-			// Mock events API for dropdown
-			await mockEventsApi(page, [{id: 'event-1', name: 'Test Event', code: '1234', isActive: true}])
+			// Server function hits emulator directly - no mock needed
 
 			await page.goto('/guests')
 			await page.getByTestId('event-select').selectOption({value: 'event-1'})
@@ -395,7 +373,7 @@ test.describe('Admin Guest Management', () => {
 			await createTestEvent({
 				id: 'event-1',
 				name: 'Test Event',
-				eventCode: '1234',
+				eventCode: TEST_CODES.VALID,
 				isActive: true
 			})
 			await createTestGuest({
@@ -410,8 +388,7 @@ test.describe('Admin Guest Management', () => {
 				email: 'existing@example.com',
 				displayName: 'Existing User'
 			})
-			// Mock events API for dropdown
-			await mockEventsApi(page, [{id: 'event-1', name: 'Test Event', code: '1234', isActive: true}])
+			// Server function hits emulator directly - no mock needed
 
 			await page.goto('/guests')
 			await page.getByTestId('event-select').selectOption({value: 'event-1'})
@@ -440,11 +417,10 @@ test.describe('Admin Guest Management', () => {
 			await createTestEvent({
 				id: 'event-1',
 				name: 'Test Event',
-				eventCode: '1234',
+				eventCode: TEST_CODES.VALID,
 				isActive: true
 			})
-			// Mock events API for dropdown
-			await mockEventsApi(page, [{id: 'event-1', name: 'Test Event', code: '1234', isActive: true}])
+			// Server function hits emulator directly - no mock needed
 
 			await page.goto('/guests')
 			await page.getByTestId('event-select').selectOption({value: 'event-1'})
