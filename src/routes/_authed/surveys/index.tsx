@@ -5,6 +5,7 @@ import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
 import {PrimaryButton} from '@/components/ui/primary-button'
+import {getAllAccessibleSurveys} from '@/server/functions/surveys'
 
 interface EventSurvey {
 	eventId: string
@@ -19,20 +20,9 @@ interface EventSurvey {
 
 export const Route = createFileRoute('/_authed/surveys/')({
 	loader: async () => {
-		// Fetch accessible surveys
-		const response = await fetch('/api/surveys/accessible')
-		const data = (await response.json()) as {
-			success: boolean
-			surveys?: EventSurvey[]
-			error?: string
-		}
-
-		if (!(response.ok && data.success)) {
-			throw new Error(data.error || 'Failed to load surveys')
-		}
-
+		const result = await getAllAccessibleSurveys()
 		return {
-			surveys: data.surveys || []
+			surveys: result.surveys as EventSurvey[]
 		}
 	},
 	component: SurveysListComponent

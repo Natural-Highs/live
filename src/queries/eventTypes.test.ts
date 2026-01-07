@@ -1,10 +1,20 @@
 /**
  * Unit tests for eventTypes query options
- * Tests success cases, error handling, and data transformation
+ * Tests query key structure and server function integration
  */
 
 import {QueryClient} from '@tanstack/react-query'
-import {type EventType, eventTypesQueryOptions} from './eventTypes'
+import {beforeEach, describe, expect, it, vi} from 'vitest'
+import {eventTypesQueryOptions} from './eventTypes'
+
+// Mock the server function
+vi.mock('@/server/functions/events', () => ({
+	getEventTypes: vi.fn()
+}))
+
+import {getEventTypes} from '@/server/functions/events'
+
+const mockGetEventTypes = vi.mocked(getEventTypes)
 
 describe('eventTypesQueryOptions', () => {
 	let queryClient: QueryClient
@@ -41,70 +51,48 @@ describe('eventTypesQueryOptions', () => {
 	})
 
 	describe('queryFn - success cases', () => {
-		it('should fetch and return event types on success', async () => {
-			const mockEventTypes: EventType[] = [
+		it('should call getEventTypes server function and return event types', async () => {
+			const mockEventTypes = [
 				{
 					id: 'type-1',
 					name: 'Workshop',
 					defaultConsentFormTemplateId: 'consent-1',
 					defaultDemographicsFormTemplateId: 'demo-1',
-					defaultSurveyTemplateId: 'survey-1'
-				},
-				{
-					id: 'type-2',
-					name: 'Seminar',
-					defaultConsentFormTemplateId: 'consent-2',
-					defaultDemographicsFormTemplateId: 'demo-2',
-					defaultSurveyTemplateId: null
+					defaultSurveyTemplateId: null,
+					createdAt: '2025-01-01T00:00:00.000Z'
 				}
 			]
 
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: true, eventTypes: mockEventTypes})
-				})
-			)
+			mockGetEventTypes.mockResolvedValue(mockEventTypes)
 
 			const result = await invokeQueryFn()
 
-			expect(fetch).toHaveBeenCalledWith('/api/eventTypes')
-			expect(result).toHaveLength(2)
+			expect(getEventTypes).toHaveBeenCalled()
+			expect(result).toHaveLength(1)
 			expect(result[0].name).toBe('Workshop')
-			expect(result[1].defaultSurveyTemplateId).toBeNull()
 		})
 
 		it('should handle event types with optional fields undefined', async () => {
-			const mockEventTypes: EventType[] = [
+			const mockEventTypes = [
 				{
 					id: 'type-1',
-					name: 'Basic Event'
+					name: 'Simple Event',
+					defaultConsentFormTemplateId: undefined,
+					defaultDemographicsFormTemplateId: undefined,
+					defaultSurveyTemplateId: null,
+					createdAt: '2025-01-01T00:00:00.000Z'
 				}
 			]
 
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: true, eventTypes: mockEventTypes})
-				})
-			)
+			mockGetEventTypes.mockResolvedValue(mockEventTypes)
 
 			const result = await invokeQueryFn()
 
-			expect(result[0].defaultConsentFormTemplateId).toBeUndefined()
-			expect(result[0].defaultDemographicsFormTemplateId).toBeUndefined()
+			expect(result[0].defaultSurveyTemplateId).toBeNull()
 		})
 
 		it('should return empty array when no event types exist', async () => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: true, eventTypes: []})
-				})
-			)
+			mockGetEventTypes.mockResolvedValue([])
 
 			const result = await invokeQueryFn()
 
@@ -113,52 +101,16 @@ describe('eventTypesQueryOptions', () => {
 	})
 
 	describe('queryFn - error handling', () => {
-		it('should throw error when response is not ok', async () => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: false,
-					status: 404
-				})
-			)
+		it('should propagate errors from server function', async () => {
+			mockGetEventTypes.mockRejectedValue(new Error('Admin access required'))
 
-			await expect(invokeQueryFn()).rejects.toThrow('Failed to fetch event types')
+			await expect(invokeQueryFn()).rejects.toThrow('Admin access required')
 		})
 
-		it('should throw error when success is false with custom error', async () => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: false, error: 'Event types not configured'})
-				})
-			)
+		it('should propagate authorization errors', async () => {
+			mockGetEventTypes.mockRejectedValue(new Error('Unauthorized'))
 
-			await expect(invokeQueryFn()).rejects.toThrow('Event types not configured')
-		})
-
-		it('should throw default error when success is false with no error message', async () => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: false})
-				})
-			)
-
-			await expect(invokeQueryFn()).rejects.toThrow('Failed to load event types')
-		})
-
-		it('should throw error when eventTypes array is missing', async () => {
-			vi.stubGlobal(
-				'fetch',
-				vi.fn().mockResolvedValue({
-					ok: true,
-					json: () => Promise.resolve({success: true})
-				})
-			)
-
-			await expect(invokeQueryFn()).rejects.toThrow('Failed to load event types')
+			await expect(invokeQueryFn()).rejects.toThrow('Unauthorized')
 		})
 	})
 })

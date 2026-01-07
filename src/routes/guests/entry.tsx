@@ -7,6 +7,8 @@ import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
 import {PrimaryButton} from '@/components/ui/primary-button'
+import {getSessionForRoutesFn} from '@/server/functions/auth'
+import {validateGuestCode} from '@/server/functions/guests'
 import {useAuth} from '../../context/AuthContext'
 
 export const Route = createFileRoute('/guests/entry')({
@@ -24,16 +26,13 @@ function GuestEntryComponent() {
 	const [hasSession, setHasSession] = useState<boolean | null>(null)
 	const [checkingSession, setCheckingSession] = useState(true)
 
-	// Check if session cookie exists (similar to layout route auth check)
+	// Check if session exists via server function
 	// This prevents Firebase Auth emulator persistence from causing incorrect redirects
 	useEffect(() => {
 		const checkSession = async () => {
 			try {
-				const response = await fetch('/api/auth/sessionLogin', {
-					credentials: 'include'
-				})
-				const data = (await response.json()) as {token?: boolean}
-				setHasSession(data.token === true)
+				const sessionResult = await getSessionForRoutesFn()
+				setHasSession(sessionResult.isAuthenticated)
 			} catch {
 				setHasSession(false)
 			} finally {
@@ -62,24 +61,8 @@ function GuestEntryComponent() {
 		setLoading(true)
 
 		try {
-			const response = await fetch('/api/guests/validateCode', {
-				method: 'POST',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({eventCode})
-			})
-
-			const data = (await response.json()) as {
-				success: boolean
-				eventId?: string
-				eventName?: string
-				error?: string
-			}
-
-			if (!(response.ok && data.success)) {
-				setError(data.error || 'Invalid event code')
-				setLoading(false)
-				return
-			}
+			// Use server function to validate event code
+			const data = await validateGuestCode({data: {eventCode}})
 
 			// If user is logged in (both user AND session cookie exist), redirect to profile
 			if (isLoggedIn) {
@@ -91,11 +74,9 @@ function GuestEntryComponent() {
 
 			// If not logged in, show choice to login or continue as guest
 			setValidatedEventCode(eventCode)
-			if (data.eventId) {
-				sessionStorage.setItem('guestEventId', data.eventId)
-				sessionStorage.setItem('guestEventName', data.eventName || '')
-				sessionStorage.setItem('guestEventCode', eventCode)
-			}
+			sessionStorage.setItem('guestEventId', data.eventId)
+			sessionStorage.setItem('guestEventName', data.eventName || '')
+			sessionStorage.setItem('guestEventCode', eventCode)
 			setShowChoice(true)
 			setLoading(false)
 		} catch (err) {

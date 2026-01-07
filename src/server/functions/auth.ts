@@ -6,6 +6,7 @@ import {clearSession, getSessionData, type SessionData, updateSession} from '@/l
 import {requireAdmin} from '@/server/middleware/auth'
 import {getSessionExpiration, isSessionExpiringSoon} from '@/server/middleware/session'
 import {AuthenticationError, ValidationError} from './utils/errors'
+import {captureServerError} from './utils/sentry.server'
 
 export interface SessionUser {
 	uid: string
@@ -260,12 +261,14 @@ export const logMagicLinkAttemptFn = createServerFn({method: 'POST'})
 	.handler(async ({data}): Promise<{success: true}> => {
 		const {success, errorCode, emailDomain} = data
 
-		// TODO: Replace with proper monitoring service (e.g., Sentry, DataDog)
-		// Magic link attempt logging intentionally removed - was console.log only
-		// Re-implement when monitoring infrastructure is in place
-		void success
-		void errorCode
-		void emailDomain
+		// Log magic link attempts to Sentry for monitoring
+		if (!success && errorCode) {
+			captureServerError(new Error(`Magic link attempt failed: ${errorCode}`), {
+				errorCode,
+				emailDomain,
+				context: 'magic_link_attempt'
+			})
+		}
 
 		return {success: true}
 	})

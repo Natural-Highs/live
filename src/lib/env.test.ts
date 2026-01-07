@@ -56,7 +56,7 @@ describe('env utilities', () => {
 				// biome-ignore lint/performance/noDelete: Test requires undefined window
 				delete (globalThis as {window?: unknown}).window
 
-				vi.stubEnv('FIRESTORE_EMULATOR_HOST', 'localhost:8080')
+				vi.stubEnv('FIRESTORE_EMULATOR_HOST', 'localhost:8180')
 				vi.stubEnv('SENTRY_DSN', 'https://test@sentry.io/123')
 
 				const {isSentryEnabled} = await resetModule()

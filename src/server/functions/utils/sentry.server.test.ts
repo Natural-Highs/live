@@ -68,7 +68,7 @@ describe('sentry server', () => {
 		})
 
 		it('should return false when FIRESTORE_EMULATOR_HOST is set', async () => {
-			vi.stubEnv('FIRESTORE_EMULATOR_HOST', 'localhost:8080')
+			vi.stubEnv('FIRESTORE_EMULATOR_HOST', 'localhost:8180')
 			vi.stubEnv('SENTRY_DSN', 'https://test@sentry.io/123')
 
 			const {initSentryServer} = await resetModule()

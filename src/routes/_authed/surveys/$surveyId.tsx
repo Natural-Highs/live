@@ -5,6 +5,7 @@ import {Alert, Spinner} from '@/components/ui'
 import {FormContainer} from '@/components/ui/form-container'
 import {Logo} from '@/components/ui/logo'
 import {PageContainer} from '@/components/ui/page-container'
+import {getSurveyById, submitUserResponse} from '@/server/functions/surveys'
 
 interface SurveySearch {
 	eventId?: string
@@ -21,61 +22,57 @@ export const Route = createFileRoute('/_authed/surveys/$surveyId')({
 			throw new Error('Survey ID is required')
 		}
 
-		// Fetch survey questions
-		const response = await fetch(`/api/surveyQuestions?id=${surveyId}`)
-		const data = (await response.json()) as {
-			success?: boolean
-			questions?: Array<{
+		// Fetch survey questions using server function
+		const data = await getSurveyById({data: {surveyId}})
+
+		if (!(data.questions || data.surveyJson)) {
+			throw new Error('Survey data not available')
+		}
+
+		// Convert questions to SurveyJS JSON format if not already in surveyJson format
+		let surveyJson: SurveyJSJson
+
+		if (data.surveyJson) {
+			surveyJson = data.surveyJson as SurveyJSJson
+		} else {
+			const questions = data.questions as Array<{
 				id: string
 				text: string
 				type: string
 				required?: boolean
 				options?: string[]
-				[key: string]: unknown
 			}>
-			name?: string
-			message?: string
-			error?: string
-		}
 
-		if (!response.ok || data.message || data.error) {
-			throw new Error(data.error || data.message || 'Failed to load survey')
-		}
-
-		if (!(data.questions && data.name)) {
-			throw new Error('Survey data not available')
-		}
-
-		// Convert questions to SurveyJS JSON format
-		const elements = data.questions.map(q => {
-			const baseElement: Record<string, unknown> = {
-				type: q.type === 'text' ? 'text' : q.type === 'textarea' ? 'comment' : 'text',
-				name: q.id,
-				title: q.text,
-				isRequired: q.required
-			}
-
-			if (q.options && q.options.length > 0) {
-				if (q.type === 'checkbox') {
-					baseElement.type = 'checkbox'
-					baseElement.choices = q.options
-				} else if (q.type === 'radio') {
-					baseElement.type = 'radiogroup'
-					baseElement.choices = q.options
+			const elements = questions.map(q => {
+				const baseElement: Record<string, unknown> = {
+					type: q.type === 'text' ? 'text' : q.type === 'textarea' ? 'comment' : 'text',
+					name: q.id,
+					title: q.text,
+					isRequired: q.required
 				}
-			}
 
-			return baseElement
-		})
-
-		const surveyJson: SurveyJSJson = {
-			title: data.name,
-			pages: [
-				{
-					elements
+				if (q.options && q.options.length > 0) {
+					if (q.type === 'checkbox') {
+						baseElement.type = 'checkbox'
+						baseElement.choices = q.options
+					} else if (q.type === 'radio') {
+						baseElement.type = 'radiogroup'
+						baseElement.choices = q.options
+					}
 				}
-			],
-			showProgressBar: 'bottom'
+
+				return baseElement
+			})
+
+			surveyJson = {
+				title: data.name,
+				pages: [
+					{
+						elements
+					}
+				],
+				showProgressBar: 'bottom'
+			}
 		}
 
 		return {
@@ -109,26 +106,12 @@ function SurveyFormComponent() {
 				responseText: String(value)
 			}))
 
-			const response = await fetch('/api/userResponses', {
-				method: 'POST',
-				headers: {'Content-Type': 'application/json'},
-				body: JSON.stringify({
+			await submitUserResponse({
+				data: {
 					surveyId,
 					responses
-				})
+				}
 			})
-
-			const data = (await response.json()) as {
-				success?: boolean
-				message?: string
-				error?: string
-			}
-
-			if (!(response.ok && data.success)) {
-				setError(data.error || data.message || 'Failed to submit survey')
-				setSubmitting(false)
-				return
-			}
 
 			navigate({to: '/surveys', replace: true})
 		} catch (err) {

@@ -10,6 +10,7 @@
  */
 
 import {adminDb} from '@/lib/firebase/firebase.admin'
+import {isEmulatorMode} from '@/lib/env'
 import type {SessionData} from '@/lib/session'
 import {
 	getSessionData,
@@ -106,6 +107,12 @@ export async function checkSessionRevoked(
 	// If no session creation time, can't determine revocation status
 	// Allow for backwards compatibility with legacy sessions
 	if (!sessionCreatedAt) {
+		return false
+	}
+
+	// Skip Firestore revocation check in emulator mode
+	// E2E tests use session injection - revocation is a production security feature
+	if (isEmulatorMode()) {
 		return false
 	}
 
