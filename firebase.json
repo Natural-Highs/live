@@ -8,13 +8,14 @@
 			"port": 9099
 		},
 		"firestore": {
-			"port": 8080
+			"port": 8180
 		},
 		"ui": {
 			"enabled": true
 		},
 		"websocket": {
 			"port": 9151
-		}
+		},
+		"singleProjectMode": false
 	}
 }

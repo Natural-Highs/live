@@ -310,3 +310,36 @@ export const test = base.extend<NetworkFixtures>({
 })
 
 export {expect} from '@playwright/test'
+
+/**
+ * Mock TanStack Start server functions to return an error.
+ * Server functions use /_serverFn/:serverFnId URLs.
+ * This helper intercepts all server function calls and returns an HTTP 500 error.
+ *
+ * Use for testing error handling UI states.
+ *
+ * @param page - Playwright page instance
+ * @param errorMessage - Error message to return in the response body
+ *
+ * @example
+ * ```typescript
+ * // Navigate first, then set up mock
+ * await page.goto('/authentication')
+ * await mockServerFunctionError(page, 'Server temporarily unavailable')
+ *
+ * // Trigger action that calls server function
+ * await page.click('button[data-testid="submit"]')
+ *
+ * // Verify error is displayed
+ * await expect(page.getByText('Server temporarily unavailable')).toBeVisible()
+ * ```
+ */
+export async function mockServerFunctionError(page: Page, errorMessage: string): Promise<void> {
+	await page.route('**/_serverFn/*', async (route: Route) => {
+		await route.fulfill({
+			status: 500,
+			contentType: 'text/plain',
+			body: errorMessage
+		})
+	})
+}

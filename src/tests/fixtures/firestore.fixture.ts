@@ -15,12 +15,17 @@
  * - deleteTestUserDocument(uid) - Remove user and subcollections
  * - clearFirestoreEmulator() - Clear all test data
  *
+ * Test Isolation:
+ * - Use `workerPrefix` fixture for parallel worker isolation
+ * - Example: `await createTestUser(\`${workerPrefix}__user-123\`, {...})`
+ *
  * IMPORTANT: This fixture requires the Firestore emulator to be running.
  * The emulator host is configured via FIRESTORE_EMULATOR_HOST environment variable.
  */
 
 import {type App, deleteApp, getApps, initializeApp} from 'firebase-admin/app'
 import {type Firestore, getFirestore} from 'firebase-admin/firestore'
+import {withRetryWrapper} from './retry-firestore.fixture'
 
 /**
  * Project ID for the Firebase emulator.
@@ -29,10 +34,10 @@ import {type Firestore, getFirestore} from 'firebase-admin/firestore'
 const EMULATOR_PROJECT_ID = 'demo-natural-highs'
 
 /**
- * Firestore emulator host.
+ * Default Firestore emulator host configuration.
  * Matches firebase.json emulators.firestore.port configuration.
  */
-const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8080'
+const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
 
 /**
  * Lazy-initialized Firebase app for tests.
@@ -415,6 +420,9 @@ export interface TestEventDocument {
 	eventCode: string
 	eventTypeId?: string
 	eventDate?: Date
+	startDate?: Date
+	endDate?: Date
+	location?: string
 	isActive?: boolean
 	activatedAt?: Date
 	collectAdditionalDemographics?: boolean
@@ -470,7 +478,7 @@ export async function createTestEvent(event: TestEventDocument): Promise<void> {
 	const db = getTestDb()
 	const now = new Date()
 
-	const eventDoc = {
+	const eventDoc: Record<string, unknown> = {
 		name: event.name,
 		eventCode: event.eventCode,
 		eventTypeId: event.eventTypeId ?? 'default-type',
@@ -480,6 +488,17 @@ export async function createTestEvent(event: TestEventDocument): Promise<void> {
 		collectAdditionalDemographics: event.collectAdditionalDemographics ?? false,
 		createdAt: event.createdAt ?? now,
 		updatedAt: event.updatedAt ?? now
+	}
+
+	// Add optional time window fields only if provided
+	if (event.startDate !== undefined) {
+		eventDoc.startDate = event.startDate
+	}
+	if (event.endDate !== undefined) {
+		eventDoc.endDate = event.endDate
+	}
+	if (event.location !== undefined) {
+		eventDoc.location = event.location
 	}
 
 	await db.collection('events').doc(event.id).set(eventDoc)
@@ -620,11 +639,16 @@ export type TestScenario = 'admin-with-guests' | 'user-with-history' | 'empty-ev
  *
  * @param scenario - Name of the scenario to seed
  *
+ * WARNING: This function calls clearFirestoreEmulator() which performs a
+ * GLOBAL wipe of all Firestore data. Do NOT use in parallel E2E tests.
+ * This is intended for manual seeding (bun run seed:test-data) and
+ * single-worker test scenarios only. For parallel tests, use worker-scoped
+ * isolation with workerPrefix instead.
+ *
  * @example
  * ```typescript
- * test.beforeEach(async () => {
- *   await seedTestScenario('admin-with-guests')
- * })
+ * // Manual seeding only - NOT for parallel E2E tests
+ * await seedTestScenario('admin-with-guests')
  * ```
  */
 export async function seedTestScenario(scenario: TestScenario): Promise<void> {
@@ -749,3 +773,15 @@ export async function seedTestScenario(scenario: TestScenario): Promise<void> {
 		}
 	}
 }
+
+// Retryable seed functions - optional utilities for edge cases
+// Primary ECONNRESET defense is worker-scoped cleanup (firebase-reset.fixture.ts)
+export const createTestUserWithRetry = withRetryWrapper(createTestUser)
+export const createTestUserDocumentWithRetry = withRetryWrapper(createTestUserDocument)
+export const createTestEventWithRetry = withRetryWrapper(createTestEvent)
+export const createTestGuestWithRetry = withRetryWrapper(createTestGuest)
+export const deleteTestUserWithRetry = withRetryWrapper(deleteTestUser)
+export const deleteTestUserDocumentWithRetry = withRetryWrapper(deleteTestUserDocument)
+export const deleteTestEventWithRetry = withRetryWrapper(deleteTestEvent)
+export const deleteTestGuestWithRetry = withRetryWrapper(deleteTestGuest)
+export const seedTestScenarioWithRetry = withRetryWrapper(seedTestScenario)

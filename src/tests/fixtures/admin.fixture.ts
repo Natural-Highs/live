@@ -5,18 +5,25 @@
  * Provides admin user fixtures with admin claims for testing admin routes.
  *
  * Key patterns:
- * - Extends existing authTest fixture
+ * - Extends existing authTest fixture merged with firebaseResetTest
  * - Uses session cookie injection (not localStorage) via session.fixture.ts
  * - Auto-cleanup after each test
+ * - Includes workerPrefix for parallel worker data isolation
  *
  * Architecture:
  * - session.fixture.ts provides cookie helpers
  * - auth.fixture.ts uses session helpers for authenticated fixtures
+ * - firebase-reset.fixture.ts provides workerPrefix and cleanup
  * - admin.fixture.ts extends auth with admin claims via injectAdminSessionCookie()
  */
 
+import {mergeTests} from '@playwright/test'
 import {test as authTest, createMockUser, createTestAuthUser, setUserClaims} from './auth.fixture'
+import {test as firebaseResetTest} from './firebase-reset.fixture'
 import {clearSessionCookie, injectAdminSessionCookie, type TestUser} from './session.fixture'
+
+// Merge auth and firebase-reset fixtures to get workerPrefix
+const baseTest = mergeTests(authTest, firebaseResetTest)
 
 // Types for admin fixtures
 interface MockUser {
@@ -44,7 +51,7 @@ interface AdminFixtures {
 /**
  * Playwright fixture that extends auth test with admin helpers
  */
-export const test = authTest.extend<AdminFixtures>({
+export const test = baseTest.extend<AdminFixtures>({
 	adminUser: async ({context}, use) => {
 		const mockUser = createMockUser({
 			email: 'admin@test.local',

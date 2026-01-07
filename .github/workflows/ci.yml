@@ -267,14 +267,31 @@ jobs:
 
       - name: Start Firebase emulators
         run: |
+          # Start emulators in background
           firebase emulators:start --only auth,firestore --project demo-natural-highs &
-          for i in {1..30}; do
-            if curl -s http://localhost:9099 > /dev/null 2>&1; then
-              echo "Auth emulator ready"
+          EMULATOR_PID=$!
+          
+          # Extended timeout for CI stability
+          MAX_WAIT=90
+          RETRY_DELAY=2
+          
+          echo "Waiting for emulators (timeout: ${MAX_WAIT}s)..."
+          for i in $(seq 1 $MAX_WAIT); do
+            AUTH_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9099 2>/dev/null || echo "000")
+            FS_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8180 2>/dev/null || echo "000")
+            
+            if [[ "$AUTH_OK" != "000" ]] && [[ "$FS_OK" != "000" ]]; then
+              echo "All emulators ready after ${i}s (Auth: $AUTH_OK, Firestore: $FS_OK)"
               break
             fi
-            echo "Waiting for emulators... ($i/30)"
-            sleep 1
+            
+            if [ $i -eq $MAX_WAIT ]; then
+              echo "ERROR: Emulators failed to start within ${MAX_WAIT}s"
+              exit 1
+            fi
+            
+            echo "Waiting... ($i/${MAX_WAIT}s) Auth: $AUTH_OK, Firestore: $FS_OK"
+            sleep $RETRY_DELAY
           done
           sleep 2
 
@@ -282,6 +299,7 @@ jobs:
         run: bun run test:e2e:ci -- --shard=${{ matrix.shard }}/4
         env:
           CI: true
+          CI_EMULATOR_TIMEOUT: "60000"
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
@@ -323,12 +341,13 @@ jobs:
           path: all-reports
           merge-multiple: true
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
       - name: Merge reports
         run: |
-          # Install playwright to use merge-reports
-          npm install -g playwright
-          # Merge all shard reports into one
-          npx playwright merge-reports --reporter=html all-reports -o merged-report || {
+          # Merge all shard reports into one (bunx auto-installs playwright)
+          bunx playwright merge-reports --reporter=html all-reports -o merged-report || {
             echo "Merge failed, using raw reports"
             mkdir -p merged-report
             cp -r all-reports/* merged-report/ 2>/dev/null || true
@@ -360,6 +379,80 @@ jobs:
           echo "[${{ steps.netlify.outputs.deploy-url }}](${{ steps.netlify.outputs.deploy-url }})" >> $GITHUB_STEP_SUMMARY
 
   # ============================================
+  # Stage 3c: Integration Tests (Real Emulators)
+  # ============================================
+  test-integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: [detect-changes, lint, test-unit]
+    # Run if code changed AND upstream jobs succeeded or were skipped
+    if: |
+      always() &&
+      needs.detect-changes.outputs.any-code == 'true' &&
+      (needs.lint.result == 'success' || needs.lint.result == 'skipped') &&
+      (needs.test-unit.result == 'success' || needs.test-unit.result == 'skipped')
+    timeout-minutes: 20
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-bun
+        with:
+          java-version: "21"
+          install-playwright: "true"
+          install-firebase: "true"
+
+      - name: Start Firebase emulators
+        run: |
+          # Start emulators in background
+          firebase emulators:start --only auth,firestore --project demo-natural-highs &
+          EMULATOR_PID=$!
+          
+          # Extended timeout for CI stability
+          MAX_WAIT=90
+          RETRY_DELAY=2
+          
+          echo "Waiting for emulators (timeout: ${MAX_WAIT}s)..."
+          for i in $(seq 1 $MAX_WAIT); do
+            AUTH_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9099 2>/dev/null || echo "000")
+            FS_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8180 2>/dev/null || echo "000")
+            
+            if [[ "$AUTH_OK" != "000" ]] && [[ "$FS_OK" != "000" ]]; then
+              echo "All emulators ready after ${i}s (Auth: $AUTH_OK, Firestore: $FS_OK)"
+              break
+            fi
+            
+            if [ $i -eq $MAX_WAIT ]; then
+              echo "ERROR: Emulators failed to start within ${MAX_WAIT}s"
+              exit 1
+            fi
+            
+            echo "Waiting... ($i/${MAX_WAIT}s) Auth: $AUTH_OK, Firestore: $FS_OK"
+            sleep $RETRY_DELAY
+          done
+          sleep 2
+
+      - name: Run integration tests
+        run: bun run test:integration:ci
+        env:
+          CI: true
+          CI_EMULATOR_TIMEOUT: "60000"
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:8180
+          FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+          SESSION_SECRET: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+
+      - name: Upload integration test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-test-results
+          path: |
+            .build/playwright-report/
+            .build/test-results/
+          retention-days: 7
+
+  # ============================================
   # Stage 4: Burn-In (Flaky Detection) - PRs Only
   # ============================================
   burn-in:
@@ -387,14 +480,31 @@ jobs:
 
       - name: Start Firebase emulators
         run: |
+          # Start emulators in background
           firebase emulators:start --only auth,firestore --project demo-natural-highs &
-          for i in {1..30}; do
-            if curl -s http://localhost:9099 > /dev/null 2>&1; then
-              echo "Auth emulator ready"
+          EMULATOR_PID=$!
+
+          # Extended timeout for CI stability
+          MAX_WAIT=90
+          RETRY_DELAY=2
+
+          echo "Waiting for emulators (timeout: ${MAX_WAIT}s)..."
+          for i in $(seq 1 $MAX_WAIT); do
+            AUTH_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9099 2>/dev/null || echo "000")
+            FS_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8180 2>/dev/null || echo "000")
+
+            if [[ "$AUTH_OK" != "000" ]] && [[ "$FS_OK" != "000" ]]; then
+              echo "All emulators ready after ${i}s (Auth: $AUTH_OK, Firestore: $FS_OK)"
               break
             fi
-            echo "Waiting for emulators... ($i/30)"
-            sleep 1
+
+            if [ $i -eq $MAX_WAIT ]; then
+              echo "ERROR: Emulators failed to start within ${MAX_WAIT}s"
+              exit 1
+            fi
+
+            echo "Waiting... ($i/${MAX_WAIT}s) Auth: $AUTH_OK, Firestore: $FS_OK"
+            sleep $RETRY_DELAY
           done
           sleep 2
 
@@ -425,6 +535,9 @@ jobs:
           echo "All 5 burn-in iterations passed"
           echo "## Burn-In Result" >> $GITHUB_STEP_SUMMARY
           echo "All 5 iterations passed - tests are stable" >> $GITHUB_STEP_SUMMARY
+        env:
+          CI: true
+          CI_EMULATOR_TIMEOUT: "60000"
 
       - name: Upload burn-in artifacts on failure
         if: failure()
@@ -456,8 +569,11 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
       - name: Install Firebase CLI
-        run: npm install -g firebase-tools
+        run: bun add -g firebase-tools
 
       - name: Deploy Firestore Rules
         env:
@@ -487,12 +603,69 @@ jobs:
           rm /tmp/sa.json
 
   # ============================================
+  # Stage 5b: Security Scanning
+  # ============================================
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.any-code == 'true' || needs.detect-changes.outputs.config == 'true'
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Snyk to check for vulnerabilities
+        uses: snyk/actions/node@9adf32b1121593767fc3c057af55b55db032dc04  # pinned to master SHA
+        continue-on-error: true
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: --severity-threshold=high --file=package.json --sarif-file-output=snyk.sarif
+
+      - name: Upload Snyk results to GitHub Code Scanning
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: snyk.sarif
+        continue-on-error: true
+
+  # ============================================
+  # Stage 5c: Bundle Analysis
+  # ============================================
+  bundle-analysis:
+    name: Bundle Analysis
+    runs-on: ubuntu-latest
+    needs: [detect-changes, lint, test-unit]
+    if: |
+      always() &&
+      needs.detect-changes.outputs.any-code == 'true' &&
+      (needs.lint.result == 'success' || needs.lint.result == 'skipped') &&
+      (needs.test-unit.result == 'success' || needs.test-unit.result == 'skipped')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup environment
+        uses: ./.github/actions/setup-bun
+        with:
+          node-version: "22"
+
+      - name: Build with bundle analysis
+        run: bun run build
+        env:
+          VITE_USE_EMULATORS: "true"
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  # ============================================
   # Stage 6: CI Summary
   # ============================================
   summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [detect-changes, lint, test-unit, test-e2e, deploy-test-report, burn-in, deploy-firestore-rules]
+    needs: [detect-changes, lint, test-unit, test-e2e, test-integration, deploy-test-report, burn-in, deploy-firestore-rules, security-scan, bundle-analysis]
     if: always()
     steps:
       - name: Generate summary
@@ -517,9 +690,12 @@ jobs:
           echo "| Code Quality | $(format_status '${{ needs.lint.result }}') |" >> $GITHUB_STEP_SUMMARY
           echo "| Unit Tests | $(format_status '${{ needs.test-unit.result }}') |" >> $GITHUB_STEP_SUMMARY
           echo "| E2E Tests | $(format_status '${{ needs.test-e2e.result }}') |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests | $(format_status '${{ needs.test-integration.result }}') |" >> $GITHUB_STEP_SUMMARY
           echo "| Test Report | $(format_status '${{ needs.deploy-test-report.result }}') |" >> $GITHUB_STEP_SUMMARY
           echo "| Flaky Detection | $(format_status '${{ needs.burn-in.result }}') |" >> $GITHUB_STEP_SUMMARY
           echo "| Firestore Deploy | $(format_status '${{ needs.deploy-firestore-rules.result }}') |" >> $GITHUB_STEP_SUMMARY
+          echo "| Security Scan | $(format_status '${{ needs.security-scan.result }}') |" >> $GITHUB_STEP_SUMMARY
+          echo "| Bundle Analysis | $(format_status '${{ needs.bundle-analysis.result }}') |" >> $GITHUB_STEP_SUMMARY
 
           echo "" >> $GITHUB_STEP_SUMMARY
 

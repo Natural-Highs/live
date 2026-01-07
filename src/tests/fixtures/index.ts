@@ -6,26 +6,22 @@
  *
  * Usage Pattern:
  * - Import `test` and `expect` from this file for E2E tests
- * - All fixtures from auth, events, session are available
+ * - All fixtures from auth, network, session are available
  * - For admin-specific tests, import from admin.fixture.ts instead
  *
  * Fixture Composition Architecture:
  * - base (Playwright) → auth → admin
- * - base (Playwright) → events
- * - Merged: auth + events = test
+ * - base (Playwright) → events (Firestore emulator helpers)
+ * - Merged: auth + events + network + firebase-reset = test
  *
  * @example
  * ```typescript
  * import {test, expect} from '../fixtures'
+ * import {createFirestoreEvent} from '../fixtures/events.fixture'
  *
- * test('user can check in to event', async ({
- *   page,
- *   authenticatedUser,
- *   mockActiveEvent,
- *   mockEventCodeValidation
- * }) => {
- *   await mockEventCodeValidation(mockActiveEvent)
- *   await page.goto('/check-in')
+ * test('user can check in to event', async ({page}) => {
+ *   await createFirestoreEvent({name: 'Test Event', eventCode: '1234', isActive: true})
+ *   await page.goto('/guest')
  *   // ... test implementation
  * })
  * ```
@@ -43,10 +39,10 @@ import {test as networkTest} from './network.fixture'
  * Provides:
  * - From auth.fixture: authenticatedUser, setMagicLinkEmail, clearMagicLinkEmail,
  *   mockSuccessfulMagicLinkSignIn, mockFailedMagicLinkSignIn
- * - From events.fixture: mockActiveEvent, mockEventCodeValidation, mockEventCheckIn,
- *   mockEventList, mockEventCreation, mockEventActivation
+ * - From events.fixture: Firestore emulator helpers (createFirestoreEvent, etc.)
  * - From network.fixture: mockApi (MockApiHelper for typed, chainable API mocking)
- * - From firebase-reset.fixture: autoCleanFirestore (auto-cleanup before each test)
+ * - From firebase-reset.fixture: workerPrefix (worker-scoped isolation prefix),
+ *   workerCleanup (auto-cleanup at worker start), isolatedDocId, isolatedPath
  */
 export const test = mergeTests(authTest, eventsTest, networkTest, firebaseResetTest)
 
@@ -68,17 +64,7 @@ export {
 	createMockUser,
 	test as authTest
 } from './auth.fixture'
-export type {MockEvent} from './events.fixture'
-export {
-	buildCheckInErrorResponse,
-	buildCheckInSuccessResponse,
-	buildEventActivationResponse,
-	buildEventCodeValidationResponse,
-	buildEventCreationResponse,
-	buildEventsListResponse,
-	createMockEvent,
-	test as eventsTest
-} from './events.fixture'
+export {test as eventsTest} from './events.fixture'
 export {test as firebaseResetTest} from './firebase-reset.fixture'
 export type {MinorDemographicsData, TestUserDocument} from './firestore.fixture'
 /**
@@ -90,7 +76,17 @@ export {
 	createTestUserDocument,
 	deleteTestUser,
 	deleteTestUserDocument,
-	isFirestoreEmulatorAvailable
+	isFirestoreEmulatorAvailable,
+	// Retryable versions for CI resilience
+	createTestUserWithRetry,
+	createTestUserDocumentWithRetry,
+	createTestEventWithRetry,
+	createTestGuestWithRetry,
+	deleteTestUserWithRetry,
+	deleteTestUserDocumentWithRetry,
+	deleteTestEventWithRetry,
+	deleteTestGuestWithRetry,
+	seedTestScenarioWithRetry
 } from './firestore.fixture'
 export {MockApiHelper, test as networkTest} from './network.fixture'
 export type {SessionData, TestClaims, TestUser, TestUserDocData} from './session.fixture'
@@ -106,3 +102,33 @@ export {
 	injectSessionCookie,
 	unsealTestSessionCookie
 } from './session.fixture'
+
+/**
+ * Re-export test isolation helpers for parallel worker support.
+ */
+export {
+	belongsToWorker,
+	DEFAULT_COLLECTIONS,
+	getBasePath,
+	getIsolatedDocId,
+	getIsolatedPath,
+	getWorkerPrefix
+} from './test-isolation.fixture'
+export type {IsolatedCleanupConfig} from './test-isolation.fixture'
+
+/**
+ * Re-export retry helpers for transient failure handling.
+ */
+export {isRetryableError, withRetry, withRetryWrapper} from './retry-firestore.fixture'
+export type {RetryConfig} from './retry-firestore.fixture'
+
+/**
+ * Re-export emulator health check helpers.
+ */
+export {
+	checkEmulatorsAvailable,
+	waitForAuthEmulator,
+	waitForEmulators,
+	waitForFirestoreEmulator
+} from './emulator-health.fixture'
+export type {EmulatorHealthConfig, HealthCheckResult} from './emulator-health.fixture'

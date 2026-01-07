@@ -463,4 +463,68 @@ Coverage reports are generated in `tests/coverage/`.
 
 ---
 
-Last Updated: 2025-12-26
+---
+
+## Parallel Worker Data Isolation
+
+E2E tests support parallel execution using worker-scoped data isolation.
+
+### How It Works
+
+Each worker receives a unique prefix derived from `workerInfo.workerIndex`:
+
+```typescript
+import {test} from '../fixtures'
+
+test('creates isolated data', async ({workerPrefix}) => {
+  // workerPrefix: "w0" or "w1" depending on worker
+  const userId = `${workerPrefix}__user-1`  // "w0__user-1"
+
+  // Data is isolated - won't collide with parallel workers
+  await createTestUser(userId, {...})
+})
+```
+
+### Available Fixtures
+
+| Fixture | Description |
+|---------|-------------|
+| `workerPrefix` | Unique prefix for this worker (e.g., "w0", "w1") |
+| `isolatedDocId(baseId)` | Create isolated document ID |
+| `isolatedPath(basePath)` | Create isolated collection path |
+| `workerCleanup` | Auto-cleans isolated data once per worker |
+
+### Retry Logic
+
+Retry wrappers are available for edge cases but typically not needed:
+
+```typescript
+import {createTestEventWithRetry} from '../fixtures'
+
+await createTestEventWithRetry({...})
+```
+
+### Emulator Health Check
+
+Tests wait for emulators via `playwright.global-setup.ts`:
+- Auth emulator: `127.0.0.1:9099`
+- Firestore emulator: `127.0.0.1:8180`
+- Timeout: 60s (configurable via `CI_EMULATOR_TIMEOUT`)
+
+### Running Burn-In Tests
+
+To validate test stability:
+
+```bash
+# Default: 10 iterations for flakiness validation
+bun run test:burn-in
+
+# Custom iterations
+./scripts/burn-in.sh 5
+
+# Outputs timing metrics and flakiness rate
+```
+
+---
+
+Last Updated: 2026-01-06
