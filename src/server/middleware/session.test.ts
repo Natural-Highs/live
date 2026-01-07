@@ -31,6 +31,11 @@ vi.mock('@/lib/firebase/firebase.admin', () => ({
 	}
 }))
 
+// Mock env module - disable emulator mode so revocation logic runs
+vi.mock('@/lib/env', () => ({
+	isEmulatorMode: vi.fn(() => false)
+}))
+
 // Mock session module
 vi.mock('@/lib/session', async importOriginal => {
 	const original = await importOriginal<typeof import('@/lib/session')>()
