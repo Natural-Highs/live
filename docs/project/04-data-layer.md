@@ -388,7 +388,7 @@ if (import.meta.env.VITE_USE_EMULATORS === 'true') {
 
 // src/lib/firebase/firebase.admin.ts
 if (process.env.USE_EMULATORS === 'true') {
-  process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080'
+  process.env.FIRESTORE_EMULATOR_HOST = '127.0.0.1:8180'
 }
 ```
 
@@ -400,7 +400,7 @@ bun run emulators
 
 Starts:
 - Auth emulator on port 9099
-- Firestore emulator on port 8080
+- Firestore emulator on port 8180
 - UI at <http://localhost:4000>
 
 ---
