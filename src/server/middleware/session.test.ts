@@ -177,6 +177,14 @@ describe('session middleware', () => {
 			expect(result).toBe(false)
 		})
 
+		it('should return false in emulator mode (skip revocation check)', async () => {
+			const {isEmulatorMode} = await import('@/lib/env')
+			vi.mocked(isEmulatorMode).mockReturnValueOnce(true)
+
+			const result = await checkSessionRevoked('test-user', new Date().toISOString())
+			expect(result).toBe(false)
+		})
+
 		it('should return true when revocation exists after session creation', async () => {
 			const {adminDb} = await import('@/lib/firebase/firebase.admin')
 			const mockGet = vi.fn().mockResolvedValue({empty: false})
