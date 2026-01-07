@@ -5,6 +5,8 @@
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest'
 import {
 	calculateGracePeriodState,
+	checkAuthServiceAvailability,
+	checkGracePeriod,
 	checkGracePeriodSync,
 	clearLastValidAuthTime,
 	GRACE_PERIOD_HOURS,
@@ -12,6 +14,13 @@ import {
 	LAST_VALID_AUTH_KEY,
 	recordValidAuth
 } from './grace-period'
+
+// Mock Firebase Auth
+vi.mock('firebase/auth', () => ({
+	getAuth: vi.fn(() => ({
+		currentUser: null
+	}))
+}))
 
 describe('grace-period', () => {
 	// Mock localStorage
@@ -70,6 +79,14 @@ describe('grace-period', () => {
 
 			expect(() => recordValidAuth()).not.toThrow()
 		})
+
+		it('should return early on server side (window undefined)', () => {
+			vi.unstubAllGlobals()
+			// @ts-expect-error - testing SSR
+			global.window = undefined
+
+			expect(() => recordValidAuth()).not.toThrow()
+		})
 	})
 
 	describe('getLastValidAuthTime', () => {
@@ -94,6 +111,14 @@ describe('grace-period', () => {
 
 			expect(getLastValidAuthTime()).toBeNull()
 		})
+
+		it('should return null on server side (window undefined)', () => {
+			vi.unstubAllGlobals()
+			// @ts-expect-error - testing SSR
+			global.window = undefined
+
+			expect(getLastValidAuthTime()).toBeNull()
+		})
 	})
 
 	describe('clearLastValidAuthTime', () => {
@@ -107,6 +132,14 @@ describe('grace-period', () => {
 			localStorageMock.removeItem.mockImplementationOnce(() => {
 				throw new Error('Storage unavailable')
 			})
+
+			expect(() => clearLastValidAuthTime()).not.toThrow()
+		})
+
+		it('should return early on server side (window undefined)', () => {
+			vi.unstubAllGlobals()
+			// @ts-expect-error - testing SSR
+			global.window = undefined
 
 			expect(() => clearLastValidAuthTime()).not.toThrow()
 		})
@@ -200,6 +233,70 @@ describe('grace-period', () => {
 
 			expect(result.isInGracePeriod).toBe(false)
 			expect(result.authServiceAvailable).toBe(true)
+		})
+	})
+
+	describe('checkAuthServiceAvailability', () => {
+		it('should return true on server side (window undefined)', async () => {
+			vi.unstubAllGlobals()
+			// @ts-expect-error - testing SSR
+			global.window = undefined
+
+			const result = await checkAuthServiceAvailability()
+			expect(result).toBe(true)
+		})
+
+		it('should return true when no current user and no previous auth', async () => {
+			const result = await checkAuthServiceAvailability()
+			expect(result).toBe(true)
+		})
+
+		it('should return true when no current user but has previous auth', async () => {
+			const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000)
+			localStorageMock.getItem.mockReturnValueOnce(oneHourAgo.toISOString())
+
+			const result = await checkAuthServiceAvailability()
+			expect(result).toBe(true)
+		})
+
+		it('should return false when Firebase throws error', async () => {
+			const {getAuth} = await import('firebase/auth')
+			vi.mocked(getAuth).mockImplementationOnce(() => {
+				throw new Error('Firebase unavailable')
+			})
+
+			const result = await checkAuthServiceAvailability()
+			expect(result).toBe(false)
+		})
+
+		it('should return true when current user can get token', async () => {
+			const {getAuth} = await import('firebase/auth')
+			vi.mocked(getAuth).mockReturnValueOnce({
+				currentUser: {
+					getIdToken: vi.fn().mockResolvedValue('mock-token')
+				}
+			} as never)
+
+			const result = await checkAuthServiceAvailability()
+			expect(result).toBe(true)
+		})
+	})
+
+	describe('checkGracePeriod', () => {
+		it('should return grace period state with auth available', async () => {
+			const result = await checkGracePeriod()
+
+			expect(result.authServiceAvailable).toBe(true)
+			expect(result.isInGracePeriod).toBe(false)
+		})
+
+		it('should record valid auth when service is available', async () => {
+			await checkGracePeriod()
+
+			expect(localStorageMock.setItem).toHaveBeenCalledWith(
+				LAST_VALID_AUTH_KEY,
+				expect.any(String)
+			)
 		})
 	})
 })
