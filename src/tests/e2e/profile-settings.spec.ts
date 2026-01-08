@@ -78,9 +78,13 @@ test.describe('Profile Settings Navigation', () => {
 			await clearAuthenticatedUser(context, testUser.uid)
 		})
 
-		test('should allow authenticated users to access profile settings', async ({page, context, workerPrefix}) => {
+		test('should allow authenticated users to access profile settings', async ({
+			page,
+			context,
+			workerPrefix
+		}) => {
 			const testUser = getIsolatedTestUser(workerPrefix)
-			
+
 			// GIVEN: User is authenticated with complete profile and Firestore doc
 			await injectAuthenticatedUser(
 				context,
@@ -107,7 +111,7 @@ test.describe('Profile Settings Form', () => {
 
 	test.beforeEach(async ({context, workerPrefix}) => {
 		const testUser = getIsolatedTestUser(workerPrefix)
-		
+
 		// Create user document + session cookie before each test
 		await injectAuthenticatedUser(
 			context,
@@ -402,7 +406,11 @@ test.describe('Minor Privacy Protection (NFR9)', () => {
 		await expect(displayNameInput).toHaveValue('Minor Updated')
 	})
 
-	test('should display demographics form sections for minor', async ({page, context, workerPrefix}) => {
+	test('should display demographics form sections for minor', async ({
+		page,
+		context,
+		workerPrefix
+	}) => {
 		const minorUser = getIsolatedMinorUser(workerPrefix, '-demo')
 
 		// GIVEN: User is authenticated as a minor

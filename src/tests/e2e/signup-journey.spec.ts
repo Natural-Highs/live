@@ -23,16 +23,19 @@
  * @see PRD Journey 1: Maya - The Frictionless Regular
  */
 
-import {test, expect} from '../fixtures'
+import {expect, test} from '../fixtures'
+import {createTestAuthUser, deleteTestAuthUser} from '../fixtures/auth.fixture'
 import {
-	injectSessionCookie,
-	injectAuthenticatedUser,
-	clearSessionCookie,
 	clearAuthenticatedUser,
+	clearSessionCookie,
+	injectAuthenticatedUser,
+	injectSessionCookie,
 	type TestUser
 } from '../fixtures/session.fixture'
-import {createFormTemplate, type TestFormTemplate} from '../integration/fixtures/firestore-seed.fixture'
-import {createTestAuthUser, deleteTestAuthUser} from '../fixtures/auth.fixture'
+import {
+	createFormTemplate,
+	type TestFormTemplate
+} from '../integration/fixtures/firestore-seed.fixture'
 
 /**
  * Generate a worker-isolated test email.

@@ -82,12 +82,13 @@ For data scenarios, seed test data directly in the Firestore emulator:
 
 ```typescript
 import {createTestEvent, clearFirestoreEmulator} from '../fixtures/firestore.fixture'
+import {TEST_CODES} from '../factories'
 
 test.beforeEach(async () => {
   await clearFirestoreEmulator()
   await createTestEvent({
     id: 'event-1',
-    eventCode: '1234',
+    eventCode: TEST_CODES.VALID,
     name: 'Test Event',
     isActive: true
   })

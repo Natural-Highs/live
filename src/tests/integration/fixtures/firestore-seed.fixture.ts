@@ -14,9 +14,9 @@
  * @see src/tests/fixtures/firestore.fixture.ts - Base implementation
  */
 
+import {test as base} from '@playwright/test'
 import {type App, getApps, initializeApp} from 'firebase-admin/app'
 import {type Firestore, getFirestore} from 'firebase-admin/firestore'
-import {test as base} from '@playwright/test'
 
 export {setUserClaims} from '../../fixtures/auth.fixture'
 
@@ -44,10 +44,8 @@ export {
 	deleteTestGuest,
 	deleteTestUser,
 	deleteTestUserDocument,
-	seedTestScenario,
 	type TestEventDocument,
 	type TestGuestDocument,
-	type TestScenario,
 	type TestUserDocument
 } from '../../fixtures/firestore.fixture'
 
@@ -62,10 +60,8 @@ import {
 	deleteTestEvent,
 	deleteTestGuest,
 	deleteTestUserDocument,
-	seedTestScenario,
 	type TestEventDocument,
 	type TestGuestDocument,
-	type TestScenario,
 	type TestUserDocument
 } from '../../fixtures/firestore.fixture'
 
@@ -219,11 +215,6 @@ export interface FirestoreSeedFixtures {
 	clearTestData: () => Promise<void>
 
 	/**
-	 * Seed a predefined test scenario.
-	 */
-	seedScenario: (scenario: TestScenario) => Promise<void>
-
-	/**
 	 * Delete a specific user.
 	 */
 	deleteUser: (uid: string) => Promise<void>
@@ -352,10 +343,6 @@ export const test = base.extend<FirestoreSeedFixtures>({
 		await use(clear)
 		// Clean after test
 		await clear()
-	},
-
-	seedScenario: async ({}, use) => {
-		await use(seedTestScenario)
 	},
 
 	deleteUser: async ({}, use) => {

@@ -21,7 +21,7 @@
  * Note: Uses fill() for InputOTP which triggers onComplete callback for auto-submit.
  */
 
-import {expect, test, TEST_CODES} from '../fixtures/check-in.fixture'
+import {expect, TEST_CODES, test} from '../fixtures/check-in.fixture'
 
 test.describe('User Check-in Flow @smoke', () => {
 	test.describe('AC1: Check-in Happy Path', () => {

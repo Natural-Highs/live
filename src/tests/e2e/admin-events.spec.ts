@@ -19,14 +19,14 @@
  */
 
 import {createMockUser, expect, test} from '../fixtures/admin.fixture'
+import {mockServerFunctionError} from '../fixtures/network.fixture'
+import {injectSessionCookie, type TestUser} from '../fixtures/session.fixture'
 import {
 	createEventType,
 	createFormTemplate,
 	type TestEventType,
 	type TestFormTemplate
 } from '../integration/fixtures/firestore-seed.fixture'
-import {mockServerFunctionError} from '../fixtures/network.fixture'
-import {injectSessionCookie, type TestUser} from '../fixtures/session.fixture'
 
 // Base seed data for admin event tests (will be prefixed with workerPrefix)
 const BASE_CONSENT_TEMPLATE: Omit<TestFormTemplate, 'id'> = {

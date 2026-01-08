@@ -18,6 +18,7 @@
  * - Note: InputOTP auto-submits on 4th digit entry
  */
 
+import {TEST_CODES} from '../factories/events.factory'
 import {expect, test} from '../fixtures'
 import {
 	createFirestoreEvent,
@@ -25,7 +26,6 @@ import {
 	deleteGuestsForEvent,
 	getGuestsForEvent
 } from '../fixtures/events.fixture'
-import {TEST_CODES} from '../factories/events.factory'
 
 // Generate unique 4-digit event code for test isolation
 // Uses last 4 digits of timestamp + random offset to ensure uniqueness across parallel tests

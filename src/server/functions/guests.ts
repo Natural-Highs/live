@@ -1,8 +1,8 @@
 import {createServerFn} from '@tanstack/react-start'
 import type {WriteBatch} from 'firebase-admin/firestore'
 import {FieldValue} from 'firebase-admin/firestore'
-import {requireAdmin, requireAuth} from '@/server/middleware/auth'
 import {adminAuth, adminDb} from '@/lib/firebase/firebase.admin'
+import {requireAdmin, requireAuth} from '@/server/middleware/auth'
 import {
 	completeGuestConversionSchema,
 	convertGuestToUserSchema,
@@ -704,7 +704,11 @@ export const updateGuestEmail = createServerFn({method: 'POST'})
 			}
 
 			// Check for duplicate email in users collection
-			const usersSnapshot = await adminDb.collection('users').where('email', '==', email).limit(1).get()
+			const usersSnapshot = await adminDb
+				.collection('users')
+				.where('email', '==', email)
+				.limit(1)
+				.get()
 
 			if (!usersSnapshot.empty) {
 				const existingUser = usersSnapshot.docs[0]!

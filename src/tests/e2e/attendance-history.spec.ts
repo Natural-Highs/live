@@ -15,9 +15,9 @@
 
 import {getApps, initializeApp} from 'firebase-admin/app'
 import {getFirestore} from 'firebase-admin/firestore'
+import {TEST_CODES} from '../factories/events.factory'
 import {expect, test} from '../fixtures'
 import {clearAuthenticatedUser, injectAuthenticatedUser} from '../fixtures/session.fixture'
-import {TEST_CODES} from '../factories/events.factory'
 
 const EMULATOR_PROJECT_ID = 'demo-natural-highs'
 const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'

@@ -16,9 +16,9 @@
  */
 
 import {devices} from '@playwright/test'
+import {TEST_CODES} from '../factories/events.factory'
 import {expect, test} from '../fixtures'
 import {injectSessionCookie} from '../fixtures/session.fixture'
-import {TEST_CODES} from '../factories/events.factory'
 
 // Configure mobile viewport for all tests in this file
 test.use({...devices['Pixel 5']})

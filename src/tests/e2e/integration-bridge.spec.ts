@@ -15,7 +15,7 @@
  * @see Story 0-6: Integration Test Layer (fixture source)
  */
 
-import {expect, test as base} from '../fixtures'
+import {test as base, expect} from '../fixtures'
 
 /**
  * Emulator configuration - must match playwright.config.ts

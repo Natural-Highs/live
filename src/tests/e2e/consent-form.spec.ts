@@ -8,7 +8,7 @@
  * - Test form validation and submission
  */
 
-import {expect, test as base} from '../fixtures'
+import {test as base, expect} from '../fixtures'
 import {clearSessionCookie, injectSessionCookie, type TestUser} from '../fixtures/session.fixture'
 
 // Test user data

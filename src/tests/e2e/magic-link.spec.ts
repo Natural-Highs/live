@@ -17,6 +17,7 @@
  * (firebase-tools#2936), so we use session injection for success paths.
  */
 
+import {TEST_CODES} from '../factories/events.factory'
 import {expect, test} from '../fixtures'
 import {
 	createFirestoreEvent,
@@ -27,7 +28,6 @@ import {
 	deletePendingConversion
 } from '../fixtures/events.fixture'
 import {injectSessionCookie} from '../fixtures/session.fixture'
-import {TEST_CODES} from '../factories/events.factory'
 
 /**
  * Helper to build a mock Firebase magic link URL

@@ -9,8 +9,8 @@
  * @module server/middleware/session
  */
 
-import {adminDb} from '@/lib/firebase/firebase.admin'
 import {isEmulatorMode} from '@/lib/env'
+import {adminDb} from '@/lib/firebase/firebase.admin'
 import type {SessionData} from '@/lib/session'
 import {
 	getSessionData,
