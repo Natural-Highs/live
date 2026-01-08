@@ -16,7 +16,6 @@
 import {TEST_CODES} from '../factories/events.factory'
 import {test as authTest} from './auth.fixture'
 import {
-	clearFirestoreEmulator,
 	createTestEvent,
 	createTestUserDocument,
 	deleteTestEvent,
@@ -105,8 +104,10 @@ const checkInTest = authTest.extend<CheckInFixtures>({
 
 	cleanupAllTestData: async ({authenticatedUser}, use) => {
 		const cleanup = async () => {
-			// Clear Firestore data
-			await clearFirestoreEmulator()
+			// Clean only this fixture's test data - NOT global emulator wipe
+			// Worker-scoped cleanup runs automatically via firebase-reset fixture
+			await deleteTestEvent(DEFAULT_TEST_EVENT.id)
+			await deleteTestUserDocument(authenticatedUser.uid)
 		}
 
 		// Don't clean in setup - let beforeEach handle it explicitly
@@ -116,13 +117,6 @@ const checkInTest = authTest.extend<CheckInFixtures>({
 
 		// Clean after test to ensure isolation
 		await cleanup()
-
-		// Also clean up user document
-		try {
-			await deleteTestUserDocument(authenticatedUser.uid)
-		} catch {
-			// Ignore if already deleted
-		}
 	}
 })
 

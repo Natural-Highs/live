@@ -19,30 +19,20 @@
  */
 
 import {expect, test} from '../fixtures/admin.fixture'
-import {
-	clearFirestoreEmulator,
-	createTestEvent,
-	deleteAllTestEvents
-} from '../fixtures/firestore.fixture'
+import {createTestEvent, deleteTestEvent} from '../fixtures/firestore.fixture'
 
 // NOTE: Dead mock helpers removed - server functions hit emulator directly
 // Tests now rely on Firestore seeding via fixtures
 
 test.describe('Admin Export Flow', () => {
-	// Clean up before each test
-	test.beforeEach(async () => {
-		await clearFirestoreEmulator()
-	})
-
-	// Clean up after each test
-	test.afterEach(async () => {
-		await deleteAllTestEvents()
-	})
+	// Worker-scoped cleanup runs automatically via firebase-reset fixture
+	// No manual clearFirestoreEmulator() needed - each test creates isolated data
 
 	test.describe('AC4: Admin Export Flow', () => {
 		test('should display survey responses page for admin users', async ({
 			page,
-			adminUser: _adminUser
+			adminUser: _adminUser,
+			workerPrefix: _workerPrefix
 		}) => {
 			// GIVEN: Admin is authenticated (via adminUser fixture)
 			// Server functions hit emulator directly - no mock needed
@@ -56,11 +46,27 @@ test.describe('Admin Export Flow', () => {
 			await expect(page.getByTestId('export-json-button')).toBeVisible()
 		})
 
-		test('should display filters for configuring export', async ({page, adminUser: _adminUser}) => {
+		test('should display filters for configuring export', async ({
+			page,
+			adminUser: _adminUser,
+			workerPrefix
+		}) => {
 			// GIVEN: Admin is authenticated
-			// Seed events in emulator
-			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
-			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
+			// Seed events in emulator with isolated IDs
+			const e1Id = `${workerPrefix}__e1`
+			const e2Id = `${workerPrefix}__e2`
+			await createTestEvent({
+				id: e1Id,
+				name: 'Peer-mentor Session',
+				eventCode: `${workerPrefix.slice(1)}11`,
+				isActive: true
+			})
+			await createTestEvent({
+				id: e2Id,
+				name: 'Workshop',
+				eventCode: `${workerPrefix.slice(1)}22`,
+				isActive: true
+			})
 
 			// WHEN: Admin navigates to survey responses page
 			await page.goto('/survey-responses')
@@ -70,28 +76,60 @@ test.describe('Admin Export Flow', () => {
 			await expect(page.getByTestId('filter-event-select')).toBeVisible()
 			await expect(page.getByTestId('filter-start-date')).toBeVisible()
 			await expect(page.getByTestId('filter-end-date')).toBeVisible()
+
+			// Cleanup
+			await deleteTestEvent(e1Id)
+			await deleteTestEvent(e2Id)
 		})
 
-		test('should configure event filter', async ({page, adminUser: _adminUser}) => {
+		test('should configure event filter', async ({page, adminUser: _adminUser, workerPrefix}) => {
 			// GIVEN: Admin is on survey responses page with events
-			// Seed events in emulator
-			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
-			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
+			// Seed events in emulator with isolated IDs
+			const e1Id = `${workerPrefix}__e1`
+			const e2Id = `${workerPrefix}__e2`
+			await createTestEvent({
+				id: e1Id,
+				name: 'Peer-mentor Session',
+				eventCode: `${workerPrefix.slice(1)}11`,
+				isActive: true
+			})
+			await createTestEvent({
+				id: e2Id,
+				name: 'Workshop',
+				eventCode: `${workerPrefix.slice(1)}22`,
+				isActive: true
+			})
 
 			await page.goto('/survey-responses')
 
 			// WHEN: Admin selects an event filter
-			await page.getByTestId('filter-event-select').selectOption('e1')
+			await page.getByTestId('filter-event-select').selectOption(e1Id)
 
 			// THEN: Event should be selected
-			await expect(page.getByTestId('filter-event-select')).toHaveValue('e1')
+			await expect(page.getByTestId('filter-event-select')).toHaveValue(e1Id)
+
+			// Cleanup
+			await deleteTestEvent(e1Id)
+			await deleteTestEvent(e2Id)
 		})
 
-		test('should configure date filters', async ({page, adminUser: _adminUser}) => {
+		test('should configure date filters', async ({page, adminUser: _adminUser, workerPrefix}) => {
 			// GIVEN: Admin is on survey responses page
 			// Seed events in emulator
-			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
-			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
+			const e1Id = `${workerPrefix}__e1`
+			const e2Id = `${workerPrefix}__e2`
+			await createTestEvent({
+				id: e1Id,
+				name: 'Peer-mentor Session',
+				eventCode: `${workerPrefix.slice(1)}11`,
+				isActive: true
+			})
+			await createTestEvent({
+				id: e2Id,
+				name: 'Workshop',
+				eventCode: `${workerPrefix.slice(1)}22`,
+				isActive: true
+			})
 
 			await page.goto('/survey-responses')
 
@@ -102,21 +140,38 @@ test.describe('Admin Export Flow', () => {
 			// THEN: Dates should be set
 			await expect(page.getByTestId('filter-start-date')).toHaveValue('2025-01-01')
 			await expect(page.getByTestId('filter-end-date')).toHaveValue('2025-01-31')
+
+			// Cleanup
+			await deleteTestEvent(e1Id)
+			await deleteTestEvent(e2Id)
 		})
 
 		test('should clear filters when clicking clear button', async ({
 			page,
-			adminUser: _adminUser
+			adminUser: _adminUser,
+			workerPrefix
 		}) => {
 			// GIVEN: Admin has filters set
 			// Seed events in emulator
-			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
-			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
+			const e1Id = `${workerPrefix}__e1`
+			const e2Id = `${workerPrefix}__e2`
+			await createTestEvent({
+				id: e1Id,
+				name: 'Peer-mentor Session',
+				eventCode: `${workerPrefix.slice(1)}11`,
+				isActive: true
+			})
+			await createTestEvent({
+				id: e2Id,
+				name: 'Workshop',
+				eventCode: `${workerPrefix.slice(1)}22`,
+				isActive: true
+			})
 
 			await page.goto('/survey-responses')
 
 			// Set filters
-			await page.getByTestId('filter-event-select').selectOption('e1')
+			await page.getByTestId('filter-event-select').selectOption(e1Id)
 			await page.getByTestId('filter-start-date').fill('2025-01-01')
 			await page.getByTestId('filter-end-date').fill('2025-01-31')
 
@@ -127,48 +182,99 @@ test.describe('Admin Export Flow', () => {
 			await expect(page.getByTestId('filter-event-select')).toHaveValue('')
 			await expect(page.getByTestId('filter-start-date')).toHaveValue('')
 			await expect(page.getByTestId('filter-end-date')).toHaveValue('')
+
+			// Cleanup
+			await deleteTestEvent(e1Id)
+			await deleteTestEvent(e2Id)
 		})
 
 		test('should have export buttons disabled when no data', async ({
 			page,
-			adminUser: _adminUser
+			adminUser: _adminUser,
+			workerPrefix
 		}) => {
 			// GIVEN: Admin is on page with no survey responses
 			// Seed events in emulator
-			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
-			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
+			const e1Id = `${workerPrefix}__e1`
+			const e2Id = `${workerPrefix}__e2`
+			await createTestEvent({
+				id: e1Id,
+				name: 'Peer-mentor Session',
+				eventCode: `${workerPrefix.slice(1)}11`,
+				isActive: true
+			})
+			await createTestEvent({
+				id: e2Id,
+				name: 'Workshop',
+				eventCode: `${workerPrefix.slice(1)}22`,
+				isActive: true
+			})
 
 			await page.goto('/survey-responses')
 
 			// THEN: Export buttons should be disabled
 			await expect(page.getByTestId('export-csv-button')).toBeDisabled()
 			await expect(page.getByTestId('export-json-button')).toBeDisabled()
+
+			// Cleanup
+			await deleteTestEvent(e1Id)
+			await deleteTestEvent(e2Id)
 		})
 
 		test('should have export buttons enabled when data exists', async ({
 			page,
-			adminUser: _adminUser
+			adminUser: _adminUser,
+			workerPrefix
 		}) => {
 			// GIVEN: Admin is on page with survey responses
 			// Seed events in emulator
-			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
-			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
+			const e1Id = `${workerPrefix}__e1`
+			const e2Id = `${workerPrefix}__e2`
+			await createTestEvent({
+				id: e1Id,
+				name: 'Peer-mentor Session',
+				eventCode: `${workerPrefix.slice(1)}11`,
+				isActive: true
+			})
+			await createTestEvent({
+				id: e2Id,
+				name: 'Workshop',
+				eventCode: `${workerPrefix.slice(1)}22`,
+				isActive: true
+			})
 
 			await page.goto('/survey-responses')
 
 			// Wait for data to load by checking button state
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
 			await expect(page.getByTestId('export-json-button')).toBeEnabled()
+
+			// Cleanup
+			await deleteTestEvent(e1Id)
+			await deleteTestEvent(e2Id)
 		})
 
 		test('should trigger CSV download when clicking export', async ({
 			page,
-			adminUser: _adminUser
+			adminUser: _adminUser,
+			workerPrefix
 		}) => {
 			// GIVEN: Admin is on page with survey responses
 			// Seed events in emulator
-			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
-			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
+			const e1Id = `${workerPrefix}__e1`
+			const e2Id = `${workerPrefix}__e2`
+			await createTestEvent({
+				id: e1Id,
+				name: 'Peer-mentor Session',
+				eventCode: `${workerPrefix.slice(1)}11`,
+				isActive: true
+			})
+			await createTestEvent({
+				id: e2Id,
+				name: 'Workshop',
+				eventCode: `${workerPrefix.slice(1)}22`,
+				isActive: true
+			})
 
 			await page.goto('/survey-responses')
 
@@ -183,16 +289,33 @@ test.describe('Admin Export Flow', () => {
 			// THEN: CSV file should download
 			const download = await downloadPromise
 			expect(download.suggestedFilename()).toMatch(/survey-responses.*\.csv$/)
+
+			// Cleanup
+			await deleteTestEvent(e1Id)
+			await deleteTestEvent(e2Id)
 		})
 
 		test('should trigger JSON download when clicking export', async ({
 			page,
-			adminUser: _adminUser
+			adminUser: _adminUser,
+			workerPrefix
 		}) => {
 			// GIVEN: Admin is on page with survey responses
 			// Seed events in emulator
-			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
-			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
+			const e1Id = `${workerPrefix}__e1`
+			const e2Id = `${workerPrefix}__e2`
+			await createTestEvent({
+				id: e1Id,
+				name: 'Peer-mentor Session',
+				eventCode: `${workerPrefix.slice(1)}11`,
+				isActive: true
+			})
+			await createTestEvent({
+				id: e2Id,
+				name: 'Workshop',
+				eventCode: `${workerPrefix.slice(1)}22`,
+				isActive: true
+			})
 
 			await page.goto('/survey-responses')
 
@@ -207,18 +330,35 @@ test.describe('Admin Export Flow', () => {
 			// THEN: JSON file should download
 			const download = await downloadPromise
 			expect(download.suggestedFilename()).toMatch(/survey-responses.*\.json$/)
+
+			// Cleanup
+			await deleteTestEvent(e1Id)
+			await deleteTestEvent(e2Id)
 		})
 	})
 
 	test.describe('AC5: Admin Export with Sensitive Fields', () => {
 		test('should display sensitive fields checkbox when exporting', async ({
 			page,
-			adminUser: _adminUser
+			adminUser: _adminUser,
+			workerPrefix
 		}) => {
 			// GIVEN: Admin is on page with survey responses containing sensitive data
 			// Seed events in emulator
-			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
-			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
+			const e1Id = `${workerPrefix}__e1`
+			const e2Id = `${workerPrefix}__e2`
+			await createTestEvent({
+				id: e1Id,
+				name: 'Peer-mentor Session',
+				eventCode: `${workerPrefix.slice(1)}11`,
+				isActive: true
+			})
+			await createTestEvent({
+				id: e2Id,
+				name: 'Workshop',
+				eventCode: `${workerPrefix.slice(1)}22`,
+				isActive: true
+			})
 
 			// WHEN: Admin navigates to survey responses page
 			await page.goto('/survey-responses')
@@ -236,16 +376,33 @@ test.describe('Admin Export Flow', () => {
 			if (hasSensitiveControl) {
 				await expect(sensitiveFieldsControl).not.toBeChecked()
 			}
+
+			// Cleanup
+			await deleteTestEvent(e1Id)
+			await deleteTestEvent(e2Id)
 		})
 
 		test('should show confirmation dialog when including sensitive fields in export', async ({
 			page,
-			adminUser: _adminUser
+			adminUser: _adminUser,
+			workerPrefix
 		}) => {
 			// GIVEN: Admin is on page with survey responses
 			// Seed events in emulator
-			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
-			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
+			const e1Id = `${workerPrefix}__e1`
+			const e2Id = `${workerPrefix}__e2`
+			await createTestEvent({
+				id: e1Id,
+				name: 'Peer-mentor Session',
+				eventCode: `${workerPrefix.slice(1)}11`,
+				isActive: true
+			})
+			await createTestEvent({
+				id: e2Id,
+				name: 'Workshop',
+				eventCode: `${workerPrefix.slice(1)}22`,
+				isActive: true
+			})
 
 			await page.goto('/survey-responses')
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
@@ -271,16 +428,33 @@ test.describe('Admin Export Flow', () => {
 				const download = await downloadPromise
 				expect(download.suggestedFilename()).toMatch(/\.csv$/)
 			}
+
+			// Cleanup
+			await deleteTestEvent(e1Id)
+			await deleteTestEvent(e2Id)
 		})
 
 		test('should export with sensitive fields after confirmation', async ({
 			page,
-			adminUser: _adminUser
+			adminUser: _adminUser,
+			workerPrefix
 		}) => {
 			// GIVEN: Admin is on page with survey responses
 			// Seed events in emulator
-			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
-			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
+			const e1Id = `${workerPrefix}__e1`
+			const e2Id = `${workerPrefix}__e2`
+			await createTestEvent({
+				id: e1Id,
+				name: 'Peer-mentor Session',
+				eventCode: `${workerPrefix.slice(1)}11`,
+				isActive: true
+			})
+			await createTestEvent({
+				id: e2Id,
+				name: 'Workshop',
+				eventCode: `${workerPrefix.slice(1)}22`,
+				isActive: true
+			})
 
 			await page.goto('/survey-responses')
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
@@ -292,13 +466,33 @@ test.describe('Admin Export Flow', () => {
 
 			// THEN: Export should complete
 			expect(download.suggestedFilename()).toMatch(/survey-responses.*\.csv$/)
+
+			// Cleanup
+			await deleteTestEvent(e1Id)
+			await deleteTestEvent(e2Id)
 		})
 
-		test('should properly format exported CSV file', async ({page, adminUser: _adminUser}) => {
+		test('should properly format exported CSV file', async ({
+			page,
+			adminUser: _adminUser,
+			workerPrefix
+		}) => {
 			// GIVEN: Admin is on page with survey responses
 			// Seed events in emulator
-			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
-			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
+			const e1Id = `${workerPrefix}__e1`
+			const e2Id = `${workerPrefix}__e2`
+			await createTestEvent({
+				id: e1Id,
+				name: 'Peer-mentor Session',
+				eventCode: `${workerPrefix.slice(1)}11`,
+				isActive: true
+			})
+			await createTestEvent({
+				id: e2Id,
+				name: 'Workshop',
+				eventCode: `${workerPrefix.slice(1)}22`,
+				isActive: true
+			})
 
 			await page.goto('/survey-responses')
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
@@ -310,13 +504,33 @@ test.describe('Admin Export Flow', () => {
 
 			// THEN: CSV file should be properly named and downloadable
 			expect(download.suggestedFilename()).toMatch(/survey-responses.*\.csv$/)
+
+			// Cleanup
+			await deleteTestEvent(e1Id)
+			await deleteTestEvent(e2Id)
 		})
 
-		test('should properly format exported JSON file', async ({page, adminUser: _adminUser}) => {
+		test('should properly format exported JSON file', async ({
+			page,
+			adminUser: _adminUser,
+			workerPrefix
+		}) => {
 			// GIVEN: Admin is on page with survey responses
 			// Seed events in emulator
-			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
-			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
+			const e1Id = `${workerPrefix}__e1`
+			const e2Id = `${workerPrefix}__e2`
+			await createTestEvent({
+				id: e1Id,
+				name: 'Peer-mentor Session',
+				eventCode: `${workerPrefix.slice(1)}11`,
+				isActive: true
+			})
+			await createTestEvent({
+				id: e2Id,
+				name: 'Workshop',
+				eventCode: `${workerPrefix.slice(1)}22`,
+				isActive: true
+			})
 
 			await page.goto('/survey-responses')
 			await expect(page.getByTestId('export-json-button')).toBeEnabled()
@@ -328,15 +542,35 @@ test.describe('Admin Export Flow', () => {
 
 			// THEN: JSON file should be properly named and downloadable
 			expect(download.suggestedFilename()).toMatch(/survey-responses.*\.json$/)
+
+			// Cleanup
+			await deleteTestEvent(e1Id)
+			await deleteTestEvent(e2Id)
 		})
 	})
 
 	test.describe('AC8: Performance Assertions', () => {
-		test('should complete export within 5 seconds', async ({page, adminUser: _adminUser}) => {
+		test('should complete export within 5 seconds', async ({
+			page,
+			adminUser: _adminUser,
+			workerPrefix
+		}) => {
 			// GIVEN: Admin is on page with survey responses
 			// Seed events in emulator
-			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
-			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
+			const e1Id = `${workerPrefix}__e1`
+			const e2Id = `${workerPrefix}__e2`
+			await createTestEvent({
+				id: e1Id,
+				name: 'Peer-mentor Session',
+				eventCode: `${workerPrefix.slice(1)}11`,
+				isActive: true
+			})
+			await createTestEvent({
+				id: e2Id,
+				name: 'Workshop',
+				eventCode: `${workerPrefix.slice(1)}22`,
+				isActive: true
+			})
 
 			await page.goto('/survey-responses')
 
@@ -352,13 +586,33 @@ test.describe('Admin Export Flow', () => {
 
 			// THEN: Export should complete within 5 seconds
 			expect(elapsed).toBeLessThan(5000)
+
+			// Cleanup
+			await deleteTestEvent(e1Id)
+			await deleteTestEvent(e2Id)
 		})
 
-		test('should load page within reasonable time', async ({page, adminUser: _adminUser}) => {
+		test('should load page within reasonable time', async ({
+			page,
+			adminUser: _adminUser,
+			workerPrefix
+		}) => {
 			// GIVEN: Admin is authenticated
 			// Seed events in emulator
-			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
-			await createTestEvent({id: 'e2', name: 'Workshop', eventCode: '2222', isActive: true})
+			const e1Id = `${workerPrefix}__e1`
+			const e2Id = `${workerPrefix}__e2`
+			await createTestEvent({
+				id: e1Id,
+				name: 'Peer-mentor Session',
+				eventCode: `${workerPrefix.slice(1)}11`,
+				isActive: true
+			})
+			await createTestEvent({
+				id: e2Id,
+				name: 'Workshop',
+				eventCode: `${workerPrefix.slice(1)}22`,
+				isActive: true
+			})
 
 			// WHEN: Admin navigates to survey responses page
 			const start = Date.now()
@@ -368,14 +622,28 @@ test.describe('Admin Export Flow', () => {
 
 			// THEN: Page should load within 3 seconds
 			expect(elapsed).toBeLessThan(3000)
+
+			// Cleanup
+			await deleteTestEvent(e1Id)
+			await deleteTestEvent(e2Id)
 		})
 	})
 
 	test.describe('Error Handling (AC6)', () => {
-		test('should handle API error gracefully', async ({page, adminUser: _adminUser}) => {
+		test('should handle API error gracefully', async ({
+			page,
+			adminUser: _adminUser,
+			workerPrefix
+		}) => {
 			// GIVEN: Admin is authenticated
 			// Seed events in emulator
-			await createTestEvent({id: 'e1', name: 'Peer-mentor Session', eventCode: '1111', isActive: true})
+			const e1Id = `${workerPrefix}__e1`
+			await createTestEvent({
+				id: e1Id,
+				name: 'Peer-mentor Session',
+				eventCode: `${workerPrefix.slice(1)}11`,
+				isActive: true
+			})
 
 			// Navigate first, then set up error simulation mock
 			await page.goto('/survey-responses')
@@ -402,6 +670,9 @@ test.describe('Admin Export Flow', () => {
 
 			// THEN: Error should be displayed (use longer timeout due to React Query retries)
 			await expect(page.getByTestId('survey-responses-error')).toBeVisible({timeout: 15000})
+
+			// Cleanup
+			await deleteTestEvent(e1Id)
 		})
 	})
 })

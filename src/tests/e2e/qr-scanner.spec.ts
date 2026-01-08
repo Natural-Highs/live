@@ -17,11 +17,7 @@
 
 import {TEST_CODES} from '../factories/events.factory'
 import {expect, test} from '../fixtures/auth.fixture'
-import {
-	createTestEvent,
-	clearFirestoreEmulator,
-	deleteAllTestEvents
-} from '../fixtures/firestore.fixture'
+import {createTestEvent, deleteTestEvent} from '../fixtures/firestore.fixture'
 import {
 	setupFailedCheckInMock,
 	setupQrTestEnvironment,
@@ -361,7 +357,7 @@ test.describe('QR Scanner - Success Flow Integration', () => {
 		await setupQrTestEnvironment(page)
 
 		// Clear any existing data
-		await clearFirestoreEmulator()
+		await deleteTestEvent('qr-test-event')
 
 		await page.goto('/dashboard')
 		await page.waitForLoadState('networkidle')
@@ -397,7 +393,7 @@ test.describe('QR Scanner - Success Flow Integration', () => {
 		await expect(page.getByTestId('open-qr-scanner')).not.toBeVisible()
 
 		// Cleanup
-		await deleteAllTestEvents()
+		await deleteTestEvent('qr-test-event')
 	})
 
 	test('should trigger check-in when QR code is scanned', async ({page, authenticatedUser: _}) => {
@@ -405,7 +401,7 @@ test.describe('QR Scanner - Success Flow Integration', () => {
 		await setupQrTestEnvironment(page, {simulateQrScan: TEST_CODES.VALID, scanDelayMs: 200})
 
 		// Clear any existing data first
-		await clearFirestoreEmulator()
+		await deleteTestEvent('qr-scan-event')
 
 		// Seed the event that will be scanned
 		await createTestEvent({
@@ -434,7 +430,7 @@ test.describe('QR Scanner - Success Flow Integration', () => {
 		await expect(page.getByText('Scanned Event')).toBeVisible()
 
 		// Cleanup
-		await deleteAllTestEvents()
+		await deleteTestEvent('qr-scan-event')
 	})
 })
 

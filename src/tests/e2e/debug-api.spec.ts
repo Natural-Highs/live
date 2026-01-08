@@ -1,6 +1,5 @@
 import {expect, test} from '../fixtures'
 import {createMockUser} from '../fixtures/admin.fixture'
-import {clearFirestoreEmulator} from '../fixtures/firestore.fixture'
 import {injectAdminSessionCookie} from '../fixtures/session.fixture'
 
 test('debug: check modal structure', async ({page, context}) => {
@@ -12,9 +11,8 @@ test('debug: check modal structure', async ({page, context}) => {
 		displayName: adminUser.displayName
 	})
 
-	// Clear emulator and seed test data
-	await clearFirestoreEmulator()
-	// Server functions hit emulator directly - no mocks needed
+	// Worker-scoped cleanup runs automatically via firebase-reset fixture
+	// No manual clearFirestoreEmulator() needed - this test doesn't seed data
 
 	// Navigate to events page
 	await page.goto('/events')
