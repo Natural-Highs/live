@@ -154,15 +154,17 @@ test.describe('Passkey Registration Flow', () => {
 		// Navigate to profile page
 		await page.goto('/profile')
 
-		// Note: This will redirect to auth if not authenticated
-		// Check if we're on the auth page or profile page
-		const isOnAuthPage = await page
-			.getByTestId('magic-link-form')
-			.isVisible()
-			.catch(() => false)
+		// Note: This will redirect to auth or profile-setup if not authenticated
+		// Check URL to determine where we landed
+		const currentUrl = page.url()
+		const isOnAuthPage =
+			currentUrl.includes('/authentication') ||
+			currentUrl.includes('/login') ||
+			currentUrl.includes('/signin')
+		const isOnProfileSetup = currentUrl.includes('/profile-setup')
 
-		if (isOnAuthPage) {
-			// Skip test - requires authenticated session setup
+		if (isOnAuthPage || isOnProfileSetup) {
+			// Skip test - requires authenticated session with completed profile
 			test.skip()
 			return
 		}

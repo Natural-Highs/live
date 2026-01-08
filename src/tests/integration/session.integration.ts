@@ -16,6 +16,7 @@
 
 import {mergeTests} from '@playwright/test'
 import {test as firebaseTest} from './fixtures/firebase.fixture'
+import {createTestUserDocument, setUserClaims} from './fixtures/firestore-seed.fixture'
 import {expect, test as oobTest} from './fixtures/oob-codes.fixture'
 
 // Merge fixtures for combined functionality
@@ -157,7 +158,8 @@ test.describe('Session Integration - AC4', () => {
 
 	test('should allow authenticated users to access protected routes', async ({
 		page,
-		getMagicLinkCode
+		getMagicLinkCode,
+		getAuthUser
 	}) => {
 		// GIVEN: User completes authentication
 		await page.goto('/authentication')
@@ -177,8 +179,20 @@ test.describe('Session Integration - AC4', () => {
 		await page.goto(magicLink)
 		await expect(page.getByTestId('magic-link-success')).toBeVisible({timeout: 15000})
 
-		// Wait for redirect to dashboard after successful auth
-		await page.waitForURL(/\/dashboard/i, {timeout: 10000})
+		// Seed profile so user can reach dashboard (not redirected to /profile-setup)
+		const authUser = await getAuthUser(TEST_EMAIL)
+		if (!authUser) {
+			throw new Error('Auth user not found after magic link')
+		}
+
+		await createTestUserDocument({
+			uid: authUser.uid,
+			email: TEST_EMAIL,
+			displayName: 'Test User',
+			profileComplete: true,
+			signedConsentForm: true
+		})
+		await setUserClaims(authUser.uid, {signedConsentForm: true})
 
 		// WHEN: User accesses protected route
 		await page.goto('/dashboard', {waitUntil: 'networkidle'})
@@ -219,7 +233,11 @@ test.describe('Session Persistence', () => {
 		await clearOobCodes()
 	})
 
-	test('should persist session across page navigations', async ({page, getMagicLinkCode}) => {
+	test('should persist session across page navigations', async ({
+		page,
+		getMagicLinkCode,
+		getAuthUser
+	}) => {
 		// GIVEN: Authenticated user
 		await page.goto('/authentication')
 		await page.getByTestId('magic-link-email-input').fill(TEST_EMAIL)
@@ -237,6 +255,21 @@ test.describe('Session Persistence', () => {
 
 		await page.goto(magicLink)
 		await expect(page.getByTestId('magic-link-success')).toBeVisible({timeout: 15000})
+
+		// Seed profile so user can navigate to protected routes
+		const authUser = await getAuthUser(TEST_EMAIL)
+		if (!authUser) {
+			throw new Error('Auth user not found after magic link')
+		}
+
+		await createTestUserDocument({
+			uid: authUser.uid,
+			email: TEST_EMAIL,
+			displayName: 'Test User',
+			profileComplete: true,
+			signedConsentForm: true
+		})
+		await setUserClaims(authUser.uid, {signedConsentForm: true})
 
 		// Get session cookie value
 		const initialCookies = await page.context().cookies()
@@ -255,7 +288,7 @@ test.describe('Session Persistence', () => {
 		expect(finalSession?.value).toBe(initialSession?.value)
 	})
 
-	test('should clear session on logout', async ({page, getMagicLinkCode}) => {
+	test('should clear session on logout', async ({page, getMagicLinkCode, getAuthUser}) => {
 		// GIVEN: Authenticated user
 		await page.goto('/authentication')
 		await page.getByTestId('magic-link-email-input').fill(TEST_EMAIL)
@@ -273,6 +306,21 @@ test.describe('Session Persistence', () => {
 
 		await page.goto(magicLink)
 		await expect(page.getByTestId('magic-link-success')).toBeVisible({timeout: 15000})
+
+		// Seed profile so user can navigate to protected routes
+		const authUser = await getAuthUser(TEST_EMAIL)
+		if (!authUser) {
+			throw new Error('Auth user not found after magic link')
+		}
+
+		await createTestUserDocument({
+			uid: authUser.uid,
+			email: TEST_EMAIL,
+			displayName: 'Test User',
+			profileComplete: true,
+			signedConsentForm: true
+		})
+		await setUserClaims(authUser.uid, {signedConsentForm: true})
 
 		// Verify session exists
 		let cookies = await page.context().cookies()

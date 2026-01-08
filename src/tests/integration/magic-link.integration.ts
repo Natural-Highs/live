@@ -15,6 +15,7 @@
 
 import {mergeTests} from '@playwright/test'
 import {test as firebaseTest} from './fixtures/firebase.fixture'
+import {createTestUserDocument, setUserClaims} from './fixtures/firestore-seed.fixture'
 import {expect, test as oobTest} from './fixtures/oob-codes.fixture'
 
 // Merge fixtures for combined functionality
@@ -66,7 +67,11 @@ test.describe('Magic Link Integration - AC2', () => {
 		expect(magicLink).toContain(projectId)
 	})
 
-	test('should complete sign-in using OOB code link', async ({page, getMagicLinkCode}) => {
+	test('should complete sign-in using OOB code link', async ({
+		page,
+		getMagicLinkCode,
+		getAuthUser
+	}) => {
 		// GIVEN: Magic link has been requested
 		await page.goto('/authentication')
 		await expect(page.getByTestId('magic-link-form')).toBeVisible()
@@ -92,11 +97,27 @@ test.describe('Magic Link Integration - AC2', () => {
 
 		// THEN: Sign-in should succeed (use testid only to avoid strict mode)
 		await expect(page.getByTestId('magic-link-success')).toBeVisible({timeout: 15000})
+
+		// Seed profile so any post-auth redirect works correctly
+		const authUser = await getAuthUser(TEST_EMAIL)
+		if (!authUser) {
+			throw new Error('Auth user not found after magic link')
+		}
+
+		await createTestUserDocument({
+			uid: authUser.uid,
+			email: TEST_EMAIL,
+			displayName: 'Test User',
+			profileComplete: true,
+			signedConsentForm: true
+		})
+		await setUserClaims(authUser.uid, {signedConsentForm: true})
 	})
 
 	test('should handle cross-device sign-in (no localStorage email)', async ({
 		page,
-		getMagicLinkCode
+		getMagicLinkCode,
+		getAuthUser
 	}) => {
 		// GIVEN: Magic link requested on one device
 		await page.goto('/authentication')
@@ -128,6 +149,21 @@ test.describe('Magic Link Integration - AC2', () => {
 
 		// THEN: Sign-in should complete
 		await expect(page.getByTestId('magic-link-success')).toBeVisible({timeout: 15000})
+
+		// Seed profile so any post-auth redirect works correctly
+		const authUser = await getAuthUser(TEST_EMAIL)
+		if (!authUser) {
+			throw new Error('Auth user not found after magic link')
+		}
+
+		await createTestUserDocument({
+			uid: authUser.uid,
+			email: TEST_EMAIL,
+			displayName: 'Test User',
+			profileComplete: true,
+			signedConsentForm: true
+		})
+		await setUserClaims(authUser.uid, {signedConsentForm: true})
 	})
 
 	test('should show error for invalid/expired magic link', async ({page}) => {
@@ -152,7 +188,8 @@ test.describe('Magic Link Integration - AC2', () => {
 
 	test('should create session after successful magic link auth', async ({
 		page,
-		getMagicLinkCode
+		getMagicLinkCode,
+		getAuthUser
 	}) => {
 		// GIVEN: Magic link flow completed
 		await page.goto('/authentication')
@@ -175,6 +212,21 @@ test.describe('Magic Link Integration - AC2', () => {
 
 		// Wait for sign-in success
 		await expect(page.getByTestId('magic-link-success')).toBeVisible({timeout: 15000})
+
+		// Seed profile so any post-auth redirect works correctly
+		const authUser = await getAuthUser(TEST_EMAIL)
+		if (!authUser) {
+			throw new Error('Auth user not found after magic link')
+		}
+
+		await createTestUserDocument({
+			uid: authUser.uid,
+			email: TEST_EMAIL,
+			displayName: 'Test User',
+			profileComplete: true,
+			signedConsentForm: true
+		})
+		await setUserClaims(authUser.uid, {signedConsentForm: true})
 
 		// THEN: Session cookie should be set
 		const cookies = await page.context().cookies()

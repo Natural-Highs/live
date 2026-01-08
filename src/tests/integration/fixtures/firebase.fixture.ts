@@ -86,6 +86,12 @@ export interface IntegrationFixtures {
 	 * Called automatically in beforeEach and afterEach.
 	 */
 	clearAllTestData: () => Promise<void>
+
+	/**
+	 * Get user from Auth emulator by email.
+	 * Use after magic link auth to get the dynamically assigned UID.
+	 */
+	getAuthUser: (email: string) => Promise<{uid: string; email: string} | null>
 }
 
 /**
@@ -185,6 +191,54 @@ function verifySessionSecret(): void {
 }
 
 /**
+ * Get user UID from Auth emulator by email.
+ * Use after magic link auth to get the dynamically assigned UID.
+ *
+ * @param email - Email address to look up
+ * @returns User data or null if not found
+ * @throws Error if emulator is unreachable or returns unexpected response
+ */
+async function getUserByEmail(email: string): Promise<{uid: string; email: string} | null> {
+	const url = `http://${AUTH_EMULATOR_HOST}/identitytoolkit/v1/projects/${PROJECT_ID}/accounts:lookup`
+
+	try {
+		const response = await fetch(url, {
+			method: 'POST',
+			headers: {'Content-Type': 'application/json'},
+			body: JSON.stringify({email: [email]}),
+			signal: AbortSignal.timeout(EMULATOR_HEALTH_TIMEOUT_MS)
+		})
+
+		if (!response.ok) {
+			// 400 typically means user not found, which is expected
+			if (response.status === 400) {
+				return null
+			}
+			console.warn(`[IntegrationFixture] getUserByEmail returned ${response.status} for ${email}`)
+			return null
+		}
+
+		const data = await response.json()
+		if (!data.users || data.users.length === 0) {
+			return null
+		}
+
+		return {
+			uid: data.users[0].localId,
+			email: data.users[0].email
+		}
+	} catch (error) {
+		// Distinguish between timeout/network errors and other issues
+		if (error instanceof Error && error.name === 'TimeoutError') {
+			console.error(`[IntegrationFixture] getUserByEmail timed out for ${email}`)
+		} else {
+			console.error(`[IntegrationFixture] getUserByEmail failed for ${email}:`, error)
+		}
+		return null
+	}
+}
+
+/**
  * Playwright fixture that provides Firebase emulator connection and cleanup.
  *
  * Features:
@@ -257,6 +311,10 @@ export const test = base.extend<IntegrationFixtures>({
 
 		// Clean up after test
 		await clearAll()
+	},
+
+	getAuthUser: async ({}, use) => {
+		await use(getUserByEmail)
 	}
 })
 
