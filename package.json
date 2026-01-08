@@ -130,7 +130,7 @@
 			"biome check --write --unsafe",
 			"bash -c 'tsc -b --noEmit 2>&1'"
 		],
-		"*.{json,md,css}": [
+		"*.{json,css}": [
 			"biome format --write"
 		]
 	}
