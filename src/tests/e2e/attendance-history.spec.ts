@@ -13,7 +13,7 @@
  * - Use data-testid selectors for stability
  */
 
-import {getTestDb} from '../common'
+import {deleteTestUser, getTestDb} from '../common'
 import {TEST_CODES} from '../factories/events.factory'
 import {expect, test} from '../fixtures'
 import {clearAuthenticatedUser, injectAuthenticatedUser} from '../fixtures/session.fixture'
@@ -125,15 +125,18 @@ async function seedEmptyUser(_uid: string) {
 
 /**
  * Clean up test data.
+ * Uses deleteTestUser to properly handle subcollections (private, passkeys, demographicHistory).
  */
 async function cleanupTestData(uid: string) {
 	const db = getTestDb()
 
 	// Delete userEvents for this user
 	const userEventsSnapshot = await db.collection('userEvents').where('userId', '==', uid).get()
+	const batch = db.batch()
 	for (const doc of userEventsSnapshot.docs) {
-		await doc.ref.delete()
+		batch.delete(doc.ref)
 	}
+	await batch.commit()
 
 	// Delete test events
 	const eventIds = ['event-workshop', 'event-retreat', 'event-guest-converted']
@@ -141,8 +144,8 @@ async function cleanupTestData(uid: string) {
 		await db.collection('events').doc(eventId).delete()
 	}
 
-	// Delete user document
-	await db.collection('users').doc(uid).delete()
+	// Delete user document and subcollections using proper helper
+	await deleteTestUser(uid)
 }
 
 test.describe('Attendance History (AC1, AC2)', () => {
