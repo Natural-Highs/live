@@ -87,6 +87,10 @@ export const adminDb = {
 	get collection() {
 		initializeAdmin()
 		return admin.firestore().collection.bind(admin.firestore())
+	},
+	getAll(...refs: admin.firestore.DocumentReference[]) {
+		initializeAdmin()
+		return admin.firestore().getAll(...refs)
 	}
 } as admin.firestore.Firestore
 
