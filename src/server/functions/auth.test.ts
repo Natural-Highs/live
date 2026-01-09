@@ -347,63 +347,34 @@ describe('auth server functions (Task 2, 3, 4)', () => {
 
 	describe('logoutFn (Task 3)', () => {
 		it('should call clearSession to remove session cookie', async () => {
-			// Arrange
-			mockRedirect.mockImplementation((opts: {to: string}) => {
-				const error = new Error(`REDIRECT:${opts.to}`)
-				error.name = 'RedirectError'
-				throw error
-			})
-
 			// Act
-			try {
-				await logoutFn()
-			} catch {
-				// Expected - redirect throws
-			}
+			await logoutFn()
 
 			// Assert
 			expect(mockClearSession).toHaveBeenCalled()
 		})
 
-		it('should redirect to home page after clearing session', async () => {
-			// Arrange
-			mockRedirect.mockImplementation((opts: {to: string}) => {
-				const error = new Error(`REDIRECT:${opts.to}`)
-				error.name = 'RedirectError'
-				throw error
-			})
+		it('should not throw redirect (client handles navigation)', async () => {
+			// Act - should complete without throwing
+			await expect(logoutFn()).resolves.toBeUndefined()
 
-			// Act & Assert
-			try {
-				await logoutFn()
-			} catch {
-				expect(mockRedirect).toHaveBeenCalledWith({to: '/'})
-			}
+			// Assert - redirect should not be called (client navigates)
+			expect(mockRedirect).not.toHaveBeenCalled()
 		})
 
-		it('should clear session before redirect for proper cleanup', async () => {
+		it('should complete clearSession before returning', async () => {
 			// Arrange
-			const callOrder: string[] = []
-			mockClearSession.mockImplementation(() => {
-				callOrder.push('clear')
-				return Promise.resolve()
-			})
-			mockRedirect.mockImplementation((opts: {to: string}) => {
-				callOrder.push('redirect')
-				const error = new Error(`REDIRECT:${opts.to}`)
-				error.name = 'RedirectError'
-				throw error
+			let clearSessionCompleted = false
+			mockClearSession.mockImplementation(async () => {
+				clearSessionCompleted = true
 			})
 
 			// Act
-			try {
-				await logoutFn()
-			} catch {
-				// Expected
-			}
+			await logoutFn()
 
 			// Assert
-			expect(callOrder).toEqual(['clear', 'redirect'])
+			expect(clearSessionCompleted).toBe(true)
+			expect(mockClearSession).toHaveBeenCalledTimes(1)
 		})
 	})
 
