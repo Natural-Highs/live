@@ -30,6 +30,25 @@ const EMULATOR_PROJECT_ID = 'naturalhighs'
 const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
 
 /**
+ * Force emulator mode by preventing SDK from looking for production credentials.
+ * This ensures parity between local development and CI environments.
+ */
+function ensureEmulatorEnvironment(): void {
+	// Set emulator hosts
+	process.env.FIRESTORE_EMULATOR_HOST = FIRESTORE_EMULATOR_HOST
+	process.env.FIREBASE_AUTH_EMULATOR_HOST ??= '127.0.0.1:9099'
+
+	// Prevent SDK from looking for production credentials
+	// These must be set BEFORE initializing the Firebase app
+	if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+		process.env.GOOGLE_APPLICATION_CREDENTIALS = ''
+	}
+	if (!process.env.FIREBASE_CONFIG) {
+		process.env.FIREBASE_CONFIG = '{}'
+	}
+}
+
+/**
  * Lazy-initialized Firebase app for tests.
  * Single source of truth for all test fixtures.
  */
@@ -41,8 +60,8 @@ export function getTestApp(): App {
 		return testApp
 	}
 
-	// Set emulator environment before initializing
-	process.env.FIRESTORE_EMULATOR_HOST = FIRESTORE_EMULATOR_HOST
+	// Ensure emulator environment before initializing
+	ensureEmulatorEnvironment()
 
 	// Check if an app already exists to avoid duplicate initialization
 	const existingApps = getApps()
