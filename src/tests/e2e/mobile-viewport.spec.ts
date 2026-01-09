@@ -147,10 +147,10 @@ test.describe('Mobile Viewport Coverage', () => {
 
 			// WHEN: User navigates to dashboard
 			await page.goto('/dashboard')
+			await page.waitForLoadState('networkidle')
 
-			// THEN: Event code input should be visible (dashboard check-in feature)
+			// THEN: Event code input should be visible (dashboard uses auto-submit OTP, no submit button)
 			await expect(page.getByTestId('event-code-input')).toBeVisible()
-			await expect(page.getByTestId('check-in-submit-button')).toBeVisible()
 		})
 
 		test('should allow event code entry on dashboard mobile', async ({page, context}) => {
@@ -160,9 +160,11 @@ test.describe('Mobile Viewport Coverage', () => {
 			// Server functions hit Firestore emulator directly (no mocks needed)
 
 			await page.goto('/dashboard')
+			await page.waitForLoadState('networkidle')
 
 			// WHEN: User enters event code on mobile
 			const input = page.getByTestId('event-code-input')
+			await input.waitFor({state: 'visible'})
 			await input.tap()
 			await input.fill(TEST_CODES.EXPIRED)
 
@@ -189,10 +191,12 @@ test.describe('Mobile Viewport Coverage', () => {
 
 			// WHEN: We check button dimensions
 			const button = page.getByTestId('guest-entry-continue-button')
+			await button.waitFor({state: 'visible'})
 			const box = await button.boundingBox()
 
 			// THEN: Button should be at least 44x44 pixels (Apple HIG minimum)
-			expect(box?.height).toBeGreaterThanOrEqual(44)
+			expect(box).not.toBeNull()
+			expect(box!.height).toBeGreaterThanOrEqual(44)
 		})
 
 		test('should have appropriately sized input fields for touch', async ({page}) => {
@@ -201,10 +205,12 @@ test.describe('Mobile Viewport Coverage', () => {
 
 			// WHEN: We check input dimensions
 			const input = page.getByTestId('guest-entry-code-input')
+			await input.waitFor({state: 'visible'})
 			const box = await input.boundingBox()
 
 			// THEN: Input should be at least 44 pixels tall for comfortable touch
-			expect(box?.height).toBeGreaterThanOrEqual(44)
+			expect(box).not.toBeNull()
+			expect(box!.height).toBeGreaterThanOrEqual(44)
 		})
 	})
 

@@ -427,7 +427,10 @@ test.describe('QR Scanner - Success Flow Integration', () => {
 
 		// Wait for success confirmation (scanner auto-scans and triggers check-in)
 		await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 3000})
-		await expect(page.getByText('Scanned Event')).toBeVisible()
+		// Scope to confirmation card to avoid strict mode violation from potential duplicates
+		await expect(
+			page.getByTestId('success-confirmation-card').getByText('Scanned Event')
+		).toBeVisible()
 
 		// Cleanup
 		await deleteTestEvent('qr-scan-event')

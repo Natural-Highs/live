@@ -149,9 +149,11 @@ test.describe('User Check-in Flow @smoke', () => {
 			await page.waitForLoadState('networkidle')
 
 			const input = page.getByTestId('event-code-input')
+			await input.waitFor({state: 'visible'})
 			await input.fill(TEST_CODES.VALID)
 
-			// THEN: Should display formatted event date
+			// THEN: Should display formatted event date in success overlay
+			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 5000})
 			await expect(page.getByTestId('event-date')).toBeVisible()
 			await expect(page.getByTestId('event-date')).toContainText(/January 15, 2025/)
 		})
@@ -170,10 +172,11 @@ test.describe('User Check-in Flow @smoke', () => {
 			await page.waitForLoadState('networkidle')
 
 			const input = page.getByTestId('event-code-input')
+			await input.waitFor({state: 'visible'})
 			await input.fill(TEST_CODES.VALID)
 
 			// THEN: Should display success overlay (location may be default)
-			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible()
+			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 5000})
 		})
 
 		test('should display animated checkmark in confirmation overlay', async ({
@@ -336,13 +339,16 @@ test.describe('User Check-in Flow @smoke', () => {
 
 			// Fill in the code
 			const input = page.getByTestId('event-code-input')
+			await input.waitFor({state: 'visible'})
 
 			// WHEN: User enters 4th digit (auto-submits)
 			const start = Date.now()
 			await input.fill(TEST_CODES.VALID)
 
-			// Wait for success confirmation
-			await page.getByTestId('success-confirmation-overlay').waitFor()
+			// Wait for success confirmation with explicit timeout
+			await page
+				.getByTestId('success-confirmation-overlay')
+				.waitFor({state: 'visible', timeout: 5000})
 			const elapsed = Date.now() - start
 
 			// THEN: Response time should be under 3 seconds
