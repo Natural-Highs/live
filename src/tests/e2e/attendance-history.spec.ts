@@ -19,7 +19,7 @@ import {TEST_CODES} from '../factories/events.factory'
 import {expect, test} from '../fixtures'
 import {clearAuthenticatedUser, injectAuthenticatedUser} from '../fixtures/session.fixture'
 
-const EMULATOR_PROJECT_ID = 'demo-natural-highs'
+const EMULATOR_PROJECT_ID = 'naturalhighs'
 const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
 
 // Test user IDs

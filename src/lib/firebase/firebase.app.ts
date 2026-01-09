@@ -20,7 +20,7 @@ export const shouldUseEmulators = import.meta.env.VITE_USE_EMULATORS === 'true'
 /**
  * Get project ID with emulator fallback.
  * When running in emulator mode without explicit VITE_PROJECT_ID,
- * use demo-natural-highs to match emulator/fixture expectations.
+ * use naturalhighs to match emulator/fixture expectations.
  */
 function getProjectId(): string {
 	const envProjectId = import.meta.env.VITE_PROJECT_ID
@@ -29,7 +29,7 @@ function getProjectId(): string {
 	}
 
 	if (shouldUseEmulators) {
-		return 'demo-natural-highs'
+		return 'naturalhighs'
 	}
 
 	throw new Error('VITE_PROJECT_ID is required in production mode')

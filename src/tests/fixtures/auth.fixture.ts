@@ -61,11 +61,7 @@ interface AuthFixtures {
 	authenticatedUser: MockUser
 }
 
-/**
- * Project ID for the Firebase emulator.
- * Must be demo-* format for emulator to work without credentials.
- */
-const EMULATOR_PROJECT_ID = 'demo-natural-highs'
+const EMULATOR_PROJECT_ID = 'naturalhighs'
 
 /**
  * Auth emulator host.
@@ -79,10 +75,6 @@ const AUTH_EMULATOR_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST ?? 'localhost
 let adminApp: App | null = null
 let adminAuth: AdminAuth | null = null
 
-/**
- * Get or create the Firebase Admin app for E2E auth tests.
- * Uses demo-* project ID pattern for emulator compatibility.
- */
 function getAdminApp(): App {
 	if (adminApp) {
 		return adminApp

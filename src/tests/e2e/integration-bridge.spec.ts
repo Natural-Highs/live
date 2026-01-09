@@ -22,7 +22,7 @@ import {test as base, expect} from '../fixtures'
  */
 const AUTH_EMULATOR_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST ?? '127.0.0.1:9099'
 const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
-const PROJECT_ID = process.env.VITE_PROJECT_ID ?? 'demo-natural-highs'
+const PROJECT_ID = process.env.VITE_PROJECT_ID ?? 'naturalhighs'
 
 /**
  * Polling configuration for OOB code retrieval

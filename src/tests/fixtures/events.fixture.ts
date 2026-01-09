@@ -29,11 +29,7 @@ export const test = base
 // Firestore Emulator Fixtures for TanStack Start Server Functions
 // ============================================================================
 
-/**
- * Project ID for the Firebase emulator.
- * Must be demo-* format for emulator to work without credentials.
- */
-const EMULATOR_PROJECT_ID = 'demo-natural-highs'
+const EMULATOR_PROJECT_ID = 'naturalhighs'
 
 /**
  * Firestore emulator host.

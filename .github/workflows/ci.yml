@@ -20,8 +20,8 @@ env:
   # checkov:skip=CKV_SECRET_6:Intentional placeholder values for Firebase emulator testing
   VITE_APIKEY: demo-test-key
   VITE_AUTH_DOMAIN: localhost
-  VITE_PROJECT_ID: demo-natural-highs
-  VITE_STORAGE_BUCKET: demo-natural-highs.appspot.com
+  VITE_PROJECT_ID: naturalhighs
+  VITE_STORAGE_BUCKET: naturalhighs.appspot.com
   VITE_MESSAGING_SENDER_ID: "000000000000"
   VITE_APP_ID: demo-app-id
   VITE_USE_EMULATORS: "true"
@@ -268,7 +268,7 @@ jobs:
       - name: Start Firebase emulators
         run: |
           # Start emulators in background
-          firebase emulators:start --only auth,firestore --project demo-natural-highs &
+          firebase emulators:start --only auth,firestore --project naturalhighs &
           EMULATOR_PID=$!
           
           # Extended timeout for CI stability
@@ -406,7 +406,7 @@ jobs:
       - name: Start Firebase emulators
         run: |
           # Start emulators in background
-          firebase emulators:start --only auth,firestore --project demo-natural-highs &
+          firebase emulators:start --only auth,firestore --project naturalhighs &
           EMULATOR_PID=$!
           
           # Extended timeout for CI stability
@@ -481,7 +481,7 @@ jobs:
       - name: Start Firebase emulators
         run: |
           # Start emulators in background
-          firebase emulators:start --only auth,firestore --project demo-natural-highs &
+          firebase emulators:start --only auth,firestore --project naturalhighs &
           EMULATOR_PID=$!
 
           # Extended timeout for CI stability

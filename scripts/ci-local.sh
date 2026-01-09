@@ -68,7 +68,7 @@ if [ "$SKIP_E2E" = false ]; then
   # Check if emulators are running
   if ! curl -s http://localhost:9099 > /dev/null 2>&1; then
     echo "Starting Firebase emulators..."
-    firebase emulators:start --only auth,firestore --project demo-natural-highs &
+    firebase emulators:start --only auth,firestore --project naturalhighs &
     for i in {1..30}; do
       if curl -s http://localhost:9099 > /dev/null 2>&1; then
         echo "Emulators ready"
@@ -81,7 +81,7 @@ if [ "$SKIP_E2E" = false ]; then
   fi
 
   VITE_USE_EMULATORS=true VITE_APIKEY=demo-test-key VITE_AUTH_DOMAIN=localhost \
-  VITE_PROJECT_ID=demo-natural-highs VITE_STORAGE_BUCKET=demo-natural-highs.appspot.com \
+  VITE_PROJECT_ID=naturalhighs VITE_STORAGE_BUCKET=naturalhighs.appspot.com \
   VITE_MESSAGING_SENDER_ID=000000000000 VITE_APP_ID=demo-app-id \
   bun run test:e2e:ci || {
     echo "E2E tests failed"

@@ -69,7 +69,7 @@ import {
  * Emulator configuration
  */
 const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
-const EMULATOR_PROJECT_ID = 'demo-natural-highs'
+const EMULATOR_PROJECT_ID = 'naturalhighs'
 
 /**
  * Lazy-initialized Firebase app for seeding.

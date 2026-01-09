@@ -51,7 +51,7 @@ interface PollingOptions {
  * Emulator configuration from environment variables.
  */
 const AUTH_EMULATOR_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST ?? '127.0.0.1:9099'
-const PROJECT_ID = process.env.VITE_PROJECT_ID ?? 'demo-natural-highs'
+const PROJECT_ID = process.env.VITE_PROJECT_ID ?? 'naturalhighs'
 
 /**
  * OOB Code API fixtures provided by this module.

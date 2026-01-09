@@ -28,7 +28,7 @@ if (!process.env.SESSION_SECRET) {
  */
 const AUTH_EMULATOR_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST ?? '127.0.0.1:9099'
 const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
-const PROJECT_ID = process.env.VITE_PROJECT_ID ?? 'demo-natural-highs'
+const PROJECT_ID = process.env.VITE_PROJECT_ID ?? 'naturalhighs'
 
 /** Default timeout for emulator health checks (ms). */
 const EMULATOR_HEALTH_TIMEOUT_MS = 5000

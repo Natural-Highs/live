@@ -27,11 +27,7 @@ import {type App, deleteApp, getApps, initializeApp} from 'firebase-admin/app'
 import {type Firestore, getFirestore} from 'firebase-admin/firestore'
 import {withRetryWrapper} from './retry-firestore.fixture'
 
-/**
- * Project ID for the Firebase emulator.
- * Must be demo-* format for emulator to work without credentials.
- */
-const EMULATOR_PROJECT_ID = 'demo-natural-highs'
+const EMULATOR_PROJECT_ID = 'naturalhighs'
 
 /**
  * Default Firestore emulator host configuration.
@@ -45,10 +41,6 @@ const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.
 let testApp: App | null = null
 let testDb: Firestore | null = null
 
-/**
- * Get or create the Firebase Admin app for E2E tests.
- * Uses demo-* project ID pattern for emulator compatibility.
- */
 function getTestApp(): App {
 	if (testApp) {
 		return testApp
