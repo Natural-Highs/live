@@ -19,6 +19,7 @@ export {
 	deleteTestGuest,
 	deleteTestUser,
 	deleteTestUserDocument,
+	ensureEmulatorEnvironment,
 	getTestApp,
 	getTestDb,
 	isFirestoreEmulatorAvailable,

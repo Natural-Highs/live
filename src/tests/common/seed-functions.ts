@@ -4,6 +4,24 @@
  * Common seed functions used by both E2E and integration test fixtures.
  * Uses Firebase Admin SDK to create/delete test data in the Firestore emulator.
  *
+ * PARALLEL EXECUTION SAFETY:
+ * When using these functions in E2E tests with fullyParallel: true, ALWAYS
+ * prefix document IDs with the worker prefix to prevent data collisions:
+ *
+ * @example
+ * ```typescript
+ * test('my test', async ({workerPrefix}) => {
+ *   // GOOD - Worker-isolated
+ *   await createTestUser(`${workerPrefix}__user-1`, {...})
+ *
+ *   // BAD - Will collide with other workers
+ *   await createTestUser('user-1', {...})
+ * })
+ * ```
+ *
+ * Integration tests run sequentially (fullyParallel: false) so worker
+ * prefixes are optional but recommended for consistency.
+ *
  * Key patterns:
  * - User documents: users/{uid}
  * - Minor demographics: users/{uid}/private/demographics
@@ -32,8 +50,11 @@ const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.
 /**
  * Force emulator mode by preventing SDK from looking for production credentials.
  * This ensures parity between local development and CI environments.
+ *
+ * Exported for use by auth fixtures and other test infrastructure that needs
+ * to ensure emulator environment before SDK initialization.
  */
-function ensureEmulatorEnvironment(): void {
+export function ensureEmulatorEnvironment(): void {
 	// Set emulator hosts
 	process.env.FIRESTORE_EMULATOR_HOST = FIRESTORE_EMULATOR_HOST
 	process.env.FIREBASE_AUTH_EMULATOR_HOST ??= '127.0.0.1:9099'
@@ -231,13 +252,23 @@ export async function deleteTestUserDocument(uid: string): Promise<void> {
  * Simplified wrapper around createTestUserDocument for common use cases.
  * Used when E2E tests need to verify Firestore state with minimal setup.
  *
+ * DEFAULT BEHAVIOR (differs from createTestUserDocument):
+ * - profileComplete: false (user needs to complete profile)
+ * - signedConsentForm: inherits from createTestUserDocument (true)
+ *
+ * Use createTestUserDocument directly if you need a fully complete user,
+ * or pass { profileComplete: true } to override.
+ *
  * @param uid - User ID (should match session fixture UID)
  * @param data - Optional partial user data to override defaults
  *
  * @example
  * ```typescript
- * // Create minimal user matching session
+ * // Create minimal user matching session (profileComplete: false)
  * await createTestUser('test-user-123')
+ *
+ * // Create user with complete profile
+ * await createTestUser('test-user-123', { profileComplete: true })
  *
  * // Create user with custom display name
  * await createTestUser('test-user-123', { displayName: 'Custom Name' })
