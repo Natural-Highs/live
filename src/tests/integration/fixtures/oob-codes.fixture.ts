@@ -117,6 +117,7 @@ function filterCodesByEmail(codes: OobCode[], email: string): OobCode[] {
 
 /**
  * Get magic link code with polling and exponential backoff.
+ * Returns the app URL (continueUrl) with oobCode appended for testing.
  */
 async function getMagicLinkCodeWithPolling(
 	email: string,
@@ -135,6 +136,25 @@ async function getMagicLinkCodeWithPolling(
 		const magicLinkCode = emailCodes.find(code => code.requestType === 'EMAIL_SIGNIN')
 
 		if (magicLinkCode) {
+			// The oobLink from emulator points to emulator action URL.
+			// For testing, we need the app URL (continueUrl) with oobCode appended.
+			// Extract continueUrl and oobCode to construct the proper app URL.
+			const emulatorUrl = new URL(magicLinkCode.oobLink)
+			const continueUrl = emulatorUrl.searchParams.get('continueUrl')
+			const oobCode = magicLinkCode.oobCode
+			const mode = emulatorUrl.searchParams.get('mode') || 'signIn'
+			const apiKey = emulatorUrl.searchParams.get('apiKey') || 'fake-api-key'
+
+			if (continueUrl) {
+				// Construct app URL with oobCode parameters for signInWithEmailLink
+				const appUrl = new URL(continueUrl)
+				appUrl.searchParams.set('oobCode', oobCode)
+				appUrl.searchParams.set('mode', mode)
+				appUrl.searchParams.set('apiKey', apiKey)
+				return appUrl.toString()
+			}
+
+			// Fallback: return raw oobLink if no continueUrl
 			return magicLinkCode.oobLink
 		}
 
