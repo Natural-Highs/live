@@ -39,6 +39,9 @@ function initializeAdmin(): void {
 			projectId: process.env.VITE_PROJECT_ID || 'naturalhighs'
 		})
 
+		// Use REST for more stable connections in test environments
+		admin.firestore().settings({preferRest: true})
+
 		initialized = true
 		return
 	}
@@ -75,6 +78,9 @@ function initializeAdmin(): void {
 		credential: admin.credential.cert(serviceAccount),
 		storageBucket
 	})
+
+	// Use REST for more stable connections
+	admin.firestore().settings({preferRest: true})
 
 	initialized = true
 }

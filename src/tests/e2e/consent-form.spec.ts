@@ -1,7 +1,7 @@
 /**
  * Consent Form E2E Tests
  *
- * Test Strategy (Post Story 0-7):
+ * Test Strategy:
  * - Use auth fixtures to simulate authenticated user state via session cookies
  * - Server functions hit Firestore emulator directly (no REST API mocks)
  * - Error simulation mocks target /_serverFn/* paths (acceptable per AC2)

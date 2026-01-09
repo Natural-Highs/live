@@ -9,7 +9,7 @@ This project uses a **two-tier testing strategy** to ensure comprehensive covera
 | **Integration** | Real infrastructure behavior | OOB API, WebAuthn CDP | Zero mocks |
 | **E2E** | User journey verification | Session state reuse | Error simulation only |
 
-## Mock Policy (Story 0-7)
+## Mock Policy
 
 ### Acceptable Mocks (Error Simulation Only)
 
@@ -48,7 +48,7 @@ await page.route('**/_serverFn/*', route =>
 
 ### Why This Policy
 
-After Story 0-7 (Task 2.5), the application follows TanStack Start patterns:
+The application follows TanStack Start patterns:
 - **Routes call server functions directly** (not REST APIs)
 - **Server functions hit Firebase emulators** during tests
 - **No `/api/*` endpoints exist** - they were an antipattern
@@ -72,7 +72,7 @@ test('authenticated user flow', async ({page, context}) => {
 ```
 
 This is acceptable because:
-- Real authentication is tested in integration layer (Story 0-6)
+- Real authentication is tested in the integration layer
 - E2E tests focus on user journey verification, not auth correctness
 - Playwright docs recommend this pattern for test efficiency
 
@@ -122,7 +122,7 @@ bunx playwright test src/tests/e2e/check-in.spec.ts
 bunx playwright test --ui
 ```
 
-## Data Isolation for Parallel Workers (Story 0-8)
+## Data Isolation for Parallel Workers
 
 E2E tests support parallel workers via **worker-scoped** `workerPrefix` fixture:
 
@@ -179,7 +179,7 @@ E2E tests run in CI with Firebase emulators:
 - Execution time target: <4 minutes per shard with 2 workers
 - Flakiness threshold: <2%
 
-## Mock Migration Summary (Story 0-7)
+## Mock Migration Summary
 
 | Before | After |
 |--------|-------|

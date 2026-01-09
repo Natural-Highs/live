@@ -13,7 +13,7 @@
  * - Use data-testid selectors for stability
  * - Error simulation mocks for network failure testing only
  *
- * Test Isolation (Story 0-8 AC1):
+ * Test Isolation:
  * - Uses workerPrefix fixture for parallel worker data isolation
  * - Each worker gets unique IDs to prevent cross-worker collisions
  */

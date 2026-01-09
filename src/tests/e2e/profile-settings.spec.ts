@@ -30,7 +30,7 @@
  * - Test route access and redirects
  * - Skip navbar-dependent tests
  *
- * Test Isolation (Story 0-8 AC1):
+ * Test Isolation:
  * - Uses workerPrefix fixture for parallel worker data isolation
  * - Each worker gets unique user IDs to prevent cross-worker collisions
  */

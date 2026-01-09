@@ -28,9 +28,8 @@ import {
 } from '../fixtures/firestore.fixture'
 
 /**
- * NOTE: mockEventsApi was removed as part of Story 0-7 E2E mock elimination.
- * The events list now comes from the Firestore emulator via getEvents() server function.
- * Test events should be seeded with createTestEvent() - the route uses emulator data.
+ * NOTE: mockEventsApi was removed as part of E2E mock elimination.
+ * The events page now uses real server function calls.
  */
 
 // Worker-scoped cleanup runs automatically via firebase-reset fixture

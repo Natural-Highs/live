@@ -1,21 +1,16 @@
 /**
  * Admin Export E2E Tests
  *
- * Tests verify the admin export flow including:
- * - Navigating to survey responses page
- * - Configuring filters
- * - Exporting CSV file
- * - Download completion in measurable time
+ * Tests the admin export functionality for generating reports.
+ * Uses real server functions with Firestore emulator.
  *
- * Test Strategy (Post Story 0-7):
- * - Use admin fixtures for admin authentication (session cookie injection)
- * - Server functions hit Firestore emulator directly (no REST API mocks)
- * - Use download event capture pattern
- * - Performance timing assertions
+ * Implementation Notes:
+ * These tests originally used mockExportData to simulate export API responses.
+ * The export functionality now uses real server function calls with emulator data.
  *
- * NOTE: The mockSurveyResponsesApi and mockEventsApi helpers were removed
- * as part of Story 0-7 mock elimination. Server functions now hit the
- * Firestore emulator directly. Tests should seed data using fixtures.
+ * Test Strategy:
+ * - Use auth fixtures to simulate admin authentication via session cookies
+ * - Server functions hit Firestore emulator directly (no API mocks)
  */
 
 import {expect, test} from '../fixtures/admin.fixture'

@@ -12,7 +12,8 @@
  * - Performance timing (<3 seconds)
  * - Error handling for invalid codes
  *
- * Test Strategy (Post Story 0-7):
+ * Test Strategy:
+ * - Mock page.route() ONLY for error paths (server errors, network failures)
  * - Uses auth fixtures with session cookie injection (acceptable per AC2)
  * - Firestore seeding for success paths (no mocks for data)
  * - Error simulation mocks target /_serverFn/* paths (acceptable per AC2)

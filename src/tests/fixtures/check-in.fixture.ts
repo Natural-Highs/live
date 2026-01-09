@@ -9,12 +9,17 @@
  * This fixture enables E2E tests to use real server functions
  * instead of page.route() mocks for success paths.
  *
+ * Uses workerPrefix for parallel worker data isolation.
+ * Event IDs are unique per worker to prevent collisions.
+ *
  * @see src/tests/fixtures/auth.fixture.ts - Base auth fixture
  * @see src/tests/fixtures/firestore.fixture.ts - Firestore seeding
  */
 
+import {mergeTests} from '@playwright/test'
 import {TEST_CODES} from '../factories/events.factory'
 import {test as authTest} from './auth.fixture'
+import {test as firebaseResetTest} from './firebase-reset.fixture'
 import {
 	createTestEvent,
 	createTestUserDocument,
@@ -23,9 +28,26 @@ import {
 	type TestEventDocument
 } from './firestore.fixture'
 
+// Merge auth and firebase-reset fixtures to get workerPrefix
+const baseTest = mergeTests(authTest, firebaseResetTest)
+
 /**
- * Default test event for check-in tests.
- * Uses TEST_CODES.VALID ('1234') as the event code.
+ * Get default test event with worker-isolated ID.
+ * Uses workerPrefix for parallel worker isolation.
+ */
+function getDefaultTestEvent(workerPrefix: string): TestEventDocument {
+	return {
+		id: `${workerPrefix}__checkin-event`,
+		name: 'Community Session',
+		eventCode: TEST_CODES.VALID, // '1234'
+		eventTypeId: 'community',
+		isActive: true,
+		activatedAt: new Date()
+	}
+}
+
+/**
+ * @deprecated Use getDefaultTestEvent(workerPrefix) for worker isolation
  */
 export const DEFAULT_TEST_EVENT: TestEventDocument = {
 	id: 'test-event-checkin',
@@ -67,13 +89,17 @@ interface CheckInFixtures {
 /**
  * Base test extended with check-in fixtures.
  */
-const checkInTest = authTest.extend<CheckInFixtures>({
-	testEvent: DEFAULT_TEST_EVENT,
+const checkInTest = baseTest.extend<CheckInFixtures>({
+	testEvent: async ({workerPrefix}, use) => {
+		await use(getDefaultTestEvent(workerPrefix))
+	},
 
-	seedTestEvent: async ({authenticatedUser}, use) => {
+	seedTestEvent: async ({authenticatedUser, workerPrefix}, use) => {
+		const defaultEvent = getDefaultTestEvent(workerPrefix)
+
 		const seed = async (eventOverrides: Partial<TestEventDocument> = {}) => {
 			const event: TestEventDocument = {
-				...DEFAULT_TEST_EVENT,
+				...defaultEvent,
 				...eventOverrides
 			}
 
@@ -94,19 +120,23 @@ const checkInTest = authTest.extend<CheckInFixtures>({
 		await use(seed)
 	},
 
-	cleanupTestEvent: async ({}, use) => {
+	cleanupTestEvent: async ({workerPrefix}, use) => {
+		const defaultEvent = getDefaultTestEvent(workerPrefix)
+
 		const cleanup = async () => {
-			await deleteTestEvent(DEFAULT_TEST_EVENT.id)
+			await deleteTestEvent(defaultEvent.id)
 		}
 
 		await use(cleanup)
 	},
 
-	cleanupAllTestData: async ({authenticatedUser}, use) => {
+	cleanupAllTestData: async ({authenticatedUser, workerPrefix}, use) => {
+		const defaultEvent = getDefaultTestEvent(workerPrefix)
+
 		const cleanup = async () => {
 			// Clean only this fixture's test data - NOT global emulator wipe
 			// Worker-scoped cleanup runs automatically via firebase-reset fixture
-			await deleteTestEvent(DEFAULT_TEST_EVENT.id)
+			await deleteTestEvent(defaultEvent.id)
 			await deleteTestUserDocument(authenticatedUser.uid)
 		}
 

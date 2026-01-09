@@ -2,7 +2,7 @@
  * Firestore Seeding Fixture for Integration and E2E Testing
  *
  * Provides Playwright fixtures for seeding test data in Firestore emulator.
- * This is a wrapper around existing fixtures in src/tests/fixtures/ that exposes
+ * This is a wrapper around existing fixtures in src/tests/common/ that exposes
  * them as Playwright fixtures for use in integration tests.
  *
  * Key patterns:
@@ -10,28 +10,14 @@
  * - Auto-cleanup in beforeEach and afterEach
  * - Consistent with firebase.fixture.ts emulator connection
  *
- * @see Story 0-7: E2E Test Mock Elimination
- * @see src/tests/fixtures/firestore.fixture.ts - Base implementation
+ * @see src/tests/common/ - Base implementation
  */
 
 import {test as base} from '@playwright/test'
 import {type App, getApps, initializeApp} from 'firebase-admin/app'
 import {type Firestore, getFirestore} from 'firebase-admin/firestore'
 
-export {setUserClaims} from '../../fixtures/auth.fixture'
-
-export {
-	createFirestoreEvent,
-	createFirestoreGuest,
-	createPendingConversion,
-	createValidFirestoreEvent,
-	deleteFirestoreEvent,
-	deleteFirestoreGuest,
-	deletePendingConversion,
-	type FirestoreEventDocument,
-	type FirestoreGuestDocument
-} from '../../fixtures/events.fixture'
-// Re-export existing implementations for direct use
+// Re-export from common layer (fixes layer violation)
 export {
 	clearFirestoreEmulator,
 	createTestEvent,
@@ -47,9 +33,20 @@ export {
 	type TestEventDocument,
 	type TestGuestDocument,
 	type TestUserDocument
-} from '../../fixtures/firestore.fixture'
+} from '../../common'
+export {setUserClaims} from '../../fixtures/auth.fixture'
+export {
+	createFirestoreEvent,
+	createFirestoreGuest,
+	createPendingConversion,
+	createValidFirestoreEvent,
+	deleteFirestoreEvent,
+	deleteFirestoreGuest,
+	deletePendingConversion,
+	type FirestoreEventDocument,
+	type FirestoreGuestDocument
+} from '../../fixtures/events.fixture'
 
-import {setUserClaims} from '../../fixtures/auth.fixture'
 import {
 	clearFirestoreEmulator,
 	createTestEvent,
@@ -63,7 +60,8 @@ import {
 	type TestEventDocument,
 	type TestGuestDocument,
 	type TestUserDocument
-} from '../../fixtures/firestore.fixture'
+} from '../../common'
+import {setUserClaims} from '../../fixtures/auth.fixture'
 
 /**
  * Emulator configuration
