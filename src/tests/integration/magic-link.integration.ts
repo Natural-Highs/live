@@ -266,18 +266,20 @@ test.describe('Magic Link Edge Cases', () => {
 		page,
 		getOobCodesForEmail
 	}) => {
-		// GIVEN: User on authentication page
-		await page.goto('/authentication')
-		await expect(page.getByTestId('magic-link-form')).toBeVisible()
-
 		// WHEN: User requests magic link multiple times rapidly
+		// Each submission redirects to success screen, so we re-navigate between submissions
 		for (let i = 0; i < 3; i++) {
-			await page.getByTestId('magic-link-email-input').fill('')
+			// Navigate to authentication page (resets form state)
+			await page.goto('/authentication')
+			await expect(page.getByTestId('magic-link-form')).toBeVisible()
+
 			await page.getByTestId('magic-link-email-input').fill(TEST_EMAIL)
 			await page.getByTestId('send-magic-link-button').click()
 
-			// Wait briefly between requests
-			await page.waitForTimeout(500)
+			// Wait for success confirmation before next iteration
+			await expect(page.getByText(/check your email|magic link sent|email sent/i)).toBeVisible({
+				timeout: 10000
+			})
 		}
 
 		// THEN: Multiple codes should exist but most recent should be returned
