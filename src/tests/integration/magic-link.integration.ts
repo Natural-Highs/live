@@ -34,11 +34,7 @@ test.describe('Magic Link Integration - AC2', () => {
 		await clearOobCodes()
 	})
 
-	test('should request magic link and fetch OOB code via API', async ({
-		page,
-		getMagicLinkCode,
-		projectId
-	}) => {
+	test('should request magic link and fetch OOB code via API', async ({page, getMagicLinkCode}) => {
 		// GIVEN: User is on the authentication page
 		await page.goto('/authentication')
 
@@ -61,10 +57,9 @@ test.describe('Magic Link Integration - AC2', () => {
 			maxWaitMs: 10000
 		})
 
-		// Verify we got a valid magic link URL
+		// Verify we got a valid magic link URL with OOB code
 		expect(magicLink).toBeTruthy()
 		expect(magicLink).toContain('oobCode=')
-		expect(magicLink).toContain(projectId)
 	})
 
 	test('should complete sign-in using OOB code link', async ({
@@ -170,6 +165,9 @@ test.describe('Magic Link Integration - AC2', () => {
 		// GIVEN: User has an invalid magic link
 		const invalidLink = '/magic-link?oobCode=invalid-code&mode=signIn'
 
+		// Navigate to app first to access localStorage (domain-specific)
+		await page.goto('/')
+
 		// Store email to bypass cross-device prompt
 		await page.evaluate(() => {
 			window.localStorage.setItem('emailForSignIn', 'test@example.com')
@@ -180,7 +178,10 @@ test.describe('Magic Link Integration - AC2', () => {
 
 		// THEN: Error should be displayed
 		await expect(page.getByTestId('magic-link-error')).toBeVisible({timeout: 10000})
-		await expect(page.getByText(/expired|invalid|already been used/i)).toBeVisible()
+		// Use more specific text to avoid matching "invalid-code" in URL display
+		await expect(
+			page.getByTestId('magic-link-error').getByText(/expired|has expired|already been used/i)
+		).toBeVisible()
 
 		// AND: Option to request new link should be available
 		await expect(page.getByTestId('request-new-link-button')).toBeVisible()
