@@ -13,7 +13,7 @@
  */
 
 import {type App, deleteApp, getApps, initializeApp} from 'firebase-admin/app'
-import {type Firestore, getFirestore} from 'firebase-admin/firestore'
+import {type Firestore, initializeFirestore} from 'firebase-admin/firestore'
 import type {
 	MinorDemographicsData,
 	TestEventDocument,
@@ -31,6 +31,7 @@ const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.
 
 /**
  * Lazy-initialized Firebase app for tests.
+ * Single source of truth for all test fixtures.
  */
 let testApp: App | null = null
 let testDb: Firestore | null = null
@@ -45,7 +46,7 @@ export function getTestApp(): App {
 
 	// Check if an app already exists to avoid duplicate initialization
 	const existingApps = getApps()
-	const existingTestApp = existingApps.find(app => app.name === 'e2e-test-app')
+	const existingTestApp = existingApps.find(app => app.name === 'test-app')
 
 	if (existingTestApp) {
 		testApp = existingTestApp
@@ -56,14 +57,16 @@ export function getTestApp(): App {
 		{
 			projectId: EMULATOR_PROJECT_ID
 		},
-		'e2e-test-app'
+		'test-app'
 	)
 
 	return testApp
 }
 
 /**
- * Get Firestore instance for E2E tests.
+ * Get Firestore instance for tests.
+ * Uses initializeFirestore with preferRest: true per Firebase Admin SDK docs.
+ * Single source of truth - all test fixtures should import this.
  */
 export function getTestDb(): Firestore {
 	if (testDb) {
@@ -71,7 +74,10 @@ export function getTestDb(): Firestore {
 	}
 
 	const app = getTestApp()
-	testDb = getFirestore(app)
+
+	// Use initializeFirestore with preferRest to avoid gRPC credential requirements
+	// This is the recommended approach per Firebase Admin SDK documentation
+	testDb = initializeFirestore(app, {preferRest: true})
 
 	return testDb
 }

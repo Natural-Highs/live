@@ -2,7 +2,7 @@
  * Events Fixtures for E2E Testing
  *
  * Provides Firestore emulator fixtures for testing event check-in flows.
- * Uses Firebase Admin SDK to seed data directly in the emulator.
+ * Uses the shared test SDK from src/tests/common/ - single source of truth.
  *
  * Key patterns:
  * - Firestore emulator fixtures for TanStack Start server functions
@@ -17,73 +17,19 @@
  */
 
 import {test as base, expect} from '@playwright/test'
-import {type App, deleteApp, getApps, initializeApp} from 'firebase-admin/app'
-import {type Firestore, getFirestore} from 'firebase-admin/firestore'
+import {getTestDb, isFirestoreEmulatorAvailable} from '../common'
 
 export {expect}
 
 // Re-export base test for mergeTests compatibility
 export const test = base
 
+// Re-export emulator check from common
+export {isFirestoreEmulatorAvailable as isEventsEmulatorAvailable}
+
 // ============================================================================
 // Firestore Emulator Fixtures for TanStack Start Server Functions
 // ============================================================================
-
-const EMULATOR_PROJECT_ID = 'naturalhighs'
-
-/**
- * Firestore emulator host.
- * Matches firebase.json emulators.firestore.port configuration.
- */
-const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
-
-/**
- * Lazy-initialized Firebase app for events tests.
- */
-let eventsTestApp: App | null = null
-let eventsTestDb: Firestore | null = null
-
-/**
- * Get or create the Firebase Admin app for E2E events tests.
- */
-function getEventsTestApp(): App {
-	if (eventsTestApp) {
-		return eventsTestApp
-	}
-
-	process.env.FIRESTORE_EMULATOR_HOST = FIRESTORE_EMULATOR_HOST
-
-	const existingApps = getApps()
-	const existingTestApp = existingApps.find(app => app.name === 'e2e-events-test-app')
-
-	if (existingTestApp) {
-		eventsTestApp = existingTestApp
-		return eventsTestApp
-	}
-
-	eventsTestApp = initializeApp(
-		{
-			projectId: EMULATOR_PROJECT_ID
-		},
-		'e2e-events-test-app'
-	)
-
-	return eventsTestApp
-}
-
-/**
- * Get Firestore instance for E2E events tests.
- */
-function getEventsTestDb(): Firestore {
-	if (eventsTestDb) {
-		return eventsTestDb
-	}
-
-	const app = getEventsTestApp()
-	eventsTestDb = getFirestore(app)
-
-	return eventsTestDb
-}
 
 /**
  * Firestore event document structure.
@@ -139,7 +85,7 @@ export interface FirestoreGuestDocument {
  * ```
  */
 export async function createFirestoreEvent(event: FirestoreEventDocument): Promise<string> {
-	const db = getEventsTestDb()
+	const db = getTestDb()
 	const now = new Date()
 	const eventId = event.id ?? `test-event-${Date.now()}`
 	const eventRef = db.collection('events').doc(eventId)
@@ -167,7 +113,7 @@ export async function createFirestoreEvent(event: FirestoreEventDocument): Promi
  * @param eventId - Event ID to delete
  */
 export async function deleteFirestoreEvent(eventId: string): Promise<void> {
-	const db = getEventsTestDb()
+	const db = getTestDb()
 	await db.collection('events').doc(eventId).delete()
 }
 
@@ -177,7 +123,7 @@ export async function deleteFirestoreEvent(eventId: string): Promise<void> {
  * @param guestId - Guest ID to delete
  */
 export async function deleteFirestoreGuest(guestId: string): Promise<void> {
-	const db = getEventsTestDb()
+	const db = getTestDb()
 	await db.collection('guests').doc(guestId).delete()
 }
 
@@ -188,7 +134,7 @@ export async function deleteFirestoreGuest(guestId: string): Promise<void> {
  * @returns Array of guest documents
  */
 export async function getGuestsForEvent(eventId: string): Promise<FirestoreGuestDocument[]> {
-	const db = getEventsTestDb()
+	const db = getTestDb()
 	const snapshot = await db.collection('guests').where('eventId', '==', eventId).get()
 
 	return snapshot.docs.map(doc => ({
@@ -203,7 +149,7 @@ export async function getGuestsForEvent(eventId: string): Promise<FirestoreGuest
  * @param eventId - Event ID to delete guests for
  */
 export async function deleteGuestsForEvent(eventId: string): Promise<void> {
-	const db = getEventsTestDb()
+	const db = getTestDb()
 	const snapshot = await db.collection('guests').where('eventId', '==', eventId).get()
 
 	const batch = db.batch()
@@ -235,41 +181,13 @@ export async function createValidFirestoreEvent(
 }
 
 /**
- * Cleanup function to delete the events test app.
- */
-export async function cleanupEventsTestApp(): Promise<void> {
-	if (eventsTestApp) {
-		await deleteApp(eventsTestApp)
-		eventsTestApp = null
-		eventsTestDb = null
-	}
-}
-
-/**
- * Check if the Firestore emulator is available.
- */
-export async function isEventsEmulatorAvailable(): Promise<boolean> {
-	const host = FIRESTORE_EMULATOR_HOST
-
-	try {
-		const response = await fetch(`http://${host}/`, {
-			method: 'GET',
-			signal: AbortSignal.timeout(2000)
-		})
-		return response.ok || response.status === 404
-	} catch {
-		return false
-	}
-}
-
-/**
  * Create a guest document in the Firestore emulator.
  *
  * @param guest - Guest document data
  * @returns The created guest ID
  */
 export async function createFirestoreGuest(guest: FirestoreGuestDocument): Promise<string> {
-	const db = getEventsTestDb()
+	const db = getTestDb()
 	const now = new Date()
 	const guestId = guest.id ?? `test-guest-${Date.now()}`
 	const guestRef = db.collection('guests').doc(guestId)
@@ -299,7 +217,7 @@ export async function createFirestoreGuest(guest: FirestoreGuestDocument): Promi
  * @returns The email (document ID)
  */
 export async function createPendingConversion(email: string, guestId: string): Promise<string> {
-	const db = getEventsTestDb()
+	const db = getTestDb()
 	const normalizedEmail = email.toLowerCase().trim()
 	const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000) // 24 hours
 
@@ -318,7 +236,7 @@ export async function createPendingConversion(email: string, guestId: string): P
  * @param email - Email address (document ID)
  */
 export async function deletePendingConversion(email: string): Promise<void> {
-	const db = getEventsTestDb()
+	const db = getTestDb()
 	const normalizedEmail = email.toLowerCase().trim()
 	await db.collection('pendingConversions').doc(normalizedEmail).delete()
 }

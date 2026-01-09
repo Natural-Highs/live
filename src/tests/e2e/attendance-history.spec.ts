@@ -13,14 +13,10 @@
  * - Use data-testid selectors for stability
  */
 
-import {getApps, initializeApp} from 'firebase-admin/app'
-import {getFirestore} from 'firebase-admin/firestore'
+import {getTestDb} from '../common'
 import {TEST_CODES} from '../factories/events.factory'
 import {expect, test} from '../fixtures'
 import {clearAuthenticatedUser, injectAuthenticatedUser} from '../fixtures/session.fixture'
-
-const EMULATOR_PROJECT_ID = 'naturalhighs'
-const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
 
 // Test user IDs
 const TEST_USER_WITH_HISTORY = {
@@ -39,30 +35,6 @@ const TEST_USER_GUEST_CONVERTED = {
 	uid: 'test-user-converted-789',
 	email: 'converted-test@example.com',
 	displayName: 'Converted Guest User'
-}
-
-/**
- * Get or create the Firebase Admin app for E2E tests.
- */
-function getTestApp() {
-	process.env.FIRESTORE_EMULATOR_HOST = FIRESTORE_EMULATOR_HOST
-
-	const existingApps = getApps()
-	const existingTestApp = existingApps.find(app => app.name === 'e2e-test-app')
-
-	if (existingTestApp) {
-		return existingTestApp
-	}
-
-	return initializeApp({projectId: EMULATOR_PROJECT_ID}, 'e2e-test-app')
-}
-
-/**
- * Get Firestore instance for E2E tests.
- */
-function getTestDb() {
-	const app = getTestApp()
-	return getFirestore(app)
 }
 
 /**

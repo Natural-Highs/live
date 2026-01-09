@@ -2,8 +2,7 @@
  * Firestore Seeding Fixture for Integration and E2E Testing
  *
  * Provides Playwright fixtures for seeding test data in Firestore emulator.
- * This is a wrapper around existing fixtures in src/tests/common/ that exposes
- * them as Playwright fixtures for use in integration tests.
+ * Uses the shared test SDK from src/tests/common/ - single source of truth.
  *
  * Key patterns:
  * - Use Admin SDK to seed data directly (bypasses security rules)
@@ -14,10 +13,28 @@
  */
 
 import {test as base} from '@playwright/test'
-import {type App, getApps, initializeApp} from 'firebase-admin/app'
-import {type Firestore, getFirestore} from 'firebase-admin/firestore'
 
-// Re-export from common layer (fixes layer violation)
+// Import shared test SDK and seed functions from common layer
+import {
+	clearFirestoreEmulator,
+	createTestEvent,
+	createTestGuest,
+	createTestUser,
+	createTestUserDocument,
+	deleteAllTestEvents,
+	deleteAllTestGuests,
+	deleteTestEvent,
+	deleteTestGuest,
+	deleteTestUser,
+	deleteTestUserDocument,
+	getTestDb,
+	type TestEventDocument,
+	type TestGuestDocument,
+	type TestUserDocument
+} from '../../common'
+import {setUserClaims} from '../../fixtures/auth.fixture'
+
+// Re-export from common layer for convenience
 export {
 	clearFirestoreEmulator,
 	createTestEvent,
@@ -30,10 +47,11 @@ export {
 	deleteTestGuest,
 	deleteTestUser,
 	deleteTestUserDocument,
+	getTestDb,
 	type TestEventDocument,
 	type TestGuestDocument,
 	type TestUserDocument
-} from '../../common'
+}
 export {setUserClaims} from '../../fixtures/auth.fixture'
 export {
 	createFirestoreEvent,
@@ -46,78 +64,6 @@ export {
 	type FirestoreEventDocument,
 	type FirestoreGuestDocument
 } from '../../fixtures/events.fixture'
-
-import {
-	clearFirestoreEmulator,
-	createTestEvent,
-	createTestGuest,
-	createTestUserDocument,
-	deleteAllTestEvents,
-	deleteAllTestGuests,
-	deleteTestEvent,
-	deleteTestGuest,
-	deleteTestUserDocument,
-	type TestEventDocument,
-	type TestGuestDocument,
-	type TestUserDocument
-} from '../../common'
-import {setUserClaims} from '../../fixtures/auth.fixture'
-
-/**
- * Emulator configuration
- */
-const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
-const EMULATOR_PROJECT_ID = 'naturalhighs'
-
-/**
- * Lazy-initialized Firebase app for seeding.
- */
-let seedApp: App | null = null
-let seedDb: Firestore | null = null
-
-/**
- * Get or create the Firebase Admin app for seeding.
- */
-function getSeedApp(): App {
-	if (seedApp) {
-		return seedApp
-	}
-
-	// Set emulator environment before initializing
-	process.env.FIRESTORE_EMULATOR_HOST = FIRESTORE_EMULATOR_HOST
-
-	// Check if an app already exists to avoid duplicate initialization
-	const existingApps = getApps()
-	const existingApp = existingApps.find(app => app.name === 'seed-app')
-
-	if (existingApp) {
-		seedApp = existingApp
-		return seedApp
-	}
-
-	seedApp = initializeApp(
-		{
-			projectId: EMULATOR_PROJECT_ID
-		},
-		'seed-app'
-	)
-
-	return seedApp
-}
-
-/**
- * Get Firestore instance for seeding.
- */
-function getSeedDb(): Firestore {
-	if (seedDb) {
-		return seedDb
-	}
-
-	const app = getSeedApp()
-	seedDb = getFirestore(app)
-
-	return seedDb
-}
 
 /**
  * Form template question structure.
@@ -233,7 +179,7 @@ export interface FirestoreSeedFixtures {
  * Uses Firebase Admin SDK to bypass security rules.
  */
 async function createFormTemplate(template: TestFormTemplate): Promise<void> {
-	const db = getSeedDb()
+	const db = getTestDb()
 	const now = new Date()
 
 	const templateDoc: Record<string, unknown> = {
@@ -263,7 +209,7 @@ async function createFormTemplate(template: TestFormTemplate): Promise<void> {
  * Uses Firebase Admin SDK to bypass security rules.
  */
 async function createEventType(eventType: TestEventType): Promise<void> {
-	const db = getSeedDb()
+	const db = getTestDb()
 	const now = new Date()
 
 	const eventTypeDoc: Record<string, unknown> = {
