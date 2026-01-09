@@ -301,6 +301,9 @@ jobs:
         env:
           CI: true
           CI_EMULATOR_TIMEOUT: "60000"
+          # Prevent Admin SDK from looking for production credentials
+          GOOGLE_APPLICATION_CREDENTIALS: ""
+          FIREBASE_CONFIG: "{}"
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
@@ -442,6 +445,9 @@ jobs:
           FIRESTORE_EMULATOR_HOST: 127.0.0.1:8180
           FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
           SESSION_SECRET: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          # Prevent Admin SDK from looking for production credentials
+          GOOGLE_APPLICATION_CREDENTIALS: ""
+          FIREBASE_CONFIG: "{}"
 
       - name: Upload integration test results
         uses: actions/upload-artifact@v4
