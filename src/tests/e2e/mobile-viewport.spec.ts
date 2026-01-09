@@ -17,7 +17,7 @@
 
 import {devices} from '@playwright/test'
 import {TEST_CODES} from '../factories/events.factory'
-import {expect, test} from '../fixtures'
+import {createTestEventWithRetry, deleteTestEventWithRetry, expect, test} from '../fixtures'
 import {injectSessionCookie} from '../fixtures/session.fixture'
 
 // Configure mobile viewport for all tests in this file
@@ -33,6 +33,29 @@ const testUser = {
 }
 
 test.describe('Mobile Viewport Coverage', () => {
+	// Seed test event for tests that validate event codes against Firestore
+	let testEventId: string
+
+	test.beforeAll(async ({}, testInfo) => {
+		// Use worker index for parallel isolation
+		const workerIndex = testInfo.parallelIndex
+		testEventId = `mobile-test-event-${workerIndex}`
+		await createTestEventWithRetry({
+			id: testEventId,
+			name: 'Mobile Test Event',
+			eventCode: TEST_CODES.VALID, // '1234'
+			eventTypeId: 'mobile-test',
+			isActive: true,
+			activatedAt: new Date()
+		})
+	})
+
+	test.afterAll(async () => {
+		if (testEventId) {
+			await deleteTestEventWithRetry(testEventId)
+		}
+	})
+
 	test.describe('AC7: Guest Entry Page Mobile', () => {
 		test('should render guest entry page correctly on mobile', async ({page}) => {
 			// GIVEN: User is on mobile device
