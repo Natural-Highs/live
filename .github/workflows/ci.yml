@@ -266,31 +266,37 @@ jobs:
           install-playwright: "true"
           install-firebase: "true"
 
+      - name: Cache Firebase emulators
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}
+
       - name: Start Firebase emulators
         run: |
           # Start emulators in background
           firebase emulators:start --only auth,firestore --project naturalhighs &
           EMULATOR_PID=$!
-          
+
           # Extended timeout for CI stability
           MAX_WAIT=90
           RETRY_DELAY=2
-          
+
           echo "Waiting for emulators (timeout: ${MAX_WAIT}s)..."
           for i in $(seq 1 $MAX_WAIT); do
             AUTH_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9099 2>/dev/null || echo "000")
             FS_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8180 2>/dev/null || echo "000")
-            
+
             if [[ "$AUTH_OK" != "000" ]] && [[ "$FS_OK" != "000" ]]; then
               echo "All emulators ready after ${i}s (Auth: $AUTH_OK, Firestore: $FS_OK)"
               break
             fi
-            
+
             if [ $i -eq $MAX_WAIT ]; then
               echo "ERROR: Emulators failed to start within ${MAX_WAIT}s"
               exit 1
             fi
-            
+
             echo "Waiting... ($i/${MAX_WAIT}s) Auth: $AUTH_OK, Firestore: $FS_OK"
             sleep $RETRY_DELAY
           done
@@ -407,31 +413,37 @@ jobs:
           install-playwright: "true"
           install-firebase: "true"
 
+      - name: Cache Firebase emulators
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}
+
       - name: Start Firebase emulators
         run: |
           # Start emulators in background
           firebase emulators:start --only auth,firestore --project naturalhighs &
           EMULATOR_PID=$!
-          
+
           # Extended timeout for CI stability
           MAX_WAIT=90
           RETRY_DELAY=2
-          
+
           echo "Waiting for emulators (timeout: ${MAX_WAIT}s)..."
           for i in $(seq 1 $MAX_WAIT); do
             AUTH_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9099 2>/dev/null || echo "000")
             FS_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8180 2>/dev/null || echo "000")
-            
+
             if [[ "$AUTH_OK" != "000" ]] && [[ "$FS_OK" != "000" ]]; then
               echo "All emulators ready after ${i}s (Auth: $AUTH_OK, Firestore: $FS_OK)"
               break
             fi
-            
+
             if [ $i -eq $MAX_WAIT ]; then
               echo "ERROR: Emulators failed to start within ${MAX_WAIT}s"
               exit 1
             fi
-            
+
             echo "Waiting... ($i/${MAX_WAIT}s) Auth: $AUTH_OK, Firestore: $FS_OK"
             sleep $RETRY_DELAY
           done
@@ -484,6 +496,12 @@ jobs:
           java-version: "21"
           install-playwright: "true"
           install-firebase: "true"
+
+      - name: Cache Firebase emulators
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}
 
       - name: Start Firebase emulators
         run: |
