@@ -25,13 +25,19 @@ const emulatorEnv = {
 	USE_EMULATORS: 'true',
 	FIRESTORE_EMULATOR_HOST: process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8180',
 	FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
-	SESSION_SECRET: SESSION_SECRET_TEST
+	SESSION_SECRET: SESSION_SECRET_TEST,
+	GOOGLE_APPLICATION_CREDENTIALS: '',
+	FIREBASE_CONFIG: '{}'
 }
+
+process.env.FIRESTORE_EMULATOR_HOST = emulatorEnv.FIRESTORE_EMULATOR_HOST
+process.env.FIREBASE_AUTH_EMULATOR_HOST = emulatorEnv.FIREBASE_AUTH_EMULATOR_HOST
+process.env.GOOGLE_APPLICATION_CREDENTIALS = ''
+process.env.FIREBASE_CONFIG = '{}'
 
 export default defineConfig({
 	forbidOnly: isCI,
 	fullyParallel: true,
-	// Global setup: Wait for emulators before any tests run (Story 0-8 AC3)
 	globalSetup: './playwright.global-setup.ts',
 	projects: [
 		{
@@ -91,8 +97,6 @@ export default defineConfig({
 		url: 'http://localhost:3000',
 		timeout: 120_000
 	},
-	// CI: Use 2 workers per shard for parallel execution (Story 0-8 AC5)
-	// String '50%' on 2-core ubuntu evaluates to 1; explicit 2 doubles parallelism
-	// Local: Use all available cores
+
 	workers: isCI ? 2 : undefined
 })

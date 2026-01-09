@@ -31,7 +31,7 @@
  */
 
 import {type App, deleteApp, getApps, initializeApp} from 'firebase-admin/app'
-import {type Firestore, initializeFirestore} from 'firebase-admin/firestore'
+import {type Firestore, getFirestore} from 'firebase-admin/firestore'
 import type {
 	MinorDemographicsData,
 	TestEventDocument,
@@ -105,7 +105,7 @@ export function getTestApp(): App {
 
 /**
  * Get Firestore instance for tests.
- * Uses initializeFirestore with preferRest: true per Firebase Admin SDK docs.
+ * Uses getFirestore which auto-detects emulator via FIRESTORE_EMULATOR_HOST.
  * Single source of truth - all test fixtures should import this.
  */
 export function getTestDb(): Firestore {
@@ -115,9 +115,9 @@ export function getTestDb(): Firestore {
 
 	const app = getTestApp()
 
-	// Use initializeFirestore with preferRest to avoid gRPC credential requirements
-	// This is the recommended approach per Firebase Admin SDK documentation
-	testDb = initializeFirestore(app, {preferRest: true})
+	// Use getFirestore which automatically connects to emulator when
+	// FIRESTORE_EMULATOR_HOST env var is set (via ensureEmulatorEnvironment)
+	testDb = getFirestore(app)
 
 	return testDb
 }

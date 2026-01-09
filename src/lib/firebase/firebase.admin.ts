@@ -39,9 +39,7 @@ function initializeAdmin(): void {
 			projectId: process.env.VITE_PROJECT_ID || 'naturalhighs'
 		})
 
-		// Use REST for more stable connections in test environments
-		admin.firestore().settings({preferRest: true})
-
+		// Emulator auto-detects via FIRESTORE_EMULATOR_HOST env var
 		initialized = true
 		return
 	}
