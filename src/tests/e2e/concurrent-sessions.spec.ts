@@ -26,6 +26,8 @@ test.describe('Concurrent Sessions', () => {
 		// Create two separate browser contexts (simulating different devices/browsers)
 		const contextA = await browser.newContext()
 		const contextB = await browser.newContext()
+		let pageA: Awaited<ReturnType<typeof contextA.newPage>> | undefined
+		let pageB: Awaited<ReturnType<typeof contextB.newPage>> | undefined
 
 		try {
 			// Create two different users
@@ -46,8 +48,8 @@ test.describe('Concurrent Sessions', () => {
 			await injectSessionCookie(contextB, userB, {signedConsentForm: true})
 
 			// Create pages in each context
-			const pageA = await contextA.newPage()
-			const pageB = await contextB.newPage()
+			pageA = await contextA.newPage()
+			pageB = await contextB.newPage()
 
 			// Both users navigate to protected route simultaneously
 			await Promise.all([pageA.goto('/dashboard'), pageB.goto('/dashboard')])
@@ -66,14 +68,12 @@ test.describe('Concurrent Sessions', () => {
 			// Neither should be on authentication page
 			expect(urlA).not.toContain('/authentication')
 			expect(urlB).not.toContain('/authentication')
-
-			// Clean up pages
-			await pageA.close()
-			await pageB.close()
 		} finally {
-			// Clean up contexts
+			// Clean up in correct order: cookies first, then pages, then contexts
 			await clearSessionCookie(contextA)
 			await clearSessionCookie(contextB)
+			await pageA?.close()
+			await pageB?.close()
 			await contextA.close()
 			await contextB.close()
 		}
@@ -82,6 +82,8 @@ test.describe('Concurrent Sessions', () => {
 	test('admin and regular user sessions coexist without interference', async ({browser}) => {
 		const adminContext = await browser.newContext()
 		const userContext = await browser.newContext()
+		let adminPage: Awaited<ReturnType<typeof adminContext.newPage>> | undefined
+		let userPage: Awaited<ReturnType<typeof userContext.newPage>> | undefined
 
 		try {
 			const adminUser: TestUser = {
@@ -101,8 +103,8 @@ test.describe('Concurrent Sessions', () => {
 			// Inject regular user session (no admin claim)
 			await injectSessionCookie(userContext, regularUser, {signedConsentForm: true})
 
-			const adminPage = await adminContext.newPage()
-			const userPage = await userContext.newPage()
+			adminPage = await adminContext.newPage()
+			userPage = await userContext.newPage()
 
 			// Admin accesses admin route
 			await adminPage.goto('/admin-dashboard')
@@ -127,12 +129,12 @@ test.describe('Concurrent Sessions', () => {
 			// Regular user should be redirected away from admin route
 			const userAdminAttemptUrl = userPage.url()
 			expect(userAdminAttemptUrl).not.toContain('/admin-dashboard')
-
-			await adminPage.close()
-			await userPage.close()
 		} finally {
+			// Clean up in correct order: cookies first, then pages, then contexts
 			await clearSessionCookie(adminContext)
 			await clearSessionCookie(userContext)
+			await adminPage?.close()
+			await userPage?.close()
 			await adminContext.close()
 			await userContext.close()
 		}
@@ -141,6 +143,8 @@ test.describe('Concurrent Sessions', () => {
 	test('session in one context does not leak to another', async ({browser}) => {
 		const authenticatedContext = await browser.newContext()
 		const unauthenticatedContext = await browser.newContext()
+		let authPage: Awaited<ReturnType<typeof authenticatedContext.newPage>> | undefined
+		let unauthPage: Awaited<ReturnType<typeof unauthenticatedContext.newPage>> | undefined
 
 		try {
 			const user: TestUser = {
@@ -154,8 +158,8 @@ test.describe('Concurrent Sessions', () => {
 				signedConsentForm: true
 			})
 
-			const authPage = await authenticatedContext.newPage()
-			const unauthPage = await unauthenticatedContext.newPage()
+			authPage = await authenticatedContext.newPage()
+			unauthPage = await unauthenticatedContext.newPage()
 
 			// Authenticated user accesses protected route
 			await authPage.goto('/dashboard')
@@ -170,11 +174,11 @@ test.describe('Concurrent Sessions', () => {
 
 			// Unauthenticated context should be redirected to auth
 			expect(unauthPage.url()).toContain('/authentication')
-
-			await authPage.close()
-			await unauthPage.close()
 		} finally {
+			// Clean up in correct order: cookies first, then pages, then contexts
 			await clearSessionCookie(authenticatedContext)
+			await authPage?.close()
+			await unauthPage?.close()
 			await authenticatedContext.close()
 			await unauthenticatedContext.close()
 		}
@@ -183,6 +187,8 @@ test.describe('Concurrent Sessions', () => {
 	test('clearing session in one context does not affect another', async ({browser}) => {
 		const contextA = await browser.newContext()
 		const contextB = await browser.newContext()
+		let pageA: Awaited<ReturnType<typeof contextA.newPage>> | undefined
+		let pageB: Awaited<ReturnType<typeof contextB.newPage>> | undefined
 
 		try {
 			const userA: TestUser = {
@@ -204,8 +210,8 @@ test.describe('Concurrent Sessions', () => {
 			// Clear session from context A only
 			await clearSessionCookie(contextA)
 
-			const pageA = await contextA.newPage()
-			const pageB = await contextB.newPage()
+			pageA = await contextA.newPage()
+			pageB = await contextB.newPage()
 
 			// Navigate both to protected route
 			await Promise.all([pageA.goto('/dashboard'), pageB.goto('/dashboard')])
@@ -220,11 +226,11 @@ test.describe('Concurrent Sessions', () => {
 
 			// Context B should still have access
 			expect(pageB.url()).not.toContain('/authentication')
-
-			await pageA.close()
-			await pageB.close()
 		} finally {
+			// Clean up in correct order: cookies first, then pages, then contexts
 			await clearSessionCookie(contextB)
+			await pageA?.close()
+			await pageB?.close()
 			await contextA.close()
 			await contextB.close()
 		}
