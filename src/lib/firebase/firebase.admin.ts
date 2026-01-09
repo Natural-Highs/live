@@ -95,6 +95,10 @@ export const adminDb = {
 	getAll(...refs: admin.firestore.DocumentReference[]) {
 		initializeAdmin()
 		return admin.firestore().getAll(...refs)
+	},
+	batch() {
+		initializeAdmin()
+		return admin.firestore().batch()
 	}
 } as admin.firestore.Firestore
 
