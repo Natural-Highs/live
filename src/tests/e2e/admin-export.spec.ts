@@ -252,7 +252,7 @@ test.describe('Admin Export Flow', () => {
 			})
 
 			await page.goto('/survey-responses')
-			await page.waitForLoadState('networkidle')
+			await page.waitForLoadState('domcontentloaded')
 
 			// Wait for data to load by checking response count indicator
 			// This ensures React Query has fetched and rendered the data
@@ -294,7 +294,7 @@ test.describe('Admin Export Flow', () => {
 			await page.goto('/survey-responses')
 
 			// Wait for page to fully load and data to be fetched
-			await page.waitForLoadState('networkidle')
+			await page.waitForLoadState('domcontentloaded')
 			// Wait for response count to show data is loaded
 			await expect(page.getByText(/Responses \([1-9]/)).toBeVisible({timeout: 10000})
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
@@ -339,7 +339,7 @@ test.describe('Admin Export Flow', () => {
 			await page.goto('/survey-responses')
 
 			// Wait for page to fully load and data to be fetched
-			await page.waitForLoadState('networkidle')
+			await page.waitForLoadState('domcontentloaded')
 			// Wait for response count to show data is loaded
 			await expect(page.getByText(/Responses \([1-9]/)).toBeVisible({timeout: 10000})
 			await expect(page.getByTestId('export-json-button')).toBeEnabled()
@@ -385,7 +385,7 @@ test.describe('Admin Export Flow', () => {
 
 			// WHEN: Admin navigates to survey responses page
 			await page.goto('/survey-responses')
-			await page.waitForLoadState('networkidle')
+			await page.waitForLoadState('domcontentloaded')
 
 			// Wait for data to load by checking response count indicator
 			await expect(page.getByText(/Responses \([1-9]/)).toBeVisible({timeout: 10000})
@@ -432,7 +432,7 @@ test.describe('Admin Export Flow', () => {
 			})
 
 			await page.goto('/survey-responses')
-			await page.waitForLoadState('networkidle')
+			await page.waitForLoadState('domcontentloaded')
 			// Wait for data to load by checking response count indicator
 			await expect(page.getByText(/Responses \([1-9]/)).toBeVisible({timeout: 10000})
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
@@ -489,7 +489,7 @@ test.describe('Admin Export Flow', () => {
 			})
 
 			await page.goto('/survey-responses')
-			await page.waitForLoadState('networkidle')
+			await page.waitForLoadState('domcontentloaded')
 			// Wait for data to load by checking response count indicator
 			await expect(page.getByText(/Responses \([1-9]/)).toBeVisible({timeout: 10000})
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
@@ -532,7 +532,7 @@ test.describe('Admin Export Flow', () => {
 			})
 
 			await page.goto('/survey-responses')
-			await page.waitForLoadState('networkidle')
+			await page.waitForLoadState('domcontentloaded')
 			// Wait for data to load by checking response count indicator
 			await expect(page.getByText(/Responses \([1-9]/)).toBeVisible({timeout: 10000})
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
@@ -574,7 +574,7 @@ test.describe('Admin Export Flow', () => {
 			})
 
 			await page.goto('/survey-responses')
-			await page.waitForLoadState('networkidle')
+			await page.waitForLoadState('domcontentloaded')
 			// Wait for data to load by checking response count indicator
 			await expect(page.getByText(/Responses \([1-9]/)).toBeVisible({timeout: 10000})
 			await expect(page.getByTestId('export-json-button')).toBeEnabled()
@@ -617,7 +617,7 @@ test.describe('Admin Export Flow', () => {
 			})
 
 			await page.goto('/survey-responses')
-			await page.waitForLoadState('networkidle')
+			await page.waitForLoadState('domcontentloaded')
 
 			// Wait for data to load by checking response count indicator
 			await expect(page.getByText(/Responses \([1-9]/)).toBeVisible({timeout: 10000})
@@ -695,7 +695,7 @@ test.describe('Admin Export Flow', () => {
 			await page.goto('/survey-responses')
 
 			// Wait for page to load
-			await page.waitForLoadState('networkidle')
+			await page.waitForLoadState('domcontentloaded')
 
 			// Set up error simulation mock (acceptable per AC2)
 			// Server functions use /_serverFn/* URLs
@@ -712,7 +712,7 @@ test.describe('Admin Export Flow', () => {
 			await page.reload()
 
 			// Wait for page to load - the error may take time to appear
-			await page.waitForLoadState('networkidle')
+			await page.waitForLoadState('domcontentloaded')
 
 			// THEN: Error should be displayed (use longer timeout due to React Query retries)
 			await expect(page.getByTestId('survey-responses-error')).toBeVisible({timeout: 15000})

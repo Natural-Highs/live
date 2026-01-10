@@ -184,7 +184,7 @@ test.describe('Profile Settings Form', () => {
 
 		test('should validate empty display name', async ({page}) => {
 			await page.goto('/settings/profile')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('profile-displayname-input').waitFor({state: 'visible'})
 
 			// WHEN: User clears display name and blurs
 			const displayNameInput = page.getByTestId('profile-displayname-input')
@@ -199,7 +199,7 @@ test.describe('Profile Settings Form', () => {
 	test.describe('Demographics Updates', () => {
 		test('should allow selecting pronouns', async ({page}) => {
 			await page.goto('/settings/profile')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('profile-displayname-input').waitFor({state: 'visible'})
 
 			// WHEN: User opens pronouns select
 			const pronounsSelect = page.getByTestId('profile-pronouns-select')
@@ -218,7 +218,7 @@ test.describe('Profile Settings Form', () => {
 		// TODO: Radix Select mobile viewport - gender select options not rendering in CI
 		test.skip('should allow selecting gender', async ({page}) => {
 			await page.goto('/settings/profile')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('profile-displayname-input').waitFor({state: 'visible'})
 
 			// WHEN: User opens gender select
 			const genderSelect = page.getByTestId('profile-gender-select')
@@ -249,7 +249,7 @@ test.describe('Profile Settings Form', () => {
 	test.describe('Emergency Contact Validation', () => {
 		test('should validate phone format', async ({page}) => {
 			await page.goto('/settings/profile')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('profile-displayname-input').waitFor({state: 'visible'})
 
 			// WHEN: User enters invalid phone and blurs
 			const phoneInput = page.getByTestId('profile-emergency-phone-input')
@@ -263,7 +263,7 @@ test.describe('Profile Settings Form', () => {
 
 		test('should validate email format', async ({page}) => {
 			await page.goto('/settings/profile')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('profile-displayname-input').waitFor({state: 'visible'})
 
 			// WHEN: User enters invalid email and blurs
 			const emailInput = page.getByTestId('profile-emergency-email-input')
@@ -277,7 +277,7 @@ test.describe('Profile Settings Form', () => {
 
 		test('should accept valid phone format', async ({page}) => {
 			await page.goto('/settings/profile')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('profile-displayname-input').waitFor({state: 'visible'})
 
 			// WHEN: User enters valid phone
 			const phoneInput = page.getByTestId('profile-emergency-phone-input')
@@ -302,7 +302,7 @@ test.describe('Profile Settings Form', () => {
 
 		test('should disable submit button when form has errors', async ({page}) => {
 			await page.goto('/settings/profile')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('profile-displayname-input').waitFor({state: 'visible'})
 
 			// WHEN: User clears display name (invalid state)
 			const displayNameInput = page.getByTestId('profile-displayname-input')
@@ -320,7 +320,7 @@ test.describe('Profile Settings Form', () => {
 		// TODO: Toast visibility - info toast not visible on Mobile Chrome within timeout
 		test.skip('should show info toast when no changes made', async ({page}) => {
 			await page.goto('/settings/profile')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('profile-displayname-input').waitFor({state: 'visible'})
 
 			// WHEN: User clicks Save without making changes
 			const submitButton = page.getByTestId('profile-settings-submit-button')
@@ -484,7 +484,7 @@ test.describe('Minor Privacy Protection (NFR9)', () => {
 		)
 
 		await page.goto('/settings/profile')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('profile-displayname-input').waitFor({state: 'visible'})
 
 		// WHEN: Minor opens pronouns select
 		const pronounsSelect = page.getByTestId('profile-pronouns-select')

@@ -44,7 +44,7 @@ test.describe('QR Scanner - Progressive Disclosure', () => {
 		await setupQrTestEnvironment(page)
 		await setupFailedCheckInMock(page)
 		await page.goto('/dashboard')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 		// QR button should not be visible initially (progressive disclosure)
 		await expect(page.getByTestId('open-qr-scanner')).not.toBeVisible()
@@ -59,7 +59,7 @@ test.describe('QR Scanner - Progressive Disclosure', () => {
 		await setupQrTestEnvironment(page)
 		await setupFailedCheckInMock(page)
 		await page.goto('/dashboard')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 		// Verify QR option not visible initially
 		await expect(page.getByTestId('open-qr-scanner')).not.toBeVisible()
@@ -76,7 +76,7 @@ test.describe('QR Scanner - Progressive Disclosure', () => {
 		await setupQrTestEnvironment(page, {cameraAvailable: false})
 		await setupFailedCheckInMock(page)
 		await page.goto('/dashboard')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 		// Trigger error
 		const input = page.getByTestId('event-code-input')
@@ -99,7 +99,7 @@ test.describe('QR Scanner - Open/Close Behavior', () => {
 		await setupQrTestEnvironment(page)
 		await setupFailedCheckInMock(page)
 		await page.goto('/dashboard')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 		await triggerFailedCheckIn(page)
 
@@ -120,7 +120,7 @@ test.describe('QR Scanner - Open/Close Behavior', () => {
 		await setupQrTestEnvironment(page)
 		await setupFailedCheckInMock(page)
 		await page.goto('/dashboard')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 		await triggerFailedCheckIn(page)
 
@@ -141,7 +141,7 @@ test.describe('QR Scanner - Open/Close Behavior', () => {
 		await setupQrTestEnvironment(page)
 		await setupFailedCheckInMock(page)
 		await page.goto('/dashboard')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 		await triggerFailedCheckIn(page)
 
@@ -166,7 +166,7 @@ test.describe('QR Scanner - Open/Close Behavior', () => {
 		await setupQrTestEnvironment(page)
 		await setupFailedCheckInMock(page)
 		await page.goto('/dashboard')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 		await triggerFailedCheckIn(page)
 
@@ -188,7 +188,7 @@ test.describe('QR Scanner - Open/Close Behavior', () => {
 		await setupQrTestEnvironment(page)
 		await setupFailedCheckInMock(page)
 		await page.goto('/dashboard')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 		await triggerFailedCheckIn(page)
 
@@ -215,7 +215,7 @@ test.describe('QR Scanner - Accessibility', () => {
 		await setupQrTestEnvironment(page)
 		await setupFailedCheckInMock(page)
 		await page.goto('/dashboard')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 		await triggerFailedCheckIn(page)
 		await waitForQrAdapter(page)
@@ -233,7 +233,7 @@ test.describe('QR Scanner - Accessibility', () => {
 		await setupQrTestEnvironment(page)
 		await setupFailedCheckInMock(page)
 		await page.goto('/dashboard')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 		await triggerFailedCheckIn(page)
 		await waitForQrAdapter(page)
@@ -247,7 +247,7 @@ test.describe('QR Scanner - Accessibility', () => {
 		await setupQrTestEnvironment(page)
 		await setupFailedCheckInMock(page)
 		await page.goto('/dashboard')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 		await triggerFailedCheckIn(page)
 		await waitForQrAdapter(page)
@@ -263,7 +263,7 @@ test.describe('QR Scanner - Accessibility', () => {
 		await setupQrTestEnvironment(page)
 		await setupFailedCheckInMock(page)
 		await page.goto('/dashboard')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 		await triggerFailedCheckIn(page)
 		await waitForQrAdapter(page)
@@ -289,7 +289,7 @@ test.describe('QR Scanner - Camera Controls', () => {
 		await setupQrTestEnvironment(page)
 		await setupFailedCheckInMock(page)
 		await page.goto('/dashboard')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 		await triggerFailedCheckIn(page)
 		await waitForQrAdapter(page)
@@ -306,7 +306,7 @@ test.describe('QR Scanner - Camera Controls', () => {
 		await setupQrTestEnvironment(page)
 		await setupFailedCheckInMock(page)
 		await page.goto('/dashboard')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 		await triggerFailedCheckIn(page)
 		await waitForQrAdapter(page)
@@ -326,7 +326,7 @@ test.describe('QR Scanner - Camera Controls', () => {
 		await setupFailedCheckInMock(page)
 
 		await page.goto('/dashboard')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 		// Trigger failed check-in to show QR option
 		await triggerFailedCheckIn(page)
@@ -363,7 +363,7 @@ test.describe('QR Scanner - Success Flow Integration', () => {
 		await deleteTestEvent('qr-test-event')
 
 		await page.goto('/dashboard')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 		// First attempt fails (no event seeded - server naturally returns NotFoundError)
 		await page.getByTestId('event-code-input').fill(TEST_CODES.INVALID)
@@ -416,7 +416,7 @@ test.describe('QR Scanner - Success Flow Integration', () => {
 		})
 
 		await page.goto('/dashboard')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 		// Trigger failed check-in to show QR option (use invalid code - no matching event)
 		await page.getByTestId('event-code-input').fill(TEST_CODES.INVALID)
@@ -448,7 +448,7 @@ test.describe('QR Scanner - Permission Denied', () => {
 		await setupQrTestEnvironment(page, {permissionDenied: true})
 		await setupFailedCheckInMock(page)
 		await page.goto('/dashboard')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 		await triggerFailedCheckIn(page)
 		await waitForQrAdapter(page)
@@ -470,7 +470,7 @@ test.describe('QR Scanner - Permission Denied', () => {
 		await setupQrTestEnvironment(page, {permissionDenied: true})
 		await setupFailedCheckInMock(page)
 		await page.goto('/dashboard')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 		await triggerFailedCheckIn(page)
 		await waitForQrAdapter(page)
@@ -498,7 +498,7 @@ test.describe('QR Scanner - Invalid QR Code Handling', () => {
 		await setupFailedCheckInMock(page)
 
 		await page.goto('/dashboard')
-		await page.waitForLoadState('networkidle')
+		await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 		// Trigger failed check-in to show QR option
 		await triggerFailedCheckIn(page)

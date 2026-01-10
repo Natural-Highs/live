@@ -86,7 +86,7 @@ test.describe('Admin Event Management', () => {
 
 			// WHEN: Admin navigates to events page
 			await page.goto('/events')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('admin-events-page').waitFor({state: 'visible'})
 
 			// THEN: Events page should be visible
 			await expect(page.getByTestId('admin-events-page')).toBeVisible({timeout: 10000})
@@ -129,7 +129,7 @@ test.describe('Admin Event Management', () => {
 
 			// WHEN: Admin fills in form and submits
 			// Wait for hydration and all React Query refetches to complete
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('admin-events-page').waitFor({state: 'visible'})
 
 			// Wait for event types to load from Firestore emulator
 			const eventTypeSelect = page.getByTestId('event-type-select')
@@ -183,7 +183,7 @@ test.describe('Admin Event Management', () => {
 
 			// WHEN: Admin navigates to events page
 			await page.goto('/events')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('admin-events-page').waitFor({state: 'visible'})
 
 			// THEN: Should show empty state message or events list
 			// Either no-events-message OR events-list should be visible
@@ -228,7 +228,7 @@ test.describe('Admin Event Management', () => {
 			// STEP 1: Create event
 			await page.getByTestId('create-event-button').click()
 			await expect(page.getByTestId('create-event-modal')).toBeVisible()
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('admin-events-page').waitFor({state: 'visible'})
 
 			await page.getByTestId('event-name-input').fill('Lifecycle Test Event')
 			// Select the seeded event type (Workshop)
@@ -286,7 +286,7 @@ test.describe('Admin Event Management', () => {
 			await mockServerFunctionError(page, 'Event name already exists')
 
 			// WHEN: Admin tries to create event
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('admin-events-page').waitFor({state: 'visible'})
 
 			await page.getByTestId('event-name-input').fill('Duplicate Event')
 			// Select the seeded event type (Workshop)
@@ -307,7 +307,7 @@ test.describe('Admin Event Management', () => {
 			await expect(page.getByTestId('create-event-modal')).toBeVisible()
 
 			// WHEN: Admin tries to create event with network failure
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('admin-events-page').waitFor({state: 'visible'})
 
 			await page.getByTestId('event-name-input').fill('Test Event')
 			// Select the seeded event type (Workshop)

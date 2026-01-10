@@ -90,7 +90,7 @@ test.describe('Guest Check-in Flow', () => {
 
 		test('should auto-submit on 4th digit entry', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Enter 4 digits - should auto-submit and transition to info step
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -103,7 +103,7 @@ test.describe('Guest Check-in Flow', () => {
 	test.describe('AC2: Step-based Guest Flow', () => {
 		test('should progress from code to info step after valid code', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Enter valid code (auto-submits on 4th digit)
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -116,7 +116,7 @@ test.describe('Guest Check-in Flow', () => {
 
 		test('should progress from info to consent step', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Step 1: Code entry (auto-submits)
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -134,7 +134,7 @@ test.describe('Guest Check-in Flow', () => {
 
 		test('should show success confirmation after consent', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Step 1: Code entry (auto-submits)
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -158,7 +158,7 @@ test.describe('Guest Check-in Flow', () => {
 
 		test('should allow back navigation between steps', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Go to info step (auto-submits)
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -185,7 +185,7 @@ test.describe('Guest Check-in Flow', () => {
 	test.describe('AC3: Typed Consent Signature', () => {
 		test('should require signature matching full name', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Navigate to consent step (auto-submits on 4th digit)
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -205,7 +205,7 @@ test.describe('Guest Check-in Flow', () => {
 
 		test('should accept signature matching name case-insensitively', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Navigate to consent step (auto-submits on 4th digit)
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -227,7 +227,7 @@ test.describe('Guest Check-in Flow', () => {
 	test.describe('AC4: Data Retention Notice', () => {
 		test('should display data retention notice on consent step', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Navigate to consent step (auto-submits on 4th digit)
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -249,7 +249,7 @@ test.describe('Guest Check-in Flow', () => {
 			page
 		}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Navigate through flow with only required fields (auto-submits on 4th digit)
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -272,7 +272,7 @@ test.describe('Guest Check-in Flow', () => {
 
 		test('should show email and phone as optional fields', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Navigate to info step (auto-submits on 4th digit)
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -285,7 +285,7 @@ test.describe('Guest Check-in Flow', () => {
 
 		test('should accept submission with all optional fields filled', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Navigate through flow with all fields (auto-submits on 4th digit)
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -311,7 +311,7 @@ test.describe('Guest Check-in Flow', () => {
 	test.describe('AC6: Error Handling', () => {
 		test('should show error for invalid event code', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Enter invalid code (0000 doesn't exist in Firestore) - auto-submits
 			await page.getByTestId('guest-event-code-input').pressSequentially('0000')
@@ -322,7 +322,7 @@ test.describe('Guest Check-in Flow', () => {
 
 		test('should validate required fields on info step', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Navigate to info step (auto-submits on 4th digit)
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -337,7 +337,7 @@ test.describe('Guest Check-in Flow', () => {
 
 		test('should validate email format when provided', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Navigate to info step (auto-submits on 4th digit)
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -357,7 +357,7 @@ test.describe('Guest Check-in Flow', () => {
 	test.describe('AC7: Guest Record Creation', () => {
 		test('should create guest record in Firestore with all required fields', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Complete full flow (auto-submits on 4th digit)
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -394,7 +394,7 @@ test.describe('Guest Check-in Flow', () => {
 
 		test('should create guest record without optional email and phone', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Complete flow without optional fields (auto-submits on 4th digit)
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -429,7 +429,7 @@ test.describe('Guest Check-in Flow', () => {
 	test.describe('Success Confirmation', () => {
 		test('should display event name and guest name in success overlay', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Complete flow (auto-submits on 4th digit)
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -449,7 +449,7 @@ test.describe('Guest Check-in Flow', () => {
 
 		test('should dismiss success overlay on click and show conversion prompt', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Complete flow (auto-submits on 4th digit)
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -487,7 +487,7 @@ test.describe('Guest Check-in Flow', () => {
 	test.describe('Guest Conversion Prompt', () => {
 		test('should show conversion prompt after dismissing success overlay', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Complete check-in flow
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -511,7 +511,7 @@ test.describe('Guest Check-in Flow', () => {
 
 		test('should show first-time guest messaging for single event', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Complete check-in flow
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -534,7 +534,7 @@ test.describe('Guest Check-in Flow', () => {
 
 		test('should dismiss prompt and return to code entry on Maybe Later', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Complete check-in flow
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -561,7 +561,7 @@ test.describe('Guest Check-in Flow', () => {
 
 		test('should not show prompt again after Maybe Later in same session', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// First check-in
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)
@@ -601,7 +601,7 @@ test.describe('Guest Check-in Flow', () => {
 
 		test('should navigate to /guest/convert on Create Account click', async ({page}) => {
 			await page.goto('/guest')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Complete check-in flow with email
 			await page.getByTestId('guest-event-code-input').pressSequentially(testEventCode)

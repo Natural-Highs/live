@@ -141,7 +141,7 @@ test.describe('Profile Creation Flow', () => {
 			await injectSessionCookie(context, testUser, {signedConsentForm: false})
 
 			await page.goto('/signup/about-you?email=test@example.com&username=testuser')
-			await page.waitForLoadState('networkidle')
+			await page.waitForLoadState('domcontentloaded')
 
 			// WHEN: User fills in profile and submits
 			// Server function hits Firestore emulator directly (no mock needed)

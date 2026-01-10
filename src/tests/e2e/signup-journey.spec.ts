@@ -140,7 +140,7 @@ test.describe('Signup Journey E2E @smoke', () => {
 			// THEN: Should be redirected to profile-setup (due to !hasProfile check in _authed)
 			await expect(page).toHaveURL(/profile-setup/, {timeout: 10000})
 			// Wait for hydration to complete before interacting with form
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('profile-form').waitFor({state: 'visible'})
 			await expect(page.getByTestId('profile-form')).toBeVisible()
 
 			// Fill and submit profile form
@@ -213,7 +213,7 @@ test.describe('Signup Journey E2E @smoke', () => {
 			// WHEN: User navigates to profile setup
 			await page.goto('/profile-setup')
 			// Wait for hydration to complete before interacting with form
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('profile-form').waitFor({state: 'visible'})
 			await expect(page.getByTestId('profile-form')).toBeVisible({timeout: 10000})
 
 			// AND: User submits form without filling required fields
@@ -256,7 +256,7 @@ test.describe('Signup Journey E2E @smoke', () => {
 
 			await page.goto('/profile-setup')
 			// Wait for hydration to complete before interacting with form
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('profile-form').waitFor({state: 'visible'})
 			await expect(page.getByTestId('profile-form')).toBeVisible({timeout: 10000})
 
 			// Fill in profile data

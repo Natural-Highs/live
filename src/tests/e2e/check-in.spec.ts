@@ -53,7 +53,7 @@ test.describe('User Check-in Flow @smoke', () => {
 
 			// Navigate to dashboard
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// WHEN: User enters 4 digits (auto-submits on 4th digit)
 			const input = page.getByTestId('event-code-input')
@@ -74,7 +74,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			await seedTestEvent()
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// WHEN: User enters valid event code (auto-submits)
 			const input = page.getByTestId('event-code-input')
@@ -96,7 +96,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			await seedTestEvent()
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// WHEN: User completes check-in (auto-submit on 4th digit)
 			const input = page.getByTestId('event-code-input')
@@ -127,9 +127,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			await seedTestEvent({name: 'Workshop'})
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
-
 			const input = page.getByTestId('event-code-input')
+			await input.waitFor({state: 'visible'})
 			await input.fill(TEST_CODES.VALID)
 
 			// THEN: Should display event name in the overlay
@@ -150,8 +149,6 @@ test.describe('User Check-in Flow @smoke', () => {
 			await seedTestEvent({eventDate: new Date('2025-01-15T10:00:00Z')})
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
-
 			const input = page.getByTestId('event-code-input')
 			await input.waitFor({state: 'visible'})
 			await input.fill(TEST_CODES.VALID)
@@ -173,8 +170,6 @@ test.describe('User Check-in Flow @smoke', () => {
 			await seedTestEvent({name: 'Test Event'})
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
-
 			const input = page.getByTestId('event-code-input')
 			await input.waitFor({state: 'visible'})
 			await input.fill(TEST_CODES.VALID)
@@ -194,9 +189,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			await seedTestEvent()
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
-
 			const input = page.getByTestId('event-code-input')
+			await input.waitFor({state: 'visible'})
 			await input.fill(TEST_CODES.VALID)
 
 			// THEN: Should display animated checkmark
@@ -215,9 +209,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			await seedTestEvent()
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
-
 			const input = page.getByTestId('event-code-input')
+			await input.waitFor({state: 'visible'})
 			await input.fill(TEST_CODES.VALID)
 
 			// Wait for confirmation
@@ -240,9 +233,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			await seedTestEvent()
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
-
 			const input = page.getByTestId('event-code-input')
+			await input.waitFor({state: 'visible'})
 			await input.fill(TEST_CODES.VALID)
 
 			// Wait for confirmation to appear
@@ -267,7 +259,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			await seedTestEvent()
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// WHEN: Returning user enters valid event code (auto-submits on 4th digit)
 			const input = page.getByTestId('event-code-input')
@@ -289,7 +281,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			await seedTestEvent()
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// WHEN: Returning user enters event code (auto-submits)
 			const input = page.getByTestId('event-code-input')
@@ -313,7 +305,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			// Don't seed event - server will naturally return NotFoundError
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// WHEN: User enters invalid code
 			const input = page.getByTestId('event-code-input')
@@ -341,7 +333,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			await seedTestEvent()
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// Fill in the code
 			const input = page.getByTestId('event-code-input')
@@ -372,7 +364,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			await cleanupAllTestData()
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// WHEN: User enters invalid code (auto-submits on 4th digit)
 			const input = page.getByTestId('event-code-input')
@@ -398,7 +390,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			} as unknown as import('../fixtures/firestore.fixture').TestEventDocument)
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// WHEN: User enters expired event code (auto-submits)
 			const input = page.getByTestId('event-code-input')
@@ -418,7 +410,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			})
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// WHEN: User submits with network failure (auto-submits on 4th digit)
 			const input = page.getByTestId('event-code-input')
@@ -439,7 +431,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			// Don't seed initially - first attempt will fail
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 			const input = page.getByTestId('event-code-input')
 
 			// First attempt - should fail (no event seeded)
@@ -472,7 +464,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			await seedTestEvent()
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// First check-in succeeds
 			const input = page.getByTestId('event-code-input')
@@ -502,7 +494,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			await seedTestEvent()
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// First check-in succeeds
 			const input = page.getByTestId('event-code-input')
@@ -532,7 +524,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			await seedTestEvent()
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// First check-in
 			const input = page.getByTestId('event-code-input')
@@ -570,7 +562,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			await seedTestEvent({isActive: false, eventCode: '4567'})
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// WHEN: User enters code for inactive event
 			const input = page.getByTestId('event-code-input')
@@ -599,7 +591,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			} as unknown as import('../fixtures/firestore.fixture').TestEventDocument)
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// WHEN: User enters event code for an event outside time window
 			const input = page.getByTestId('event-code-input')

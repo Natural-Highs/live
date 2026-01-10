@@ -173,7 +173,7 @@ test.describe('Mobile Viewport Coverage', () => {
 
 			// WHEN: User navigates to dashboard
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// THEN: Event code input should be visible (dashboard uses auto-submit OTP, no submit button)
 			await expect(page.getByTestId('event-code-input')).toBeVisible()
@@ -186,7 +186,7 @@ test.describe('Mobile Viewport Coverage', () => {
 			// Server functions hit Firestore emulator directly (no mocks needed)
 
 			await page.goto('/dashboard')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('event-code-input').waitFor({state: 'visible'})
 
 			// WHEN: User enters event code on mobile
 			const input = page.getByTestId('event-code-input')

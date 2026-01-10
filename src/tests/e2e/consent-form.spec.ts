@@ -96,7 +96,7 @@ test.describe('Consent Form Flow @smoke', () => {
 		}) => {
 			// GIVEN: User is on consent form
 			await page.goto('/consent')
-			await page.waitForLoadState('networkidle')
+			await page.waitForLoadState('domcontentloaded')
 
 			// Wait for form to be fully rendered
 			const checkbox = page.getByRole('checkbox')
@@ -122,7 +122,7 @@ test.describe('Consent Form Flow @smoke', () => {
 			// Server function hits emulator directly - no mock needed
 
 			await page.goto('/consent')
-			await page.waitForLoadState('networkidle')
+			await page.waitForLoadState('domcontentloaded')
 
 			// Wait for form to be fully rendered
 			const checkbox = page.getByRole('checkbox')
@@ -156,7 +156,7 @@ test.describe('Consent Form Flow @smoke', () => {
 			})
 
 			await page.goto('/consent')
-			await page.waitForLoadState('networkidle')
+			await page.waitForLoadState('domcontentloaded')
 
 			// Wait for form to be fully rendered
 			const checkbox = page.getByRole('checkbox')
@@ -179,7 +179,7 @@ test.describe('Consent Form Flow @smoke', () => {
 		}) => {
 			// GIVEN: User is on consent form
 			await page.goto('/consent')
-			await page.waitForLoadState('networkidle')
+			await page.waitForLoadState('domcontentloaded')
 
 			// THEN: Should display consent form heading
 			// Use more specific selector to avoid strict mode violation
