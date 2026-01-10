@@ -199,9 +199,15 @@ test.describe('Profile Settings Form', () => {
 	test.describe('Demographics Updates', () => {
 		test('should allow selecting pronouns', async ({page}) => {
 			await page.goto('/settings/profile')
+			await page.waitForLoadState('networkidle')
 
 			// WHEN: User opens pronouns select
-			await page.getByTestId('profile-pronouns-select').click()
+			const pronounsSelect = page.getByTestId('profile-pronouns-select')
+			await expect(pronounsSelect).toBeVisible()
+			await pronounsSelect.click()
+
+			// Wait for listbox to open (Radix Select uses role="listbox")
+			await expect(page.getByRole('listbox')).toBeVisible()
 
 			// THEN: Should see pronoun options
 			await expect(page.getByRole('option', {name: 'she/her'})).toBeVisible()
@@ -211,9 +217,15 @@ test.describe('Profile Settings Form', () => {
 
 		test('should allow selecting gender', async ({page}) => {
 			await page.goto('/settings/profile')
+			await page.waitForLoadState('networkidle')
 
 			// WHEN: User opens gender select
-			await page.getByTestId('profile-gender-select').click()
+			const genderSelect = page.getByTestId('profile-gender-select')
+			await expect(genderSelect).toBeVisible()
+			await genderSelect.click()
+
+			// Wait for listbox to open (Radix Select uses role="listbox")
+			await expect(page.getByRole('listbox')).toBeVisible()
 
 			// THEN: Should see gender options
 			await expect(page.getByRole('option', {name: 'female'})).toBeVisible()
@@ -306,13 +318,16 @@ test.describe('Profile Settings Form', () => {
 
 		test('should show info toast when no changes made', async ({page}) => {
 			await page.goto('/settings/profile')
+			await page.waitForLoadState('networkidle')
 
 			// WHEN: User clicks Save without making changes
 			const submitButton = page.getByTestId('profile-settings-submit-button')
+			await expect(submitButton).toBeVisible()
+			await expect(submitButton).toBeEnabled()
 			await submitButton.click()
 
-			// THEN: Should show info toast about no changes
-			await expect(page.getByText(/no changes to save/i)).toBeVisible()
+			// THEN: Should show info toast about no changes (toast renders in portal)
+			await expect(page.getByText(/no changes to save/i)).toBeVisible({timeout: 10000})
 		})
 	})
 
@@ -467,9 +482,15 @@ test.describe('Minor Privacy Protection (NFR9)', () => {
 		)
 
 		await page.goto('/settings/profile')
+		await page.waitForLoadState('networkidle')
 
 		// WHEN: Minor opens pronouns select
-		await page.getByTestId('profile-pronouns-select').click()
+		const pronounsSelect = page.getByTestId('profile-pronouns-select')
+		await expect(pronounsSelect).toBeVisible()
+		await pronounsSelect.click()
+
+		// Wait for listbox to open (Radix Select uses role="listbox")
+		await expect(page.getByRole('listbox')).toBeVisible()
 
 		// THEN: Should see pronoun options (demographics accessible to minors)
 		await expect(page.getByRole('option', {name: 'they/them'})).toBeVisible()
