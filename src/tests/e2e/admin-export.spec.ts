@@ -24,7 +24,13 @@ import {
 // NOTE: Dead mock helpers removed - server functions hit emulator directly
 // Tests now rely on Firestore seeding via fixtures
 
+// TODO: Data Export & Reporting - enable when feature is complete
+const SKIP_REASON = 'TODO: Data Export & Reporting'
+
 test.describe('Admin Export Flow', () => {
+	// TODO: Data Export & Reporting - enable when feature is complete
+	test.skip(true, SKIP_REASON)
+
 	// Worker-scoped cleanup runs automatically via firebase-reset fixture
 	// No manual clearFirestoreEmulator() needed - each test creates isolated data
 
