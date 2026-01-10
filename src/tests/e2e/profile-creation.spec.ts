@@ -57,10 +57,14 @@ test.describe('Profile Creation Flow', () => {
 			await page.goto('/signup')
 
 			// WHEN: User clicks sign in button
-			await page.getByTestId('signup-signin-button').click()
+			// Wait for button to be actionable before clicking (CI stability)
+			const signInButton = page.getByTestId('signup-signin-button')
+			await signInButton.waitFor({state: 'visible'})
+			await signInButton.click()
 
 			// THEN: Should navigate to authentication page
-			await expect(page).toHaveURL('/authentication')
+			// Use waitForURL for more reliable navigation assertion in CI
+			await page.waitForURL('/authentication')
 		})
 
 		test('should fill signup form fields', async ({page}) => {
@@ -135,6 +139,7 @@ test.describe('Profile Creation Flow', () => {
 			await injectSessionCookie(context, testUser, {signedConsentForm: false})
 
 			await page.goto('/signup/about-you?email=test@example.com&username=testuser')
+			await page.waitForLoadState('networkidle')
 
 			// WHEN: User fills in profile and submits
 			// Server function hits Firestore emulator directly (no mock needed)
@@ -144,7 +149,8 @@ test.describe('Profile Creation Flow', () => {
 			await page.getByTestId('about-you-submit-button').click()
 
 			// THEN: Should navigate to consent page
-			await expect(page).toHaveURL('/consent')
+			// Use waitForURL for more reliable navigation in CI
+			await page.waitForURL('/consent')
 		})
 	})
 

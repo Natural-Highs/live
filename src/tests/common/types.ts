@@ -96,3 +96,17 @@ export interface TestGuestEventDocument {
 	registeredAt?: Date
 	createdAt?: Date
 }
+
+/**
+ * Test survey response document data structure.
+ * Matches the fields expected by admin export functions.
+ */
+export interface TestResponseDocument {
+	id?: string
+	userId: string
+	eventId: string
+	surveyType: 'pre' | 'post'
+	responses: Record<string, string | number | boolean | string[]>
+	submittedAt?: Date
+	createdAt?: Date
+}

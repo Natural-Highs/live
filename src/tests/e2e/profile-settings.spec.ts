@@ -184,14 +184,15 @@ test.describe('Profile Settings Form', () => {
 
 		test('should validate empty display name', async ({page}) => {
 			await page.goto('/settings/profile')
+			await page.waitForLoadState('networkidle')
 
 			// WHEN: User clears display name and blurs
 			const displayNameInput = page.getByTestId('profile-displayname-input')
 			await displayNameInput.clear()
 			await displayNameInput.blur()
 
-			// THEN: Should show validation error
-			await expect(page.locator('.text-destructive')).toBeVisible()
+			// THEN: Should show validation error (wait for React re-render in CI)
+			await expect(page.locator('.text-destructive')).toBeVisible({timeout: 10000})
 		})
 	})
 
@@ -235,6 +236,7 @@ test.describe('Profile Settings Form', () => {
 	test.describe('Emergency Contact Validation', () => {
 		test('should validate phone format', async ({page}) => {
 			await page.goto('/settings/profile')
+			await page.waitForLoadState('networkidle')
 
 			// WHEN: User enters invalid phone and blurs
 			const phoneInput = page.getByTestId('profile-emergency-phone-input')
@@ -242,12 +244,13 @@ test.describe('Profile Settings Form', () => {
 			await phoneInput.fill('invalid-phone')
 			await phoneInput.blur()
 
-			// THEN: Should show validation error
-			await expect(page.getByText(/invalid phone format/i)).toBeVisible()
+			// THEN: Should show validation error (wait for React re-render in CI)
+			await expect(page.getByText(/invalid phone format/i)).toBeVisible({timeout: 10000})
 		})
 
 		test('should validate email format', async ({page}) => {
 			await page.goto('/settings/profile')
+			await page.waitForLoadState('networkidle')
 
 			// WHEN: User enters invalid email and blurs
 			const emailInput = page.getByTestId('profile-emergency-email-input')
@@ -255,12 +258,13 @@ test.describe('Profile Settings Form', () => {
 			await emailInput.fill('invalid-email')
 			await emailInput.blur()
 
-			// THEN: Should show validation error
-			await expect(page.getByText(/invalid email format/i)).toBeVisible()
+			// THEN: Should show validation error (wait for React re-render in CI)
+			await expect(page.getByText(/invalid email format/i)).toBeVisible({timeout: 10000})
 		})
 
 		test('should accept valid phone format', async ({page}) => {
 			await page.goto('/settings/profile')
+			await page.waitForLoadState('networkidle')
 
 			// WHEN: User enters valid phone
 			const phoneInput = page.getByTestId('profile-emergency-phone-input')
@@ -285,11 +289,15 @@ test.describe('Profile Settings Form', () => {
 
 		test('should disable submit button when form has errors', async ({page}) => {
 			await page.goto('/settings/profile')
+			await page.waitForLoadState('networkidle')
 
 			// WHEN: User clears display name (invalid state)
 			const displayNameInput = page.getByTestId('profile-displayname-input')
 			await displayNameInput.clear()
 			await displayNameInput.blur()
+
+			// Wait for validation to trigger (CI timing)
+			await expect(page.locator('.text-destructive')).toBeVisible({timeout: 10000})
 
 			// THEN: Submit button should be disabled
 			const submitButton = page.getByTestId('profile-settings-submit-button')

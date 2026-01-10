@@ -36,6 +36,11 @@ process.env.GOOGLE_APPLICATION_CREDENTIALS = ''
 process.env.FIREBASE_CONFIG = '{}'
 
 export default defineConfig({
+	// Increase expect timeout in CI for stability
+	// CI runners are slower and headless Chrome has different timing
+	expect: {
+		timeout: isCI ? 10000 : 5000
+	},
 	forbidOnly: isCI,
 	fullyParallel: true,
 	globalSetup: './playwright.global-setup.ts',
@@ -83,6 +88,8 @@ export default defineConfig({
 	// Output directories for CI artifact collection
 	outputDir: '.build/test-results',
 	use: {
+		// Increase action timeout in CI for stability
+		actionTimeout: isCI ? 15000 : 10000,
 		baseURL: 'http://localhost:3000',
 		trace: 'on-first-retry',
 		screenshot: 'only-on-failure',

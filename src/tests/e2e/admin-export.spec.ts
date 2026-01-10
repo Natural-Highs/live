@@ -14,7 +14,12 @@
  */
 
 import {expect, test} from '../fixtures/admin.fixture'
-import {createTestEvent, deleteTestEvent} from '../fixtures/firestore.fixture'
+import {
+	createTestEvent,
+	createTestResponse,
+	deleteTestEvent,
+	deleteTestResponse
+} from '../fixtures/firestore.fixture'
 
 // NOTE: Dead mock helpers removed - server functions hit emulator directly
 // Tests now rely on Firestore seeding via fixtures
@@ -222,31 +227,34 @@ test.describe('Admin Export Flow', () => {
 			workerPrefix
 		}) => {
 			// GIVEN: Admin is on page with survey responses
-			// Seed events in emulator
+			// Seed events and responses in emulator
 			const e1Id = `${workerPrefix}__e1`
-			const e2Id = `${workerPrefix}__e2`
+			const r1Id = `${workerPrefix}__r1`
 			await createTestEvent({
 				id: e1Id,
 				name: 'Peer-mentor Session',
 				eventCode: `${workerPrefix.slice(1)}11`,
 				isActive: true
 			})
-			await createTestEvent({
-				id: e2Id,
-				name: 'Workshop',
-				eventCode: `${workerPrefix.slice(1)}22`,
-				isActive: true
+			// Seed survey response to enable export buttons
+			await createTestResponse({
+				id: r1Id,
+				userId: `${workerPrefix}__user1`,
+				eventId: e1Id,
+				surveyType: 'pre',
+				responses: {q1: 'test answer', q2: 5}
 			})
 
 			await page.goto('/survey-responses')
+			await page.waitForLoadState('networkidle')
 
 			// Wait for data to load by checking button state
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
 			await expect(page.getByTestId('export-json-button')).toBeEnabled()
 
 			// Cleanup
+			await deleteTestResponse(r1Id)
 			await deleteTestEvent(e1Id)
-			await deleteTestEvent(e2Id)
 		})
 
 		test('should trigger CSV download when clicking export', async ({
@@ -255,27 +263,29 @@ test.describe('Admin Export Flow', () => {
 			workerPrefix
 		}) => {
 			// GIVEN: Admin is on page with survey responses
-			// Seed events in emulator
+			// Seed events and responses in emulator
 			const e1Id = `${workerPrefix}__e1`
-			const e2Id = `${workerPrefix}__e2`
+			const r1Id = `${workerPrefix}__r1`
 			await createTestEvent({
 				id: e1Id,
 				name: 'Peer-mentor Session',
 				eventCode: `${workerPrefix.slice(1)}11`,
 				isActive: true
 			})
-			await createTestEvent({
-				id: e2Id,
-				name: 'Workshop',
-				eventCode: `${workerPrefix.slice(1)}22`,
-				isActive: true
+			// Seed survey response to enable export buttons
+			await createTestResponse({
+				id: r1Id,
+				userId: `${workerPrefix}__user1`,
+				eventId: e1Id,
+				surveyType: 'pre',
+				responses: {q1: 'test answer', q2: 5}
 			})
 
 			await page.goto('/survey-responses')
 
 			// Wait for page to fully load and render export buttons
 			await page.waitForLoadState('networkidle')
-			await expect(page.getByTestId('export-csv-button')).toBeVisible()
+			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
 
 			// WHEN: Admin clicks export CSV
 			const downloadPromise = page.waitForEvent('download')
@@ -286,8 +296,8 @@ test.describe('Admin Export Flow', () => {
 			expect(download.suggestedFilename()).toMatch(/survey-responses.*\.csv$/)
 
 			// Cleanup
+			await deleteTestResponse(r1Id)
 			await deleteTestEvent(e1Id)
-			await deleteTestEvent(e2Id)
 		})
 
 		test('should trigger JSON download when clicking export', async ({
@@ -296,27 +306,29 @@ test.describe('Admin Export Flow', () => {
 			workerPrefix
 		}) => {
 			// GIVEN: Admin is on page with survey responses
-			// Seed events in emulator
+			// Seed events and responses in emulator
 			const e1Id = `${workerPrefix}__e1`
-			const e2Id = `${workerPrefix}__e2`
+			const r1Id = `${workerPrefix}__r1`
 			await createTestEvent({
 				id: e1Id,
 				name: 'Peer-mentor Session',
 				eventCode: `${workerPrefix.slice(1)}11`,
 				isActive: true
 			})
-			await createTestEvent({
-				id: e2Id,
-				name: 'Workshop',
-				eventCode: `${workerPrefix.slice(1)}22`,
-				isActive: true
+			// Seed survey response to enable export buttons
+			await createTestResponse({
+				id: r1Id,
+				userId: `${workerPrefix}__user1`,
+				eventId: e1Id,
+				surveyType: 'pre',
+				responses: {q1: 'test answer', q2: 5}
 			})
 
 			await page.goto('/survey-responses')
 
 			// Wait for page to fully load and render export buttons
 			await page.waitForLoadState('networkidle')
-			await expect(page.getByTestId('export-json-button')).toBeVisible()
+			await expect(page.getByTestId('export-json-button')).toBeEnabled()
 
 			// WHEN: Admin clicks export JSON (force click for mobile viewport)
 			const downloadPromise = page.waitForEvent('download')
@@ -327,8 +339,8 @@ test.describe('Admin Export Flow', () => {
 			expect(download.suggestedFilename()).toMatch(/survey-responses.*\.json$/)
 
 			// Cleanup
+			await deleteTestResponse(r1Id)
 			await deleteTestEvent(e1Id)
-			await deleteTestEvent(e2Id)
 		})
 	})
 
@@ -339,24 +351,27 @@ test.describe('Admin Export Flow', () => {
 			workerPrefix
 		}) => {
 			// GIVEN: Admin is on page with survey responses containing sensitive data
-			// Seed events in emulator
+			// Seed events and responses in emulator
 			const e1Id = `${workerPrefix}__e1`
-			const e2Id = `${workerPrefix}__e2`
+			const r1Id = `${workerPrefix}__r1`
 			await createTestEvent({
 				id: e1Id,
 				name: 'Peer-mentor Session',
 				eventCode: `${workerPrefix.slice(1)}11`,
 				isActive: true
 			})
-			await createTestEvent({
-				id: e2Id,
-				name: 'Workshop',
-				eventCode: `${workerPrefix.slice(1)}22`,
-				isActive: true
+			// Seed survey response to enable export buttons
+			await createTestResponse({
+				id: r1Id,
+				userId: `${workerPrefix}__user1`,
+				eventId: e1Id,
+				surveyType: 'pre',
+				responses: {q1: 'test answer', q2: 5}
 			})
 
 			// WHEN: Admin navigates to survey responses page
 			await page.goto('/survey-responses')
+			await page.waitForLoadState('networkidle')
 
 			// Wait for data to load
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
@@ -373,8 +388,8 @@ test.describe('Admin Export Flow', () => {
 			}
 
 			// Cleanup
+			await deleteTestResponse(r1Id)
 			await deleteTestEvent(e1Id)
-			await deleteTestEvent(e2Id)
 		})
 
 		test('should show confirmation dialog when including sensitive fields in export', async ({
@@ -383,23 +398,26 @@ test.describe('Admin Export Flow', () => {
 			workerPrefix
 		}) => {
 			// GIVEN: Admin is on page with survey responses
-			// Seed events in emulator
+			// Seed events and responses in emulator
 			const e1Id = `${workerPrefix}__e1`
-			const e2Id = `${workerPrefix}__e2`
+			const r1Id = `${workerPrefix}__r1`
 			await createTestEvent({
 				id: e1Id,
 				name: 'Peer-mentor Session',
 				eventCode: `${workerPrefix.slice(1)}11`,
 				isActive: true
 			})
-			await createTestEvent({
-				id: e2Id,
-				name: 'Workshop',
-				eventCode: `${workerPrefix.slice(1)}22`,
-				isActive: true
+			// Seed survey response to enable export buttons
+			await createTestResponse({
+				id: r1Id,
+				userId: `${workerPrefix}__user1`,
+				eventId: e1Id,
+				surveyType: 'pre',
+				responses: {q1: 'test answer', q2: 5}
 			})
 
 			await page.goto('/survey-responses')
+			await page.waitForLoadState('networkidle')
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
 
 			// Check if sensitive fields control exists
@@ -425,8 +443,8 @@ test.describe('Admin Export Flow', () => {
 			}
 
 			// Cleanup
+			await deleteTestResponse(r1Id)
 			await deleteTestEvent(e1Id)
-			await deleteTestEvent(e2Id)
 		})
 
 		test('should export with sensitive fields after confirmation', async ({
@@ -435,23 +453,26 @@ test.describe('Admin Export Flow', () => {
 			workerPrefix
 		}) => {
 			// GIVEN: Admin is on page with survey responses
-			// Seed events in emulator
+			// Seed events and responses in emulator
 			const e1Id = `${workerPrefix}__e1`
-			const e2Id = `${workerPrefix}__e2`
+			const r1Id = `${workerPrefix}__r1`
 			await createTestEvent({
 				id: e1Id,
 				name: 'Peer-mentor Session',
 				eventCode: `${workerPrefix.slice(1)}11`,
 				isActive: true
 			})
-			await createTestEvent({
-				id: e2Id,
-				name: 'Workshop',
-				eventCode: `${workerPrefix.slice(1)}22`,
-				isActive: true
+
+			await createTestResponse({
+				id: r1Id,
+				userId: `${workerPrefix}__user1`,
+				eventId: e1Id,
+				surveyType: 'pre',
+				responses: {q1: 'test answer', q2: 5}
 			})
 
 			await page.goto('/survey-responses')
+			await page.waitForLoadState('networkidle')
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
 
 			// WHEN: Admin exports data
@@ -463,8 +484,8 @@ test.describe('Admin Export Flow', () => {
 			expect(download.suggestedFilename()).toMatch(/survey-responses.*\.csv$/)
 
 			// Cleanup
+			await deleteTestResponse(r1Id)
 			await deleteTestEvent(e1Id)
-			await deleteTestEvent(e2Id)
 		})
 
 		test('should properly format exported CSV file', async ({
@@ -473,23 +494,26 @@ test.describe('Admin Export Flow', () => {
 			workerPrefix
 		}) => {
 			// GIVEN: Admin is on page with survey responses
-			// Seed events in emulator
+			// Seed events and responses in emulator
 			const e1Id = `${workerPrefix}__e1`
-			const e2Id = `${workerPrefix}__e2`
+			const r1Id = `${workerPrefix}__r1`
 			await createTestEvent({
 				id: e1Id,
 				name: 'Peer-mentor Session',
 				eventCode: `${workerPrefix.slice(1)}11`,
 				isActive: true
 			})
-			await createTestEvent({
-				id: e2Id,
-				name: 'Workshop',
-				eventCode: `${workerPrefix.slice(1)}22`,
-				isActive: true
+			// Seed survey response to enable export buttons
+			await createTestResponse({
+				id: r1Id,
+				userId: `${workerPrefix}__user1`,
+				eventId: e1Id,
+				surveyType: 'pre',
+				responses: {q1: 'test answer', q2: 5}
 			})
 
 			await page.goto('/survey-responses')
+			await page.waitForLoadState('networkidle')
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
 
 			// WHEN: Admin exports to CSV
@@ -501,8 +525,8 @@ test.describe('Admin Export Flow', () => {
 			expect(download.suggestedFilename()).toMatch(/survey-responses.*\.csv$/)
 
 			// Cleanup
+			await deleteTestResponse(r1Id)
 			await deleteTestEvent(e1Id)
-			await deleteTestEvent(e2Id)
 		})
 
 		test('should properly format exported JSON file', async ({
@@ -511,23 +535,25 @@ test.describe('Admin Export Flow', () => {
 			workerPrefix
 		}) => {
 			// GIVEN: Admin is on page with survey responses
-			// Seed events in emulator
 			const e1Id = `${workerPrefix}__e1`
-			const e2Id = `${workerPrefix}__e2`
+			const r1Id = `${workerPrefix}__r1`
 			await createTestEvent({
 				id: e1Id,
 				name: 'Peer-mentor Session',
 				eventCode: `${workerPrefix.slice(1)}11`,
 				isActive: true
 			})
-			await createTestEvent({
-				id: e2Id,
-				name: 'Workshop',
-				eventCode: `${workerPrefix.slice(1)}22`,
-				isActive: true
+			// Seed survey response to enable export buttons
+			await createTestResponse({
+				id: r1Id,
+				userId: `${workerPrefix}__user1`,
+				eventId: e1Id,
+				surveyType: 'pre',
+				responses: {q1: 'test answer', q2: 5}
 			})
 
 			await page.goto('/survey-responses')
+			await page.waitForLoadState('networkidle')
 			await expect(page.getByTestId('export-json-button')).toBeEnabled()
 
 			// WHEN: Admin exports to JSON
@@ -539,8 +565,8 @@ test.describe('Admin Export Flow', () => {
 			expect(download.suggestedFilename()).toMatch(/survey-responses.*\.json$/)
 
 			// Cleanup
+			await deleteTestResponse(r1Id)
 			await deleteTestEvent(e1Id)
-			await deleteTestEvent(e2Id)
 		})
 	})
 
@@ -551,23 +577,24 @@ test.describe('Admin Export Flow', () => {
 			workerPrefix
 		}) => {
 			// GIVEN: Admin is on page with survey responses
-			// Seed events in emulator
 			const e1Id = `${workerPrefix}__e1`
-			const e2Id = `${workerPrefix}__e2`
+			const r1Id = `${workerPrefix}__r1`
 			await createTestEvent({
 				id: e1Id,
 				name: 'Peer-mentor Session',
 				eventCode: `${workerPrefix.slice(1)}11`,
 				isActive: true
 			})
-			await createTestEvent({
-				id: e2Id,
-				name: 'Workshop',
-				eventCode: `${workerPrefix.slice(1)}22`,
-				isActive: true
+			await createTestResponse({
+				id: r1Id,
+				userId: `${workerPrefix}__user1`,
+				eventId: e1Id,
+				surveyType: 'pre',
+				responses: {q1: 'test answer', q2: 5}
 			})
 
 			await page.goto('/survey-responses')
+			await page.waitForLoadState('networkidle')
 
 			// Wait for data to load by checking button state
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
@@ -583,8 +610,8 @@ test.describe('Admin Export Flow', () => {
 			expect(elapsed).toBeLessThan(5000)
 
 			// Cleanup
+			await deleteTestResponse(r1Id)
 			await deleteTestEvent(e1Id)
-			await deleteTestEvent(e2Id)
 		})
 
 		test('should load page within reasonable time', async ({

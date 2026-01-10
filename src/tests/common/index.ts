@@ -11,12 +11,15 @@ export {
 	clearFirestoreEmulator,
 	createTestEvent,
 	createTestGuest,
+	createTestResponse,
 	createTestUser,
 	createTestUserDocument,
 	deleteAllTestEvents,
 	deleteAllTestGuests,
+	deleteAllTestResponses,
 	deleteTestEvent,
 	deleteTestGuest,
+	deleteTestResponse,
 	deleteTestUser,
 	deleteTestUserDocument,
 	ensureEmulatorEnvironment,
@@ -31,5 +34,6 @@ export type {
 	TestEventDocument,
 	TestGuestDocument,
 	TestGuestEventDocument,
+	TestResponseDocument,
 	TestUserDocument
 } from './types'

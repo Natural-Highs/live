@@ -31,6 +31,7 @@ export type {
 	TestEventDocument,
 	TestGuestDocument,
 	TestGuestEventDocument,
+	TestResponseDocument,
 	TestUserDocument
 } from '../common'
 
@@ -40,12 +41,15 @@ export {
 	clearFirestoreEmulator,
 	createTestEvent,
 	createTestGuest,
+	createTestResponse,
 	createTestUser,
 	createTestUserDocument,
 	deleteAllTestEvents,
 	deleteAllTestGuests,
+	deleteAllTestResponses,
 	deleteTestEvent,
 	deleteTestGuest,
+	deleteTestResponse,
 	deleteTestUser,
 	deleteTestUserDocument,
 	isFirestoreEmulatorAvailable,
@@ -56,10 +60,12 @@ export {
 import {
 	createTestEvent,
 	createTestGuest,
+	createTestResponse,
 	createTestUser,
 	createTestUserDocument,
 	deleteTestEvent,
 	deleteTestGuest,
+	deleteTestResponse,
 	deleteTestUser,
 	deleteTestUserDocument
 } from '../common'
@@ -74,7 +80,9 @@ export const createTestUserWithRetry = withRetryWrapper(createTestUser)
 export const createTestUserDocumentWithRetry = withRetryWrapper(createTestUserDocument)
 export const createTestEventWithRetry = withRetryWrapper(createTestEvent)
 export const createTestGuestWithRetry = withRetryWrapper(createTestGuest)
+export const createTestResponseWithRetry = withRetryWrapper(createTestResponse)
 export const deleteTestUserWithRetry = withRetryWrapper(deleteTestUser)
 export const deleteTestUserDocumentWithRetry = withRetryWrapper(deleteTestUserDocument)
 export const deleteTestEventWithRetry = withRetryWrapper(deleteTestEvent)
 export const deleteTestGuestWithRetry = withRetryWrapper(deleteTestGuest)
+export const deleteTestResponseWithRetry = withRetryWrapper(deleteTestResponse)

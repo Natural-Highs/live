@@ -36,6 +36,7 @@ import type {
 	MinorDemographicsData,
 	TestEventDocument,
 	TestGuestDocument,
+	TestResponseDocument,
 	TestUserDocument
 } from './types'
 
@@ -461,6 +462,64 @@ export async function deleteAllTestGuests(): Promise<void> {
 	// Delete all guests
 	const guestsSnapshot = await db.collection('guests').listDocuments()
 	for (const doc of guestsSnapshot) {
+		await doc.delete()
+	}
+}
+
+/**
+ * Create a survey response document in the Firestore emulator.
+ *
+ * @param response - Response document data
+ * @returns The response ID (generated if not provided)
+ *
+ * @example
+ * ```typescript
+ * const responseId = await createTestResponse({
+ *   userId: 'user-1',
+ *   eventId: 'event-1',
+ *   surveyType: 'pre',
+ *   responses: { q1: 'answer1', q2: 5 }
+ * })
+ * ```
+ */
+export async function createTestResponse(response: TestResponseDocument): Promise<string> {
+	const db = getTestDb()
+	const now = new Date()
+	const responseId = response.id ?? `response-${Date.now()}-${Math.random().toString(36).slice(2)}`
+
+	const responseDoc = {
+		userId: response.userId,
+		eventId: response.eventId,
+		surveyType: response.surveyType,
+		responses: response.responses,
+		submittedAt: response.submittedAt ?? now,
+		createdAt: response.createdAt ?? now
+	}
+
+	await db.collection('responses').doc(responseId).set(responseDoc)
+
+	return responseId
+}
+
+/**
+ * Delete a response document from the Firestore emulator.
+ *
+ * @param responseId - Response ID to delete
+ */
+export async function deleteTestResponse(responseId: string): Promise<void> {
+	const db = getTestDb()
+	await db.collection('responses').doc(responseId).delete()
+}
+
+/**
+ * Delete all responses from the Firestore emulator.
+ * Useful for test cleanup.
+ */
+export async function deleteAllTestResponses(): Promise<void> {
+	const db = getTestDb()
+	const responsesSnapshot = await db.collection('responses').listDocuments()
+
+	for (const doc of responsesSnapshot) {
 		await doc.delete()
 	}
 }
