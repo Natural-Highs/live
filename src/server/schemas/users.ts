@@ -41,9 +41,6 @@ export const getAccountActivityResponseSchema = z.array(accountActivityItemSchem
 export type ActivityType = z.infer<typeof activityTypeSchema>
 export type AccountActivityItem = z.infer<typeof accountActivityItemSchema>
 
-/**
- * Account deletion schemas (Story 3.5)
- */
 export const deletionRequestStatusSchema = z.enum([
 	'pending',
 	'processing',

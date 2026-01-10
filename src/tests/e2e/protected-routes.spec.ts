@@ -11,7 +11,7 @@
  * Covers: Protected route architecture with layout-based auth
  */
 
-import {expect, test as base} from '../fixtures'
+import {test as base, expect} from '../fixtures'
 import {createMockUser} from '../fixtures/auth.fixture'
 import {
 	clearSessionCookie,

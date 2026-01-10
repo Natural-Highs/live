@@ -293,10 +293,7 @@ describe('grace-period', () => {
 		it('should record valid auth when service is available', async () => {
 			await checkGracePeriod()
 
-			expect(localStorageMock.setItem).toHaveBeenCalledWith(
-				LAST_VALID_AUTH_KEY,
-				expect.any(String)
-			)
+			expect(localStorageMock.setItem).toHaveBeenCalledWith(LAST_VALID_AUTH_KEY, expect.any(String))
 		})
 	})
 })

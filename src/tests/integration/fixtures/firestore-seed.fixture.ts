@@ -2,36 +2,39 @@
  * Firestore Seeding Fixture for Integration and E2E Testing
  *
  * Provides Playwright fixtures for seeding test data in Firestore emulator.
- * This is a wrapper around existing fixtures in src/tests/fixtures/ that exposes
- * them as Playwright fixtures for use in integration tests.
+ * Uses the shared test SDK from src/tests/common/ - single source of truth.
  *
  * Key patterns:
  * - Use Admin SDK to seed data directly (bypasses security rules)
  * - Auto-cleanup in beforeEach and afterEach
  * - Consistent with firebase.fixture.ts emulator connection
  *
- * @see Story 0-7: E2E Test Mock Elimination
- * @see src/tests/fixtures/firestore.fixture.ts - Base implementation
+ * @see src/tests/common/ - Base implementation
  */
 
-import {type App, getApps, initializeApp} from 'firebase-admin/app'
-import {type Firestore, getFirestore} from 'firebase-admin/firestore'
 import {test as base} from '@playwright/test'
 
-export {setUserClaims} from '../../fixtures/auth.fixture'
+// Import shared test SDK and seed functions from common layer
+import {
+	clearFirestoreEmulator,
+	createTestEvent,
+	createTestGuest,
+	createTestUser,
+	createTestUserDocument,
+	deleteAllTestEvents,
+	deleteAllTestGuests,
+	deleteTestEvent,
+	deleteTestGuest,
+	deleteTestUser,
+	deleteTestUserDocument,
+	getTestDb,
+	type TestEventDocument,
+	type TestGuestDocument,
+	type TestUserDocument
+} from '../../common'
+import {setUserClaims} from '../../fixtures/auth.fixture'
 
-export {
-	createFirestoreEvent,
-	createFirestoreGuest,
-	createPendingConversion,
-	createValidFirestoreEvent,
-	deleteFirestoreEvent,
-	deleteFirestoreGuest,
-	deletePendingConversion,
-	type FirestoreEventDocument,
-	type FirestoreGuestDocument
-} from '../../fixtures/events.fixture'
-// Re-export existing implementations for direct use
+// Re-export from common layer for convenience
 export {
 	clearFirestoreEmulator,
 	createTestEvent,
@@ -44,86 +47,23 @@ export {
 	deleteTestGuest,
 	deleteTestUser,
 	deleteTestUserDocument,
-	seedTestScenario,
+	getTestDb,
 	type TestEventDocument,
 	type TestGuestDocument,
-	type TestScenario,
 	type TestUserDocument
-} from '../../fixtures/firestore.fixture'
-
-import {setUserClaims} from '../../fixtures/auth.fixture'
-import {
-	clearFirestoreEmulator,
-	createTestEvent,
-	createTestGuest,
-	createTestUserDocument,
-	deleteAllTestEvents,
-	deleteAllTestGuests,
-	deleteTestEvent,
-	deleteTestGuest,
-	deleteTestUserDocument,
-	seedTestScenario,
-	type TestEventDocument,
-	type TestGuestDocument,
-	type TestScenario,
-	type TestUserDocument
-} from '../../fixtures/firestore.fixture'
-
-/**
- * Emulator configuration
- */
-const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
-const EMULATOR_PROJECT_ID = 'demo-natural-highs'
-
-/**
- * Lazy-initialized Firebase app for seeding.
- */
-let seedApp: App | null = null
-let seedDb: Firestore | null = null
-
-/**
- * Get or create the Firebase Admin app for seeding.
- */
-function getSeedApp(): App {
-	if (seedApp) {
-		return seedApp
-	}
-
-	// Set emulator environment before initializing
-	process.env.FIRESTORE_EMULATOR_HOST = FIRESTORE_EMULATOR_HOST
-
-	// Check if an app already exists to avoid duplicate initialization
-	const existingApps = getApps()
-	const existingApp = existingApps.find(app => app.name === 'seed-app')
-
-	if (existingApp) {
-		seedApp = existingApp
-		return seedApp
-	}
-
-	seedApp = initializeApp(
-		{
-			projectId: EMULATOR_PROJECT_ID
-		},
-		'seed-app'
-	)
-
-	return seedApp
 }
-
-/**
- * Get Firestore instance for seeding.
- */
-function getSeedDb(): Firestore {
-	if (seedDb) {
-		return seedDb
-	}
-
-	const app = getSeedApp()
-	seedDb = getFirestore(app)
-
-	return seedDb
-}
+export {setUserClaims} from '../../fixtures/auth.fixture'
+export {
+	createFirestoreEvent,
+	createFirestoreGuest,
+	createPendingConversion,
+	createValidFirestoreEvent,
+	deleteFirestoreEvent,
+	deleteFirestoreGuest,
+	deletePendingConversion,
+	type FirestoreEventDocument,
+	type FirestoreGuestDocument
+} from '../../fixtures/events.fixture'
 
 /**
  * Form template question structure.
@@ -219,11 +159,6 @@ export interface FirestoreSeedFixtures {
 	clearTestData: () => Promise<void>
 
 	/**
-	 * Seed a predefined test scenario.
-	 */
-	seedScenario: (scenario: TestScenario) => Promise<void>
-
-	/**
 	 * Delete a specific user.
 	 */
 	deleteUser: (uid: string) => Promise<void>
@@ -244,7 +179,7 @@ export interface FirestoreSeedFixtures {
  * Uses Firebase Admin SDK to bypass security rules.
  */
 async function createFormTemplate(template: TestFormTemplate): Promise<void> {
-	const db = getSeedDb()
+	const db = getTestDb()
 	const now = new Date()
 
 	const templateDoc: Record<string, unknown> = {
@@ -274,7 +209,7 @@ async function createFormTemplate(template: TestFormTemplate): Promise<void> {
  * Uses Firebase Admin SDK to bypass security rules.
  */
 async function createEventType(eventType: TestEventType): Promise<void> {
-	const db = getSeedDb()
+	const db = getTestDb()
 	const now = new Date()
 
 	const eventTypeDoc: Record<string, unknown> = {
@@ -352,10 +287,6 @@ export const test = base.extend<FirestoreSeedFixtures>({
 		await use(clear)
 		// Clean after test
 		await clear()
-	},
-
-	seedScenario: async ({}, use) => {
-		await use(seedTestScenario)
 	},
 
 	deleteUser: async ({}, use) => {

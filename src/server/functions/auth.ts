@@ -1,4 +1,3 @@
-import {redirect} from '@tanstack/react-router'
 import {createServerFn} from '@tanstack/react-start'
 import {z} from 'zod'
 import {adminAuth, shouldUseEmulators} from '@/lib/firebase/firebase.admin'
@@ -141,12 +140,10 @@ export const createSessionFn = createServerFn({method: 'POST'})
  * - Redirects to home page
  * - Session fixation prevention: clearing generates new session on next login (R-022)
  */
-export const logoutFn = createServerFn({method: 'POST'}).handler(async (): Promise<never> => {
+export const logoutFn = createServerFn({method: 'POST'}).handler(async (): Promise<void> => {
 	// Clear session (removes nh-session cookie)
 	await clearSession()
-
-	// Redirect to home page
-	throw redirect({to: '/'})
+	// Note: Navigation handled by client to ensure Set-Cookie header is received
 })
 
 /**

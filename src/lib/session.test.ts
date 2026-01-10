@@ -14,7 +14,8 @@ import {beforeEach, describe, expect, it, vi} from 'vitest'
 
 // Mock must be defined before any imports that use it
 vi.mock('@tanstack/react-start/server', () => ({
-	useSession: vi.fn()
+	useSession: vi.fn(),
+	deleteCookie: vi.fn()
 }))
 
 // Import the mocked module to get access to the mock

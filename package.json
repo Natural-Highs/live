@@ -31,9 +31,9 @@
 		"check": "biome check src --write --unsafe",
 		"check:ci": "biome check src",
 		"lint:tsc": "tsc -b",
-		"lint": "bun run check && bun run lint:tsc && trunk check",
-		"lint:fix": "bun run check && trunk check --fix",
-		"format": "biome format src --write && trunk fmt",
+		"lint": "bun run check && bun run lint:tsc && bunx @trunkio/launcher check",
+		"lint:fix": "bun run check && bunx @trunkio/launcher check --fix",
+		"format": "biome format src --write && bunx @trunkio/launcher fmt",
 		"validate": "bun run lint && bun run test:ci && bun run test:e2e:ci",
 		"ci:local": "bash scripts/ci-local.sh",
 		"test:burn-in": "bash scripts/burn-in.sh",
@@ -130,7 +130,7 @@
 			"biome check --write --unsafe",
 			"bash -c 'tsc -b --noEmit 2>&1'"
 		],
-		"*.{json,md,css}": [
+		"*.{json,css}": [
 			"biome format --write"
 		]
 	}

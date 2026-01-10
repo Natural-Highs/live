@@ -321,7 +321,7 @@ test('displays guest list', async ({page}) => {
 })
 ```
 
-## Infrastructure Stability (Story 0-8)
+## Infrastructure Stability
 
 ### Parallel Worker Data Isolation
 

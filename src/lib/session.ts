@@ -12,7 +12,7 @@
  * @module session
  */
 
-import {useSession} from '@tanstack/react-start/server'
+import {deleteCookie, useSession} from '@tanstack/react-start/server'
 
 /**
  * Session data structure stored in the encrypted cookie.
@@ -156,7 +156,8 @@ export async function useAppSession() {
 			httpOnly: true,
 			secure: isProduction,
 			sameSite: 'lax',
-			maxAge: SESSION_MAX_AGE
+			maxAge: SESSION_MAX_AGE,
+			path: '/'
 		}
 	})
 }
@@ -175,6 +176,8 @@ export async function useAppSession() {
 export async function clearSession(): Promise<void> {
 	const session = await useAppSession()
 	await session.clear()
+	// Explicitly delete the cookie to ensure it's removed
+	deleteCookie(SESSION_COOKIE_NAME, {path: '/'})
 }
 
 /**

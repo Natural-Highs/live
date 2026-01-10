@@ -35,7 +35,7 @@ import {getFirestore} from 'firebase-admin/firestore'
 // Configuration
 // =============================================================================
 
-const EMULATOR_PROJECT_ID = 'demo-natural-highs'
+const EMULATOR_PROJECT_ID = 'naturalhighs'
 const FIRESTORE_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
 const AUTH_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST ?? '127.0.0.1:9099'
 

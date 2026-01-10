@@ -1,6 +1,6 @@
 import {createServerFn} from '@tanstack/react-start'
-import {requireAdmin} from '@/server/middleware/auth'
 import {adminAuth, adminDb} from '@/lib/firebase/firebase.admin'
+import {requireAdmin} from '@/server/middleware/auth'
 import {buildCustomClaims} from '../../lib/utils/custom-claims'
 import {
 	activateEventSchema,

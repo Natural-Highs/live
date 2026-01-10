@@ -13,8 +13,8 @@
  * - Token revocation checks tested via unit tests (Firestore dependency)
  */
 
-import {expect, test} from '../fixtures'
 import * as Iron from 'iron-webcrypto'
+import {expect, test} from '../fixtures'
 import {
 	buildTestSessionCookie,
 	injectSessionCookie,

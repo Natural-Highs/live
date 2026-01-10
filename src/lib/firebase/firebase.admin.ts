@@ -36,9 +36,10 @@ function initializeAdmin(): void {
 		process.env.FIREBASE_AUTH_EMULATOR_HOST ??= '127.0.0.1:9099'
 
 		admin.initializeApp({
-			projectId: process.env.VITE_PROJECT_ID || 'demo-natural-highs'
+			projectId: process.env.VITE_PROJECT_ID || 'naturalhighs'
 		})
 
+		// Emulator auto-detects via FIRESTORE_EMULATOR_HOST env var
 		initialized = true
 		return
 	}
@@ -76,6 +77,9 @@ function initializeAdmin(): void {
 		storageBucket
 	})
 
+	// Use REST for more stable connections
+	admin.firestore().settings({preferRest: true})
+
 	initialized = true
 }
 
@@ -87,6 +91,14 @@ export const adminDb = {
 	get collection() {
 		initializeAdmin()
 		return admin.firestore().collection.bind(admin.firestore())
+	},
+	getAll(...refs: admin.firestore.DocumentReference[]) {
+		initializeAdmin()
+		return admin.firestore().getAll(...refs)
+	},
+	batch() {
+		initializeAdmin()
+		return admin.firestore().batch()
 	}
 } as admin.firestore.Firestore
 
@@ -164,4 +176,3 @@ export async function testAdminFunctions() {
 		})
 	} catch {}
 }
-

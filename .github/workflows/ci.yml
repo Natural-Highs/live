@@ -20,8 +20,8 @@ env:
   # checkov:skip=CKV_SECRET_6:Intentional placeholder values for Firebase emulator testing
   VITE_APIKEY: demo-test-key
   VITE_AUTH_DOMAIN: localhost
-  VITE_PROJECT_ID: demo-natural-highs
-  VITE_STORAGE_BUCKET: demo-natural-highs.appspot.com
+  VITE_PROJECT_ID: naturalhighs
+  VITE_STORAGE_BUCKET: naturalhighs.appspot.com
   VITE_MESSAGING_SENDER_ID: "000000000000"
   VITE_APP_ID: demo-app-id
   VITE_USE_EMULATORS: "true"
@@ -150,7 +150,7 @@ jobs:
 
       - name: Upload test results to Codecov
         if: ${{ !cancelled() }}
-        uses: codecov/test-results-action@v1
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./.build/test-results/junit.xml
@@ -158,6 +158,7 @@ jobs:
           slug: Natural-Highs/live
           verbose: true
           codecov_yml_path: ./.github/codecov.yml
+          report_type: test_results
 
       - name: Coverage Threshold Check
         run: |
@@ -265,31 +266,37 @@ jobs:
           install-playwright: "true"
           install-firebase: "true"
 
+      - name: Cache Firebase emulators
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}
+
       - name: Start Firebase emulators
         run: |
           # Start emulators in background
-          firebase emulators:start --only auth,firestore --project demo-natural-highs &
+          firebase emulators:start --only auth,firestore --project naturalhighs &
           EMULATOR_PID=$!
-          
+
           # Extended timeout for CI stability
           MAX_WAIT=90
           RETRY_DELAY=2
-          
+
           echo "Waiting for emulators (timeout: ${MAX_WAIT}s)..."
           for i in $(seq 1 $MAX_WAIT); do
             AUTH_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9099 2>/dev/null || echo "000")
             FS_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8180 2>/dev/null || echo "000")
-            
+
             if [[ "$AUTH_OK" != "000" ]] && [[ "$FS_OK" != "000" ]]; then
               echo "All emulators ready after ${i}s (Auth: $AUTH_OK, Firestore: $FS_OK)"
               break
             fi
-            
+
             if [ $i -eq $MAX_WAIT ]; then
               echo "ERROR: Emulators failed to start within ${MAX_WAIT}s"
               exit 1
             fi
-            
+
             echo "Waiting... ($i/${MAX_WAIT}s) Auth: $AUTH_OK, Firestore: $FS_OK"
             sleep $RETRY_DELAY
           done
@@ -300,6 +307,9 @@ jobs:
         env:
           CI: true
           CI_EMULATOR_TIMEOUT: "60000"
+          # Prevent Admin SDK from looking for production credentials
+          GOOGLE_APPLICATION_CREDENTIALS: ""
+          FIREBASE_CONFIG: "{}"
 
       - name: Upload Playwright report
         uses: actions/upload-artifact@v4
@@ -403,31 +413,37 @@ jobs:
           install-playwright: "true"
           install-firebase: "true"
 
+      - name: Cache Firebase emulators
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}
+
       - name: Start Firebase emulators
         run: |
           # Start emulators in background
-          firebase emulators:start --only auth,firestore --project demo-natural-highs &
+          firebase emulators:start --only auth,firestore --project naturalhighs &
           EMULATOR_PID=$!
-          
+
           # Extended timeout for CI stability
           MAX_WAIT=90
           RETRY_DELAY=2
-          
+
           echo "Waiting for emulators (timeout: ${MAX_WAIT}s)..."
           for i in $(seq 1 $MAX_WAIT); do
             AUTH_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:9099 2>/dev/null || echo "000")
             FS_OK=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8180 2>/dev/null || echo "000")
-            
+
             if [[ "$AUTH_OK" != "000" ]] && [[ "$FS_OK" != "000" ]]; then
               echo "All emulators ready after ${i}s (Auth: $AUTH_OK, Firestore: $FS_OK)"
               break
             fi
-            
+
             if [ $i -eq $MAX_WAIT ]; then
               echo "ERROR: Emulators failed to start within ${MAX_WAIT}s"
               exit 1
             fi
-            
+
             echo "Waiting... ($i/${MAX_WAIT}s) Auth: $AUTH_OK, Firestore: $FS_OK"
             sleep $RETRY_DELAY
           done
@@ -441,6 +457,9 @@ jobs:
           FIRESTORE_EMULATOR_HOST: 127.0.0.1:8180
           FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
           SESSION_SECRET: aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+          # Prevent Admin SDK from looking for production credentials
+          GOOGLE_APPLICATION_CREDENTIALS: ""
+          FIREBASE_CONFIG: "{}"
 
       - name: Upload integration test results
         uses: actions/upload-artifact@v4
@@ -478,10 +497,16 @@ jobs:
           install-playwright: "true"
           install-firebase: "true"
 
+      - name: Cache Firebase emulators
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}
+
       - name: Start Firebase emulators
         run: |
           # Start emulators in background
-          firebase emulators:start --only auth,firestore --project demo-natural-highs &
+          firebase emulators:start --only auth,firestore --project naturalhighs &
           EMULATOR_PID=$!
 
           # Extended timeout for CI stability
@@ -626,8 +651,8 @@ jobs:
           args: --severity-threshold=high --file=package.json --sarif-file-output=snyk.sarif
 
       - name: Upload Snyk results to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
+        uses: github/codeql-action/upload-sarif@v4
+        if: always() && hashFiles('snyk.sarif') != ''
         with:
           sarif_file: snyk.sarif
         continue-on-error: true
