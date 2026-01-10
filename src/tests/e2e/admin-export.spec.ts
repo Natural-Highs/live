@@ -248,7 +248,11 @@ test.describe('Admin Export Flow', () => {
 			await page.goto('/survey-responses')
 			await page.waitForLoadState('networkidle')
 
-			// Wait for data to load by checking button state
+			// Wait for data to load by checking response count indicator
+			// This ensures React Query has fetched and rendered the data
+			await expect(page.getByText(/Responses \([1-9]/)).toBeVisible({timeout: 10000})
+
+			// Verify export buttons are enabled
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
 			await expect(page.getByTestId('export-json-button')).toBeEnabled()
 
@@ -283,8 +287,10 @@ test.describe('Admin Export Flow', () => {
 
 			await page.goto('/survey-responses')
 
-			// Wait for page to fully load and render export buttons
+			// Wait for page to fully load and data to be fetched
 			await page.waitForLoadState('networkidle')
+			// Wait for response count to show data is loaded
+			await expect(page.getByText(/Responses \([1-9]/)).toBeVisible({timeout: 10000})
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
 
 			// WHEN: Admin clicks export CSV
@@ -326,8 +332,10 @@ test.describe('Admin Export Flow', () => {
 
 			await page.goto('/survey-responses')
 
-			// Wait for page to fully load and render export buttons
+			// Wait for page to fully load and data to be fetched
 			await page.waitForLoadState('networkidle')
+			// Wait for response count to show data is loaded
+			await expect(page.getByText(/Responses \([1-9]/)).toBeVisible({timeout: 10000})
 			await expect(page.getByTestId('export-json-button')).toBeEnabled()
 
 			// WHEN: Admin clicks export JSON (force click for mobile viewport)
@@ -373,7 +381,8 @@ test.describe('Admin Export Flow', () => {
 			await page.goto('/survey-responses')
 			await page.waitForLoadState('networkidle')
 
-			// Wait for data to load
+			// Wait for data to load by checking response count indicator
+			await expect(page.getByText(/Responses \([1-9]/)).toBeVisible({timeout: 10000})
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
 
 			// THEN: Sensitive fields option should be visible (if it exists in UI)
@@ -418,6 +427,8 @@ test.describe('Admin Export Flow', () => {
 
 			await page.goto('/survey-responses')
 			await page.waitForLoadState('networkidle')
+			// Wait for data to load by checking response count indicator
+			await expect(page.getByText(/Responses \([1-9]/)).toBeVisible({timeout: 10000})
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
 
 			// Check if sensitive fields control exists
@@ -473,6 +484,8 @@ test.describe('Admin Export Flow', () => {
 
 			await page.goto('/survey-responses')
 			await page.waitForLoadState('networkidle')
+			// Wait for data to load by checking response count indicator
+			await expect(page.getByText(/Responses \([1-9]/)).toBeVisible({timeout: 10000})
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
 
 			// WHEN: Admin exports data
@@ -514,6 +527,8 @@ test.describe('Admin Export Flow', () => {
 
 			await page.goto('/survey-responses')
 			await page.waitForLoadState('networkidle')
+			// Wait for data to load by checking response count indicator
+			await expect(page.getByText(/Responses \([1-9]/)).toBeVisible({timeout: 10000})
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
 
 			// WHEN: Admin exports to CSV
@@ -554,6 +569,8 @@ test.describe('Admin Export Flow', () => {
 
 			await page.goto('/survey-responses')
 			await page.waitForLoadState('networkidle')
+			// Wait for data to load by checking response count indicator
+			await expect(page.getByText(/Responses \([1-9]/)).toBeVisible({timeout: 10000})
 			await expect(page.getByTestId('export-json-button')).toBeEnabled()
 
 			// WHEN: Admin exports to JSON
@@ -596,7 +613,8 @@ test.describe('Admin Export Flow', () => {
 			await page.goto('/survey-responses')
 			await page.waitForLoadState('networkidle')
 
-			// Wait for data to load by checking button state
+			// Wait for data to load by checking response count indicator
+			await expect(page.getByText(/Responses \([1-9]/)).toBeVisible({timeout: 10000})
 			await expect(page.getByTestId('export-csv-button')).toBeEnabled()
 
 			// WHEN: Admin clicks export CSV and measures time
