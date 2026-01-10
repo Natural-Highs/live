@@ -96,7 +96,8 @@ test.describe('Consent Form Flow @smoke', () => {
 			await expect(submitButton).toBeDisabled()
 
 			// WHEN: User checks the consent checkbox
-			await page.getByRole('checkbox').check()
+			// Use click() for Radix UI checkbox (button with role="checkbox")
+			await page.getByRole('checkbox').click()
 
 			// THEN: Submit button should be enabled
 			await expect(submitButton).toBeEnabled()
@@ -112,7 +113,8 @@ test.describe('Consent Form Flow @smoke', () => {
 			await page.goto('/consent')
 
 			// WHEN: User checks checkbox and submits
-			await page.getByRole('checkbox').check()
+			// Use click() for Radix UI checkbox (button with role="checkbox")
+			await page.getByRole('checkbox').click()
 			await page.getByRole('button', {name: /i consent/i}).click()
 
 			// THEN: Should redirect to dashboard
@@ -140,7 +142,8 @@ test.describe('Consent Form Flow @smoke', () => {
 			await page.goto('/consent')
 
 			// WHEN: User tries to submit consent
-			await page.getByRole('checkbox').check()
+			// Use click() for Radix UI checkbox (button with role="checkbox")
+			await page.getByRole('checkbox').click()
 			await page.getByRole('button', {name: /i consent/i}).click()
 
 			// THEN: Should show error message
@@ -156,8 +159,9 @@ test.describe('Consent Form Flow @smoke', () => {
 			// GIVEN: User is on consent form
 			await page.goto('/consent')
 
-			// THEN: Should display consent information
-			await expect(page.getByText(/consent|participate|research/i)).toBeVisible()
+			// THEN: Should display consent form heading
+			// Use more specific selector to avoid strict mode violation
+			await expect(page.getByRole('heading', {name: 'Consent Form'})).toBeVisible()
 		})
 
 		test('should have accessible checkbox with proper label', async ({
