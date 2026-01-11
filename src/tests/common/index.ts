@@ -5,6 +5,16 @@
  * This layer eliminates cross-layer imports between E2E and integration.
  */
 
+// Emulator configuration (single source of truth)
+export {
+	applyEmulatorEnvironment,
+	EMULATOR_CONFIG,
+	EMULATOR_PROJECT_ID,
+	getAuthEmulatorUrl,
+	getEmulatorEnvironment,
+	getFirestoreEmulatorUrl
+} from './emulator-config'
+
 // Seed functions
 export {
 	cleanupTestApp,
@@ -22,12 +32,14 @@ export {
 	deleteTestResponse,
 	deleteTestUser,
 	deleteTestUserDocument,
+	ensureEmulatorConnected,
 	ensureEmulatorEnvironment,
 	getTestApp,
 	getTestDb,
 	isFirestoreEmulatorAvailable,
 	waitForFirestoreEmulator
 } from './seed-functions'
+
 // Types
 export type {
 	MinorDemographicsData,

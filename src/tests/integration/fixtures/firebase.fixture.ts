@@ -16,6 +16,7 @@
 
 import {test as base, type Page} from '@playwright/test'
 import {SESSION_SECRET_TEST} from '../../../../playwright.config'
+import {EMULATOR_CONFIG} from '../../common/emulator-config'
 
 // Set SESSION_SECRET in test process if not already set
 // This is needed because playwright.config.ts only passes it to webServer.env
@@ -24,14 +25,14 @@ if (!process.env.SESSION_SECRET) {
 }
 
 /**
- * Emulator configuration from environment variables.
+ * Emulator configuration from centralized config.
  */
-const AUTH_EMULATOR_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST ?? '127.0.0.1:9099'
-const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
-const PROJECT_ID = process.env.VITE_PROJECT_ID ?? 'naturalhighs'
+const AUTH_EMULATOR_HOST = EMULATOR_CONFIG.auth.host
+const FIRESTORE_EMULATOR_HOST = EMULATOR_CONFIG.firestore.host
+const PROJECT_ID = EMULATOR_CONFIG.projectId
 
 /** Default timeout for emulator health checks (ms). */
-const EMULATOR_HEALTH_TIMEOUT_MS = 5000
+const EMULATOR_HEALTH_TIMEOUT_MS = EMULATOR_CONFIG.defaultTimeoutMs
 
 /**
  * Emulator health status result.

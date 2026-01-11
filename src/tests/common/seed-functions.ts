@@ -32,6 +32,7 @@
 
 import {type App, deleteApp, getApps, initializeApp} from 'firebase-admin/app'
 import {type Firestore, getFirestore} from 'firebase-admin/firestore'
+import {applyEmulatorEnvironment, EMULATOR_CONFIG, EMULATOR_PROJECT_ID} from './emulator-config'
 import type {
 	MinorDemographicsData,
 	TestEventDocument,
@@ -40,13 +41,11 @@ import type {
 	TestUserDocument
 } from './types'
 
-const EMULATOR_PROJECT_ID = 'naturalhighs'
-
 /**
  * Default Firestore emulator host configuration.
- * Matches firebase.json emulators.firestore.port configuration.
+ * Uses centralized config from emulator-config.ts.
  */
-const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
+const FIRESTORE_EMULATOR_HOST = EMULATOR_CONFIG.firestore.host
 
 /**
  * Force emulator mode by preventing SDK from looking for production credentials.
@@ -56,18 +55,7 @@ const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.
  * to ensure emulator environment before SDK initialization.
  */
 export function ensureEmulatorEnvironment(): void {
-	// Set emulator hosts
-	process.env.FIRESTORE_EMULATOR_HOST = FIRESTORE_EMULATOR_HOST
-	process.env.FIREBASE_AUTH_EMULATOR_HOST ??= '127.0.0.1:9099'
-
-	// Prevent SDK from looking for production credentials
-	// These must be set BEFORE initializing the Firebase app
-	if (!process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-		process.env.GOOGLE_APPLICATION_CREDENTIALS = ''
-	}
-	if (!process.env.FIREBASE_CONFIG) {
-		process.env.FIREBASE_CONFIG = '{}'
-	}
+	applyEmulatorEnvironment()
 }
 
 /**
@@ -543,15 +531,22 @@ export async function clearFirestoreEmulator(): Promise<void> {
 		const response = await fetch(
 			`http://${host}/emulator/v1/projects/${EMULATOR_PROJECT_ID}/databases/(default)/documents`,
 			{
-				method: 'DELETE'
+				method: 'DELETE',
+				signal: AbortSignal.timeout(EMULATOR_CONFIG.defaultTimeoutMs)
 			}
 		)
 
 		if (!response.ok && response.status !== 404) {
-			console.warn(`[Fixture] clearFirestoreEmulator returned ${response.status}`)
+			console.warn(`[SeedFunctions] clearFirestoreEmulator returned ${response.status}`)
 		}
 	} catch (error) {
-		console.warn('[Fixture] Could not clear Firestore emulator:', error)
+		if (error instanceof Error && error.name === 'TimeoutError') {
+			console.warn(
+				`[SeedFunctions] Firestore clear timed out after ${EMULATOR_CONFIG.defaultTimeoutMs}ms`
+			)
+		} else {
+			console.warn('[SeedFunctions] Could not clear Firestore emulator:', error)
+		}
 	}
 }
 
@@ -611,8 +606,53 @@ export async function waitForFirestoreEmulator(
 }
 
 /**
+ * Ensure Firestore emulator is connected and ready.
+ * Throws a descriptive error if emulator is not available.
+ *
+ * Call this at the start of test setup to fail fast with a clear message
+ * instead of getting confusing "fetch failed" errors later.
+ *
+ * @throws Error if emulator is not running
+ *
+ * @example
+ * ```typescript
+ * // In playwright.global-setup.ts or beforeAll
+ * await ensureEmulatorConnected()
+ * ```
+ */
+export async function ensureEmulatorConnected(): Promise<void> {
+	const available = await isFirestoreEmulatorAvailable()
+
+	if (!available) {
+		throw new Error(
+			`Firestore emulator is not running at ${FIRESTORE_EMULATOR_HOST}.\n` +
+				'Start emulators with: bun run emulators\n' +
+				'Or verify FIRESTORE_EMULATOR_HOST is set correctly.'
+		)
+	}
+}
+
+/**
  * Cleanup function to delete the test app.
- * Call at the end of test runs if needed.
+ *
+ * WHEN TO CALL:
+ * - In global teardown (playwright.global-teardown.ts) for explicit cleanup
+ * - NOT in afterEach - the app is shared across all tests for performance
+ * - NOT in afterAll - Playwright handles process cleanup automatically
+ *
+ * AUTOMATIC CLEANUP:
+ * - Node.js process termination automatically cleans up Firebase apps
+ * - This function is optional for explicit cleanup in complex test scenarios
+ *
+ * @example
+ * ```typescript
+ * // playwright.global-teardown.ts
+ * import {cleanupTestApp} from './src/tests/common'
+ *
+ * export default async function globalTeardown() {
+ *   await cleanupTestApp()
+ * }
+ * ```
  */
 export async function cleanupTestApp(): Promise<void> {
 	if (testApp) {
