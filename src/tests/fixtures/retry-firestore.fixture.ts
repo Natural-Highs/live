@@ -61,7 +61,9 @@ const DEFAULTS: Required<Omit<RetryConfig, 'isRetryable'>> = {
  * @returns true if the error is transient and should be retried
  */
 export function isRetryableError(error: unknown): boolean {
-	if (!error) return false
+	if (!error) {
+		return false
+	}
 
 	// Check error code (Node.js system errors)
 	if (typeof error === 'object' && 'code' in error) {
@@ -75,9 +77,7 @@ export function isRetryableError(error: unknown): boolean {
 	const message = error instanceof Error ? error.message : String(error)
 	const lowerMessage = message.toLowerCase()
 
-	return RETRYABLE_ERROR_MESSAGES.some(
-		pattern => lowerMessage.includes(pattern.toLowerCase())
-	)
+	return RETRYABLE_ERROR_MESSAGES.some(pattern => lowerMessage.includes(pattern.toLowerCase()))
 }
 
 /**
@@ -132,7 +132,12 @@ export async function withRetry<T>(
 	operation: () => Promise<T>,
 	options: RetryConfig = {}
 ): Promise<T> {
-	const {maxRetries = DEFAULTS.maxRetries, baseDelay = DEFAULTS.baseDelay, logRetries = DEFAULTS.logRetries, isRetryable = isRetryableError} = options
+	const {
+		maxRetries = DEFAULTS.maxRetries,
+		baseDelay = DEFAULTS.baseDelay,
+		logRetries = DEFAULTS.logRetries,
+		isRetryable = isRetryableError
+	} = options
 
 	let lastError: unknown
 
@@ -154,7 +159,7 @@ export async function withRetry<T>(
 			}
 
 			// Calculate delay with exponential backoff
-			const delay = baseDelay * Math.pow(2, attempt - 1)
+			const delay = baseDelay * 2 ** (attempt - 1)
 
 			if (logRetries) {
 				const errorDesc = getErrorDescription(error)

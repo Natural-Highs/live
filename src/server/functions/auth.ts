@@ -1,4 +1,3 @@
-import {redirect} from '@tanstack/react-router'
 import {createServerFn} from '@tanstack/react-start'
 import {z} from 'zod'
 import {adminAuth, shouldUseEmulators} from '@/lib/firebase/firebase.admin'
@@ -67,6 +66,13 @@ export const createSessionFn = createServerFn({method: 'POST'})
 		// The emulator doesn't support verifying mock tokens from HTTP mocks
 		// Production still requires full token verification (R-010)
 		if (shouldUseEmulators) {
+			// SECURITY: Defense in depth - ensure emulator bypass never runs in production
+			// This guards against misconfiguration where USE_EMULATORS=true accidentally
+			// reaches production, which would allow authentication bypass
+			if (process.env.NODE_ENV === 'production') {
+				throw new AuthenticationError('Emulator mode is not allowed in production environment')
+			}
+
 			// Trust the provided UID in emulator mode
 			// This allows E2E tests to mock Firebase Auth and still create sessions
 			claims = {
@@ -141,12 +147,10 @@ export const createSessionFn = createServerFn({method: 'POST'})
  * - Redirects to home page
  * - Session fixation prevention: clearing generates new session on next login (R-022)
  */
-export const logoutFn = createServerFn({method: 'POST'}).handler(async (): Promise<never> => {
+export const logoutFn = createServerFn({method: 'POST'}).handler(async (): Promise<void> => {
 	// Clear session (removes nh-session cookie)
 	await clearSession()
-
-	// Redirect to home page
-	throw redirect({to: '/'})
+	// Note: Navigation handled by client to ensure Set-Cookie header is received
 })
 
 /**

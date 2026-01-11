@@ -1,5 +1,6 @@
 import process from 'node:process'
 import {defineConfig, devices} from '@playwright/test'
+import {EMULATOR_CONFIG, getEmulatorEnvironment} from './src/tests/common/emulator-config'
 
 const isCI = Boolean(process.env.CI)
 
@@ -12,26 +13,30 @@ const isCI = Boolean(process.env.CI)
 export const SESSION_SECRET_TEST =
 	'test-session-secret-32-characters-minimum-length-for-iron-webcrypto'
 
-// Firebase emulator config - same values used in CI
+// Firebase emulator config from centralized source
 // Firestore emulator port 8180 - avoids Windows port conflicts with svchost.exe on 8080
 const emulatorEnv = {
+	...getEmulatorEnvironment(),
 	VITE_APIKEY: 'demo-test-key',
 	VITE_AUTH_DOMAIN: 'localhost',
-	VITE_PROJECT_ID: 'demo-natural-highs',
-	VITE_STORAGE_BUCKET: 'demo-natural-highs.appspot.com',
 	VITE_MESSAGING_SENDER_ID: '000000000000',
 	VITE_APP_ID: 'demo-app-id',
-	VITE_USE_EMULATORS: 'true',
-	USE_EMULATORS: 'true',
-	FIRESTORE_EMULATOR_HOST: process.env.FIRESTORE_EMULATOR_HOST || '127.0.0.1:8180',
-	FIREBASE_AUTH_EMULATOR_HOST: '127.0.0.1:9099',
 	SESSION_SECRET: SESSION_SECRET_TEST
 }
 
+process.env.FIRESTORE_EMULATOR_HOST = EMULATOR_CONFIG.firestore.host
+process.env.FIREBASE_AUTH_EMULATOR_HOST = EMULATOR_CONFIG.auth.host
+process.env.GOOGLE_APPLICATION_CREDENTIALS = ''
+process.env.FIREBASE_CONFIG = '{}'
+
 export default defineConfig({
+	// Increase expect timeout in CI for stability
+	// CI runners are slower and headless Chrome has different timing
+	expect: {
+		timeout: isCI ? 10000 : 5000
+	},
 	forbidOnly: isCI,
 	fullyParallel: true,
-	// Global setup: Wait for emulators before any tests run (Story 0-8 AC3)
 	globalSetup: './playwright.global-setup.ts',
 	projects: [
 		{
@@ -77,6 +82,8 @@ export default defineConfig({
 	// Output directories for CI artifact collection
 	outputDir: '.build/test-results',
 	use: {
+		// Increase action timeout in CI for stability
+		actionTimeout: isCI ? 15000 : 10000,
 		baseURL: 'http://localhost:3000',
 		trace: 'on-first-retry',
 		screenshot: 'only-on-failure',
@@ -91,8 +98,6 @@ export default defineConfig({
 		url: 'http://localhost:3000',
 		timeout: 120_000
 	},
-	// CI: Use 2 workers per shard for parallel execution (Story 0-8 AC5)
-	// String '50%' on 2-core ubuntu evaluates to 1; explicit 2 doubles parallelism
-	// Local: Use all available cores
+
 	workers: isCI ? 2 : undefined
 })

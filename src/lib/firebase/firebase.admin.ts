@@ -15,6 +15,16 @@ let initError: Error | null = null
  */
 export const shouldUseEmulators = process.env.USE_EMULATORS === 'true'
 
+// SECURITY: Fail fast if emulator mode is enabled in production
+// This prevents catastrophic authentication bypass if USE_EMULATORS is accidentally
+// set to 'true' in a production deployment
+if (shouldUseEmulators && process.env.NODE_ENV === 'production') {
+	throw new Error(
+		'SECURITY: USE_EMULATORS cannot be true in production environment. ' +
+			'This would bypass authentication. Check environment configuration.'
+	)
+}
+
 function initializeAdmin(): void {
 	// Check if Firebase Admin is already initialized (handles HMR/multiple imports)
 	if (admin.apps.length > 0) {
@@ -36,9 +46,10 @@ function initializeAdmin(): void {
 		process.env.FIREBASE_AUTH_EMULATOR_HOST ??= '127.0.0.1:9099'
 
 		admin.initializeApp({
-			projectId: process.env.VITE_PROJECT_ID || 'demo-natural-highs'
+			projectId: process.env.VITE_PROJECT_ID || 'naturalhighs'
 		})
 
+		// Emulator auto-detects via FIRESTORE_EMULATOR_HOST env var
 		initialized = true
 		return
 	}
@@ -76,6 +87,9 @@ function initializeAdmin(): void {
 		storageBucket
 	})
 
+	// Use REST for more stable connections
+	admin.firestore().settings({preferRest: true})
+
 	initialized = true
 }
 
@@ -87,6 +101,14 @@ export const adminDb = {
 	get collection() {
 		initializeAdmin()
 		return admin.firestore().collection.bind(admin.firestore())
+	},
+	getAll(...refs: admin.firestore.DocumentReference[]) {
+		initializeAdmin()
+		return admin.firestore().getAll(...refs)
+	},
+	batch() {
+		initializeAdmin()
+		return admin.firestore().batch()
 	}
 } as admin.firestore.Firestore
 
@@ -164,4 +186,3 @@ export async function testAdminFunctions() {
 		})
 	} catch {}
 }
-

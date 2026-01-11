@@ -229,10 +229,20 @@ export async function injectAdminSessionCookie(
 /**
  * Clear session cookie from browser context.
  *
+ * Handles cleanup errors gracefully when context is already closed.
+ *
  * @param context - Playwright BrowserContext
  */
 export async function clearSessionCookie(context: BrowserContext): Promise<void> {
-	await context.clearCookies({name: SESSION_COOKIE_NAME})
+	try {
+		await context.clearCookies({name: SESSION_COOKIE_NAME})
+	} catch (error) {
+		// Context may already be closed during test cleanup - ignore
+		const message = error instanceof Error ? error.message : ''
+		if (!message.includes('browser context') && !message.includes('Test ended')) {
+			throw error
+		}
+	}
 }
 
 /**
@@ -348,15 +358,36 @@ export async function injectAuthenticatedUser(
 
 	let minorDemographics: MinorDemographicsData | undefined
 	if (isMinor && userDocData) {
-		minorDemographics = {
-			pronouns: userDocData.pronouns,
-			gender: userDocData.gender,
-			raceEthnicity: userDocData.raceEthnicity,
-			emergencyContactName: userDocData.emergencyContactName,
-			emergencyContactPhone: userDocData.emergencyContactPhone,
-			emergencyContactEmail: userDocData.emergencyContactEmail,
-			dietaryRestrictions: userDocData.dietaryRestrictions,
-			medicalConditions: userDocData.medicalConditions
+		// Filter out undefined values to avoid Firestore rejection
+		const demographics: Partial<MinorDemographicsData> = {}
+		if (userDocData.pronouns !== undefined) {
+			demographics.pronouns = userDocData.pronouns
+		}
+		if (userDocData.gender !== undefined) {
+			demographics.gender = userDocData.gender
+		}
+		if (userDocData.raceEthnicity !== undefined) {
+			demographics.raceEthnicity = userDocData.raceEthnicity
+		}
+		if (userDocData.emergencyContactName !== undefined) {
+			demographics.emergencyContactName = userDocData.emergencyContactName
+		}
+		if (userDocData.emergencyContactPhone !== undefined) {
+			demographics.emergencyContactPhone = userDocData.emergencyContactPhone
+		}
+		if (userDocData.emergencyContactEmail !== undefined) {
+			demographics.emergencyContactEmail = userDocData.emergencyContactEmail
+		}
+		if (userDocData.dietaryRestrictions !== undefined) {
+			demographics.dietaryRestrictions = userDocData.dietaryRestrictions
+		}
+		if (userDocData.medicalConditions !== undefined) {
+			demographics.medicalConditions = userDocData.medicalConditions
+		}
+
+		// Only set minorDemographics if there are actual values to store
+		if (Object.keys(demographics).length > 0) {
+			minorDemographics = demographics as MinorDemographicsData
 		}
 	}
 

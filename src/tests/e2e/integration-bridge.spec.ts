@@ -1,7 +1,7 @@
 /**
  * Integration Bridge E2E Tests - Fixture Compatibility Validation
  *
- * Story 0-7, Task 0: Validate integration fixtures work in E2E context.
+ * Validates integration fixtures work in E2E context.
  * This is a GATE test - must pass before proceeding to full migration.
  *
  * Purpose:
@@ -10,19 +10,16 @@
  * - Prove Firestore fixture can seed and clear test data
  *
  * Exit Criteria: Single integration-backed E2E test passes reliably (5/5 local, 3/3 CI)
- *
- * @see Story 0-7: E2E Test Mock Elimination
- * @see Story 0-6: Integration Test Layer (fixture source)
  */
 
-import {expect, test as base} from '../fixtures'
+import {test as base, expect} from '../fixtures'
 
 /**
  * Emulator configuration - must match playwright.config.ts
  */
 const AUTH_EMULATOR_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST ?? '127.0.0.1:9099'
 const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
-const PROJECT_ID = process.env.VITE_PROJECT_ID ?? 'demo-natural-highs'
+const PROJECT_ID = process.env.VITE_PROJECT_ID ?? 'naturalhighs'
 
 /**
  * Polling configuration for OOB code retrieval

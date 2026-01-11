@@ -101,7 +101,7 @@ interface FirebaseResetWorkerFixtures {
 /**
  * Firestore emulator configuration
  */
-const EMULATOR_PROJECT_ID = 'demo-natural-highs'
+const EMULATOR_PROJECT_ID = 'naturalhighs'
 const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
 
 /**

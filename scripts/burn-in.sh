@@ -158,10 +158,11 @@ echo "Results written to: $RESULTS_FILE"
 echo ""
 
 # Determine exit status
-# Flakiness rate must be 0% (no failures allowed for merge)
+# Story 0-8 AC5: Flakiness rate must be <2% (0-1 failures out of 10)
+# For merge quality, we enforce 0% threshold locally
 if [ $FAILED -gt 0 ]; then
   echo "BURN-IN FAILED"
-  echo "Flakiness rate ${FLAKINESS_RATE}% exceeds 0% threshold for merge"
+  echo "Flakiness rate ${FLAKINESS_RATE}% - AC5 threshold is <2%, merge threshold is 0%"
   exit 1
 else
   echo "BURN-IN PASSED"

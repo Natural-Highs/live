@@ -494,32 +494,3 @@ const guestId = await createTestGuest({
 | `deleteTestGuest(guestId)` | Delete guest and guestEvents |
 | `deleteAllTestEvents()` | Clear all events |
 | `deleteAllTestGuests()` | Clear all guests and guestEvents |
-
-## Scenario Seeding
-
-For quickly setting up complete test scenarios:
-
-```typescript
-import {seedTestScenario} from '../fixtures/firestore.fixture'
-
-test.beforeEach(async () => {
-  await seedTestScenario('admin-with-guests')
-})
-```
-
-### Available Scenarios
-
-| Scenario | Contents |
-|----------|----------|
-| `admin-with-guests` | 1 active event, 3 guest check-ins |
-| `user-with-history` | 1 user, 2 past events, attendance records |
-| `empty-event` | 1 active event with no check-ins |
-
-### CLI Seeding
-
-For manual testing, use the seed script:
-
-```bash
-bun run seed:test-data              # Seed all scenarios
-bun run seed:test-data admin-with-guests  # Seed specific scenario
-```
