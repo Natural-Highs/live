@@ -30,14 +30,15 @@ import type {App as FirebaseApp} from 'firebase-admin/app'
 import {deleteApp, getApps, initializeApp} from 'firebase-admin/app'
 import {getAuth} from 'firebase-admin/auth'
 import {getFirestore} from 'firebase-admin/firestore'
+import {EMULATOR_CONFIG} from '../src/tests/common/emulator-config'
 
 // =============================================================================
-// Configuration
+// Configuration - uses centralized emulator config
 // =============================================================================
 
-const EMULATOR_PROJECT_ID = 'naturalhighs'
-const FIRESTORE_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
-const AUTH_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST ?? '127.0.0.1:9099'
+const EMULATOR_PROJECT_ID = EMULATOR_CONFIG.projectId
+const FIRESTORE_HOST = EMULATOR_CONFIG.firestore.host
+const AUTH_HOST = EMULATOR_CONFIG.auth.host
 
 // =============================================================================
 // Emulator Initialization
