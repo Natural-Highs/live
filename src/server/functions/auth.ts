@@ -66,6 +66,13 @@ export const createSessionFn = createServerFn({method: 'POST'})
 		// The emulator doesn't support verifying mock tokens from HTTP mocks
 		// Production still requires full token verification (R-010)
 		if (shouldUseEmulators) {
+			// SECURITY: Defense in depth - ensure emulator bypass never runs in production
+			// This guards against misconfiguration where USE_EMULATORS=true accidentally
+			// reaches production, which would allow authentication bypass
+			if (process.env.NODE_ENV === 'production') {
+				throw new AuthenticationError('Emulator mode is not allowed in production environment')
+			}
+
 			// Trust the provided UID in emulator mode
 			// This allows E2E tests to mock Firebase Auth and still create sessions
 			claims = {

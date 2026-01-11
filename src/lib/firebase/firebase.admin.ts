@@ -15,6 +15,16 @@ let initError: Error | null = null
  */
 export const shouldUseEmulators = process.env.USE_EMULATORS === 'true'
 
+// SECURITY: Fail fast if emulator mode is enabled in production
+// This prevents catastrophic authentication bypass if USE_EMULATORS is accidentally
+// set to 'true' in a production deployment
+if (shouldUseEmulators && process.env.NODE_ENV === 'production') {
+	throw new Error(
+		'SECURITY: USE_EMULATORS cannot be true in production environment. ' +
+			'This would bypass authentication. Check environment configuration.'
+	)
+}
+
 function initializeAdmin(): void {
 	// Check if Firebase Admin is already initialized (handles HMR/multiple imports)
 	if (admin.apps.length > 0) {
