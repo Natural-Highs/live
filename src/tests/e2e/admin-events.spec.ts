@@ -79,8 +79,8 @@ test.describe('Admin Event Management', () => {
 	})
 
 	test.describe('AC3: Admin Event Creation', () => {
-		// TODO: Test isolation - adminUser fixture leaves orphan users between runs
-		test.skip('should display admin events page for admin users', async ({page, adminUser}) => {
+		// Worker isolation: adminUser fixture now uses workerPrefix for unique emails
+		test('should display admin events page for admin users', async ({page, adminUser}) => {
 			// GIVEN: Admin is authenticated (via adminUser fixture)
 			// Server functions hit Firestore emulator directly (no mocks needed)
 
@@ -92,8 +92,9 @@ test.describe('Admin Event Management', () => {
 			await expect(page.getByTestId('admin-events-page')).toBeVisible({timeout: 10000})
 			await expect(page.getByTestId('create-event-button')).toBeVisible()
 
-			// Verify admin user is authenticated
-			expect(adminUser.email).toBe('admin@test.local')
+			// Verify admin user is authenticated (email now includes workerPrefix)
+			expect(adminUser.email).toContain('admin-')
+			expect(adminUser.email).toContain('@test.local')
 		})
 
 		test('should open create event modal when clicking create button', async ({
@@ -116,7 +117,8 @@ test.describe('Admin Event Management', () => {
 		})
 
 		// TODO: Event form submission - Workshop event type not found in select options intermittently
-		test.skip('should create event with form submission', async ({page, adminUser: _adminUser}) => {
+		// Worker isolation: adminUser fixture now uses workerPrefix for unique emails
+		test('should create event with form submission', async ({page, adminUser: _adminUser}) => {
 			// GIVEN: Admin has create event modal open
 			// Server functions hit Firestore emulator directly (no mocks needed)
 
