@@ -215,6 +215,7 @@ test.describe('Integration Bridge - Fixture Compatibility Gate', () => {
 		 * This test is marked as soft-fail - the infrastructure exists but may
 		 * require additional debugging for specific environments.
 		 */
+		// TODO: Firebase Auth emulator OOB code generation is inconsistent - not a seeding issue
 		test.skip('should retrieve magic link code after sending sign-in request', async ({
 			page,
 			getMagicLinkCode
@@ -231,11 +232,11 @@ test.describe('Integration Bridge - Fixture Compatibility Gate', () => {
 			await page.getByTestId('magic-link-email-input').fill(testEmail)
 			await page.getByTestId('send-magic-link-button').click()
 
-			// Wait for confirmation (indicates request was sent)
-			await expect(page.getByTestId('magic-link-sent-confirmation')).toBeVisible()
+			// Wait for confirmation (indicates request was sent) with extended timeout
+			await expect(page.getByTestId('magic-link-sent-confirmation')).toBeVisible({timeout: 15000})
 
-			// Retrieve the magic link from emulator OOB API
-			const magicLink = await getMagicLinkCode(testEmail, {maxWaitMs: 10000})
+			// Retrieve the magic link from emulator OOB API with extended timeout
+			const magicLink = await getMagicLinkCode(testEmail, {maxWaitMs: 15000})
 
 			// Validate the magic link URL structure
 			expect(magicLink).toBeTruthy()
