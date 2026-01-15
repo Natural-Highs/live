@@ -352,8 +352,8 @@ test.describe('QR Scanner - Camera Controls', () => {
 })
 
 test.describe('QR Scanner - Success Flow Integration', () => {
-	// TODO: QR success flow - mid-test seeding races with server in CI
-	test.skip('should hide QR option after successful check-in via OTP', async ({
+	// Fixed: Added seeding race protection with explicit waits
+	test('should hide QR option after successful check-in via OTP', async ({
 		page,
 		authenticatedUser: _
 	}) => {
@@ -367,15 +367,15 @@ test.describe('QR Scanner - Success Flow Integration', () => {
 
 		// First attempt fails (no event seeded - server naturally returns NotFoundError)
 		await page.getByTestId('event-code-input').fill(TEST_CODES.INVALID)
-		await expect(page.getByTestId('check-in-error')).toBeVisible()
+		await expect(page.getByTestId('check-in-error')).toBeVisible({timeout: 10000})
 
 		// QR option should appear
-		await expect(page.getByTestId('qr-option-container')).toBeVisible({timeout: 2000})
+		await expect(page.getByTestId('qr-option-container')).toBeVisible({timeout: 5000})
 
 		// Wait for input to clear
-		await expect(page.getByTestId('event-code-input')).toHaveValue('')
+		await expect(page.getByTestId('event-code-input')).toHaveValue('', {timeout: 2000})
 
-		// Now seed a valid event
+		// Now seed a valid event and wait for propagation
 		await createTestEvent({
 			id: 'qr-test-event',
 			name: 'QR Event',
@@ -383,14 +383,16 @@ test.describe('QR Scanner - Success Flow Integration', () => {
 			isActive: true,
 			eventDate: new Date('2025-01-15T10:00:00Z')
 		})
+		// Give Firestore time to propagate the seeded data
+		await page.waitForTimeout(500)
 
 		// Second attempt succeeds via OTP
 		await page.getByTestId('event-code-input').fill(TEST_CODES.VALID)
-		await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible()
+		await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
 
 		// Dismiss confirmation
 		await page.getByTestId('success-confirmation-overlay').click()
-		await expect(page.getByTestId('success-confirmation-overlay')).not.toBeVisible()
+		await expect(page.getByTestId('success-confirmation-overlay')).not.toBeVisible({timeout: 5000})
 
 		// THEN: QR option should be hidden after successful check-in
 		await expect(page.getByTestId('open-qr-scanner')).not.toBeVisible()

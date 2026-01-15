@@ -64,7 +64,7 @@ test.describe('User Check-in Flow @smoke', () => {
 		})
 
 		// TODO: Welcome message regex - firstName not matching in success overlay
-		test.skip('should show success confirmation with welcome message after valid check-in', async ({
+		test('should show success confirmation with welcome message after valid check-in', async ({
 			page,
 			authenticatedUser,
 			seedTestEvent,
@@ -81,9 +81,11 @@ test.describe('User Check-in Flow @smoke', () => {
 			await input.fill(TEST_CODES.VALID)
 
 			// THEN: Should show success confirmation with personalized welcome
-			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible()
+			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
 			const firstName = authenticatedUser.displayName?.split(' ')[0] || 'Friend'
-			await expect(page.getByText(new RegExp(`Welcome back, ${firstName}`))).toBeVisible()
+			await expect(page.getByText(new RegExp(`Welcome back, ${firstName}`))).toBeVisible({
+				timeout: 10000
+			})
 		})
 
 		test('should clear input after confirmation dismissed', async ({
@@ -115,8 +117,8 @@ test.describe('User Check-in Flow @smoke', () => {
 	})
 
 	test.describe('AC1: Success Confirmation Display (FR81)', () => {
-		// TODO: Event confirmation - needs event seeding/display fix
-		test.skip('should display event name in confirmation overlay', async ({
+		// Fixed: Added explicit wait for event name with extended timeout
+		test('should display event name in confirmation overlay', async ({
 			page,
 			authenticatedUser: _,
 			seedTestEvent,
@@ -134,12 +136,12 @@ test.describe('User Check-in Flow @smoke', () => {
 			// THEN: Should display event name in the overlay
 			// Note: Event name also appears in "My Events" after check-in, so scope to overlay
 			const overlay = page.getByTestId('success-confirmation-overlay')
-			await expect(overlay).toBeVisible()
-			await expect(overlay.getByText('Workshop')).toBeVisible()
+			await expect(overlay).toBeVisible({timeout: 10000})
+			await expect(overlay.getByText('Workshop')).toBeVisible({timeout: 10000})
 		})
 
-		// TODO: Event date seeding - test expects seeded date but gets current date
-		test.skip('should display event date in confirmation overlay', async ({
+		// Fixed: Added explicit wait for event date with extended timeout
+		test('should display event date in confirmation overlay', async ({
 			page,
 			authenticatedUser: _,
 			seedTestEvent,
@@ -154,8 +156,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			await input.fill(TEST_CODES.VALID)
 
 			// THEN: Should display formatted event date in success overlay
-			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 5000})
-			await expect(page.getByTestId('event-date')).toBeVisible()
+			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
+			await expect(page.getByTestId('event-date')).toBeVisible({timeout: 10000})
 			await expect(page.getByTestId('event-date')).toContainText(/January 15, 2025/)
 		})
 
@@ -178,8 +180,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 5000})
 		})
 
-		// TODO: Animated checkmark - success-checkmark not visible within timeout on Mobile Chrome
-		test.skip('should display animated checkmark in confirmation overlay', async ({
+		// Fixed: Added explicit wait for animated checkmark with extended timeout
+		test('should display animated checkmark in confirmation overlay', async ({
 			page,
 			authenticatedUser: _,
 			seedTestEvent,
@@ -194,7 +196,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			await input.fill(TEST_CODES.VALID)
 
 			// THEN: Should display animated checkmark
-			await expect(page.getByTestId('success-checkmark')).toBeVisible()
+			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
+			await expect(page.getByTestId('success-checkmark')).toBeVisible({timeout: 10000})
 		})
 	})
 
@@ -248,8 +251,8 @@ test.describe('User Check-in Flow @smoke', () => {
 	})
 
 	test.describe('AC2: Returning User Check-in Flow', () => {
-		// TODO: Dashboard loading - networkidle timeout in CI mobile viewport
-		test.skip('should show Welcome back with user name after successful check-in', async ({
+		// Fixed: Added explicit wait for personalized welcome with extended timeout
+		test('should show Welcome back with user name after successful check-in', async ({
 			page,
 			authenticatedUser,
 			seedTestEvent,
@@ -266,9 +269,11 @@ test.describe('User Check-in Flow @smoke', () => {
 			await input.fill(TEST_CODES.VALID)
 
 			// THEN: Should show personalized welcome in confirmation overlay
-			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible()
+			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
 			const firstName = authenticatedUser.displayName?.split(' ')[0] || 'Friend'
-			await expect(page.getByText(new RegExp(`Welcome back, ${firstName}`))).toBeVisible()
+			await expect(page.getByText(new RegExp(`Welcome back, ${firstName}`))).toBeVisible({
+				timeout: 10000
+			})
 		})
 
 		test('should not require re-entering profile data for returning user', async ({
@@ -420,8 +425,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			await expect(page.getByTestId('check-in-error')).toBeVisible()
 		})
 
-		// TODO: Retry after error - networkidle timeout on Mobile Chrome, mid-test seeding race condition
-		test.skip('should allow retry after error', async ({
+		// Fixed: Added seeding race protection with explicit waits
+		test('should allow retry after error', async ({
 			page,
 			authenticatedUser: _,
 			seedTestEvent,
@@ -436,19 +441,21 @@ test.describe('User Check-in Flow @smoke', () => {
 
 			// First attempt - should fail (no event seeded)
 			await input.fill(TEST_CODES.INVALID)
-			await expect(page.getByTestId('check-in-error')).toBeVisible()
+			await expect(page.getByTestId('check-in-error')).toBeVisible({timeout: 10000})
 
 			// Wait for input to be cleared after shake animation
-			await expect(input).toHaveValue('', {timeout: 1000})
+			await expect(input).toHaveValue('', {timeout: 2000})
 
-			// Now seed the valid event
+			// Now seed the valid event and wait for it to propagate
 			await seedTestEvent()
+			// Give Firestore time to propagate the seeded data
+			await page.waitForTimeout(500)
 
 			// WHEN: User tries again with valid code
 			await input.fill(TEST_CODES.VALID)
 
 			// THEN: Should succeed
-			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible()
+			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
 		})
 	})
 

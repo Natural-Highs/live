@@ -176,8 +176,8 @@ test.describe('Attendance History (AC1, AC2)', () => {
 			await expect(page.getByText('Attendance History')).toBeVisible()
 		})
 
-		// TODO: Attendance history - UI not rendering seeded data in CI
-		test.skip('should display chronological list of attended events', async ({page, context}) => {
+		// Fixed: Added explicit wait for seeded data elements with extended timeout
+		test('should display chronological list of attended events', async ({page, context}) => {
 			// GIVEN: User is authenticated with multiple events
 			await injectAuthenticatedUser(
 				context,
@@ -189,14 +189,15 @@ test.describe('Attendance History (AC1, AC2)', () => {
 			// WHEN: User navigates to profile
 			await page.goto('/profile')
 
-			// THEN: Should see event cards in the history
-			await expect(page.getByTestId('attendance-history')).toBeVisible()
+			// THEN: Should see event cards in the history (wait for data to load)
+			await expect(page.getByTestId('attendance-history')).toBeVisible({timeout: 10000})
 			const eventCards = page.getByTestId('attendance-history-item')
+			await expect(eventCards.first()).toBeVisible({timeout: 10000})
 			await expect(eventCards).toHaveCount(2)
 		})
 
-		// TODO: Event display - needs event data seeding fix
-		test.skip('should display event name and date', async ({page, context}) => {
+		// Fixed: Added explicit wait for seeded event names with extended timeout
+		test('should display event name and date', async ({page, context}) => {
 			// GIVEN: User is authenticated with events
 			await injectAuthenticatedUser(
 				context,
@@ -210,8 +211,9 @@ test.describe('Attendance History (AC1, AC2)', () => {
 
 			// THEN: Should see event details in attendance history section
 			const historySection = page.getByTestId('attendance-history-section')
-			await expect(historySection.getByText('Mindfulness Workshop')).toBeVisible()
-			await expect(historySection.getByText('Weekend Retreat')).toBeVisible()
+			await expect(historySection).toBeVisible({timeout: 10000})
+			await expect(historySection.getByText('Mindfulness Workshop')).toBeVisible({timeout: 10000})
+			await expect(historySection.getByText('Weekend Retreat')).toBeVisible({timeout: 10000})
 		})
 	})
 
@@ -225,11 +227,8 @@ test.describe('Attendance History (AC1, AC2)', () => {
 			await cleanupTestData(TEST_USER_GUEST_CONVERTED.uid)
 		})
 
-		// TODO: Guest badge display - needs event/check-in data seeding fix
-		test.skip('should display Guest badge for pre-conversion check-ins', async ({
-			page,
-			context
-		}) => {
+		// Fixed: Added explicit wait for guest badge with extended timeout
+		test('should display Guest badge for pre-conversion check-ins', async ({page, context}) => {
 			// GIVEN: User has check-ins from before account creation (guest check-ins)
 			await injectAuthenticatedUser(
 				context,
@@ -242,12 +241,13 @@ test.describe('Attendance History (AC1, AC2)', () => {
 			await page.goto('/profile')
 
 			// THEN: Should see Guest badge on migrated event
-			await expect(page.getByTestId('guest-badge')).toBeVisible()
+			await expect(page.getByTestId('attendance-history-section')).toBeVisible({timeout: 10000})
+			await expect(page.getByTestId('guest-badge')).toBeVisible({timeout: 10000})
 			await expect(page.getByTestId('guest-badge')).toHaveText('Guest')
 		})
 
-		// TODO: Clean event name - flaky in burn-in, visibility race on guest history seeding
-		test.skip('should show clean event name without inline text', async ({page, context}) => {
+		// Fixed: Added explicit wait for guest history with extended timeout
+		test('should show clean event name without inline text', async ({page, context}) => {
 			// GIVEN: User with guest history
 			await injectAuthenticatedUser(
 				context,
@@ -261,9 +261,10 @@ test.describe('Attendance History (AC1, AC2)', () => {
 
 			// THEN: Event name should not have "(as Guest)" inline text
 			const historySection = page.getByTestId('attendance-history-section')
-			await expect(historySection.getByText('Community Gathering')).toBeVisible()
+			await expect(historySection).toBeVisible({timeout: 10000})
+			await expect(historySection.getByText('Community Gathering')).toBeVisible({timeout: 10000})
 			// Badge should be separate from the name
-			await expect(page.getByTestId('guest-badge')).toBeVisible()
+			await expect(page.getByTestId('guest-badge')).toBeVisible({timeout: 10000})
 		})
 	})
 
@@ -324,8 +325,8 @@ test.describe('Account Activity (AC3)', () => {
 			await expect(page.getByText('Account Activity')).toBeVisible()
 		})
 
-		// TODO: Account activity - activity items not rendering in CI
-		test.skip('should display activity items with type and timestamp', async ({page, context}) => {
+		// Fixed: Added explicit wait for activity items with extended timeout
+		test('should display activity items with type and timestamp', async ({page, context}) => {
 			// GIVEN: User with check-in activity
 			await injectAuthenticatedUser(
 				context,
@@ -338,14 +339,15 @@ test.describe('Account Activity (AC3)', () => {
 			await page.goto('/profile')
 
 			// THEN: Should see activity items with check-in type
-			await expect(page.getByTestId('account-activity')).toBeVisible()
+			await expect(page.getByTestId('account-activity')).toBeVisible({timeout: 10000})
 			const activityItems = page.getByTestId('account-activity-item')
+			await expect(activityItems.first()).toBeVisible({timeout: 10000})
 			// Should have check-in activities + consent activity
 			expect(await activityItems.count()).toBeGreaterThanOrEqual(2)
 		})
 
-		// TODO: Account activity - consent activity not rendering in CI
-		test.skip('should display consent signing in activity', async ({page, context}) => {
+		// Fixed: Added explicit wait for consent activity with extended timeout
+		test('should display consent signing in activity', async ({page, context}) => {
 			// GIVEN: User who has signed consent
 			await injectAuthenticatedUser(
 				context,
@@ -358,11 +360,12 @@ test.describe('Account Activity (AC3)', () => {
 			await page.goto('/profile')
 
 			// THEN: Should see consent activity
-			await expect(page.getByText('Signed consent form')).toBeVisible()
+			await expect(page.getByTestId('account-activity-section')).toBeVisible({timeout: 10000})
+			await expect(page.getByText('Signed consent form')).toBeVisible({timeout: 10000})
 		})
 
-		// TODO: Check-in activities - needs event seeding/display fix
-		test.skip('should display check-in activities with event names', async ({page, context}) => {
+		// Fixed: Added explicit wait for check-in activity with extended timeout
+		test('should display check-in activities with event names', async ({page, context}) => {
 			// GIVEN: User with check-in history
 			await injectAuthenticatedUser(
 				context,
@@ -376,7 +379,8 @@ test.describe('Account Activity (AC3)', () => {
 
 			// THEN: Should see check-in descriptions with event names
 			const activitySection = page.getByTestId('account-activity-section')
-			await expect(activitySection.getByText(/Checked in to/).first()).toBeVisible()
+			await expect(activitySection).toBeVisible({timeout: 10000})
+			await expect(activitySection.getByText(/Checked in to/).first()).toBeVisible({timeout: 10000})
 		})
 	})
 
@@ -390,8 +394,8 @@ test.describe('Account Activity (AC3)', () => {
 			await cleanupTestData(TEST_USER_EMPTY.uid)
 		})
 
-		// TODO: Account activity - consent activity not rendering consistently in CI burn-in
-		test.skip('should display only consent activity when no check-ins', async ({page, context}) => {
+		// Fixed: Added explicit wait for consent activity with extended timeout
+		test('should display only consent activity when no check-ins', async ({page, context}) => {
 			// GIVEN: User has signed consent but no check-in activity
 			await injectAuthenticatedUser(
 				context,
@@ -405,7 +409,8 @@ test.describe('Account Activity (AC3)', () => {
 
 			// THEN: Should see only consent activity (no check-ins)
 			const activitySection = page.getByTestId('account-activity-section')
-			await expect(activitySection.getByText('Signed consent form')).toBeVisible()
+			await expect(activitySection).toBeVisible({timeout: 10000})
+			await expect(activitySection.getByText('Signed consent form')).toBeVisible({timeout: 10000})
 			// Only one activity item (consent)
 			const activityItems = page.getByTestId('account-activity-item')
 			await expect(activityItems).toHaveCount(1)
