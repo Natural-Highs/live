@@ -4,13 +4,16 @@
  * Validates that multiple browser contexts with different user sessions
  * can operate simultaneously without interference.
  *
- * This test addresses AC #5: Multi-device session isolation.
  *
  * Key validations:
  * - Two different users can have active sessions simultaneously
  * - Session cookies are isolated per browser context
  * - Actions in one context don't affect the other
  * - Both contexts maintain their own session state
+ *
+ * Test Isolation:
+ * - Uses workerPrefix fixture for parallel worker data isolation
+ * - Each worker gets unique user IDs to prevent cross-worker collisions
  */
 
 import {expect, test} from '../fixtures'
@@ -21,13 +24,11 @@ import {
 	type TestUser
 } from '../fixtures/session.fixture'
 
-// TODO: Multi-context session isolation - flaky in CI, needs investigation
-const SKIP_REASON = 'TODO: Multi-context session isolation - flaky in CI'
-
 test.describe('Concurrent Sessions', () => {
-	// TODO: Multi-context session isolation - flaky in CI, needs investigation
-	test.skip(true, SKIP_REASON)
-	test('two different users can access protected routes simultaneously', async ({browser}) => {
+	test('two different users can access protected routes simultaneously', async ({
+		browser,
+		workerPrefix
+	}) => {
 		// Create two separate browser contexts (simulating different devices/browsers)
 		const contextA = await browser.newContext()
 		const contextB = await browser.newContext()
@@ -35,16 +36,16 @@ test.describe('Concurrent Sessions', () => {
 		let pageB: Awaited<ReturnType<typeof contextB.newPage>> | undefined
 
 		try {
-			// Create two different users
+			// Create two different users with worker-isolated IDs
 			const userA: TestUser = {
-				uid: `user-a-${Date.now()}`,
-				email: 'user-a@example.com',
+				uid: `${workerPrefix}__user-a-${Date.now()}`,
+				email: `${workerPrefix}-user-a@example.com`,
 				displayName: 'User A'
 			}
 
 			const userB: TestUser = {
-				uid: `user-b-${Date.now()}`,
-				email: 'user-b@example.com',
+				uid: `${workerPrefix}__user-b-${Date.now()}`,
+				email: `${workerPrefix}-user-b@example.com`,
 				displayName: 'User B'
 			}
 
@@ -84,7 +85,10 @@ test.describe('Concurrent Sessions', () => {
 		}
 	})
 
-	test('admin and regular user sessions coexist without interference', async ({browser}) => {
+	test('admin and regular user sessions coexist without interference', async ({
+		browser,
+		workerPrefix
+	}) => {
 		const adminContext = await browser.newContext()
 		const userContext = await browser.newContext()
 		let adminPage: Awaited<ReturnType<typeof adminContext.newPage>> | undefined
@@ -92,14 +96,14 @@ test.describe('Concurrent Sessions', () => {
 
 		try {
 			const adminUser: TestUser = {
-				uid: `admin-${Date.now()}`,
-				email: 'admin@naturalhighs.org',
+				uid: `${workerPrefix}__admin-${Date.now()}`,
+				email: `${workerPrefix}-admin@naturalhighs.org`,
 				displayName: 'Admin User'
 			}
 
 			const regularUser: TestUser = {
-				uid: `regular-${Date.now()}`,
-				email: 'regular@example.com',
+				uid: `${workerPrefix}__regular-${Date.now()}`,
+				email: `${workerPrefix}-regular@example.com`,
 				displayName: 'Regular User'
 			}
 
@@ -145,7 +149,7 @@ test.describe('Concurrent Sessions', () => {
 		}
 	})
 
-	test('session in one context does not leak to another', async ({browser}) => {
+	test('session in one context does not leak to another', async ({browser, workerPrefix}) => {
 		const authenticatedContext = await browser.newContext()
 		const unauthenticatedContext = await browser.newContext()
 		let authPage: Awaited<ReturnType<typeof authenticatedContext.newPage>> | undefined
@@ -153,8 +157,8 @@ test.describe('Concurrent Sessions', () => {
 
 		try {
 			const user: TestUser = {
-				uid: `leak-test-${Date.now()}`,
-				email: 'leak-test@example.com',
+				uid: `${workerPrefix}__leak-test-${Date.now()}`,
+				email: `${workerPrefix}-leak-test@example.com`,
 				displayName: 'Leak Test User'
 			}
 
@@ -189,7 +193,10 @@ test.describe('Concurrent Sessions', () => {
 		}
 	})
 
-	test('clearing session in one context does not affect another', async ({browser}) => {
+	test('clearing session in one context does not affect another', async ({
+		browser,
+		workerPrefix
+	}) => {
 		const contextA = await browser.newContext()
 		const contextB = await browser.newContext()
 		let pageA: Awaited<ReturnType<typeof contextA.newPage>> | undefined
@@ -197,14 +204,14 @@ test.describe('Concurrent Sessions', () => {
 
 		try {
 			const userA: TestUser = {
-				uid: `clear-test-a-${Date.now()}`,
-				email: 'clear-a@example.com',
+				uid: `${workerPrefix}__clear-test-a-${Date.now()}`,
+				email: `${workerPrefix}-clear-a@example.com`,
 				displayName: 'Clear Test A'
 			}
 
 			const userB: TestUser = {
-				uid: `clear-test-b-${Date.now()}`,
-				email: 'clear-b@example.com',
+				uid: `${workerPrefix}__clear-test-b-${Date.now()}`,
+				email: `${workerPrefix}-clear-b@example.com`,
 				displayName: 'Clear Test B'
 			}
 
