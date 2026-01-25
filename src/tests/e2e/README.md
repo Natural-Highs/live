@@ -374,6 +374,71 @@ await expect(async () => {
 
 This handles timing variance between Firestore writes and React Query cache updates.
 
+### WebAuthn Transient State Testing
+
+Testing transient UI states (loading spinners, "Verifying..." text) during WebAuthn operations requires disabling automatic presence simulation:
+
+```typescript
+test('should show verifying state', async ({page}) => {
+  const client = await page.context().newCDPSession(page)
+  await client.send('WebAuthn.enable')
+
+  const {authenticatorId} = await client.send('WebAuthn.addVirtualAuthenticator', {
+    options: {
+      protocol: 'ctap2',
+      transport: 'internal',
+      hasResidentKey: true,
+      hasUserVerification: true,
+      isUserVerified: true,
+      automaticPresenceSimulation: false  // Key: prevents instant completion
+    }
+  })
+
+  try {
+    await page.goto('/authentication')
+    await page.getByRole('button', {name: /sign in with passkey/i}).click()
+
+    // Now we can reliably catch the transient state
+    await expect(
+      page.getByText(/verifying/i).or(page.getByText(/authenticating/i))
+    ).toBeVisible({timeout: 5000})
+  } finally {
+    await client.send('WebAuthn.removeVirtualAuthenticator', {authenticatorId})
+  }
+})
+```
+
+**Why this works:** With `automaticPresenceSimulation: true` (default), the virtual authenticator responds in milliseconds, making transient states impossible to catch. Setting it to `false` makes WebAuthn wait indefinitely for user presence, keeping the UI in the loading state.
+
+**Completing the flow after transient state assertion:** After asserting the transient state, enable automatic presence to let the authenticator respond:
+
+```typescript
+// Set up authenticator with manual presence control
+const {authenticatorId} = await client.send('WebAuthn.addVirtualAuthenticator', {
+  options: {
+    // ...
+    automaticPresenceSimulation: false
+  }
+})
+
+// Trigger passkey sign-in (starts waiting for presence)
+await page.getByRole('button', {name: /sign in with passkey/i}).click()
+
+// Assert transient state is visible
+await expect(page.getByText(/verifying/i)).toBeVisible()
+
+// Enable automatic presence to complete the flow
+await client.send('WebAuthn.setAutomaticPresenceSimulation', {
+  authenticatorId,
+  enabled: true
+})
+
+// Now the authenticator auto-responds and flow completes
+await expect(page.getByText(/verifying/i)).not.toBeVisible()
+```
+
+For most transient state testing, keeping `automaticPresenceSimulation: false` without triggering presence is sufficient. For tests that need to verify the full flow, use `automaticPresenceSimulation: true` with the standard `setupVirtualAuthenticator` helper.
+
 ### SSR Error Testing
 
 `page.route()` does NOT reliably intercept TanStack Start server functions because they use SSR streaming.
