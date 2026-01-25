@@ -208,14 +208,15 @@ test.describe('Integration Bridge - Fixture Compatibility Gate', () => {
 
 	test.describe('OOB Code Fixture Validation', () => {
 		/**
-		 * Note: The OOB Code API retrieval requires that the Firebase client SDK
-		 * actually generates an email sign-in request. In some environments,
-		 * the sendSignInLinkToEmail may silently fail (anti-enumeration behavior).
+		 * P2 Skip: Firebase Auth emulator OOB code generation is inconsistent.
 		 *
-		 * This test is marked as soft-fail - the infrastructure exists but may
-		 * require additional debugging for specific environments.
+		 * Root cause: sendSignInLinkToEmail() may silently fail in the emulator due to
+		 * anti-enumeration behavior. The OOB code API endpoint works (verified in health
+		 * check above), but code generation timing varies by environment.
+		 *
+		 * Resolution: Requires Firebase emulator configuration investigation or
+		 * alternative approach using Admin SDK to directly create OOB codes.
 		 */
-		// TODO: Firebase Auth emulator OOB code generation is inconsistent - not a seeding issue
 		test.skip('should retrieve magic link code after sending sign-in request', async ({
 			page,
 			getMagicLinkCode
@@ -247,6 +248,10 @@ test.describe('Integration Bridge - Fixture Compatibility Gate', () => {
 			expect(url.pathname).toContain('magic-link')
 		})
 
+		/**
+		 * P2 Skip: Depends on OOB code generation which is inconsistent in emulator.
+		 * See comment above for root cause and resolution path.
+		 */
 		test.skip('should complete full magic link auth flow using real emulator', async ({
 			page,
 			getMagicLinkCode
@@ -327,12 +332,13 @@ test.describe('Integration Bridge - Fixture Compatibility Gate', () => {
 		})
 
 		/**
-		 * Note: Direct document creation via REST API requires bypassing security rules.
-		 * The emulator REST endpoint respects Firestore security rules, so we need
-		 * to use the Admin SDK or create documents through authenticated app paths.
+		 * P2 Skip: Direct document creation via REST API requires bypassing security rules.
 		 *
-		 * This test is skipped - the emulator connectivity is validated above.
-		 * For Task 2, we'll create proper Firestore seeding fixtures using Admin SDK.
+		 * Root cause: Emulator REST endpoint respects Firestore security rules.
+		 * Resolution: Use Admin SDK for seeding (already implemented in firestore.fixture.ts).
+		 *
+		 * This test validates a capability that's already working via Admin SDK fixtures.
+		 * Keeping as reference for alternative seeding approaches.
 		 */
 		test.skip('should seed and retrieve test data from Firestore emulator', async ({}) => {
 			// This test requires Admin SDK access or security rule bypass

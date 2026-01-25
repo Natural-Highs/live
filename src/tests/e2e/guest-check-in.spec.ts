@@ -375,7 +375,6 @@ test.describe('Guest Check-in Flow', () => {
 
 			// Wait for success and give Firestore time to complete the write
 			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
-			await page.waitForTimeout(500) // Allow Firestore write to complete
 
 			// Verify guest record was created in Firestore
 			const guests = await getGuestsForEvent(testEventId!)
@@ -410,7 +409,6 @@ test.describe('Guest Check-in Flow', () => {
 
 			// Wait for success and give Firestore time to complete the write
 			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
-			await page.waitForTimeout(500) // Allow Firestore write to complete
 
 			// Verify guest record was created with null email/phone
 			const guests = await getGuestsForEvent(testEventId!)

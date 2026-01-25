@@ -45,7 +45,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			page,
 			authenticatedUser: _,
 			seedTestEvent,
-			cleanupAllTestData
+			cleanupAllTestData,
+			testEvent
 		}) => {
 			// GIVEN: Test event seeded in Firestore emulator
 			await cleanupAllTestData()
@@ -57,7 +58,7 @@ test.describe('User Check-in Flow @smoke', () => {
 
 			// WHEN: User enters 4 digits (auto-submits on 4th digit)
 			const input = page.getByTestId('event-code-input')
-			await input.fill(TEST_CODES.VALID)
+			await input.fill(testEvent.eventCode)
 
 			// THEN: Should show full-screen success confirmation overlay
 			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible()
@@ -68,7 +69,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			page,
 			authenticatedUser,
 			seedTestEvent,
-			cleanupAllTestData
+			cleanupAllTestData,
+			testEvent
 		}) => {
 			await cleanupAllTestData()
 			await seedTestEvent()
@@ -78,7 +80,7 @@ test.describe('User Check-in Flow @smoke', () => {
 
 			// WHEN: User enters valid event code (auto-submits)
 			const input = page.getByTestId('event-code-input')
-			await input.fill(TEST_CODES.VALID)
+			await input.fill(testEvent.eventCode)
 
 			// THEN: Should show success confirmation with personalized welcome
 			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
@@ -92,7 +94,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			page,
 			authenticatedUser: _,
 			seedTestEvent,
-			cleanupAllTestData
+			cleanupAllTestData,
+			testEvent
 		}) => {
 			await cleanupAllTestData()
 			await seedTestEvent()
@@ -102,7 +105,7 @@ test.describe('User Check-in Flow @smoke', () => {
 
 			// WHEN: User completes check-in (auto-submit on 4th digit)
 			const input = page.getByTestId('event-code-input')
-			await input.fill(TEST_CODES.VALID)
+			await input.fill(testEvent.eventCode)
 
 			// Wait for confirmation overlay
 			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible()
@@ -122,7 +125,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			page,
 			authenticatedUser: _,
 			seedTestEvent,
-			cleanupAllTestData
+			cleanupAllTestData,
+			testEvent
 		}) => {
 			await cleanupAllTestData()
 			// Seed event with specific name
@@ -131,7 +135,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			await page.goto('/dashboard')
 			const input = page.getByTestId('event-code-input')
 			await input.waitFor({state: 'visible'})
-			await input.fill(TEST_CODES.VALID)
+			await input.fill(testEvent.eventCode)
 
 			// THEN: Should display event name in the overlay
 			// Note: Event name also appears in "My Events" after check-in, so scope to overlay
@@ -145,7 +149,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			page,
 			authenticatedUser: _,
 			seedTestEvent,
-			cleanupAllTestData
+			cleanupAllTestData,
+			testEvent
 		}) => {
 			await cleanupAllTestData()
 			await seedTestEvent({eventDate: new Date('2025-01-15T10:00:00Z')})
@@ -153,7 +158,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			await page.goto('/dashboard')
 			const input = page.getByTestId('event-code-input')
 			await input.waitFor({state: 'visible'})
-			await input.fill(TEST_CODES.VALID)
+			await input.fill(testEvent.eventCode)
 
 			// THEN: Should display formatted event date in success overlay
 			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
@@ -165,7 +170,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			page,
 			authenticatedUser: _,
 			seedTestEvent,
-			cleanupAllTestData
+			cleanupAllTestData,
+			testEvent
 		}) => {
 			await cleanupAllTestData()
 			// Note: Event location comes from eventType or event itself
@@ -174,7 +180,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			await page.goto('/dashboard')
 			const input = page.getByTestId('event-code-input')
 			await input.waitFor({state: 'visible'})
-			await input.fill(TEST_CODES.VALID)
+			await input.fill(testEvent.eventCode)
 
 			// THEN: Should display success overlay (location may be default)
 			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 5000})
@@ -185,7 +191,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			page,
 			authenticatedUser: _,
 			seedTestEvent,
-			cleanupAllTestData
+			cleanupAllTestData,
+			testEvent
 		}) => {
 			await cleanupAllTestData()
 			await seedTestEvent()
@@ -193,7 +200,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			await page.goto('/dashboard')
 			const input = page.getByTestId('event-code-input')
 			await input.waitFor({state: 'visible'})
-			await input.fill(TEST_CODES.VALID)
+			await input.fill(testEvent.eventCode)
 
 			// THEN: Should display animated checkmark
 			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
@@ -206,7 +213,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			page,
 			authenticatedUser: _,
 			seedTestEvent,
-			cleanupAllTestData
+			cleanupAllTestData,
+			testEvent
 		}) => {
 			await cleanupAllTestData()
 			await seedTestEvent()
@@ -214,7 +222,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			await page.goto('/dashboard')
 			const input = page.getByTestId('event-code-input')
 			await input.waitFor({state: 'visible'})
-			await input.fill(TEST_CODES.VALID)
+			await input.fill(testEvent.eventCode)
 
 			// Wait for confirmation
 			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible()
@@ -230,7 +238,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			page,
 			authenticatedUser: _,
 			seedTestEvent,
-			cleanupAllTestData
+			cleanupAllTestData,
+			testEvent
 		}) => {
 			await cleanupAllTestData()
 			await seedTestEvent()
@@ -238,7 +247,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			await page.goto('/dashboard')
 			const input = page.getByTestId('event-code-input')
 			await input.waitFor({state: 'visible'})
-			await input.fill(TEST_CODES.VALID)
+			await input.fill(testEvent.eventCode)
 
 			// Wait for confirmation to appear
 			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible()
@@ -256,7 +265,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			page,
 			authenticatedUser,
 			seedTestEvent,
-			cleanupAllTestData
+			cleanupAllTestData,
+			testEvent
 		}) => {
 			await cleanupAllTestData()
 			await seedTestEvent()
@@ -266,7 +276,7 @@ test.describe('User Check-in Flow @smoke', () => {
 
 			// WHEN: Returning user enters valid event code (auto-submits on 4th digit)
 			const input = page.getByTestId('event-code-input')
-			await input.fill(TEST_CODES.VALID)
+			await input.fill(testEvent.eventCode)
 
 			// THEN: Should show personalized welcome in confirmation overlay
 			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
@@ -280,7 +290,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			page,
 			authenticatedUser: _,
 			seedTestEvent,
-			cleanupAllTestData
+			cleanupAllTestData,
+			testEvent
 		}) => {
 			await cleanupAllTestData()
 			await seedTestEvent()
@@ -290,7 +301,7 @@ test.describe('User Check-in Flow @smoke', () => {
 
 			// WHEN: Returning user enters event code (auto-submits)
 			const input = page.getByTestId('event-code-input')
-			await input.fill(TEST_CODES.VALID)
+			await input.fill(testEvent.eventCode)
 
 			// THEN: Should go directly to success confirmation (no profile form shown)
 			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible()
@@ -332,7 +343,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			page,
 			authenticatedUser: _,
 			seedTestEvent,
-			cleanupAllTestData
+			cleanupAllTestData,
+			testEvent
 		}) => {
 			await cleanupAllTestData()
 			await seedTestEvent()
@@ -346,7 +358,7 @@ test.describe('User Check-in Flow @smoke', () => {
 
 			// WHEN: User enters 4th digit (auto-submits)
 			const start = Date.now()
-			await input.fill(TEST_CODES.VALID)
+			await input.fill(testEvent.eventCode)
 
 			// Wait for success confirmation with explicit timeout
 			await page
@@ -407,7 +419,8 @@ test.describe('User Check-in Flow @smoke', () => {
 
 		test('should handle network failure gracefully (AC5/NFR24)', async ({
 			page,
-			authenticatedUser: _
+			authenticatedUser: _,
+			testEvent
 		}) => {
 			// Mock network failure at server function level
 			await page.route('**/_serverFn/*', route => {
@@ -419,7 +432,7 @@ test.describe('User Check-in Flow @smoke', () => {
 
 			// WHEN: User submits with network failure (auto-submits on 4th digit)
 			const input = page.getByTestId('event-code-input')
-			await input.fill(TEST_CODES.VALID)
+			await input.fill(testEvent.eventCode)
 
 			// THEN: Should show error message
 			await expect(page.getByTestId('check-in-error')).toBeVisible()
@@ -430,7 +443,8 @@ test.describe('User Check-in Flow @smoke', () => {
 			page,
 			authenticatedUser: _,
 			seedTestEvent,
-			cleanupAllTestData
+			cleanupAllTestData,
+			testEvent
 		}) => {
 			await cleanupAllTestData()
 			// Don't seed initially - first attempt will fail
@@ -446,13 +460,11 @@ test.describe('User Check-in Flow @smoke', () => {
 			// Wait for input to be cleared after shake animation
 			await expect(input).toHaveValue('', {timeout: 2000})
 
-			// Now seed the valid event and wait for it to propagate
+			// Now seed the valid event
 			await seedTestEvent()
-			// Give Firestore time to propagate the seeded data
-			await page.waitForTimeout(500)
 
 			// WHEN: User tries again with valid code
-			await input.fill(TEST_CODES.VALID)
+			await input.fill(testEvent.eventCode)
 
 			// THEN: Should succeed
 			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
@@ -460,12 +472,12 @@ test.describe('User Check-in Flow @smoke', () => {
 	})
 
 	test.describe('AC6: Duplicate Check-in Prevention', () => {
-		// TODO: Duplicate check-in error - check-in-error not visible in CI
-		test.skip('should show already checked in message when user attempts duplicate check-in', async ({
+		test('should show already checked in message when user attempts duplicate check-in', async ({
 			page,
 			authenticatedUser: _,
 			seedTestEvent,
-			cleanupAllTestData
+			cleanupAllTestData,
+			testEvent
 		}) => {
 			await cleanupAllTestData()
 			await seedTestEvent()
@@ -475,27 +487,33 @@ test.describe('User Check-in Flow @smoke', () => {
 
 			// First check-in succeeds
 			const input = page.getByTestId('event-code-input')
-			await input.fill(TEST_CODES.VALID)
-			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible()
+			await input.fill(testEvent.eventCode)
+			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
 
-			// Dismiss overlay
+			// Dismiss overlay and wait for state to settle (6s timeout for 3s auto-dismiss + animation buffer)
 			await page.getByTestId('success-confirmation-overlay').click()
-			await expect(page.getByTestId('success-confirmation-overlay')).not.toBeVisible()
+			await expect(page.getByTestId('success-confirmation-overlay')).not.toBeVisible({
+				timeout: 6000
+			})
+
+			// Wait for input to be ready for new entry
+			await expect(input).toHaveValue('', {timeout: 2000})
+			await expect(input).toBeEnabled()
 
 			// WHEN: User tries to check in again with same code
-			await page.getByTestId('event-code-input').fill(TEST_CODES.VALID)
+			await input.fill(testEvent.eventCode)
 
 			// THEN: Should show "already checked in" error message
-			await expect(page.getByTestId('check-in-error')).toBeVisible()
-			await expect(page.getByText(/already checked in/i)).toBeVisible()
+			await expect(page.getByTestId('check-in-error')).toBeVisible({timeout: 10000})
+			await expect(page.getByText(/already checked in/i)).toBeVisible({timeout: 5000})
 		})
 
-		// TODO: Duplicate check-in - check-in-error not visible on second attempt in Mobile Chrome
-		test.skip('should not create duplicate record when authenticated user re-submits', async ({
+		test('should not create duplicate record when authenticated user re-submits', async ({
 			page,
 			authenticatedUser: _,
 			seedTestEvent,
-			cleanupAllTestData
+			cleanupAllTestData,
+			testEvent
 		}) => {
 			await cleanupAllTestData()
 			await seedTestEvent()
@@ -505,27 +523,32 @@ test.describe('User Check-in Flow @smoke', () => {
 
 			// First check-in succeeds
 			const input = page.getByTestId('event-code-input')
-			await input.fill(TEST_CODES.VALID)
-			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible()
+			await input.fill(testEvent.eventCode)
+			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
 
-			// Dismiss and try again
+			// Dismiss and wait for state to settle (6s timeout for 3s auto-dismiss + animation buffer)
 			await page.getByTestId('success-confirmation-overlay').click()
-			await expect(page.getByTestId('success-confirmation-overlay')).not.toBeVisible()
+			await expect(page.getByTestId('success-confirmation-overlay')).not.toBeVisible({
+				timeout: 6000
+			})
+
+			// Wait for input to be ready
+			await expect(input).toHaveValue('', {timeout: 2000})
+			await expect(input).toBeEnabled()
 
 			// Try again - server rejects duplicate
-			await page.getByTestId('event-code-input').fill(TEST_CODES.VALID)
+			await input.fill(testEvent.eventCode)
 
 			// THEN: Should show error on second attempt
-			await expect(page.getByTestId('check-in-error')).toBeVisible()
+			await expect(page.getByTestId('check-in-error')).toBeVisible({timeout: 10000})
 		})
 
-		// AC3: Dismiss duplicate message returns to clean state
-		// TODO: Duplicate error handling - check-in-error not visible in CI mobile
-		test.skip('should clear input and return to ready state after duplicate error', async ({
+		test('should clear input and return to ready state after duplicate error', async ({
 			page,
 			authenticatedUser: _,
 			seedTestEvent,
-			cleanupAllTestData
+			cleanupAllTestData,
+			testEvent
 		}) => {
 			await cleanupAllTestData()
 			await seedTestEvent()
@@ -535,20 +558,25 @@ test.describe('User Check-in Flow @smoke', () => {
 
 			// First check-in
 			const input = page.getByTestId('event-code-input')
-			await input.fill(TEST_CODES.VALID)
-			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible()
+			await input.fill(testEvent.eventCode)
+			await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
 			await page.getByTestId('success-confirmation-overlay').click()
-			// Wait for overlay to be dismissed (has 200ms fade-out animation)
-			await expect(page.getByTestId('success-confirmation-overlay')).not.toBeVisible()
+			await expect(page.getByTestId('success-confirmation-overlay')).not.toBeVisible({
+				timeout: 6000
+			})
+
+			// Wait for input to be ready
+			await expect(input).toHaveValue('', {timeout: 2000})
+			await expect(input).toBeEnabled()
 
 			// Duplicate attempt
-			await input.fill(TEST_CODES.VALID)
+			await input.fill(testEvent.eventCode)
 
 			// THEN: Error shows
-			await expect(page.getByTestId('check-in-error')).toBeVisible()
+			await expect(page.getByTestId('check-in-error')).toBeVisible({timeout: 10000})
 
-			// AND: Input is cleared after shake animation (500ms)
-			await expect(input).toHaveValue('', {timeout: 1500})
+			// AND: Input is cleared after shake animation (500ms + buffer)
+			await expect(input).toHaveValue('', {timeout: 2000})
 
 			// AND: Input is ready for new entry
 			await expect(input).toBeEnabled()
@@ -557,8 +585,7 @@ test.describe('User Check-in Flow @smoke', () => {
 
 	// FR75: Inactive event codes should return "Code not found"
 	test.describe('AC7: Inactive Event Code Handling (FR75)', () => {
-		// TODO: Inactive event - check-in-error not visible on Mobile Chrome
-		test.skip('should show code not found for inactive event code', async ({
+		test('should show code not found for inactive event code', async ({
 			page,
 			authenticatedUser: _,
 			seedTestEvent,
@@ -576,7 +603,7 @@ test.describe('User Check-in Flow @smoke', () => {
 			await input.fill('4567')
 
 			// THEN: Should show "Code not found" error
-			await expect(page.getByTestId('check-in-error')).toBeVisible()
+			await expect(page.getByTestId('check-in-error')).toBeVisible({timeout: 10000})
 			await expect(page.getByTestId('check-in-error')).toContainText(/code not found/i)
 		})
 	})

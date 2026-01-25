@@ -17,7 +17,6 @@
  */
 
 import {mergeTests} from '@playwright/test'
-import {TEST_CODES} from '../factories/events.factory'
 import {test as authTest} from './auth.fixture'
 import {test as firebaseResetTest} from './firebase-reset.fixture'
 import {
@@ -32,30 +31,29 @@ import {
 const baseTest = mergeTests(authTest, firebaseResetTest)
 
 /**
- * Get default test event with worker-isolated ID.
+ * Generate a worker-specific event code from workerPrefix.
+ * Extracts numeric worker index and pads to 4 digits.
+ * Examples: w0 -> 1000, w1 -> 1001, w9 -> 1009
+ */
+function getWorkerEventCode(workerPrefix: string): string {
+	const match = workerPrefix.match(/w(\d+)/)
+	const workerIndex = match ? parseInt(match[1], 10) : 0
+	return String(1000 + workerIndex).padStart(4, '0')
+}
+
+/**
+ * Get default test event with worker-isolated ID and event code.
  * Uses workerPrefix for parallel worker isolation.
  */
 function getDefaultTestEvent(workerPrefix: string): TestEventDocument {
 	return {
 		id: `${workerPrefix}__checkin-event`,
 		name: 'Community Session',
-		eventCode: TEST_CODES.VALID, // '1234'
+		eventCode: getWorkerEventCode(workerPrefix),
 		eventTypeId: 'community',
 		isActive: true,
 		activatedAt: new Date()
 	}
-}
-
-/**
- * @deprecated Use getDefaultTestEvent(workerPrefix) for worker isolation
- */
-export const DEFAULT_TEST_EVENT: TestEventDocument = {
-	id: 'test-event-checkin',
-	name: 'Community Session',
-	eventCode: TEST_CODES.VALID, // '1234'
-	eventTypeId: 'community',
-	isActive: true,
-	activatedAt: new Date()
 }
 
 /**

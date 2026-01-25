@@ -51,8 +51,7 @@ test.describe('QR Scanner - Progressive Disclosure', () => {
 		await expect(page.getByTestId('qr-option-container')).not.toBeVisible()
 	})
 
-	// TODO: QR button visibility - test times out on Mobile Chrome after triggering failed check-in
-	test.skip('should show QR button after first failed OTP attempt', async ({
+	test('should show QR button after first failed OTP attempt', async ({
 		page,
 		authenticatedUser: _
 	}) => {
@@ -67,9 +66,11 @@ test.describe('QR Scanner - Progressive Disclosure', () => {
 		// WHEN: User enters invalid code (triggers error)
 		await triggerFailedCheckIn(page)
 
-		// THEN: QR option should now be visible
-		await expect(page.getByTestId('open-qr-scanner')).toBeVisible()
-		await expect(page.getByText('Having trouble? Try scanning instead')).toBeVisible()
+		// THEN: QR option should now be visible (with extended timeout for mobile)
+		await expect(page.getByTestId('open-qr-scanner')).toBeVisible({timeout: 5000})
+		await expect(page.getByText('Having trouble? Try scanning instead')).toBeVisible({
+			timeout: 5000
+		})
 	})
 
 	test('should NOT show QR button if no camera available', async ({page, authenticatedUser: _}) => {
@@ -109,7 +110,6 @@ test.describe('QR Scanner - Open/Close Behavior', () => {
 		await page.getByTestId('open-qr-scanner').click()
 
 		// Small wait for React to process
-		await page.waitForTimeout(100)
 
 		// THEN: Scanner overlay should be visible
 		await expect(page.getByTestId('qr-scanner-overlay')).toBeVisible()
@@ -158,8 +158,7 @@ test.describe('QR Scanner - Open/Close Behavior', () => {
 		await expect(page.getByTestId('qr-scanner-overlay')).not.toBeVisible()
 	})
 
-	// TODO: Focus management - button not retaining focus after scanner close on Mobile Chrome
-	test.skip('should return focus to QR button after closing scanner', async ({
+	test('should return focus to QR button after closing scanner', async ({
 		page,
 		authenticatedUser: _
 	}) => {
@@ -178,10 +177,13 @@ test.describe('QR Scanner - Open/Close Behavior', () => {
 		await qrButton.click()
 		await expect(page.getByTestId('qr-scanner-overlay')).toBeVisible()
 		await page.getByTestId('qr-scanner-close').click()
-		await expect(page.getByTestId('qr-scanner-overlay')).not.toBeVisible()
+		await expect(page.getByTestId('qr-scanner-overlay')).not.toBeVisible({timeout: 5000})
 
-		// THEN: Focus should return to QR button
-		await expect(qrButton).toBeFocused()
+		// THEN: Focus should return to QR button (allow time for focus management)
+		await expect(async () => {
+			const isFocused = await qrButton.evaluate(el => document.activeElement === el)
+			expect(isFocused).toBe(true)
+		}).toPass({timeout: 3000})
 	})
 
 	test('should show timeout prompt after 10 seconds', async ({page, authenticatedUser: _}) => {
@@ -384,15 +386,14 @@ test.describe('QR Scanner - Success Flow Integration', () => {
 			eventDate: new Date('2025-01-15T10:00:00Z')
 		})
 		// Give Firestore time to propagate the seeded data
-		await page.waitForTimeout(500)
 
 		// Second attempt succeeds via OTP
 		await page.getByTestId('event-code-input').fill(TEST_CODES.VALID)
 		await expect(page.getByTestId('success-confirmation-overlay')).toBeVisible({timeout: 10000})
 
-		// Dismiss confirmation
+		// Dismiss confirmation (6s timeout for 3s auto-dismiss + animation buffer)
 		await page.getByTestId('success-confirmation-overlay').click()
-		await expect(page.getByTestId('success-confirmation-overlay')).not.toBeVisible({timeout: 5000})
+		await expect(page.getByTestId('success-confirmation-overlay')).not.toBeVisible({timeout: 6000})
 
 		// THEN: QR option should be hidden after successful check-in
 		await expect(page.getByTestId('open-qr-scanner')).not.toBeVisible()
