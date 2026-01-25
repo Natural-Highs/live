@@ -18,6 +18,21 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute('/signup/about-you')({
 	validateSearch: searchSchema,
+	errorComponent: ({error, reset}) => (
+		<PageContainer>
+			<GreenCard className='w-full max-w-md'>
+				<h2 className='mb-4 font-bold text-xl'>Error</h2>
+				<p className='mb-4 text-destructive'>{error.message}</p>
+				<button
+					type='button'
+					onClick={reset}
+					className='rounded bg-primary px-4 py-2 text-primary-foreground'
+				>
+					Try Again
+				</button>
+			</GreenCard>
+		</PageContainer>
+	),
 	component: SignUpAboutYouComponent
 })
 
@@ -53,7 +68,6 @@ function SignUpAboutYouComponent() {
 				}
 			})
 
-			// Navigate to consent form or demographics next
 			navigate({to: '/consent', replace: true})
 		} catch (error: unknown) {
 			setError(error instanceof Error ? error.message : 'Failed to update profile')
@@ -62,8 +76,8 @@ function SignUpAboutYouComponent() {
 		}
 	}
 
-	const handleBack = () => {
-		navigate({to: '..', replace: true})
+	const handleBack = async () => {
+		await navigate({to: '..', replace: true})
 	}
 
 	return (

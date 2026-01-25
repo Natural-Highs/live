@@ -1,6 +1,8 @@
 import {useForm} from '@tanstack/react-form'
+import {Link} from '@tanstack/react-router'
 import type React from 'react'
-import {Button} from '@/components/ui/button'
+import {useEffect, useState} from 'react'
+import {Button, buttonVariants} from '@/components/ui/button'
 import {Input} from '@/components/ui/input'
 import {Label} from '@/components/ui/label'
 import {Separator} from '@/components/ui/separator'
@@ -8,11 +10,14 @@ import {type SignupAccountData, signupAccountSchema} from '@/lib/schemas/signup'
 
 interface SignUpFormProps {
 	onSubmit: (data: SignupAccountData) => Promise<void> | void
-	onNavigateToSignIn?: () => void
+	signInUrl?: string
 	loading?: boolean
 }
 
-export function SignUpForm({onSubmit, onNavigateToSignIn, loading = false}: SignUpFormProps) {
+export function SignUpForm({onSubmit, signInUrl, loading = false}: SignUpFormProps) {
+	const [hydrated, setHydrated] = useState(false)
+	useEffect(() => setHydrated(true), [])
+
 	const form = useForm({
 		defaultValues: {
 			username: '',
@@ -28,6 +33,7 @@ export function SignUpForm({onSubmit, onNavigateToSignIn, loading = false}: Sign
 	return (
 		<form
 			className='relative space-y-4 rounded-lg bg-muted p-6'
+			data-hydrated={hydrated}
 			data-testid='signup-form'
 			onSubmit={(e: React.FormEvent) => {
 				e.preventDefault()
@@ -154,8 +160,8 @@ export function SignUpForm({onSubmit, onNavigateToSignIn, loading = false}: Sign
 				}}
 			</form.Subscribe>
 
-			<Button data-testid='signup-submit-button' disabled={loading} type='submit'>
-				{loading ? 'Creating Account...' : 'Create Account'}
+			<Button data-testid='signup-submit-button' disabled={!hydrated || loading} type='submit'>
+				{!hydrated ? 'Loading...' : loading ? 'Creating Account...' : 'Create Account'}
 			</Button>
 
 			<div className='flex items-center gap-4'>
@@ -164,15 +170,14 @@ export function SignUpForm({onSubmit, onNavigateToSignIn, loading = false}: Sign
 				<Separator className='flex-1' />
 			</div>
 
-			{onNavigateToSignIn && (
-				<Button
+			{signInUrl && (
+				<Link
+					className={buttonVariants({variant: 'secondary'})}
 					data-testid='signup-signin-button'
-					onClick={onNavigateToSignIn}
-					type='button'
-					variant='secondary'
+					to={signInUrl}
 				>
 					Sign In
-				</Button>
+				</Link>
 			)}
 		</form>
 	)

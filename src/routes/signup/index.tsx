@@ -14,6 +14,23 @@ export const Route = createFileRoute('/signup/')({
 			throw redirect({to: '/dashboard'})
 		}
 	},
+	errorComponent: ({error, reset}) => (
+		<PageContainer>
+			<div className='w-full max-w-md'>
+				<h2 className='mb-4 font-bold text-xl'>Error</h2>
+				<Alert className='mb-4' variant='error'>
+					{error.message}
+				</Alert>
+				<button
+					type='button'
+					onClick={reset}
+					className='w-full rounded bg-primary px-4 py-2 text-primary-foreground'
+				>
+					Try Again
+				</button>
+			</div>
+		</PageContainer>
+	),
 	component: SignUpComponent
 })
 
@@ -71,10 +88,6 @@ function SignUpComponent() {
 		}
 	}
 
-	const handleNavigateToSignIn = () => {
-		navigate({to: '/authentication'})
-	}
-
 	return (
 		<PageContainer>
 			<div className='w-full max-w-md' data-testid='signup-page'>
@@ -94,11 +107,7 @@ function SignUpComponent() {
 					</Alert>
 				)}
 
-				<SignUpForm
-					loading={loading}
-					onNavigateToSignIn={handleNavigateToSignIn}
-					onSubmit={handleSubmit}
-				/>
+				<SignUpForm loading={loading} onSubmit={handleSubmit} signInUrl='/authentication' />
 			</div>
 		</PageContainer>
 	)

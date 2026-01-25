@@ -3,9 +3,16 @@ import userEvent from '@testing-library/user-event'
 import {beforeEach, describe, expect, it, vi} from 'vitest'
 import {SignUpForm} from './SignUpForm'
 
+vi.mock('@tanstack/react-router', () => ({
+	Link: ({children, to, ...props}: {children: React.ReactNode; to: string}) => (
+		<a href={to} {...props}>
+			{children}
+		</a>
+	)
+}))
+
 describe('SignUpForm', () => {
 	const mockOnSubmit = vi.fn()
-	const mockOnNavigateToSignIn = vi.fn()
 
 	beforeEach(() => {
 		vi.clearAllMocks()
@@ -26,26 +33,18 @@ describe('SignUpForm', () => {
 		expect(screen.getByRole('button', {name: /create account/i})).toBeInTheDocument()
 	})
 
-	it('should render sign in button when onNavigateToSignIn is provided', () => {
-		render(<SignUpForm onNavigateToSignIn={mockOnNavigateToSignIn} onSubmit={mockOnSubmit} />)
+	it('should render sign in link when signInUrl is provided', () => {
+		render(<SignUpForm onSubmit={mockOnSubmit} signInUrl='/authentication' />)
 
-		expect(screen.getByRole('button', {name: /sign in/i})).toBeInTheDocument()
+		const signInLink = screen.getByRole('link', {name: /sign in/i})
+		expect(signInLink).toBeInTheDocument()
+		expect(signInLink).toHaveAttribute('href', '/authentication')
 	})
 
-	it('should not render sign in button when onNavigateToSignIn is not provided', () => {
+	it('should not render sign in link when signInUrl is not provided', () => {
 		render(<SignUpForm onSubmit={mockOnSubmit} />)
 
-		expect(screen.queryByRole('button', {name: /sign in/i})).not.toBeInTheDocument()
-	})
-
-	it('should call onNavigateToSignIn when sign in button is clicked', async () => {
-		const user = userEvent.setup()
-
-		render(<SignUpForm onNavigateToSignIn={mockOnNavigateToSignIn} onSubmit={mockOnSubmit} />)
-
-		await user.click(screen.getByRole('button', {name: /sign in/i}))
-
-		expect(mockOnNavigateToSignIn).toHaveBeenCalled()
+		expect(screen.queryByRole('link', {name: /sign in/i})).not.toBeInTheDocument()
 	})
 
 	it('should show loading state when loading prop is true', () => {

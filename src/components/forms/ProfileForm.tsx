@@ -12,6 +12,7 @@
 
 import {useForm} from '@tanstack/react-form'
 import type React from 'react'
+import {useEffect, useState} from 'react'
 import {Button} from '@/components/ui/button'
 import {Input} from '@/components/ui/input'
 import {Label} from '@/components/ui/label'
@@ -28,6 +29,9 @@ export function ProfileForm({
 	submitting = false,
 	defaultDisplayName = ''
 }: ProfileFormProps) {
+	const [hydrated, setHydrated] = useState(false)
+	useEffect(() => setHydrated(true), [])
+
 	const form = useForm({
 		defaultValues: {
 			displayName: defaultDisplayName,
@@ -44,6 +48,7 @@ export function ProfileForm({
 	return (
 		<form
 			className='space-y-6'
+			data-hydrated={hydrated}
 			data-testid='profile-form'
 			onSubmit={(e: React.FormEvent) => {
 				e.preventDefault()
@@ -124,10 +129,10 @@ export function ProfileForm({
 			<Button
 				className='w-full'
 				data-testid='profile-submit-button'
-				disabled={submitting}
+				disabled={!hydrated || submitting}
 				type='submit'
 			>
-				{submitting ? 'Saving...' : 'Complete Profile'}
+				{!hydrated ? 'Loading...' : submitting ? 'Saving...' : 'Complete Profile'}
 			</Button>
 		</form>
 	)

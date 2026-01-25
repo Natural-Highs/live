@@ -7,7 +7,7 @@
  * Redirects to dashboard on completion.
  */
 
-import {createFileRoute, redirect, useNavigate} from '@tanstack/react-router'
+import {createFileRoute, redirect, useNavigate, useRouter} from '@tanstack/react-router'
 import {useState} from 'react'
 import {ProfileForm} from '@/components/forms/ProfileForm'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card'
@@ -40,10 +40,30 @@ export const Route = createFileRoute('/_authed/profile-setup')({
 			throw redirect({to: '/dashboard'})
 		}
 	},
+	errorComponent: ({error, reset}) => (
+		<PageContainer>
+			<Card className='w-full max-w-md'>
+				<CardHeader>
+					<CardTitle>Error</CardTitle>
+				</CardHeader>
+				<CardContent className='space-y-4'>
+					<p className='text-destructive'>{error.message}</p>
+					<button
+						type='button'
+						onClick={reset}
+						className='rounded bg-primary px-4 py-2 text-primary-foreground'
+					>
+						Try Again
+					</button>
+				</CardContent>
+			</Card>
+		</PageContainer>
+	),
 	component: ProfileSetupComponent
 })
 
 function ProfileSetupComponent() {
+	const router = useRouter()
 	const navigate = useNavigate()
 	const [submitting, setSubmitting] = useState(false)
 	const [error, setError] = useState<string | null>(null)
@@ -60,6 +80,7 @@ function ProfileSetupComponent() {
 			const result = await (createProfileFn as unknown as CreateProfileFnType)({data})
 
 			if (result.success) {
+				await router.invalidate()
 				navigate({to: '/dashboard'})
 			}
 		} catch (err) {
