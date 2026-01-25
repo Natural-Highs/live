@@ -5,6 +5,8 @@
  * - createSessionFn creates session with correct data
  * - createSessionFn rejects invalid Firebase ID token
  * - createSessionFn syncs Firebase claims to session
+ * - createSessionFn rejects emulator mode in production (NODE_ENV guard)
+ * - createSessionFn allows emulator mode in non-production environments
  * - Session userId matches Firebase UID exactly (R-012)
  * - Firebase auth failure returns appropriate error
  * - logoutFn clears session completely
@@ -347,63 +349,34 @@ describe('auth server functions (Task 2, 3, 4)', () => {
 
 	describe('logoutFn (Task 3)', () => {
 		it('should call clearSession to remove session cookie', async () => {
-			// Arrange
-			mockRedirect.mockImplementation((opts: {to: string}) => {
-				const error = new Error(`REDIRECT:${opts.to}`)
-				error.name = 'RedirectError'
-				throw error
-			})
-
 			// Act
-			try {
-				await logoutFn()
-			} catch {
-				// Expected - redirect throws
-			}
+			await logoutFn()
 
 			// Assert
 			expect(mockClearSession).toHaveBeenCalled()
 		})
 
-		it('should redirect to home page after clearing session', async () => {
-			// Arrange
-			mockRedirect.mockImplementation((opts: {to: string}) => {
-				const error = new Error(`REDIRECT:${opts.to}`)
-				error.name = 'RedirectError'
-				throw error
-			})
+		it('should not throw redirect (client handles navigation)', async () => {
+			// Act - should complete without throwing
+			await expect(logoutFn()).resolves.toBeUndefined()
 
-			// Act & Assert
-			try {
-				await logoutFn()
-			} catch {
-				expect(mockRedirect).toHaveBeenCalledWith({to: '/'})
-			}
+			// Assert - redirect should not be called (client navigates)
+			expect(mockRedirect).not.toHaveBeenCalled()
 		})
 
-		it('should clear session before redirect for proper cleanup', async () => {
+		it('should complete clearSession before returning', async () => {
 			// Arrange
-			const callOrder: string[] = []
-			mockClearSession.mockImplementation(() => {
-				callOrder.push('clear')
-				return Promise.resolve()
-			})
-			mockRedirect.mockImplementation((opts: {to: string}) => {
-				callOrder.push('redirect')
-				const error = new Error(`REDIRECT:${opts.to}`)
-				error.name = 'RedirectError'
-				throw error
+			let clearSessionCompleted = false
+			mockClearSession.mockImplementation(async () => {
+				clearSessionCompleted = true
 			})
 
 			// Act
-			try {
-				await logoutFn()
-			} catch {
-				// Expected
-			}
+			await logoutFn()
 
 			// Assert
-			expect(callOrder).toEqual(['clear', 'redirect'])
+			expect(clearSessionCompleted).toBe(true)
+			expect(mockClearSession).toHaveBeenCalledTimes(1)
 		})
 	})
 
@@ -513,6 +486,124 @@ describe('auth server functions (Task 2, 3, 4)', () => {
 			expect(result?.uid).toBe('deleted-firebase-user-123')
 			// Note: Middleware requireAuthWithFirebaseCheck() will detect
 			// the deleted user and clear the session (see middleware tests)
+		})
+	})
+
+	describe('createSessionFn emulator mode security', () => {
+		it('should throw AuthenticationError when emulator mode is enabled in production', async () => {
+			// This test verifies the NODE_ENV guard added for defense in depth
+			// The guard prevents USE_EMULATORS=true from accidentally bypassing auth in production
+
+			// Reset modules to apply new mock
+			vi.resetModules()
+
+			// Re-mock dependencies with shouldUseEmulators = true
+			vi.doMock('@/lib/firebase/firebase.admin', () => ({
+				adminAuth: {
+					verifyIdToken: vi.fn()
+				},
+				shouldUseEmulators: true
+			}))
+
+			vi.doMock('@/lib/session', () => ({
+				clearSession: vi.fn().mockResolvedValue(undefined),
+				getSessionData: vi.fn(),
+				updateSession: vi.fn().mockResolvedValue(undefined)
+			}))
+
+			// Set NODE_ENV to production
+			const originalEnv = process.env.NODE_ENV
+			process.env.NODE_ENV = 'production'
+
+			try {
+				// Re-import with new mocks
+				const {createSessionFn: createSessionFnEmulator} = await import('./auth')
+				const {AuthenticationError: AuthError} = await import('./utils/errors')
+
+				const validInput = {
+					uid: 'user-123',
+					email: 'test@example.com',
+					displayName: 'Test User',
+					idToken: 'valid-id-token'
+				}
+
+				// Act & Assert
+				await expect(createSessionFnEmulator({data: validInput})).rejects.toThrow(AuthError)
+				await expect(createSessionFnEmulator({data: validInput})).rejects.toThrow(
+					'Emulator mode is not allowed in production environment'
+				)
+			} finally {
+				process.env.NODE_ENV = originalEnv
+				vi.resetModules()
+				// Re-apply original mocks for subsequent tests
+				vi.doMock('@/lib/firebase/firebase.admin', () => ({
+					adminAuth: {
+						verifyIdToken: vi.fn(),
+						revokeRefreshTokens: vi.fn(),
+						getUser: vi.fn()
+					},
+					shouldUseEmulators: false
+				}))
+			}
+		})
+
+		it('should allow emulator mode in non-production environments', async () => {
+			// Reset modules to apply new mock
+			vi.resetModules()
+
+			// Re-mock dependencies with shouldUseEmulators = true
+			vi.doMock('@/lib/firebase/firebase.admin', () => ({
+				adminAuth: {
+					verifyIdToken: vi.fn()
+				},
+				shouldUseEmulators: true
+			}))
+
+			const mockClear = vi.fn().mockResolvedValue(undefined)
+			const mockUpdate = vi.fn().mockResolvedValue(undefined)
+			vi.doMock('@/lib/session', () => ({
+				clearSession: mockClear,
+				getSessionData: vi.fn(),
+				updateSession: mockUpdate
+			}))
+
+			// Ensure NODE_ENV is not production
+			const originalEnv = process.env.NODE_ENV
+			process.env.NODE_ENV = 'test'
+
+			try {
+				// Re-import with new mocks
+				const {createSessionFn: createSessionFnEmulator} = await import('./auth')
+
+				const validInput = {
+					uid: 'user-123',
+					email: 'test@example.com',
+					displayName: 'Test User',
+					idToken: 'valid-id-token'
+				}
+
+				// Act - should succeed in emulator mode with non-production env
+				const result = await createSessionFnEmulator({data: validInput})
+
+				// Assert - session created with default emulator claims
+				expect(result.success).toBe(true)
+				expect(result.user.claims.admin).toBe(false)
+				expect(result.user.claims.signedConsentForm).toBe(false)
+				expect(mockClear).toHaveBeenCalled()
+				expect(mockUpdate).toHaveBeenCalled()
+			} finally {
+				process.env.NODE_ENV = originalEnv
+				vi.resetModules()
+				// Re-apply original mocks for subsequent tests
+				vi.doMock('@/lib/firebase/firebase.admin', () => ({
+					adminAuth: {
+						verifyIdToken: vi.fn(),
+						revokeRefreshTokens: vi.fn(),
+						getUser: vi.fn()
+					},
+					shouldUseEmulators: false
+				}))
+			}
 		})
 	})
 

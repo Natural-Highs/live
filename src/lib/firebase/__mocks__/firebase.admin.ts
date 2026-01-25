@@ -42,7 +42,8 @@ export const adminDb = {
 		where: vi.fn().mockReturnThis(),
 		limit: vi.fn().mockReturnThis(),
 		offset: vi.fn().mockReturnThis()
-	}))
+	})),
+	getAll: vi.fn().mockResolvedValue([])
 }
 
 // Export defaults for test customization

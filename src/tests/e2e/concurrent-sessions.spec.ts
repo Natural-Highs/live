@@ -4,50 +4,64 @@
  * Validates that multiple browser contexts with different user sessions
  * can operate simultaneously without interference.
  *
- * This test addresses AC #5: Multi-device session isolation.
  *
  * Key validations:
  * - Two different users can have active sessions simultaneously
  * - Session cookies are isolated per browser context
  * - Actions in one context don't affect the other
  * - Both contexts maintain their own session state
+ *
+ * Test Isolation:
+ * - Uses workerPrefix fixture for parallel worker data isolation
+ * - Each worker gets unique user IDs to prevent cross-worker collisions
  */
 
 import {expect, test} from '../fixtures'
 import {
+	clearAuthenticatedUser,
 	clearSessionCookie,
-	injectAdminSessionCookie,
-	injectSessionCookie,
+	injectAuthenticatedUser,
 	type TestUser
 } from '../fixtures/session.fixture'
 
 test.describe('Concurrent Sessions', () => {
-	test('two different users can access protected routes simultaneously', async ({browser}) => {
+	test('two different users can access protected routes simultaneously', async ({
+		browser,
+		workerPrefix
+	}) => {
 		// Create two separate browser contexts (simulating different devices/browsers)
 		const contextA = await browser.newContext()
 		const contextB = await browser.newContext()
+		let pageA: Awaited<ReturnType<typeof contextA.newPage>> | undefined
+		let pageB: Awaited<ReturnType<typeof contextB.newPage>> | undefined
+
+		// Create two different users with worker-isolated IDs
+		const userA: TestUser = {
+			uid: `${workerPrefix}__user-a-${Date.now()}`,
+			email: `${workerPrefix}-user-a@example.com`,
+			displayName: 'User A'
+		}
+
+		const userB: TestUser = {
+			uid: `${workerPrefix}__user-b-${Date.now()}`,
+			email: `${workerPrefix}-user-b@example.com`,
+			displayName: 'User B'
+		}
 
 		try {
-			// Create two different users
-			const userA: TestUser = {
-				uid: `user-a-${Date.now()}`,
-				email: 'user-a@example.com',
-				displayName: 'User A'
-			}
-
-			const userB: TestUser = {
-				uid: `user-b-${Date.now()}`,
-				email: 'user-b@example.com',
-				displayName: 'User B'
-			}
-
-			// Inject different session cookies into each context
-			await injectSessionCookie(contextA, userA, {signedConsentForm: true})
-			await injectSessionCookie(contextB, userB, {signedConsentForm: true})
+			// Inject session cookies AND create Firestore user documents
+			await injectAuthenticatedUser(contextA, userA, {
+				signedConsentForm: true,
+				profileComplete: true
+			})
+			await injectAuthenticatedUser(contextB, userB, {
+				signedConsentForm: true,
+				profileComplete: true
+			})
 
 			// Create pages in each context
-			const pageA = await contextA.newPage()
-			const pageB = await contextB.newPage()
+			pageA = await contextA.newPage()
+			pageB = await contextB.newPage()
 
 			// Both users navigate to protected route simultaneously
 			await Promise.all([pageA.goto('/dashboard'), pageB.goto('/dashboard')])
@@ -66,43 +80,53 @@ test.describe('Concurrent Sessions', () => {
 			// Neither should be on authentication page
 			expect(urlA).not.toContain('/authentication')
 			expect(urlB).not.toContain('/authentication')
-
-			// Clean up pages
-			await pageA.close()
-			await pageB.close()
 		} finally {
-			// Clean up contexts
-			await clearSessionCookie(contextA)
-			await clearSessionCookie(contextB)
+			// Clean up: delete user documents and clear cookies
+			await clearAuthenticatedUser(contextA, userA.uid)
+			await clearAuthenticatedUser(contextB, userB.uid)
+			await pageA?.close()
+			await pageB?.close()
 			await contextA.close()
 			await contextB.close()
 		}
 	})
 
-	test('admin and regular user sessions coexist without interference', async ({browser}) => {
+	test('admin and regular user sessions coexist without interference', async ({
+		browser,
+		workerPrefix
+	}) => {
 		const adminContext = await browser.newContext()
 		const userContext = await browser.newContext()
+		let adminPage: Awaited<ReturnType<typeof adminContext.newPage>> | undefined
+		let userPage: Awaited<ReturnType<typeof userContext.newPage>> | undefined
+
+		const adminUser: TestUser = {
+			uid: `${workerPrefix}__admin-${Date.now()}`,
+			email: `${workerPrefix}-admin@naturalhighs.org`,
+			displayName: 'Admin User'
+		}
+
+		const regularUser: TestUser = {
+			uid: `${workerPrefix}__regular-${Date.now()}`,
+			email: `${workerPrefix}-regular@example.com`,
+			displayName: 'Regular User'
+		}
 
 		try {
-			const adminUser: TestUser = {
-				uid: `admin-${Date.now()}`,
-				email: 'admin@naturalhighs.org',
-				displayName: 'Admin User'
-			}
+			// Inject admin session with Firestore doc (with admin: true claim)
+			await injectAuthenticatedUser(adminContext, adminUser, {
+				admin: true,
+				signedConsentForm: true,
+				profileComplete: true
+			})
+			// Inject regular user session with Firestore doc (no admin claim)
+			await injectAuthenticatedUser(userContext, regularUser, {
+				signedConsentForm: true,
+				profileComplete: true
+			})
 
-			const regularUser: TestUser = {
-				uid: `regular-${Date.now()}`,
-				email: 'regular@example.com',
-				displayName: 'Regular User'
-			}
-
-			// Inject admin session (with admin: true claim)
-			await injectAdminSessionCookie(adminContext, adminUser)
-			// Inject regular user session (no admin claim)
-			await injectSessionCookie(userContext, regularUser, {signedConsentForm: true})
-
-			const adminPage = await adminContext.newPage()
-			const userPage = await userContext.newPage()
+			adminPage = await adminContext.newPage()
+			userPage = await userContext.newPage()
 
 			// Admin accesses admin route
 			await adminPage.goto('/admin-dashboard')
@@ -127,35 +151,38 @@ test.describe('Concurrent Sessions', () => {
 			// Regular user should be redirected away from admin route
 			const userAdminAttemptUrl = userPage.url()
 			expect(userAdminAttemptUrl).not.toContain('/admin-dashboard')
-
-			await adminPage.close()
-			await userPage.close()
 		} finally {
-			await clearSessionCookie(adminContext)
-			await clearSessionCookie(userContext)
+			// Clean up: delete user documents and clear cookies
+			await clearAuthenticatedUser(adminContext, adminUser.uid)
+			await clearAuthenticatedUser(userContext, regularUser.uid)
+			await adminPage?.close()
+			await userPage?.close()
 			await adminContext.close()
 			await userContext.close()
 		}
 	})
 
-	test('session in one context does not leak to another', async ({browser}) => {
+	test('session in one context does not leak to another', async ({browser, workerPrefix}) => {
 		const authenticatedContext = await browser.newContext()
 		const unauthenticatedContext = await browser.newContext()
+		let authPage: Awaited<ReturnType<typeof authenticatedContext.newPage>> | undefined
+		let unauthPage: Awaited<ReturnType<typeof unauthenticatedContext.newPage>> | undefined
+
+		const user: TestUser = {
+			uid: `${workerPrefix}__leak-test-${Date.now()}`,
+			email: `${workerPrefix}-leak-test@example.com`,
+			displayName: 'Leak Test User'
+		}
 
 		try {
-			const user: TestUser = {
-				uid: `leak-test-${Date.now()}`,
-				email: 'leak-test@example.com',
-				displayName: 'Leak Test User'
-			}
-
-			// Only inject session into first context
-			await injectSessionCookie(authenticatedContext, user, {
-				signedConsentForm: true
+			// Only inject session AND create Firestore doc for first context
+			await injectAuthenticatedUser(authenticatedContext, user, {
+				signedConsentForm: true,
+				profileComplete: true
 			})
 
-			const authPage = await authenticatedContext.newPage()
-			const unauthPage = await unauthenticatedContext.newPage()
+			authPage = await authenticatedContext.newPage()
+			unauthPage = await unauthenticatedContext.newPage()
 
 			// Authenticated user accesses protected route
 			await authPage.goto('/dashboard')
@@ -170,42 +197,53 @@ test.describe('Concurrent Sessions', () => {
 
 			// Unauthenticated context should be redirected to auth
 			expect(unauthPage.url()).toContain('/authentication')
-
-			await authPage.close()
-			await unauthPage.close()
 		} finally {
-			await clearSessionCookie(authenticatedContext)
+			// Clean up: delete user document and clear cookie
+			await clearAuthenticatedUser(authenticatedContext, user.uid)
+			await authPage?.close()
+			await unauthPage?.close()
 			await authenticatedContext.close()
 			await unauthenticatedContext.close()
 		}
 	})
 
-	test('clearing session in one context does not affect another', async ({browser}) => {
+	test('clearing session in one context does not affect another', async ({
+		browser,
+		workerPrefix
+	}) => {
 		const contextA = await browser.newContext()
 		const contextB = await browser.newContext()
+		let pageA: Awaited<ReturnType<typeof contextA.newPage>> | undefined
+		let pageB: Awaited<ReturnType<typeof contextB.newPage>> | undefined
+
+		const userA: TestUser = {
+			uid: `${workerPrefix}__clear-test-a-${Date.now()}`,
+			email: `${workerPrefix}-clear-a@example.com`,
+			displayName: 'Clear Test A'
+		}
+
+		const userB: TestUser = {
+			uid: `${workerPrefix}__clear-test-b-${Date.now()}`,
+			email: `${workerPrefix}-clear-b@example.com`,
+			displayName: 'Clear Test B'
+		}
 
 		try {
-			const userA: TestUser = {
-				uid: `clear-test-a-${Date.now()}`,
-				email: 'clear-a@example.com',
-				displayName: 'Clear Test A'
-			}
+			// Both contexts have sessions AND Firestore docs
+			await injectAuthenticatedUser(contextA, userA, {
+				signedConsentForm: true,
+				profileComplete: true
+			})
+			await injectAuthenticatedUser(contextB, userB, {
+				signedConsentForm: true,
+				profileComplete: true
+			})
 
-			const userB: TestUser = {
-				uid: `clear-test-b-${Date.now()}`,
-				email: 'clear-b@example.com',
-				displayName: 'Clear Test B'
-			}
-
-			// Both contexts have sessions
-			await injectSessionCookie(contextA, userA, {signedConsentForm: true})
-			await injectSessionCookie(contextB, userB, {signedConsentForm: true})
-
-			// Clear session from context A only
+			// Clear session from context A only (but keep Firestore doc for cleanup)
 			await clearSessionCookie(contextA)
 
-			const pageA = await contextA.newPage()
-			const pageB = await contextB.newPage()
+			pageA = await contextA.newPage()
+			pageB = await contextB.newPage()
 
 			// Navigate both to protected route
 			await Promise.all([pageA.goto('/dashboard'), pageB.goto('/dashboard')])
@@ -215,16 +253,17 @@ test.describe('Concurrent Sessions', () => {
 				pageB.waitForURL(/\/dashboard|\/consent/)
 			])
 
-			// Context A (cleared) should be redirected to auth
+			// Context A (cleared session) should be redirected to auth
 			expect(pageA.url()).toContain('/authentication')
 
 			// Context B should still have access
 			expect(pageB.url()).not.toContain('/authentication')
-
-			await pageA.close()
-			await pageB.close()
 		} finally {
-			await clearSessionCookie(contextB)
+			// Clean up: delete both user documents
+			await clearAuthenticatedUser(contextA, userA.uid)
+			await clearAuthenticatedUser(contextB, userB.uid)
+			await pageA?.close()
+			await pageB?.close()
 			await contextA.close()
 			await contextB.close()
 		}

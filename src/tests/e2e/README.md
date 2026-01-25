@@ -9,7 +9,7 @@ This project uses a **two-tier testing strategy** to ensure comprehensive covera
 | **Integration** | Real infrastructure behavior | OOB API, WebAuthn CDP | Zero mocks |
 | **E2E** | User journey verification | Session state reuse | Error simulation only |
 
-## Mock Policy (Story 0-7)
+## Mock Policy
 
 ### Acceptable Mocks (Error Simulation Only)
 
@@ -48,7 +48,7 @@ await page.route('**/_serverFn/*', route =>
 
 ### Why This Policy
 
-After Story 0-7 (Task 2.5), the application follows TanStack Start patterns:
+The application follows TanStack Start patterns:
 - **Routes call server functions directly** (not REST APIs)
 - **Server functions hit Firebase emulators** during tests
 - **No `/api/*` endpoints exist** - they were an antipattern
@@ -72,7 +72,7 @@ test('authenticated user flow', async ({page, context}) => {
 ```
 
 This is acceptable because:
-- Real authentication is tested in integration layer (Story 0-6)
+- Real authentication is tested in the integration layer
 - E2E tests focus on user journey verification, not auth correctness
 - Playwright docs recommend this pattern for test efficiency
 
@@ -82,12 +82,13 @@ For data scenarios, seed test data directly in the Firestore emulator:
 
 ```typescript
 import {createTestEvent, clearFirestoreEmulator} from '../fixtures/firestore.fixture'
+import {TEST_CODES} from '../factories'
 
 test.beforeEach(async () => {
   await clearFirestoreEmulator()
   await createTestEvent({
     id: 'event-1',
-    eventCode: '1234',
+    eventCode: TEST_CODES.VALID,
     name: 'Test Event',
     isActive: true
   })
@@ -121,7 +122,7 @@ bunx playwright test src/tests/e2e/check-in.spec.ts
 bunx playwright test --ui
 ```
 
-## Data Isolation for Parallel Workers (Story 0-8)
+## Data Isolation for Parallel Workers
 
 E2E tests support parallel workers via **worker-scoped** `workerPrefix` fixture:
 
@@ -178,7 +179,7 @@ E2E tests run in CI with Firebase emulators:
 - Execution time target: <4 minutes per shard with 2 workers
 - Flakiness threshold: <2%
 
-## Mock Migration Summary (Story 0-7)
+## Mock Migration Summary
 
 | Before | After |
 |--------|-------|
@@ -265,3 +266,199 @@ If tests pass with `--workers=1` but fail with `--workers=2`:
 2. Ensure all seed functions use prefixed IDs
 3. Avoid global state in test setup
 4. Check that cleanup only removes prefixed data
+
+## Wait Patterns
+
+### Auto-Wait (Default)
+
+Playwright waits automatically for elements to be attached, visible, enabled, and stable. Use built-in assertions and actions for standard interactions.
+
+```typescript
+await page.goto('/dashboard')
+await expect(page.getByTestId('event-code-input')).toBeVisible()
+await page.getByTestId('event-code-input').fill('1234')
+await expect(page.getByTestId('success-message')).toBeVisible()
+```
+
+### toPass() for Multi-Condition Verification
+
+Use when multiple assertions must all be true simultaneously.
+
+```typescript
+await expect(async () => {
+  await expect(page.getByTestId('loader')).toBeHidden()
+  await expect(page.getByTestId('status')).toHaveText('Completed')
+  await expect(page.getByTestId('error')).not.toBeVisible()
+}).toPass({ timeout: 10000 })
+```
+
+Use for transient UI states or complex state transitions. Do not use for single element assertions.
+
+### poll() for Value Extraction
+
+Use when extracting a changing value rather than asserting on it.
+
+```typescript
+const status = await expect.poll(async () => {
+  const response = await page.request.get('/api/job-status')
+  return response.status()
+}, { timeout: 10000 }).toBe(200)
+```
+
+### waitForResponse() (Limited)
+
+Use only when you must verify a specific API call completes. Prefer waiting for UI elements when possible.
+
+```typescript
+await page.getByTestId('submit-button').click()
+await page.waitForResponse(resp =>
+  resp.url().includes('createProfile') && resp.status() === 200
+)
+```
+
+### Anti-Patterns
+
+**waitForTimeout() is forbidden.** Do not use arbitrary delays. Wait for UI elements instead.
+
+```typescript
+// WRONG
+await seedTestEvent()
+await page.waitForTimeout(500)
+
+// CORRECT
+await seedTestEvent()
+await page.goto('/dashboard')
+await expect(page.getByTestId('event-code-input')).toBeVisible()
+```
+
+Causes: non-deterministic timing, wasted execution time, hidden race conditions, flaky tests. Exception: debugging only (must be removed before commit).
+
+**networkidle is discouraged.** Wait for specific elements instead.
+
+```typescript
+// WRONG
+await page.goto('/dashboard')
+await page.waitForLoadState('networkidle')
+
+// CORRECT
+await page.goto('/dashboard')
+await expect(page.getByText('Welcome')).toBeVisible()
+```
+
+Fails on pages with background activity (analytics, polling). Waits for all network to be idle, which is slow and non-deterministic. Exception: visual regression tests (must document justification).
+
+### Overlay Dismiss Pattern
+
+Success confirmation overlays have auto-dismiss timing (3s) plus animation. Use 6s timeout:
+
+```typescript
+await page.getByTestId('success-confirmation-overlay').click()
+await expect(page.getByTestId('success-confirmation-overlay')).not.toBeVisible({
+  timeout: 6000  // 3s auto-dismiss + 2s animation + 1s buffer
+})
+```
+
+### Data Propagation After Seeding
+
+Use `toPass()` for assertions that depend on seeded data rendering:
+
+```typescript
+await seedUserWithHistory(userId, workerPrefix)
+await page.goto('/profile')
+
+await expect(async () => {
+  await expect(page.getByTestId('attendance-history')).toBeVisible()
+  await expect(page.getByTestId('attendance-history-item')).toHaveCount(2)
+}).toPass({timeout: 15000})
+```
+
+This handles timing variance between Firestore writes and React Query cache updates.
+
+### WebAuthn Transient State Testing
+
+Testing transient UI states (loading spinners, "Verifying..." text) during WebAuthn operations requires disabling automatic presence simulation:
+
+```typescript
+test('should show verifying state', async ({page}) => {
+  const client = await page.context().newCDPSession(page)
+  await client.send('WebAuthn.enable')
+
+  const {authenticatorId} = await client.send('WebAuthn.addVirtualAuthenticator', {
+    options: {
+      protocol: 'ctap2',
+      transport: 'internal',
+      hasResidentKey: true,
+      hasUserVerification: true,
+      isUserVerified: true,
+      automaticPresenceSimulation: false  // Key: prevents instant completion
+    }
+  })
+
+  try {
+    await page.goto('/authentication')
+    await page.getByRole('button', {name: /sign in with passkey/i}).click()
+
+    // Now we can reliably catch the transient state
+    await expect(
+      page.getByText(/verifying/i).or(page.getByText(/authenticating/i))
+    ).toBeVisible({timeout: 5000})
+  } finally {
+    await client.send('WebAuthn.removeVirtualAuthenticator', {authenticatorId})
+  }
+})
+```
+
+**Why this works:** With `automaticPresenceSimulation: true` (default), the virtual authenticator responds in milliseconds, making transient states impossible to catch. Setting it to `false` makes WebAuthn wait indefinitely for user presence, keeping the UI in the loading state.
+
+**Completing the flow after transient state assertion:** After asserting the transient state, enable automatic presence to let the authenticator respond:
+
+```typescript
+// Set up authenticator with manual presence control
+const {authenticatorId} = await client.send('WebAuthn.addVirtualAuthenticator', {
+  options: {
+    // ...
+    automaticPresenceSimulation: false
+  }
+})
+
+// Trigger passkey sign-in (starts waiting for presence)
+await page.getByRole('button', {name: /sign in with passkey/i}).click()
+
+// Assert transient state is visible
+await expect(page.getByText(/verifying/i)).toBeVisible()
+
+// Enable automatic presence to complete the flow
+await client.send('WebAuthn.setAutomaticPresenceSimulation', {
+  authenticatorId,
+  enabled: true
+})
+
+// Now the authenticator auto-responds and flow completes
+await expect(page.getByText(/verifying/i)).not.toBeVisible()
+```
+
+For most transient state testing, keeping `automaticPresenceSimulation: false` without triggering presence is sufficient. For tests that need to verify the full flow, use `automaticPresenceSimulation: true` with the standard `setupVirtualAuthenticator` helper.
+
+### SSR Error Testing
+
+`page.route()` does NOT reliably intercept TanStack Start server functions because they use SSR streaming.
+
+**Correct approach - trigger real server errors via emulator state:**
+
+```typescript
+// Create auth user, inject session
+const uid = await createTestAuthUser({...})
+await injectSessionCookie(context, user, {...})
+await page.goto('/profile-setup')
+await page.fill('[name=displayName]', 'Test Name')
+
+// Delete auth user to trigger error in createProfileFn
+await deleteTestAuthUser(uid)
+
+// Submit - server function fails because user not found
+await page.click('[type=submit]')
+
+// Form data preserved, error displayed
+await expect(page.getByTestId('error')).toBeVisible()
+await expect(page.getByTestId('displayname-input')).toHaveValue('Test Name')
+```

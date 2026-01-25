@@ -29,7 +29,7 @@ trap cleanup EXIT SIGINT SIGTERM
 # Environment variables for emulator mode
 export VITE_USE_EMULATORS=true
 export USE_EMULATORS=true
-export VITE_PROJECT_ID=demo-natural-highs
+export VITE_PROJECT_ID=naturalhighs
 export FIRESTORE_EMULATOR_HOST=127.0.0.1:8180
 export FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099
 # Session secret for iron-webcrypto (32+ chars required, matches playwright.config.ts)
@@ -39,5 +39,5 @@ export SESSION_SECRET=test-session-secret-32-characters-minimum-length-for-iron-
 # -n: name prefixes for output
 # -c: colors for each process
 concurrently -n emu,dev -c blue,green \
-  "firebase emulators:start" \
+  "firebase emulators:start --project naturalhighs" \
   "wait-on tcp:8180 tcp:9099 && vite"

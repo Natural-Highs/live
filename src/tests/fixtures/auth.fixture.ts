@@ -17,8 +17,8 @@
  */
 
 import {test as base} from '@playwright/test'
-import {type App, getApps, initializeApp} from 'firebase-admin/app'
 import {type Auth as AdminAuth, getAuth as getAdminAuth} from 'firebase-admin/auth'
+import {getTestApp} from '../common'
 import {clearSessionCookie, injectSessionCookie, type TestUser} from './session.fixture'
 
 // Types for auth fixtures
@@ -62,63 +62,21 @@ interface AuthFixtures {
 }
 
 /**
- * Project ID for the Firebase emulator.
- * Must be demo-* format for emulator to work without credentials.
+ * Lazy-initialized Admin Auth for tests.
+ * Uses the shared Firebase app from common layer.
  */
-const EMULATOR_PROJECT_ID = 'demo-natural-highs'
-
-/**
- * Auth emulator host.
- * Matches firebase.json emulators.auth.port configuration.
- */
-const AUTH_EMULATOR_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST ?? 'localhost:9099'
-
-/**
- * Lazy-initialized Firebase app for auth tests.
- */
-let adminApp: App | null = null
 let adminAuth: AdminAuth | null = null
 
 /**
- * Get or create the Firebase Admin app for E2E auth tests.
- * Uses demo-* project ID pattern for emulator compatibility.
- */
-function getAdminApp(): App {
-	if (adminApp) {
-		return adminApp
-	}
-
-	// Set emulator environment before initializing
-	process.env.FIREBASE_AUTH_EMULATOR_HOST = AUTH_EMULATOR_HOST
-
-	// Check if an app already exists to avoid duplicate initialization
-	const existingApps = getApps()
-	const existingApp = existingApps.find(app => app.name === 'e2e-auth-admin-app')
-
-	if (existingApp) {
-		adminApp = existingApp
-		return adminApp
-	}
-
-	adminApp = initializeApp(
-		{
-			projectId: EMULATOR_PROJECT_ID
-		},
-		'e2e-auth-admin-app'
-	)
-
-	return adminApp
-}
-
-/**
  * Get Admin Auth instance for E2E tests.
+ * Uses the shared test app from src/tests/common/ - single source of truth.
  */
 function getTestAdminAuth(): AdminAuth {
 	if (adminAuth) {
 		return adminAuth
 	}
 
-	const app = getAdminApp()
+	const app = getTestApp()
 	adminAuth = getAdminAuth(app)
 
 	return adminAuth

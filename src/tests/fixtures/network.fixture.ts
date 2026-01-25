@@ -314,7 +314,8 @@ export {expect} from '@playwright/test'
 /**
  * Mock TanStack Start server functions to return an error.
  * Server functions use /_serverFn/:serverFnId URLs.
- * This helper intercepts all server function calls and returns an HTTP 500 error.
+ * This helper intercepts POST server function calls and returns an HTTP 500 error.
+ * GET requests (session/auth checks) are allowed through to prevent page crashes.
  *
  * Use for testing error handling UI states.
  *
@@ -335,11 +336,15 @@ export {expect} from '@playwright/test'
  * ```
  */
 export async function mockServerFunctionError(page: Page, errorMessage: string): Promise<void> {
-	await page.route('**/_serverFn/*', async (route: Route) => {
-		await route.fulfill({
-			status: 500,
-			contentType: 'text/plain',
-			body: errorMessage
-		})
+	await page.route('**/_serverFn/**', async (route: Route) => {
+		if (route.request().method() === 'POST') {
+			await route.fulfill({
+				status: 500,
+				contentType: 'application/json',
+				body: JSON.stringify({error: errorMessage, message: errorMessage})
+			})
+		} else {
+			await route.continue()
+		}
 	})
 }

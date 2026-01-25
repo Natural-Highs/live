@@ -40,7 +40,14 @@ const Navbar: React.FC = () => {
 						<Link to='/dashboard'>
 							<Button variant='ghost'>Dashboard</Button>
 						</Link>
-						<Button variant='ghost' type='button' onClick={() => logoutFn()}>
+						<Button
+							variant='ghost'
+							type='button'
+							onClick={async () => {
+								await logoutFn()
+								window.location.replace('/')
+							}}
+						>
 							Logout
 						</Button>
 					</>

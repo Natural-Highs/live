@@ -26,7 +26,7 @@ import {
 } from '@firebase/rules-unit-testing'
 import {afterAll, beforeAll, beforeEach, describe, it} from 'vitest'
 
-const PROJECT_ID = 'demo-natural-highs'
+const PROJECT_ID = 'naturalhighs'
 const RULES_PATH = resolve(process.cwd(), 'firestore.rules')
 
 // Test user IDs

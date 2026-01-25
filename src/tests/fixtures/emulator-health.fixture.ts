@@ -253,7 +253,7 @@ export async function waitForEmulators(options: EmulatorHealthConfig = {}): Prom
 	}
 
 	throw new Error(
-		`Emulators not ready after ${elapsed}ms. Failed emulators:\n` + failures.map(f => `  - ${f}`).join('\n')
+		`Emulators not ready after ${elapsed}ms. Failed emulators:\n${failures.map(f => `  - ${f}`).join('\n')}`
 	)
 }
 

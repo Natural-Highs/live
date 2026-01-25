@@ -13,20 +13,20 @@
  * - Use data-testid selectors for stability
  * - Error simulation mocks for network failure testing only
  *
- * Test Isolation (Story 0-8 AC1):
+ * Test Isolation:
  * - Uses workerPrefix fixture for parallel worker data isolation
  * - Each worker gets unique IDs to prevent cross-worker collisions
  */
 
 import {createMockUser, expect, test} from '../fixtures/admin.fixture'
+import {mockServerFunctionError} from '../fixtures/network.fixture'
+import {injectSessionCookie, type TestUser} from '../fixtures/session.fixture'
 import {
 	createEventType,
 	createFormTemplate,
 	type TestEventType,
 	type TestFormTemplate
 } from '../integration/fixtures/firestore-seed.fixture'
-import {mockServerFunctionError} from '../fixtures/network.fixture'
-import {injectSessionCookie, type TestUser} from '../fixtures/session.fixture'
 
 // Base seed data for admin event tests (will be prefixed with workerPrefix)
 const BASE_CONSENT_TEMPLATE: Omit<TestFormTemplate, 'id'> = {
@@ -79,20 +79,22 @@ test.describe('Admin Event Management', () => {
 	})
 
 	test.describe('AC3: Admin Event Creation', () => {
+		// Worker isolation: adminUser fixture now uses workerPrefix for unique emails
 		test('should display admin events page for admin users', async ({page, adminUser}) => {
 			// GIVEN: Admin is authenticated (via adminUser fixture)
 			// Server functions hit Firestore emulator directly (no mocks needed)
 
 			// WHEN: Admin navigates to events page
 			await page.goto('/events')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('admin-events-page').waitFor({state: 'visible'})
 
 			// THEN: Events page should be visible
 			await expect(page.getByTestId('admin-events-page')).toBeVisible({timeout: 10000})
 			await expect(page.getByTestId('create-event-button')).toBeVisible()
 
-			// Verify admin user is authenticated
-			expect(adminUser.email).toBe('admin@test.local')
+			// Verify admin user is authenticated (email now includes workerPrefix)
+			expect(adminUser.email).toContain('admin-')
+			expect(adminUser.email).toContain('@test.local')
 		})
 
 		test('should open create event modal when clicking create button', async ({
@@ -114,6 +116,8 @@ test.describe('Admin Event Management', () => {
 			await expect(page.getByTestId('event-date-input')).toBeVisible()
 		})
 
+		// TODO: Event form submission - Workshop event type not found in select options intermittently
+		// Worker isolation: adminUser fixture now uses workerPrefix for unique emails
 		test('should create event with form submission', async ({page, adminUser: _adminUser}) => {
 			// GIVEN: Admin has create event modal open
 			// Server functions hit Firestore emulator directly (no mocks needed)
@@ -127,7 +131,7 @@ test.describe('Admin Event Management', () => {
 
 			// WHEN: Admin fills in form and submits
 			// Wait for hydration and all React Query refetches to complete
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('admin-events-page').waitFor({state: 'visible'})
 
 			// Wait for event types to load from Firestore emulator
 			const eventTypeSelect = page.getByTestId('event-type-select')
@@ -181,7 +185,7 @@ test.describe('Admin Event Management', () => {
 
 			// WHEN: Admin navigates to events page
 			await page.goto('/events')
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('admin-events-page').waitFor({state: 'visible'})
 
 			// THEN: Should show empty state message or events list
 			// Either no-events-message OR events-list should be visible
@@ -226,7 +230,7 @@ test.describe('Admin Event Management', () => {
 			// STEP 1: Create event
 			await page.getByTestId('create-event-button').click()
 			await expect(page.getByTestId('create-event-modal')).toBeVisible()
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('admin-events-page').waitFor({state: 'visible'})
 
 			await page.getByTestId('event-name-input').fill('Lifecycle Test Event')
 			// Select the seeded event type (Workshop)
@@ -284,7 +288,7 @@ test.describe('Admin Event Management', () => {
 			await mockServerFunctionError(page, 'Event name already exists')
 
 			// WHEN: Admin tries to create event
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('admin-events-page').waitFor({state: 'visible'})
 
 			await page.getByTestId('event-name-input').fill('Duplicate Event')
 			// Select the seeded event type (Workshop)
@@ -305,7 +309,7 @@ test.describe('Admin Event Management', () => {
 			await expect(page.getByTestId('create-event-modal')).toBeVisible()
 
 			// WHEN: Admin tries to create event with network failure
-			await page.waitForLoadState('networkidle')
+			await page.getByTestId('admin-events-page').waitFor({state: 'visible'})
 
 			await page.getByTestId('event-name-input').fill('Test Event')
 			// Select the seeded event type (Workshop)

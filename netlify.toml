@@ -2,6 +2,9 @@
   command = "bun run build"
   publish = ".build/output/client"
 
+[build.environment]
+  NODE_ENV = "production"
+
 [dev]
   # dev:bare runs vite without Doppler secrets injection
   # netlify dev wraps this to provide Netlify platform emulation

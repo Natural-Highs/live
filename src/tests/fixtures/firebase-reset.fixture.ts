@@ -34,6 +34,7 @@
  */
 
 import {test as base, type WorkerInfo} from '@playwright/test'
+import {EMULATOR_CONFIG} from '../common/emulator-config'
 import {isFirestoreEmulatorAvailable} from './firestore.fixture'
 import {DEFAULT_COLLECTIONS, getIsolatedPath, getWorkerPrefix} from './test-isolation.fixture'
 
@@ -99,10 +100,10 @@ interface FirebaseResetWorkerFixtures {
 }
 
 /**
- * Firestore emulator configuration
+ * Firestore emulator configuration - uses centralized config
  */
-const EMULATOR_PROJECT_ID = 'demo-natural-highs'
-const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
+const {projectId: EMULATOR_PROJECT_ID} = EMULATOR_CONFIG
+const FIRESTORE_EMULATOR_HOST = EMULATOR_CONFIG.firestore.host
 
 /**
  * Clean isolated data for a specific worker by deleting documents with matching prefix.

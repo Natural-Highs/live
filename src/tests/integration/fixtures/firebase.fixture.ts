@@ -14,8 +14,9 @@
  * @see ADR-2: Fixture Composition Strategy
  */
 
-import {test as base} from '@playwright/test'
+import {test as base, type Page} from '@playwright/test'
 import {SESSION_SECRET_TEST} from '../../../../playwright.config'
+import {EMULATOR_CONFIG} from '../../common/emulator-config'
 
 // Set SESSION_SECRET in test process if not already set
 // This is needed because playwright.config.ts only passes it to webServer.env
@@ -24,14 +25,14 @@ if (!process.env.SESSION_SECRET) {
 }
 
 /**
- * Emulator configuration from environment variables.
+ * Emulator configuration from centralized config.
  */
-const AUTH_EMULATOR_HOST = process.env.FIREBASE_AUTH_EMULATOR_HOST ?? '127.0.0.1:9099'
-const FIRESTORE_EMULATOR_HOST = process.env.FIRESTORE_EMULATOR_HOST ?? '127.0.0.1:8180'
-const PROJECT_ID = process.env.VITE_PROJECT_ID ?? 'demo-natural-highs'
+const AUTH_EMULATOR_HOST = EMULATOR_CONFIG.auth.host
+const FIRESTORE_EMULATOR_HOST = EMULATOR_CONFIG.firestore.host
+const PROJECT_ID = EMULATOR_CONFIG.projectId
 
 /** Default timeout for emulator health checks (ms). */
-const EMULATOR_HEALTH_TIMEOUT_MS = 5000
+const EMULATOR_HEALTH_TIMEOUT_MS = EMULATOR_CONFIG.defaultTimeoutMs
 
 /**
  * Emulator health status result.
@@ -86,6 +87,14 @@ export interface IntegrationFixtures {
 	 * Called automatically in beforeEach and afterEach.
 	 */
 	clearAllTestData: () => Promise<void>
+
+	/**
+	 * Get user from browser's Firebase auth state by email.
+	 * Use after magic link auth to get the dynamically assigned UID.
+	 *
+	 * NOTE: Extracts UID from browser since emulator API has project-scoping issues.
+	 */
+	getAuthUser: (email: string) => Promise<{uid: string; email: string} | null>
 }
 
 /**
@@ -185,6 +194,124 @@ function verifySessionSecret(): void {
 }
 
 /**
+ * Get user UID from Auth emulator by email.
+ * Use after magic link auth to get the dynamically assigned UID.
+ *
+ * NOTE: Due to Firebase Auth emulator API limitations (project-scoped queries
+ * don't return users created via client SDK), we extract the UID from the
+ * browser's Firebase auth state in IndexedDB.
+ *
+ * @param email - Email address to look up (used for validation)
+ * @param page - Playwright page to extract UID from
+ * @returns User data or null if not found
+ */
+async function getUserFromBrowser(
+	email: string,
+	page: Page
+): Promise<{uid: string; email: string} | null> {
+	try {
+		// Extract Firebase auth state from IndexedDB where Firebase SDK stores it
+		const authState = await page.evaluate(async targetEmail => {
+			// Firebase stores auth state in IndexedDB under 'firebaseLocalStorageDb'
+			// with key pattern: firebase:authUser:{apiKey}:{appName}
+			return new Promise<{uid: string; email: string} | null>(resolve => {
+				const request = indexedDB.open('firebaseLocalStorageDb')
+
+				request.onerror = () => resolve(null)
+
+				request.onsuccess = event => {
+					const db = (event.target as IDBOpenDBRequest).result
+
+					try {
+						const transaction = db.transaction(['firebaseLocalStorage'], 'readonly')
+						const store = transaction.objectStore('firebaseLocalStorage')
+						const getAllRequest = store.getAll()
+
+						getAllRequest.onsuccess = () => {
+							const results = getAllRequest.result
+
+							// Find auth user entry
+							for (const item of results) {
+								if (item.value && typeof item.value === 'object') {
+									const user = item.value
+									// Check if this looks like a Firebase user object
+									if (user.uid && user.email) {
+										if (user.email.toLowerCase() === targetEmail.toLowerCase()) {
+											resolve({uid: user.uid, email: user.email})
+											return
+										}
+									}
+								}
+							}
+							resolve(null)
+						}
+
+						getAllRequest.onerror = () => resolve(null)
+					} catch {
+						resolve(null)
+					}
+				}
+			})
+		}, email)
+
+		if (authState) {
+			return authState
+		}
+
+		// If IndexedDB extraction fails, fall back to emulator API (may return null)
+		return await getUserByEmailFromEmulator(email)
+	} catch (error) {
+		console.warn(`[IntegrationFixture] getUserFromBrowser failed for ${email}:`, error)
+		return await getUserByEmailFromEmulator(email)
+	}
+}
+
+/**
+ * Fallback: Get user from emulator API (may not work due to project scoping issues).
+ */
+async function getUserByEmailFromEmulator(
+	email: string
+): Promise<{uid: string; email: string} | null> {
+	// Use Identity Toolkit query API
+	const queryUrl = `http://${AUTH_EMULATOR_HOST}/identitytoolkit.googleapis.com/v1/projects/${PROJECT_ID}/accounts:query`
+
+	try {
+		const response = await fetch(queryUrl, {
+			method: 'POST',
+			headers: {'Content-Type': 'application/json'},
+			body: JSON.stringify({returnUserInfo: true}),
+			signal: AbortSignal.timeout(EMULATOR_HEALTH_TIMEOUT_MS)
+		})
+
+		if (!response.ok) {
+			return null
+		}
+
+		const data = await response.json()
+		if (!data.userInfo || data.userInfo.length === 0) {
+			return null
+		}
+
+		// Find user by email (case-insensitive)
+		const user = data.userInfo.find(
+			(u: {email?: string}) => u.email?.toLowerCase() === email.toLowerCase()
+		)
+
+		if (!user) {
+			return null
+		}
+
+		return {
+			uid: user.localId,
+			email: user.email
+		}
+	} catch (error) {
+		console.warn(`[IntegrationFixture] getUserByEmailFromEmulator failed for ${email}:`, error)
+		return null
+	}
+}
+
+/**
  * Playwright fixture that provides Firebase emulator connection and cleanup.
  *
  * Features:
@@ -257,6 +384,11 @@ export const test = base.extend<IntegrationFixtures>({
 
 		// Clean up after test
 		await clearAll()
+	},
+
+	getAuthUser: async ({page}, use) => {
+		const getUser = async (email: string) => getUserFromBrowser(email, page)
+		await use(getUser)
 	}
 })
 

@@ -1,8 +1,8 @@
 import {createServerFn} from '@tanstack/react-start'
 import {FieldValue} from 'firebase-admin/firestore'
+import {adminDb} from '@/lib/firebase/firebase.admin'
 import {requireAdmin, requireAuth} from '@/server/middleware/auth'
 import {isValidEventCodeFormat} from '../../lib/events/event-validation'
-import {adminDb} from '@/lib/firebase/firebase.admin'
 import {checkInToEventSchema, getEventByCodeSchema} from '../schemas/events'
 import type {EventDocument} from '../types/events'
 import {ConflictError, NotFoundError, TimeWindowError, ValidationError} from './utils/errors'
@@ -71,8 +71,12 @@ export const getEventByCode = createServerFn({method: 'GET'})
 			eventDate: eventData.eventDate?.toDate?.()?.toISOString() ?? eventData.eventDate ?? null,
 			startDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate ?? null,
 			endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate ?? null,
-			activatedAt: eventData.activatedAt?.toDate?.()?.toISOString() ?? eventData.activatedAt ?? null,
-			surveyAccessibleAt: eventData.surveyAccessibleAt?.toDate?.()?.toISOString() ?? eventData.surveyAccessibleAt ?? null,
+			activatedAt:
+				eventData.activatedAt?.toDate?.()?.toISOString() ?? eventData.activatedAt ?? null,
+			surveyAccessibleAt:
+				eventData.surveyAccessibleAt?.toDate?.()?.toISOString() ??
+				eventData.surveyAccessibleAt ??
+				null,
 			createdAt: eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt ?? null,
 			updatedAt: eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt ?? null
 		} as EventDocument
@@ -112,8 +116,12 @@ export const getEvents = createServerFn({method: 'GET'}).handler(async () => {
 			eventDate: eventData.eventDate?.toDate?.()?.toISOString() ?? eventData.eventDate ?? null,
 			startDate: eventData.startDate?.toDate?.()?.toISOString() ?? eventData.startDate ?? null,
 			endDate: eventData.endDate?.toDate?.()?.toISOString() ?? eventData.endDate ?? null,
-			activatedAt: eventData.activatedAt?.toDate?.()?.toISOString() ?? eventData.activatedAt ?? null,
-			surveyAccessibleAt: eventData.surveyAccessibleAt?.toDate?.()?.toISOString() ?? eventData.surveyAccessibleAt ?? null,
+			activatedAt:
+				eventData.activatedAt?.toDate?.()?.toISOString() ?? eventData.activatedAt ?? null,
+			surveyAccessibleAt:
+				eventData.surveyAccessibleAt?.toDate?.()?.toISOString() ??
+				eventData.surveyAccessibleAt ??
+				null,
 			createdAt: eventData.createdAt?.toDate?.()?.toISOString() ?? eventData.createdAt ?? null,
 			updatedAt: eventData.updatedAt?.toDate?.()?.toISOString() ?? eventData.updatedAt ?? null
 		} as EventDocument

@@ -1,6 +1,6 @@
 import {createServerFn} from '@tanstack/react-start'
-import {requireAuth, requireConsent} from '@/server/middleware/auth'
 import {adminDb} from '@/lib/firebase/firebase.admin'
+import {requireAuth, requireConsent} from '@/server/middleware/auth'
 import {
 	getAccessibleSurveysSchema,
 	getSurveyByIdSchema,
@@ -197,7 +197,10 @@ export const getAllAccessibleSurveys = createServerFn({method: 'GET'}).handler(a
 	}> = []
 
 	// Get user's existing responses
-	const responsesSnapshot = await adminDb.collection('responses').where('userId', '==', user.uid).get()
+	const responsesSnapshot = await adminDb
+		.collection('responses')
+		.where('userId', '==', user.uid)
+		.get()
 
 	const userResponses = new Map<string, Set<string>>()
 	for (const doc of responsesSnapshot.docs) {

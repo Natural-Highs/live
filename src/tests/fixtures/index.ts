@@ -64,6 +64,16 @@ export {
 	createMockUser,
 	test as authTest
 } from './auth.fixture'
+export type {EmulatorHealthConfig, HealthCheckResult} from './emulator-health.fixture'
+/**
+ * Re-export emulator health check helpers.
+ */
+export {
+	checkEmulatorsAvailable,
+	waitForAuthEmulator,
+	waitForEmulators,
+	waitForFirestoreEmulator
+} from './emulator-health.fixture'
 export {test as eventsTest} from './events.fixture'
 export {test as firebaseResetTest} from './firebase-reset.fixture'
 export type {MinorDemographicsData, TestUserDocument} from './firestore.fixture'
@@ -72,23 +82,27 @@ export type {MinorDemographicsData, TestUserDocument} from './firestore.fixture'
  */
 export {
 	clearFirestoreEmulator,
-	createTestUser,
-	createTestUserDocument,
-	deleteTestUser,
-	deleteTestUserDocument,
-	isFirestoreEmulatorAvailable,
-	// Retryable versions for CI resilience
-	createTestUserWithRetry,
-	createTestUserDocumentWithRetry,
 	createTestEventWithRetry,
 	createTestGuestWithRetry,
-	deleteTestUserWithRetry,
-	deleteTestUserDocumentWithRetry,
+	createTestUser,
+	createTestUserDocument,
+	createTestUserDocumentWithRetry,
+	// Retryable versions for CI resilience
+	createTestUserWithRetry,
 	deleteTestEventWithRetry,
 	deleteTestGuestWithRetry,
-	seedTestScenarioWithRetry
+	deleteTestUser,
+	deleteTestUserDocument,
+	deleteTestUserDocumentWithRetry,
+	deleteTestUserWithRetry,
+	isFirestoreEmulatorAvailable
 } from './firestore.fixture'
 export {MockApiHelper, test as networkTest} from './network.fixture'
+export type {RetryConfig} from './retry-firestore.fixture'
+/**
+ * Re-export retry helpers for transient failure handling.
+ */
+export {isRetryableError, withRetry, withRetryWrapper} from './retry-firestore.fixture'
 export type {SessionData, TestClaims, TestUser, TestUserDocData} from './session.fixture'
 /**
  * Re-export session helpers for direct session manipulation.
@@ -102,7 +116,7 @@ export {
 	injectSessionCookie,
 	unsealTestSessionCookie
 } from './session.fixture'
-
+export type {IsolatedCleanupConfig} from './test-isolation.fixture'
 /**
  * Re-export test isolation helpers for parallel worker support.
  */
@@ -114,21 +128,3 @@ export {
 	getIsolatedPath,
 	getWorkerPrefix
 } from './test-isolation.fixture'
-export type {IsolatedCleanupConfig} from './test-isolation.fixture'
-
-/**
- * Re-export retry helpers for transient failure handling.
- */
-export {isRetryableError, withRetry, withRetryWrapper} from './retry-firestore.fixture'
-export type {RetryConfig} from './retry-firestore.fixture'
-
-/**
- * Re-export emulator health check helpers.
- */
-export {
-	checkEmulatorsAvailable,
-	waitForAuthEmulator,
-	waitForEmulators,
-	waitForFirestoreEmulator
-} from './emulator-health.fixture'
-export type {EmulatorHealthConfig, HealthCheckResult} from './emulator-health.fixture'
