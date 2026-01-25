@@ -5,11 +5,12 @@ import type * as React from 'react'
 import {cn} from '@/lib/utils'
 
 const buttonVariants = cva(
-	"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[1.25rem] text-xl font-medium transition-all disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] cursor-pointer",
+	"inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-[1.25rem] text-xl font-medium transition-[transform,filter,background-color] duration-instant ease-default active:scale-[0.98] active:brightness-90 disabled:pointer-events-none disabled:opacity-50 disabled:cursor-not-allowed [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] focus-visible:animate-focus-ring cursor-pointer",
 	{
 		variants: {
 			variant: {
-				default: 'bg-primary text-primary-foreground hover:bg-primary/80 active:shadow-sm',
+				default:
+					'bg-primary text-primary-foreground hover:bg-primary/80 hover:brightness-95 active:shadow-sm',
 				destructive:
 					'bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20',
 				outline: 'border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground',
